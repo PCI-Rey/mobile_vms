@@ -1,4 +1,4 @@
-
+import 'package:flutter/foundation.dart';
 import '../models/agenda_model.dart';
 import '../models/visitor_model.dart';
 
@@ -29,7 +29,7 @@ Future<bool> dummyCreateAgenda(AgendaModel newAgenda) async {
   
   if (success) {
     // Dalam implementasi nyata, ini akan save ke database
-    print('Agenda berhasil dibuat: ${newAgenda.id}');
+    debugPrint('Agenda berhasil dibuat: ${newAgenda.id}');
     return true;
   } else {
     throw Exception('Gagal membuat agenda. Silakan coba lagi.');
@@ -48,7 +48,7 @@ Future<bool> dummyUpdateAgenda(String agendaId, AgendaModel updatedAgenda) async
   }
   
   // Simulasi update success
-  print('Agenda $agendaId berhasil diupdate');
+  debugPrint('Agenda $agendaId berhasil diupdate');
   return true;
 }
 
@@ -62,7 +62,7 @@ Future<bool> dummyDeleteAgenda(String agendaId) async {
     throw Exception('Agenda dengan ID $agendaId tidak ditemukan');
   }
   
-  print('Agenda $agendaId berhasil dihapus');
+  debugPrint('Agenda $agendaId berhasil dihapus');
   return true;
 }
 

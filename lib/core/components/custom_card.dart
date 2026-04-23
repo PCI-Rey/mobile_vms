@@ -105,7 +105,7 @@ class CustomCard extends StatelessWidget {
         // Add subtle shadow for better depth
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 4,
             offset: const Offset(0, 2),
           ),
@@ -212,7 +212,7 @@ class CustomCardLayoutBuilder extends StatelessWidget {
         // Calculate responsive values based on available width
         final width = constraints.maxWidth;
         final isSmall = width < 300;
-        final isMedium = width >= 300 && width < 500;
+        // final isMedium = width >= 300 && width < 500;
         final isLarge = width >= 500;
 
         // Dynamic scaling factor
@@ -231,7 +231,7 @@ class CustomCardLayoutBuilder extends StatelessWidget {
             border: Border.all(width: 1, color: AppColors.grey200),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.04),
+                color: Colors.black.withValues(alpha: 0.04),
                 blurRadius: 4 * scaleFactor,
                 offset: Offset(0, 2 * scaleFactor),
               ),

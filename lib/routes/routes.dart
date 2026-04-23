@@ -13,7 +13,6 @@ import '../presentation/auth/informasi_umum_page.dart';
 import '../presentation/auth/login_page.dart';
 import '../presentation/auth/signature_agreement_page.dart';
 import '../presentation/auth/take_ktp.dart' show TakeKtpPage;
-import '../presentation/auth/take_selfie_page.dart';
 import '../presentation/auth/verification_code_page.dart';
 import '../presentation/home/guest_home_page.dart' show GuestHomePage;
 
@@ -57,7 +56,6 @@ class Routes {
     informasiUmum: (_) => const InformasiUmumPage(),
     signatureAgreement: (_) => const SignAgreementPage(),
     takeKtp: (_) => const TakeKtpPage(),
-    takeSelfie: (_) => const TakeSelfiePage(),
   };
 
   // Routes for Guest role

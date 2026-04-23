@@ -59,7 +59,7 @@ class _ParkingPageState extends State<ParkingPage> {
                   borderRadius: BorderRadius.circular(12),
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xffE5E7EB).withOpacity(0.8),
+                      color: const Color(0xffE5E7EB).withValues(alpha: 0.8),
                       spreadRadius: 1,
                       blurRadius: 8,
                       offset: const Offset(0, 3),

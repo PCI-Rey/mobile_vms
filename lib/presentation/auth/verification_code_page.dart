@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import '../../presentation/auth/informasi_umum_page.dart';
+import 'package:get/get.dart';
 import '../../core/core.dart';
+import 'controller/verification_code_controller.dart';
 
 class VerificationCodePage extends StatefulWidget {
   const VerificationCodePage({super.key});
@@ -10,12 +11,14 @@ class VerificationCodePage extends StatefulWidget {
 }
 
 class _VerificationCodePageState extends State<VerificationCodePage> {
-  TextEditingController invitationCode = TextEditingController();
-  String? codeError;
+  late final VerificationCodeController controller;
 
   @override
   void initState() {
     super.initState();
+    controller = Get.isRegistered<VerificationCodeController>()
+        ? Get.find<VerificationCodeController>()
+        : Get.put(VerificationCodeController());
   }
 
   @override
@@ -53,27 +56,39 @@ class _VerificationCodePageState extends State<VerificationCodePage> {
                           children: [
                             const SpaceHeight(20),
                             Text(
-                              'Verifikasi Kode',
+                              'verify_code'.tr,
                               style: TextStyles.headline4,
                             ),
-                            const Text('Masukkan kode undangan Anda.'),
+                            Text('enter_invitation_code'.tr),
                             const SpaceHeight(10),
 
-                            CustomTextField(
-                              controller: invitationCode,
-                              label: 'Kode Undangan',
-                              errorText: codeError,
+                            Obx(
+                              () => CustomTextField(
+                                controller:
+                                    controller.invitationCodeController,
+                                label: 'invitation_code'.tr,
+                                errorText: controller.codeError.value,
+                              ),
                             ),
 
                             const SpaceHeight(20),
-                            Spacer(),
+                            const Spacer(),
 
-                            Button.filled(
-                              onPressed: () {
-                                context.push(InformasiUmumPage());
-                              },
-                              label: 'Verifikasi',
-                            ),
+                            Obx(() {
+                              if (controller.isLoading.value) {
+                                return const Center(
+                                  child: CircularProgressIndicator(
+                                    color: AppColors.primary500,
+                                  ),
+                                );
+                              }
+                              return Button.filled(
+                                onPressed: () {
+                                  controller.verifyCode();
+                                },
+                                label: 'verify'.tr,
+                              );
+                            }),
 
                             const SizedBox(height: 30),
                           ],

@@ -61,9 +61,11 @@ class _GuestParkingPageState extends State<GuestParkingPage> {
     return '${seconds.toString().padLeft(2, '0')}s';
   }
 
+/* 
   String? _getSubText(Duration duration) {
     return null; // Tidak ada sub text untuk timer detik
   }
+*/
 
   Color _getTimerColor() {
     if (_remainingTime.inSeconds <= 10) {
@@ -100,7 +102,7 @@ class _GuestParkingPageState extends State<GuestParkingPage> {
   @override
   Widget build(BuildContext context) {
     final screenHeight = MediaQuery.of(context).size.height;
-    final screenWidth = MediaQuery.of(context).size.width;
+    // final screenWidth = MediaQuery.of(context).size.width;
     
     return Scaffold(
       appBar: AppBar(
@@ -159,7 +161,7 @@ class _GuestParkingPageState extends State<GuestParkingPage> {
                           const SizedBox(height: 12),
                           ClipRRect(
                             borderRadius: BorderRadius.circular(8),
-                            child: Container(
+                            child: SizedBox(
                               width: double.infinity,
                               height: screenHeight * 0.15,
                               child: Assets.images.parkingSlot.image(
@@ -206,7 +208,7 @@ class _GuestParkingPageState extends State<GuestParkingPage> {
                           ),
                           
                           // Jalan tengah dengan panah
-                          Container(
+                          SizedBox(
                             height: 40,
                             child: Center(
                               child: Assets.images.arrowVector.image(

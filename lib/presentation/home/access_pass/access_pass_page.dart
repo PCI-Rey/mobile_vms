@@ -1,6 +1,6 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
-import 'dart:typed_data';
 import 'dart:ui' as ui;
 import 'package:gal/gal.dart';
 
@@ -240,7 +240,7 @@ class _AccessPassDialogState extends State<AccessPassDialog> {
                           borderRadius: BorderRadius.circular(12),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.grey.withOpacity(0.2),
+                              color: Colors.grey.withValues(alpha: 0.2),
                               blurRadius: 8,
                               offset: const Offset(0, 2),
                             ),
@@ -461,7 +461,7 @@ class _AccessPassDialogState extends State<AccessPassDialog> {
         );
       }
     } on GalException catch (e) {
-      print(
+      debugPrint(
         "Gal error while saving access pass: ${e.type} - ${e.platformException}",
       );
       if (mounted) {
@@ -498,7 +498,7 @@ class _AccessPassDialogState extends State<AccessPassDialog> {
         );
       }
     } catch (e) {
-      print("Unexpected error while saving access pass: $e");
+      debugPrint("Unexpected error while saving access pass: $e");
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(

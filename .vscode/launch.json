@@ -1,0 +1,19 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Visitor App (No Impeller)",
+      "request": "launch",
+      "type": "dart",
+      "args": [
+        "--no-enable-impeller"
+      ]
+    },
+    {
+      "name": "Visitor App (Release)",
+      "request": "launch",
+      "type": "dart",
+      "flutterMode": "release"
+    }
+  ]
+}

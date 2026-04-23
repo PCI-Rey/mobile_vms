@@ -98,7 +98,7 @@ class VisitorLineChart extends StatelessWidget {
       isCurved: true,
       barWidth: 3,
       dotData: FlDotData(show: true),
-      belowBarData: BarAreaData(show: true, color: color.withOpacity(0.1)),
+      belowBarData: BarAreaData(show: true, color: color.withValues(alpha: 0.1)),
       color: color,
     );
   }

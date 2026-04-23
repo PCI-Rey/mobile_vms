@@ -29,7 +29,7 @@ class SelectableAgendaCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
-    final screenHeight = MediaQuery.of(context).size.height;
+    // final screenHeight = MediaQuery.of(context).size.height;
 
     // Enhanced responsive breakpoints
     final isSmallScreen = screenWidth < 360;
@@ -68,7 +68,7 @@ class SelectableAgendaCard extends StatelessWidget {
               BoxShadow(
                 offset: const Offset(0, 4),
                 color: isSelectable && isSelected 
-                  ? Theme.of(context).primaryColor.withOpacity(0.25)
+                  ? Theme.of(context).primaryColor.withValues(alpha: 0.25)
                   : AppColors.primary900.withValues(alpha: 0.15),
                 blurRadius: isSmallScreen ? 8 : 12,
                 spreadRadius: isSmallScreen ? 1 : 2,
@@ -129,7 +129,7 @@ class SelectableAgendaCard extends StatelessWidget {
                       borderRadius: BorderRadius.circular(4),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
+                          color: Colors.black.withValues(alpha: 0.1),
                           blurRadius: 2,
                           offset: const Offset(0, 1),
                         ),
@@ -249,7 +249,7 @@ class SelectableAgendaCard extends StatelessWidget {
               Expanded(
                 child: ElevatedButton(
                   onPressed: () {
-                    print('Extend button pressed');
+                    debugPrint('Extend button pressed');
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Theme.of(context).primaryColor,
@@ -325,7 +325,7 @@ class SelectableAgendaCard extends StatelessWidget {
           children: [
             ElevatedButton(
               onPressed: () {
-                print('Extend button pressed');
+                debugPrint('Extend button pressed');
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Theme.of(context).primaryColor,

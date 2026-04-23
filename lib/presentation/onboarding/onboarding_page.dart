@@ -57,99 +57,105 @@ class OnboardingPage extends StatelessWidget {
 
       speed: 1.8,
       pageBodies: [
-        Container(
-          alignment: Alignment.center,
-          padding: const EdgeInsets.symmetric(horizontal: 40),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: <Widget>[
-              Assets.images.onboarding1.image(height: 309), // Gambar di tengah
-              const SizedBox(height: 60),
-              Text(
-                'Registrasi Sekali,\nKunjungan Mudah',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: AppColors.grey800,
-                  fontSize: 22.0,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 1.15,
+        SingleChildScrollView(
+          child: Container(
+            alignment: Alignment.center,
+            padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 40),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: <Widget>[
+                Assets.images.onboarding1.image(height: 300),
+                const SizedBox(height: 40),
+                Text(
+                  'Registrasi Sekali,\nKunjungan Mudah',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: AppColors.grey800,
+                    fontSize: 22.0,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 1.15,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 16),
-              const Text(
-                "Isi data diri dan unggah dokumen,\nsistem akan mengatur sisanya",
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: AppColors.grey600,
-                  fontSize: 16.0,
-                  fontWeight: FontWeight.w400,
+                const SizedBox(height: 16),
+                const Text(
+                  "Isi data diri dan unggah dokumen,\nsistem akan mengatur sisanya",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: AppColors.grey600,
+                    fontSize: 16.0,
+                    fontWeight: FontWeight.w400,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
 
-        Container(
-          alignment: Alignment.center,
-          padding: const EdgeInsets.symmetric(horizontal: 40),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: <Widget>[
-              Assets.images.onboarding2.image(height: 309), // Gambar di tengah
-              const SizedBox(height: 60),
-              Text(
-                'Undangan Digital \n& QR Pass',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: AppColors.grey800,
-                  fontSize: 22.0,
-                  fontWeight: FontWeight.w800,
+        SingleChildScrollView(
+          child: Container(
+            alignment: Alignment.center,
+            padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 40),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: <Widget>[
+                Assets.images.onboarding2.image(height: 300),
+                const SizedBox(height: 40),
+                Text(
+                  'Undangan Digital \n& QR Pass',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: AppColors.grey800,
+                    fontSize: 22.0,
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 16),
-              const Text(
-                'Dapatkan undangan kunjungan dan akses masuk hanya dengan kode QR.',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: AppColors.grey600,
-                  fontSize: 16.0,
-                  fontWeight: FontWeight.w400,
+                const SizedBox(height: 16),
+                const Text(
+                  'Dapatkan undangan kunjungan dan akses masuk hanya dengan kode QR.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: AppColors.grey600,
+                    fontSize: 16.0,
+                    fontWeight: FontWeight.w400,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
-        Container(
-          alignment: Alignment.center,
-          padding: const EdgeInsets.symmetric(horizontal: 40),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: <Widget>[
-              Assets.images.onboarding3.image(height: 309), // Gambar di tengah
-              const SizedBox(height: 60),
-              Text(
-                'Pantau \nKunjungan Anda',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: AppColors.grey800,
-                  fontSize: 22.0,
-                  fontWeight: FontWeight.w700,
+        SingleChildScrollView(
+          child: Container(
+            alignment: Alignment.center,
+            padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 40),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: <Widget>[
+                Assets.images.onboarding3.image(height: 300),
+                const SizedBox(height: 40),
+                Text(
+                  'Pantau \nKunjungan Anda',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: AppColors.grey800,
+                    fontSize: 22.0,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 16),
-              const Text(
-                'Lihat jadwal, status check-in/out, dan riwayat kunjungan Anda.',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: Colors.grey,
-                  fontSize: 16.0,
-                  fontWeight: FontWeight.w400,
+                const SizedBox(height: 16),
+                const Text(
+                  'Lihat jadwal, status check-in/out, dan riwayat kunjungan Anda.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Colors.grey,
+                    fontSize: 16.0,
+                    fontWeight: FontWeight.w400,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ],

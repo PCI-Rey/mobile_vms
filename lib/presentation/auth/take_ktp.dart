@@ -72,7 +72,7 @@ class _TakeKtpPageState extends State<TakeKtpPage> {
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.15),
+                    color: Colors.black.withValues(alpha: 0.15),
                     blurRadius: 10,
                     offset: const Offset(0, 4),
                   ),
@@ -218,7 +218,7 @@ class _KtpCameraPageState extends State<KtpCameraPage> {
           });
         }
       } catch (e) {
-        print('Error initializing camera: $e');
+        debugPrint('Error initializing camera: $e');
       }
     }
   }
@@ -238,7 +238,7 @@ class _KtpCameraPageState extends State<KtpCameraPage> {
         Navigator.pop(context, imageFile);
       }
     } catch (e) {
-      print('Error taking picture: $e');
+      debugPrint('Error taking picture: $e');
       setState(() {
         _isCapturing = false;
       });

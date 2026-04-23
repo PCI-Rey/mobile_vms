@@ -4,6 +4,8 @@ import '../../../../core/extensions/extensions.dart';
 import '../../../../presentation/home/visitor/search_result_visitor_page.dart';
 
 class SearchVisitorPage extends StatefulWidget {
+  const SearchVisitorPage({super.key});
+
   @override
   State<SearchVisitorPage> createState() => _SearchVisitorPageState();
 }
@@ -12,7 +14,7 @@ class _SearchVisitorPageState extends State<SearchVisitorPage> {
   @override
   Widget build(BuildContext context) {
     TextEditingController platNumberController = TextEditingController();
-    TextEditingController areaParkingController = TextEditingController();
+    // TextEditingController areaParkingController = TextEditingController();
     TextEditingController parkInTimeController = TextEditingController();
     return Scaffold(
       appBar: AppBar(

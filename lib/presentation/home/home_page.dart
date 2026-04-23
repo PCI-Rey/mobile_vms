@@ -2,25 +2,19 @@ import 'package:country_flags/country_flags.dart';
 import 'package:date_picker_timeline/date_picker_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'alarm/controller/alarm_controller.dart';
 import '../../data/models/agenda_model.dart';
 import '../../presentation/home/alarm/list_alarm_page.dart';
-import '../../presentation/home/approval/approval_page.dart';
 import '../../presentation/home/evacuate/evacuate_page.dart';
-import '../../presentation/home/invitation/as_employee/invitation_list_page.dart';
 import '../../presentation/notification/notification_page.dart';
 import '../../presentation/parking/as_operator/parking_page.dart';
-import '../../data/datasources/auth_datasource.dart';
-import '../../presentation/home/agenda/widgets/agenda_slider.dart';
-import '../../presentation/home/agenda/widgets/itenerary_list.dart';
-import '../../presentation/home/agenda/widgets/quick_approval_list.dart';
-import '../../presentation/home/agenda/widgets/visitor_list.dart';
-import 'alarm/alarm_list.dart';
 import '../../presentation/home/report/report_page.dart';
-import '../../presentation/home/visitor/visitor_page.dart';
+import '../../presentation/home/agenda/widgets/visitor_list.dart';
+import '../../presentation/home/invitation/send_invitation_page.dart';
+import '../../presentation/auth/controller/language_controller.dart';
+import '../../presentation/auth/controller/user_controller.dart';
 import '../../presentation/parking/as_guest/guest_parking_page.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import '../widgets/is_block_page.dart';
+import '../../presentation/home/visitor/visitor_page.dart';
+import 'agenda/widgets/itenerary_list.dart';
 
 import '../../core/core.dart';
 import 'access_pass/access_pass_page.dart';
@@ -33,8 +27,7 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  String selectedLang = 'id';
-  bool isBlocked = false;
+  final langCtrl = LanguageController.to;
 
   final List<AgendaModel> agendaList = [
     AgendaModel(
@@ -57,29 +50,9 @@ class _HomePageState extends State<HomePage> {
     ),
   ];
 
-  int _currentCarouselIndex = 0;
-  String? _role;
-  Future<void> _loadRoleAndSetup() async {
-    final user = await AuthDatasource().getAuthData();
-    if (!mounted) return;
-
-    final role = user!.role ?? '';
-    setState(() {
-      _role = role;
-    });
-  }
-
   @override
   void initState() {
     super.initState();
-    _loadRoleAndSetup();
-    // AlarmController loads data on init, so no need to explicitly call load here
-    // unless we want to refresh it.
-    if (Get.isRegistered<AlarmController>()) {
-      Get.find<AlarmController>().loadAlarms();
-    } else {
-      Get.put(AlarmController());
-    }
   }
 
   @override
@@ -87,11 +60,11 @@ class _HomePageState extends State<HomePage> {
     final List<Map<String, dynamic>> menuItems = [
       {
         'icon': Assets.icons.id.image(height: 32),
-        'menuName': 'Access Pass',
+        'menuName': 'access_pass'.tr,
         'onTap': () {
           showAccessPassDialog(
             context: context,
-            name: 'Tommy',
+            name: UserController.to.fullName,
             date: 'Mon, 19 Jul 2025',
             time: '10:00 - 13:00',
             invitationCode: '729038',
@@ -108,42 +81,44 @@ class _HomePageState extends State<HomePage> {
       },
       {
         'icon': Assets.icons.invitation.image(height: 32),
-        'menuName': 'Invitation',
-        'onTap': () => context.push(InvitationListPage()),
+        'menuName': 'invitation'.tr,
+        'onTap': () => context.push(SendInvitationPage()),
       },
       {
         'icon': Assets.icons.approved.image(height: 32),
-        'menuName': 'Approval',
-        'onTap': () => context.push(ApprovalPage()),
+        'menuName': 'approval'.tr,
+        'onTap': () => debugPrint('Delivery clicked'),
       },
       {
         'icon': Assets.icons.healthCheck.image(height: 32),
-        'menuName': 'Report',
+        'menuName': 'report'.tr,
         'onTap': () => context.push(VisitorReportPage()),
       },
       {
         'icon': Assets.icons.parkingLot.image(height: 32),
-        'menuName': 'Parking',
-        'onTap': () =>
-            context.push(_role == 'guest' ? GuestParkingPage() : ParkingPage()),
+        'menuName': 'parking'.tr,
+        'onTap': () => context.push(
+          UserController.to.user.value?.roleAccess == 'guest'
+              ? GuestParkingPage()
+              : ParkingPage(),
+        ),
       },
       {
         'icon': Assets.icons.location.image(height: 32),
-        'menuName': 'Visitor',
+        'menuName': 'visitor'.tr,
         'onTap': () => context.push(VisitorPage()),
       },
       {
         'icon': Assets.icons.alarm.image(height: 32),
-        'menuName': 'Alarm',
+        'menuName': 'alarm'.tr,
         'onTap': () => context.push(AlarmListPage()),
       },
       {
         'icon': Assets.icons.evacuate.image(height: 32),
-        'menuName': 'Evacuate',
+        'menuName': 'evacuate'.tr,
         'onTap': () => context.push(EvacuatePage()),
       },
     ];
-
     return Scaffold(
       body: Stack(
         children: [
@@ -177,16 +152,18 @@ class _HomePageState extends State<HomePage> {
                         ),
                         size: 40,
                       ),
-                      title: const Text(
-                        'Welcome,',
-                        style: TextStyle(fontSize: 14, color: Colors.white),
+                      title: Text(
+                        'welcome'.tr,
+                        style: const TextStyle(fontSize: 14, color: Colors.white),
                       ),
-                      subtitle: const Text(
-                        'Tom',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
+                      subtitle: Obx(
+                        () => Text(
+                          UserController.to.fullName,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
                         ),
                       ),
                       trailing: Row(
@@ -201,56 +178,60 @@ class _HomePageState extends State<HomePage> {
                               horizontal: 8,
                               vertical: 4,
                             ),
-                            child: DropdownButtonHideUnderline(
-                              child: DropdownButton<String>(
-                                value: selectedLang,
-                                icon: const Icon(
-                                  Icons.keyboard_arrow_down,
-                                  size: 18,
-                                  color: Colors.black,
-                                ),
-                                dropdownColor: Colors.white,
-                                borderRadius: BorderRadius.circular(12),
-                                style: const TextStyle(color: Colors.black),
-                                isDense: true,
+                            child: Obx(
+                              () => DropdownButtonHideUnderline(
+                                child: DropdownButton<String>(
+                                  value: langCtrl.selectedLang.value == 'id' ? 'id' : 'us',
+                                  icon: const Icon(
+                                    Icons.keyboard_arrow_down,
+                                    size: 18,
+                                    color: Colors.black,
+                                  ),
+                                  dropdownColor: Colors.white,
+                                  borderRadius: BorderRadius.circular(12),
+                                  style: const TextStyle(color: Colors.black),
+                                  isDense: true,
 
-                                selectedItemBuilder: (BuildContext context) {
-                                  return ['us', 'id'].map<Widget>((
-                                    String value,
-                                  ) {
-                                    return CountryFlag.fromCountryCode(
-                                      value.toUpperCase(),
-                                      height: 20,
-                                      width: 28,
-                                      shape: RoundedRectangle(10),
+                                  selectedItemBuilder: (BuildContext context) {
+                                    return ['us', 'id'].map<Widget>((
+                                      String value,
+                                    ) {
+                                      return CountryFlag.fromCountryCode(
+                                        value.toUpperCase(),
+                                        height: 20,
+                                        width: 28,
+                                        shape: RoundedRectangle(10),
+                                      );
+                                    }).toList();
+                                  },
+
+                                  items: ['us', 'id'].map((code) {
+                                    return DropdownMenuItem<String>(
+                                      value: code,
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          CountryFlag.fromCountryCode(
+                                            code.toUpperCase(),
+                                            height: 20,
+                                            width: 28,
+                                            shape: RoundedRectangle(10),
+                                          ),
+                                          const SizedBox(width: 8),
+                                          Text(
+                                            code.toUpperCase(),
+                                          ),
+                                        ],
+                                      ),
                                     );
-                                  }).toList();
-                                },
+                                  }).toList(),
 
-                                items: ['us', 'id'].map((code) {
-                                  return DropdownMenuItem<String>(
-                                    value: code,
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        CountryFlag.fromCountryCode(
-                                          code.toUpperCase(),
-                                          height: 20,
-                                          width: 28,
-                                          shape: RoundedRectangle(10),
-                                        ),
-                                        const SizedBox(width: 8),
-                                        Text(code.toUpperCase()),
-                                      ],
-                                    ),
-                                  );
-                                }).toList(),
-
-                                onChanged: (value) {
-                                  setState(() {
-                                    selectedLang = value!;
-                                  });
-                                },
+                                  onChanged: (value) {
+                                    if (value != null) {
+                                      langCtrl.changeLanguage(value == 'us' ? 'en' : 'id');
+                                    }
+                                  },
+                                ),
                               ),
                             ),
                           ),
@@ -262,17 +243,18 @@ class _HomePageState extends State<HomePage> {
                                   showNotificationDialog(context);
                                 },
                                 child: Icon(
-                                  FontAwesomeIcons.bell,
+                                  Icons.notifications_none_outlined,
                                   color: Colors.white,
+                                  size: 28,
                                 ),
                               ),
                               Positioned(
-                                right: 0,
-                                top: 0,
+                                right: 4,
+                                top: 4,
                                 child: Container(
                                   width: 8,
                                   height: 8,
-                                  decoration: BoxDecoration(
+                                  decoration: const BoxDecoration(
                                     color: Colors.red,
                                     shape: BoxShape.circle,
                                   ),
@@ -285,21 +267,86 @@ class _HomePageState extends State<HomePage> {
                     ),
                   ),
 
+                  // Menu Grid
                   Container(
-                    padding: EdgeInsets.all(20),
-                    width: double.infinity,
+                    margin: const EdgeInsets.symmetric(horizontal: 20),
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 20,
+                      horizontal: 10,
+                    ),
                     decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.05),
+                          blurRadius: 10,
+                          offset: const Offset(0, 5),
+                        ),
+                      ],
+                    ),
+                    child: GridView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 4,
+                        mainAxisSpacing: 20,
+                        crossAxisSpacing: 10,
+                        childAspectRatio: 0.72,
+                      ),
+                      itemCount: menuItems.length,
+                      itemBuilder: (context, index) {
+                        return GestureDetector(
+                          onTap: menuItems[index]['onTap'],
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFE3F2FD),
+                                  borderRadius: BorderRadius.circular(15),
+                                ),
+                                child: menuItems[index]['icon'],
+                              ),
+                              const SizedBox(height: 6),
+                              Flexible(
+                                child: Text(
+                                  menuItems[index]['menuName'],
+                                  textAlign: TextAlign.center,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+
+                  const SizedBox(height: 25),
+
+                  // Content Area (Date Picker & List)
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(20),
+                    decoration: const BoxDecoration(
                       color: Color(0xffFAFCFF),
                       borderRadius: BorderRadius.only(
-                        topLeft: Radius.circular(20),
-                        topRight: Radius.circular(20),
+                        topLeft: Radius.circular(30),
+                        topRight: Radius.circular(30),
                       ),
                     ),
-
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Schedule', style: TextStyles.headline5),
+                        Text('schedule'.tr, style: TextStyles.headline5),
                         DatePicker(
                           DateTime.now(),
                           initialSelectedDate: DateTime.now(),
@@ -313,115 +360,29 @@ class _HomePageState extends State<HomePage> {
                           ),
                           monthTextStyle: const TextStyle(fontSize: 10),
                           onDateChange: (date) {
-                            print("Tanggal dipilih: $date");
+                            debugPrint("Tanggal dipilih: $date");
                           },
                         ),
                         SpaceHeight(10),
                         Divider(height: 2),
                         SpaceHeight(20),
 
-                        ConstrainedBox(
-                          constraints: const BoxConstraints(minHeight: 160),
-                          child: LayoutBuilder(
-                            builder: (context, constraints) {
-                              double screenWidth = MediaQuery.of(
-                                context,
-                              ).size.width;
-                              bool isTabletOrDesktop = screenWidth >= 600;
-
-                              if (isTabletOrDesktop) {
-                                return Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 20,
-                                    vertical: 20,
-                                  ),
-                                  child: Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceBetween,
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.center,
-                                    children: menuItems.map((menu) {
-                                      return Flexible(
-                                        child: GestureDetector(
-                                          onTap: menu['onTap'],
-                                          child: CircleMenu(
-                                            image: menu['icon'],
-                                            menuName: menu['menuName'],
-                                            size: 80,
-                                          ),
-                                        ),
-                                      );
-                                    }).toList(),
-                                  ),
-                                );
-                              } else {
-                                return Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 16,
-                                    vertical: 16,
-                                  ),
-                                  child: GridView.builder(
-                                    itemCount: menuItems.length,
-                                    shrinkWrap: true,
-                                    physics:
-                                        const NeverScrollableScrollPhysics(),
-                                    gridDelegate:
-                                        const SliverGridDelegateWithFixedCrossAxisCount(
-                                          crossAxisCount: 4,
-                                          mainAxisSpacing:
-                                              16, // Increased from 2
-                                          crossAxisSpacing:
-                                              8, // Increased from 5
-                                          childAspectRatio:
-                                              0.8, // Reduced from 1 to give more height
-                                        ),
-                                    itemBuilder: (context, index) {
-                                      final menu = menuItems[index];
-                                      return GestureDetector(
-                                        onTap: menu['onTap'],
-                                        child: CircleMenu(
-                                          image: menu['icon'],
-                                          menuName: menu['menuName'],
-                                          size: 50,
-                                        ),
-                                      );
-                                    },
-                                  ),
-                                );
-                              }
-                            },
-                          ),
-                        ),
-
-                        Divider(height: 10),
+                        // List of Visitor List (Agenda)
+                        const VisitorList(),
 
                         SpaceHeight(20),
                         Text(
-                          'Active Visit',
+                          'active_visit'.tr,
                           style: TextStyles.bodyLarge.copyWith(
                             fontWeight: FontWeight.w600,
                           ),
                         ),
-                        const SpaceHeight(10),
-                        AgendaSlider(),
-
-                        SpaceHeight(20),
-                        Divider(height: 10),
-
                         SpaceHeight(10),
-                        VisitorList(),
+
+                        // Itinerary List
+                        const IteneraryList(),
 
                         SpaceHeight(20),
-                        Divider(height: 10),
-
-                        SpaceHeight(20),
-                        AlarmList(),
-
-                        SpaceHeight(20),
-                        QuickApprovalList(),
-
-                        SpaceHeight(20),
-                        IteneraryList(),
                       ],
                     ),
                   ),
@@ -429,25 +390,8 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
           ),
-
-          // Block overlay
-          if (isBlocked) BlockedOverlay(),
         ],
       ),
-      floatingActionButton: GestureDetector(
-        onLongPress: () => setState(() => isBlocked = true),
-        child: FloatingActionButton.small(
-          backgroundColor: Colors.red,
-          child: const Icon(Icons.lock, color: Colors.white),
-          onPressed: () {
-            setState(() => isBlocked = false);
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Hold to block screen')),
-            );
-          },
-        ),
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
     );
   }
 }

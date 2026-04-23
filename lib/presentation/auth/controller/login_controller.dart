@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../data/datasources/auth_datasource.dart';
+import 'user_controller.dart';
 import '../../dashboard.dart';
 
 class LoginController extends GetxController {
@@ -38,24 +39,33 @@ class LoginController extends GetxController {
 
     isLoading.value = true;
 
-    try {
-      final userModel = await authDatasource.login(email, password);
-      isLoading.value = false;
+    final (userModel, message) = await authDatasource.login(email, password);
+    isLoading.value = false;
 
-      await authDatasource.saveAuthData(userModel);
+    if (userModel != null) {
+      final userCtrl = Get.isRegistered<UserController>() ? Get.find<UserController>() : Get.put(UserController());
+      await userCtrl.loadUser();
+      Get.snackbar(
+        'Berhasil',
+        message ?? 'Berhasil masuk',
+        backgroundColor: Colors.green,
+        colorText: Colors.white,
+        snackPosition: SnackPosition.TOP,
+        duration: const Duration(seconds: 3),
+      );
       Get.offAll(() => const Dashboard());
-    } catch (e) {
-      isLoading.value = false;
-      final error = e.toString().replaceAll('Exception: ', '');
+    } else {
+      final errorMessage = message ?? 'Gagal Login';
 
-      if (error.toLowerCase().contains('username') ||
-          error.toLowerCase().contains('sandi')) {
-        usernameError.value = error;
-        passwordError.value = error;
+      if (errorMessage.toLowerCase().contains('username') ||
+          errorMessage.toLowerCase().contains('sandi') ||
+          errorMessage.toLowerCase().contains('password')) {
+        usernameError.value = errorMessage;
+        passwordError.value = errorMessage;
       } else {
         Get.snackbar(
           'Gagal Login',
-          error,
+          errorMessage,
           backgroundColor: Colors.red,
           colorText: Colors.white,
           snackPosition: SnackPosition.BOTTOM,

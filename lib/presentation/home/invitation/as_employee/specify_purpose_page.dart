@@ -111,7 +111,7 @@ class _SpecifyPurposePageState extends State<SpecifyPurposePage> {
                                 color: selectedPurpose == purpose['value']
                                     ? Theme.of(
                                         context,
-                                      ).primaryColor.withOpacity(0.05)
+                                      ).primaryColor.withValues(alpha: 0.05)
                                     : Colors.transparent,
                               ),
                               child: Row(

@@ -1,114 +1,108 @@
 import 'package:flutter/material.dart';
-import 'package:country_flags/country_flags.dart';
-import '../../presentation/onboarding/onboarding_page.dart';
+import 'package:get/get.dart';
+import '../auth/controller/language_controller.dart';
 import '../../core/core.dart';
+import '../auth/login_page.dart';
 
-class LanguageSelectionPage extends StatefulWidget {
+class LanguageSelectionPage extends StatelessWidget {
   const LanguageSelectionPage({super.key});
 
   @override
-  State<LanguageSelectionPage> createState() => _LanguageSelectionPageState();
-}
-
-class _LanguageSelectionPageState extends State<LanguageSelectionPage> {
-  String? selectedLanguage;
-
-  @override
-  @override
   Widget build(BuildContext context) {
+    final langCtrl = LanguageController.to;
+
     return Scaffold(
       backgroundColor: Colors.white,
       body: Column(
-        mainAxisAlignment: MainAxisAlignment.start,
         children: [
-          Expanded(
-            flex: 1,
-            child: ClipPath(
-              clipper: BottomWaveClipper(),
-              child: Container(
-                width: double.infinity,
-                color: AppColors.primary500,
-                alignment: Alignment.center,
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Assets.images.iconApp.image(height: 122),
-                  ],
-                ),
+          // Blue wavy header for the logo
+          ClipPath(
+            clipper: BottomWaveClipper(),
+            child: Container(
+              width: double.infinity,
+              height: MediaQuery.of(context).size.height * 0.35,
+              color: AppColors.primary500,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Assets.images.iconApp.image(height: 100),
+                  const SizedBox(height: 10),
+                ],
               ),
             ),
           ),
-
+          
+          // Content section
           Expanded(
-            flex: 1,
-            child: Container(
-              padding: const EdgeInsets.only(
-                left: 24,
-                right: 24,
-                bottom: 60,
-              ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 10),
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                mainAxisAlignment: MainAxisAlignment.end,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    "Pilih Bahasa Anda",
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 8),
-                  const Text(
-                    "Agar pengalaman penggunaan lebih nyaman dan mudah dimengerti",
-                    textAlign: TextAlign.center,
-                    style: TextStyle(color: Colors.grey),
-                  ),
-                  const SizedBox(height: 32),
-
-                  _languageButton(
-                    flag: CountryFlag.fromCountryCode(
-                      'ID',
-                      width: 32,
-                      height: 24,
-                      shape: const RoundedRectangle(8),
+                  Text(
+                    'choose_language'.tr,
+                    style: const TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black,
                     ),
-                    label: 'Indonesia',
-                    isSelected: selectedLanguage == 'Indonesia',
-                    onTap: () {
-                      setState(() {
-                        selectedLanguage = 'Indonesia';
-                      });
-
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => OnboardingPage(),
-                        ),
-                      );
-                    },
                   ),
+                  const SizedBox(height: 12),
+                  Text(
+                    'language_subtitle_desc'.tr,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      color: Colors.grey,
+                    ),
+                  ),
+                  const SizedBox(height: 30),
+                  
+                  // English Option
+                  Obx(() => _LanguageOption(
+                        title: 'English',
+                        subtitle: 'United States',
+                        flagCode: 'US',
+                        isSelected: langCtrl.selectedLang.value == 'en',
+                        onTap: () => langCtrl.changeLanguage('en'),
+                      )),
+                  
                   const SizedBox(height: 16),
-
-                  _languageButton(
-                    flag: CountryFlag.fromCountryCode(
-                      'US',
-                      width: 32,
-                      height: 24,
-                      shape: const RoundedRectangle(8),
-                    ),
-                    label: 'English',
-                    isSelected: selectedLanguage == 'English',
-                    onTap: () {
-                      setState(() {
-                        selectedLanguage = 'English';
-                      });
-
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => OnboardingPage(),
+                  
+                  // Indonesia Option
+                  Obx(() => _LanguageOption(
+                        title: 'Indonesia',
+                        subtitle: 'Indonesian',
+                        flagCode: 'ID',
+                        isSelected: langCtrl.selectedLang.value == 'id',
+                        onTap: () => langCtrl.changeLanguage('id'),
+                      )),
+                  
+                  const Spacer(),
+                  
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Get.to(() => const LoginPage());
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary500,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
                         ),
-                      );
-                    },
+                      ),
+                      child: Text(
+                        'next'.tr,
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
                   ),
+                  const SizedBox(height: 20),
                 ],
               ),
             ),
@@ -117,23 +111,31 @@ class _LanguageSelectionPageState extends State<LanguageSelectionPage> {
       ),
     );
   }
+}
 
-  Widget _languageButton({
-    required Widget flag,
-    required String label,
-    required VoidCallback onTap,
-    required bool isSelected,
-  }) {
-    return InkWell(
+class _LanguageOption extends StatelessWidget {
+  final String title;
+  final String subtitle;
+  final String flagCode;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  const _LanguageOption({
+    required this.title,
+    required this.subtitle,
+    required this.flagCode,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
       child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: isSelected
-              ? AppColors.primary500.withValues(alpha: 0.1)
-              : const Color(0xFFF5F5F5),
+          color: isSelected ? const Color(0xFFE3F2FD) : Colors.white,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: isSelected ? AppColors.primary500 : Colors.grey.shade300,
@@ -141,18 +143,49 @@ class _LanguageSelectionPageState extends State<LanguageSelectionPage> {
           ),
         ),
         child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            flag,
-            const SizedBox(width: 16),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: isSelected ? AppColors.primary500 : Colors.black,
+            Container(
+              width: 48,
+              height: 32,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(4),
+                border: Border.all(color: Colors.grey.shade200),
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(4),
+                child: Image.network(
+                  'https://flagcdn.com/w80/${flagCode.toLowerCase()}.png',
+                  fit: BoxFit.cover,
+                ),
               ),
             ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  Text(
+                    subtitle,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            if (isSelected)
+              const Icon(
+                Icons.check_circle,
+                color: AppColors.primary500,
+              ),
           ],
         ),
       ),

@@ -25,7 +25,7 @@ class CustomCircleImage extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [Color(0xFFFFFFFFF), Color(0xFF6666666)],
+          colors: [Color(0xFFFFFFFF), Color(0xFF666666)],
         ),
       ),
       child: ClipOval(child: image),

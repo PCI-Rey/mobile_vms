@@ -41,8 +41,9 @@ class VisitorTable extends StatelessWidget {
           child: DataTable(
             columnSpacing: 0, // Hilangkan spacing default
             headingRowHeight: 56,
-            dataRowHeight: 60,
-            headingRowColor: MaterialStateProperty.all(Colors.grey.shade50),
+            dataRowMinHeight: 60,
+            dataRowMaxHeight: 60,
+            headingRowColor: WidgetStateProperty.all(Colors.grey.shade50),
             columns: [
               DataColumn(
                 label: Expanded(

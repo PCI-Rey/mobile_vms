@@ -7,7 +7,7 @@ class QuickApprovalList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Dummy data for visitors
-    final List<Map<String, dynamic>> QuickApprovalList = [
+    final List<Map<String, dynamic>> quickApprovalList = [
       {
         'name': 'Tommy',
         'company': 'PT. Lorem ipsum',
@@ -31,7 +31,7 @@ class QuickApprovalList extends StatelessWidget {
               style: TextStyles.bodyLarge.copyWith(fontWeight: FontWeight.w600),
             ),
             Text(
-              '${QuickApprovalList.length} requests',
+              '${quickApprovalList.length} requests',
               style: TextStyles.bodySmall.copyWith(color: Colors.grey[600]),
             ),
           ],
@@ -42,10 +42,10 @@ class QuickApprovalList extends StatelessWidget {
         ListView.separated(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
-          itemCount: QuickApprovalList.length,
+          itemCount: quickApprovalList.length,
           separatorBuilder: (context, index) => const SizedBox(height: 12),
           itemBuilder: (context, index) {
-            final visitor = QuickApprovalList[index];
+            final visitor = quickApprovalList[index];
             return VisitorCard(
               status: visitor['status'],
               visitorName: visitor['name'],
@@ -55,12 +55,8 @@ class QuickApprovalList extends StatelessWidget {
               timeRange: visitor['timeRange'],
               avatar: visitor['avatar'],
               onDeny: () {
-                print('Deny ${visitor['name']}');
-                // TODO: Implement deny functionality
               },
               onApprove: () {
-                print('Approve ${visitor['name']}');
-                // TODO: Implement approve functionality
               },
             );
           },

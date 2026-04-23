@@ -10,6 +10,8 @@ import '../../parking/widgets/custom_stats_card.dart';
 import 'controller/visitor_controller.dart';
 
 class VisitorPage extends StatefulWidget {
+  const VisitorPage({super.key});
+
   @override
   State<VisitorPage> createState() => _VisitorPageState();
 }

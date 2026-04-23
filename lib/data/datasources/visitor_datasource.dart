@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import '../../core/core.dart';
 import '../models/visitor_model.dart';
 
@@ -51,8 +52,8 @@ Future<List<VisitorListModel>> dummyGetVisitorsWithFilter({
     }).toList();
   }
   
-  print('Filter applied - Start: $startDate, End: $endDate, Gedung: $gedung, Status: $status');
-  print('Found ${filteredVisitors.length} visitors after filtering');
+  debugPrint('Filter applied - Start: $startDate, End: $endDate, Gedung: $gedung, Status: $status');
+  debugPrint('Found ${filteredVisitors.length} visitors after filtering');
   
   return filteredVisitors;
 }
@@ -79,7 +80,7 @@ Future<bool> dummyApproveVisitor(String visitorId) async {
   final success = DateTime.now().millisecond % 20 != 0;
   
   if (success) {
-    print('Visitor $visitorId berhasil di-approve');
+    debugPrint('Visitor $visitorId berhasil di-approve');
     return true;
   } else {
     // Rollback jika gagal
@@ -110,7 +111,7 @@ Future<bool> dummyDenyVisitor(String visitorId) async {
   final success = DateTime.now().millisecond % 20 != 0;
   
   if (success) {
-    print('Visitor $visitorId berhasil di-deny');
+    debugPrint('Visitor $visitorId berhasil di-deny');
     return true;
   } else {
     // Rollback jika gagal
@@ -146,7 +147,7 @@ Future<bool> dummyCheckInVisitor(String visitorId) async {
     updatedAt: DateTime.now(),
   );
   
-  print('Visitor ${visitor.name} berhasil check-in');
+  debugPrint('Visitor ${visitor.name} berhasil check-in');
   return true;
 }
 
@@ -177,7 +178,7 @@ Future<bool> dummyCheckOutVisitor(String visitorId) async {
     updatedAt: DateTime.now(),
   );
   
-  print('Visitor ${visitor.name} berhasil check-out');
+  debugPrint('Visitor ${visitor.name} berhasil check-out');
   return true;
 }
 
@@ -191,7 +192,7 @@ Future<bool> dummyCreateVisitor(VisitorListModel newVisitor) async {
   if (success) {
     // Tambahkan ke dummy data
     dummyVisitors.insert(0, newVisitor);
-    print('Visitor berhasil dibuat: ${newVisitor.id}');
+    debugPrint('Visitor berhasil dibuat: ${newVisitor.id}');
     return true;
   } else {
     throw Exception('Gagal membuat visitor. Silakan coba lagi.');
@@ -210,7 +211,7 @@ Future<bool> dummyDeleteVisitor(String visitorId) async {
   
   // Remove dari dummy data
   dummyVisitors.removeAt(visitorIndex);
-  print('Visitor $visitorId berhasil dihapus');
+  debugPrint('Visitor $visitorId berhasil dihapus');
   return true;
 }
 

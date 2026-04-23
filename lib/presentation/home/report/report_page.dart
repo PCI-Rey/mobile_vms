@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
-import '../../../../data/datasources/dummy_data.dart';
 import '../../../../presentation/home/report/widgets/stats_card.dart';
 import '../../../../presentation/home/report/widgets/visitor_table.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/core.dart';
-import '../../../data/datasources/agenda_datasource.dart';
 import '../../history/widgets/filter_bottom_sheet.dart';
 import 'widgets/visitor_line_chart.dart';
 
@@ -18,33 +16,9 @@ class VisitorReportPage extends StatefulWidget {
 }
 
 class _VisitorReportPageState extends State<VisitorReportPage> {
-  Map<String, int> _calculateVisitorStatus() {
-    int checkin = 0;
-    int checkout = 0;
-    int deny = 0;
-
-    for (var agenda in dummyAgendas) {
-      for (var visitor in agenda.visitors) {
-        switch (visitor.status) {
-          case 'checkin':
-            checkin++;
-            break;
-          case 'checkout':
-            checkout++;
-            break;
-          case 'deny':
-            deny++;
-            break;
-        }
-      }
-    }
-
-    return {'checkin': checkin, 'checkout': checkout, 'deny': deny};
-  }
-
   @override
   Widget build(BuildContext context) {
-    final statusCount = _calculateVisitorStatus();
+    // final statusCount = _calculateVisitorStatus();
     final List<String> filterOptions = ['Option 1', 'Option 2', 'Option 3'];
     String? selectedValue;
     DateTime? startDate;
@@ -162,7 +136,8 @@ class _VisitorReportPageState extends State<VisitorReportPage> {
                   double sideMargin = (constraints.maxWidth - maxWidth) / 2;
 
                   final spacing = 16.0;
-                  final itemWidth = (maxWidth - spacing * 2) / 3;
+                  final itemWidth =
+                      ((maxWidth - spacing * 2) / 3).clamp(1.0, double.infinity);
 
                   return Padding(
                     padding: EdgeInsets.symmetric(horizontal: sideMargin),

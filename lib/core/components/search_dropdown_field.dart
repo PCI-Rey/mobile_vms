@@ -159,7 +159,7 @@ class _SearchableDropdownFieldState extends State<SearchableDropdownField> {
             borderRadius: BorderRadius.circular(8),
             boxShadow: [
               BoxShadow(
-                color: Colors.grey.withOpacity(0.2),
+                color: Colors.grey.withValues(alpha: 0.2),
                 blurRadius: 12,
                 offset: const Offset(0, 6),
               ),
@@ -196,7 +196,7 @@ class _SearchableDropdownFieldState extends State<SearchableDropdownField> {
       shrinkWrap: true,
       physics: const ClampingScrollPhysics(),
       separatorBuilder: (context, index) =>
-          Divider(height: 1, color: Colors.grey.withOpacity(0.2)),
+          Divider(height: 1, color: Colors.grey.withValues(alpha: 0.2)),
       itemBuilder: (context, index) {
         final item = filteredItems[index];
         return _buildDropdownItem(item);

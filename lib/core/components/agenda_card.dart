@@ -23,7 +23,7 @@ class AgendaCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
-    final screenHeight = MediaQuery.of(context).size.height;
+    // final screenHeight = MediaQuery.of(context).size.height;
 
     // Enhanced responsive breakpoints
     final isSmallScreen = screenWidth < 360;
@@ -38,16 +38,16 @@ class AgendaCard extends StatelessWidget {
         : 12.0; // Reduced from 16.0
 
     final verticalSpacing = isSmallScreen
-        ? 4.0 // Reduced from 6.0
+        ? 3.0 // Reduced from 4.0
         : isMediumScreen
-        ? 6.0 // Reduced from 8.0
-        : 8.0; // Reduced from 10.0
+        ? 4.0 // Reduced from 6.0
+        : 6.0; // Reduced from 8.0
 
     final imageHeight = isSmallScreen
-        ? 100.0
+        ? 90.0 // Reduced from 100.0
         : isMediumScreen
-        ? 120.0
-        : 160.0;
+        ? 110.0 // Reduced from 120.0
+        : 150.0; // Reduced from 160.0
 
     final buttonHeight = isSmallScreen
         ? 30.0
@@ -216,7 +216,7 @@ class AgendaCard extends StatelessWidget {
               Expanded(
                 child: ElevatedButton(
                   onPressed: () {
-                    print('Extend button pressed');
+                    debugPrint('Extend button pressed');
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Theme.of(context).primaryColor,
@@ -289,7 +289,7 @@ class AgendaCard extends StatelessWidget {
           children: [
             ElevatedButton(
               onPressed: () {
-                print('Extend button pressed');
+                debugPrint('Extend button pressed');
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Theme.of(context).primaryColor,

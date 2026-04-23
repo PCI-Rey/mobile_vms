@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import '../../core/core.dart';
 import '../models/approval_model.dart';
 
@@ -120,8 +121,8 @@ Future<List<ApprovalModel>> dummyGetApprovalsWithFilter({
     }).toList();
   }
   
-  print('Filter applied - Gedung: $gedung, Start: $startDate, End: $endDate, Status: $status');
-  print('Results: ${filtered.length} approvals found');
+  debugPrint('Filter applied - Gedung: $gedung, Start: $startDate, End: $endDate, Status: $status');
+  debugPrint('Results: ${filtered.length} approvals found');
   
   return filtered;
 }
@@ -193,7 +194,7 @@ Future<bool> dummyApproveApproval(String approvalId) async {
   final success = DateTime.now().millisecond % 20 != 0;
   
   if (success) {
-    print('Approval $approvalId berhasil di-approve');
+    debugPrint('Approval $approvalId berhasil di-approve');
     return true;
   } else {
     // Rollback jika gagal
@@ -225,7 +226,7 @@ Future<bool> dummyDenyApproval(String approvalId) async {
   final success = DateTime.now().millisecond % 20 != 0;
   
   if (success) {
-    print('Approval $approvalId berhasil di-deny');
+    debugPrint('Approval $approvalId berhasil di-deny');
     return true;
   } else {
     // Rollback jika gagal

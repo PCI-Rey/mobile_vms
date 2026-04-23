@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
 class ScanTicketPage extends StatefulWidget {
+  const ScanTicketPage({super.key});
+
   @override
-  _ScanTicketPageState createState() => _ScanTicketPageState();
+  State<ScanTicketPage> createState() => _ScanTicketPageState();
 }
 
 class _ScanTicketPageState extends State<ScanTicketPage> {
@@ -60,12 +62,12 @@ class _ScanTicketPageState extends State<ScanTicketPage> {
           // Custom overlay with transparent center using CustomPainter
           CustomPaint(
             painter: ScannerOverlayPainter(),
-            child: Container(width: double.infinity, height: double.infinity),
+            child: const SizedBox(width: double.infinity, height: double.infinity),
           ),
 
           // Scanner frame with corner brackets
           Center(
-            child: Container(
+            child: SizedBox(
               width: 250,
               height: 250,
               child: Stack(
@@ -241,7 +243,7 @@ class _ScanTicketPageState extends State<ScanTicketPage> {
 class ScannerOverlayPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()..color = Colors.black.withOpacity(0.5);
+    final paint = Paint()..color = Colors.black.withValues(alpha: 0.5);
 
     // Calculate center position for the transparent area
     final center = Offset(size.width / 2, size.height / 2);

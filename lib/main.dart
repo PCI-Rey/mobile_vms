@@ -5,12 +5,24 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:hive_flutter/hive_flutter.dart';
+import 'presentation/auth/controller/user_controller.dart';
+import 'presentation/auth/controller/language_controller.dart';
+import 'core/localization/app_translations.dart';
 import 'core/core.dart';
-import 'routes/routes.dart';
+// import 'routes/routes.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await Hive.initFlutter();
+  // Open boxes
+  await Hive.openBox('authBox');
   await initializeDateFormatting('id_ID', null);
+  
+  // Inject Controllers
+  Get.put(UserController());
+  Get.put(LanguageController());
+
   runApp(MyApp());
 }
 
@@ -29,8 +41,16 @@ class _MyAppState extends State<MyApp> {
 
   @override
   Widget build(BuildContext context) {
+    final savedLang = LanguageController.to.selectedLang.value;
+    final initialLocale = savedLang == 'id' 
+        ? const Locale('id', 'ID') 
+        : const Locale('en', 'US');
+
     return GetMaterialApp(
       title: 'Visitor App',
+      translations: AppTranslations(),
+      locale: initialLocale,
+      fallbackLocale: const Locale('en', 'US'),
       theme: ThemeData(
         primaryColor: AppColors.primary500,
         scaffoldBackgroundColor: const Color(0xffFAFCFF),
@@ -54,9 +74,7 @@ class _MyAppState extends State<MyApp> {
         ),
       ),
       localizationsDelegates: GlobalMaterialLocalizations.delegates,
-      supportedLocales: const [Locale('en', ''), Locale('id', '')],
-      // initialRoute: _initialRoute,
-      // routes: Routes.getAll(),
+      supportedLocales: const [Locale('en', 'US'), Locale('id', 'ID')],
       home: const Splashscreen(),
     );
   }

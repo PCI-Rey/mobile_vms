@@ -135,7 +135,7 @@ class _PurposeInformationPageState extends State<PurposeInformationPage> {
               color: Colors.white,
               boxShadow: [
                 BoxShadow(
-                  color: Colors.grey.withOpacity(0.1),
+                  color: Colors.grey.withValues(alpha: 0.1),
                   spreadRadius: 1,
                   blurRadius: 3,
                   offset: const Offset(0, -1),
@@ -209,7 +209,7 @@ class _PurposeInformationPageState extends State<PurposeInformationPage> {
           ),
         );
 
-        if (endTime != null) {
+        if (endTime != null && mounted) {
           // Format the date and time
           final String formattedDate =
               "${selectedDate.day}/${selectedDate.month}/${selectedDate.year}";
@@ -224,6 +224,7 @@ class _PurposeInformationPageState extends State<PurposeInformationPage> {
     }
   }
 
+/*
   void _handleNext() {
     // Collect form data
     final purposeData = {
@@ -241,8 +242,10 @@ class _PurposeInformationPageState extends State<PurposeInformationPage> {
     );
 
     // Navigate to next page or process the data
-    print('Purpose Data: $purposeData');
+    debugPrint('Purpose Data: $purposeData');
   }
+*/
+// ignore: unused_element
 }
 
 // SearchableDropdown Widget - Adopted from FilterBottomSheet

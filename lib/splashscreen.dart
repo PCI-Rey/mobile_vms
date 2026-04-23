@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+// import 'package:flutter/services.dart';
 import '../presentation/onboarding/language_selection_page.dart';
 import '../data/datasources/auth_datasource.dart';
 import '../presentation/dashboard.dart';
@@ -18,7 +18,7 @@ class _SplashscreenState extends State<Splashscreen>
   late Animation<double> _opacityAnimation;
 
   static const Duration _animationDuration = Duration(seconds: 3);
-  static const Duration _minSplashDuration = Duration(seconds: 2);
+  static const Duration _minSplashDuration = Duration(seconds: 5);
 
   @override
   void initState() {

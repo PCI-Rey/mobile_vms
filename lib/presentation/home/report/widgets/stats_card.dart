@@ -1,4 +1,3 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../../../../core/core.dart';
 Widget buildSquareStatCard(String title, String value, double size) {
@@ -11,7 +10,7 @@ Widget buildSquareStatCard(String title, String value, double size) {
       border: Border.all(color: AppColors.grey300, width: 0.5),
       boxShadow: [
         BoxShadow(
-          color: Colors.black.withOpacity(0.1),
+          color: Colors.black.withValues(alpha: 0.1),
           blurRadius: 10,
           offset: const Offset(0, 4),
         ),

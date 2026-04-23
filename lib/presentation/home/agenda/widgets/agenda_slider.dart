@@ -59,7 +59,7 @@ class _AgendaSliderState extends State<AgendaSlider> {
       children: [
         // Shimmer loading with same height calculation
         ClipRect(
-          child: Container(
+          child: SizedBox(
             height: _getCarouselHeight(
               screenWidth,
               screenHeight,
@@ -121,6 +121,7 @@ class _AgendaSliderState extends State<AgendaSlider> {
                     isLargeTablet,
                   ),
                   enableInfiniteScroll: false,
+                  padEnds: true,
                 ),
               ),
             ),
@@ -146,7 +147,7 @@ class _AgendaSliderState extends State<AgendaSlider> {
     final isMediumScreen = screenWidth >= 360 && screenWidth < 600;
     final isTablet = screenWidth >= 600;
     final isLargeTablet = screenWidth >= 800;
-    final isUltraWide = screenWidth >= 1200; // Add ultra-wide detection
+    // final isUltraWide = screenWidth >= 1200; // Add ultra-wide detection
 
     final List<Widget> imageSliders = agendas
         .map(
@@ -191,7 +192,7 @@ class _AgendaSliderState extends State<AgendaSlider> {
       children: [
         // Alternative approach: Use ClipRect to prevent overflow
         ClipRect(
-          child: Container(
+          child: SizedBox(
             height: _getCarouselHeight(
               screenWidth,
               screenHeight,
@@ -230,9 +231,9 @@ class _AgendaSliderState extends State<AgendaSlider> {
                   isLargeTablet,
                 ),
                 enableInfiniteScroll:
-                    agendas.length > 1, // Use agendas instead of dummyAgendas
+                    agendas.length > 1, 
                 scrollDirection: Axis.horizontal,
-                padEnds: false,
+                padEnds: true,
                 onPageChanged: (index, reason) {
                   setState(() {
                     _current = index;
@@ -258,7 +259,7 @@ class _AgendaSliderState extends State<AgendaSlider> {
     final isTablet = screenWidth >= 600;
     final isLargeTablet = screenWidth >= 800;
 
-    return Container(
+    return SizedBox(
       height: _getCarouselHeight(
         screenWidth,
         screenHeight,
@@ -320,7 +321,7 @@ class _AgendaSliderState extends State<AgendaSlider> {
     final isTablet = screenWidth >= 600;
     final isLargeTablet = screenWidth >= 800;
 
-    return Container(
+    return SizedBox(
       height: _getCarouselHeight(
         screenWidth,
         screenHeight,
@@ -411,23 +412,22 @@ class _AgendaSliderState extends State<AgendaSlider> {
 
     if (isSmallScreen) {
       baseHeight = screenHeight * 0.30;
-      return baseHeight;
+      return baseHeight.clamp(1.0, double.infinity);
     } else if (isMediumScreen) {
       baseHeight = screenHeight * 0.34;
-      return baseHeight * 1.2;
+      return (baseHeight * 1.2).clamp(1.0, double.infinity);
     } else if (isTablet && !isLargeTablet) {
       baseHeight = screenHeight * 0.38;
-      return baseHeight * 1.25;
+      return (baseHeight * 1.25).clamp(1.0, double.infinity);
     } else if (isLargeTablet && !isUltraWide) {
       baseHeight = screenHeight * 0.40;
-      return baseHeight * 1.3;
+      return (baseHeight * 1.3).clamp(1.0, double.infinity);
     } else if (isUltraWide) {
       baseHeight = screenHeight * 0.35; // Smaller base height for ultra-wide
-      return baseHeight *
-          1.1; // Minimal extra height since enlargement is disabled/minimal
+      return (baseHeight * 1.1).clamp(1.0, double.infinity);
     } else {
       baseHeight = screenHeight * 0.36;
-      return baseHeight * 1.2;
+      return (baseHeight * 1.2).clamp(1.0, double.infinity);
     }
   }
 
@@ -441,15 +441,15 @@ class _AgendaSliderState extends State<AgendaSlider> {
     bool isLargeTablet,
   ) {
     if (isSmallScreen) {
-      return screenHeight * 0.30; // No enlargement, so same as container
+      return (screenHeight * 0.30).clamp(1.0, double.infinity);
     } else if (isMediumScreen) {
-      return screenHeight * 0.34;
+      return (screenHeight * 0.34).clamp(1.0, double.infinity);
     } else if (isTablet && !isLargeTablet) {
-      return screenHeight * 0.38;
+      return (screenHeight * 0.38).clamp(1.0, double.infinity);
     } else if (isLargeTablet) {
-      return screenHeight * 0.40; // Increased height for large tablets
+      return (screenHeight * 0.40).clamp(1.0, double.infinity);
     } else {
-      return screenHeight * 0.36;
+      return (screenHeight * 0.36).clamp(1.0, double.infinity);
     }
   }
 
@@ -522,13 +522,13 @@ class _AgendaSliderState extends State<AgendaSlider> {
                 borderRadius: BorderRadius.circular(indicatorHeight / 2),
                 color: isActive
                     ? Theme.of(context).primaryColor
-                    : Theme.of(context).primaryColor.withOpacity(0.3),
+                    : Theme.of(context).primaryColor.withValues(alpha: 0.3),
                 boxShadow: isActive
                     ? [
                         BoxShadow(
                           color: Theme.of(
                             context,
-                          ).primaryColor.withOpacity(0.3),
+                          ).primaryColor.withValues(alpha: 0.3),
                           blurRadius: 4,
                           offset: const Offset(0, 2),
                         ),
@@ -549,6 +549,7 @@ class _AgendaSliderState extends State<AgendaSlider> {
 // Controller akan di-inject otomatis oleh Get.put() di dalam AgendaSlider
 // atau bisa di-inject via Binding jika menggunakan GetX Navigation.
 class HomePage extends StatelessWidget {
+  const HomePage({super.key});
   @override
   Widget build(BuildContext context) {
     return Scaffold(

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import '../../core/core.dart';
 import '../models/alarm_model.dart';
 
@@ -43,8 +44,8 @@ Future<List<AlarmModel>> dummyGetAlarmsWithFilter({
     }).toList();
   }
   
-  print('Filter applied - Start: $startDate, End: $endDate, Gedung: $gedung');
-  print('Found ${filteredAlarms.length} alarms after filtering');
+  debugPrint('Filter applied - Start: $startDate, End: $endDate, Gedung: $gedung');
+  debugPrint('Found ${filteredAlarms.length} alarms after filtering');
   
   return filteredAlarms;
 }
@@ -71,7 +72,7 @@ Future<bool> dummyApproveAlarm(String alarmId) async {
   final success = DateTime.now().millisecond % 20 != 0;
   
   if (success) {
-    print('Alarm $alarmId berhasil di-approve');
+    debugPrint('Alarm $alarmId berhasil di-approve');
     return true;
   } else {
     // Rollback jika gagal
@@ -101,7 +102,7 @@ Future<bool> dummyDenyAlarm(String alarmId) async {
   final success = DateTime.now().millisecond % 20 != 0;
   
   if (success) {
-    print('Alarm $alarmId berhasil di-deny');
+    debugPrint('Alarm $alarmId berhasil di-deny');
     return true;
   } else {
     // Rollback jika gagal
@@ -121,7 +122,7 @@ Future<bool> dummyTrackVisitor(String alarmId) async {
   }
   
   // Simulasi tracking berhasil
-  print('Melacak visitor ${alarm.visitorName} dari alarm $alarmId');
+  debugPrint('Melacak visitor ${alarm.visitorName} dari alarm $alarmId');
   return true;
 }
 
@@ -135,7 +136,7 @@ Future<bool> dummyCreateAlarm(AlarmModel newAlarm) async {
   if (success) {
     // Tambahkan ke dummy data
     dummyAlarms.insert(0, newAlarm);
-    print('Alarm berhasil dibuat: ${newAlarm.id}');
+    debugPrint('Alarm berhasil dibuat: ${newAlarm.id}');
     return true;
   } else {
     throw Exception('Gagal membuat alarm. Silakan coba lagi.');
@@ -154,7 +155,7 @@ Future<bool> dummyDeleteAlarm(String alarmId) async {
   
   // Remove dari dummy data
   dummyAlarms.removeAt(alarmIndex);
-  print('Alarm $alarmId berhasil dihapus');
+  debugPrint('Alarm $alarmId berhasil dihapus');
   return true;
 }
 

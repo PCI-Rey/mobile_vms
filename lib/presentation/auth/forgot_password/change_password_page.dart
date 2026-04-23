@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import '../../../presentation/auth/forgot_password/otp_confirmation_page.dart';
 import '../../../presentation/auth/login_page.dart';
-import '../../../presentation/auth/verification_code_page.dart';
+// import '../../../presentation/auth/forgot_password/otp_confirmation_page.dart';
+// import '../../../presentation/auth/verification_code_page.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../../core/core.dart';
 

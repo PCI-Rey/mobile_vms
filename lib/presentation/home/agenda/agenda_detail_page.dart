@@ -7,7 +7,7 @@ import '../agenda/widgets/profile_dialog.dart';
 
 import 'dart:typed_data';
 import 'dart:ui' as ui;
-import 'dart:io';
+// import 'dart:io';
 
 import 'package:gal/gal.dart';
 
@@ -461,7 +461,7 @@ class _AgendaDetailPageState extends State<AgendaDetailPage> {
         );
       }
     } on GalException catch (e) {
-      print(
+      debugPrint(
         "Gal error while saving access pass: ${e.type} - ${e.platformException}",
       );
       if (mounted) {
@@ -499,7 +499,7 @@ class _AgendaDetailPageState extends State<AgendaDetailPage> {
         );
       }
     } catch (e) {
-      print("Unexpected error while saving access pass: $e");
+      debugPrint("Unexpected error while saving access pass: $e");
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(

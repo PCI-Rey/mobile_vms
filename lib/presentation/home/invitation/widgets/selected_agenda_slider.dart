@@ -92,7 +92,7 @@ class _SelectableAgendaSliderState extends State<SelectableAgendaSlider> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: Theme.of(context).primaryColor.withOpacity(0.1),
+                    color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
@@ -185,10 +185,10 @@ class _SelectableAgendaSliderState extends State<SelectableAgendaSlider> {
                 borderRadius: BorderRadius.circular(indicatorHeight / 2),
                 color: isActive 
                   ? Theme.of(context).primaryColor
-                  : Theme.of(context).primaryColor.withOpacity(0.3),
+                  : Theme.of(context).primaryColor.withValues(alpha: 0.3),
                 boxShadow: isActive ? [
                   BoxShadow(
-                    color: Theme.of(context).primaryColor.withOpacity(0.3),
+                    color: Theme.of(context).primaryColor.withValues(alpha: 0.3),
                     blurRadius: 4,
                     offset: const Offset(0, 2),
                   ),

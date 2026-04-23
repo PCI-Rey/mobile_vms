@@ -3,6 +3,8 @@ import '../../../../core/components/custom_card.dart';
 import '../../../core/core.dart';
 
 class SearchResultParkingPage extends StatefulWidget {
+  const SearchResultParkingPage({super.key});
+
   @override
   State<SearchResultParkingPage> createState() =>
       _SearchResultParkingPageState();

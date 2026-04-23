@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../core/core.dart';
-import '../../core/components/notification_card.dart'; 
-
 class NotificationDialog extends StatefulWidget {
   const NotificationDialog({super.key});
 
@@ -125,7 +123,7 @@ class _NotificationDialogState extends State<NotificationDialog> {
                       width: 32,
                       height: 32,
                       decoration: BoxDecoration(
-                        color: Colors.grey.withOpacity(0.1),
+                        color: Colors.grey.withValues(alpha: 0.1),
                         shape: BoxShape.circle,
                       ),
                       child: const Icon(
@@ -263,14 +261,14 @@ class _NotificationDialogState extends State<NotificationDialog> {
                           Icon(
                             Icons.notifications_none,
                             size: 64,
-                            color: Colors.grey.withOpacity(0.5),
+                            color: Colors.grey.withValues(alpha: 0.5),
                           ),
                           const SizedBox(height: 16),
                           Text(
                             'No notifications',
                             style: TextStyle(
                               fontSize: 16,
-                              color: Colors.grey.withOpacity(0.7),
+                              color: Colors.grey.withValues(alpha: 0.7),
                               fontWeight: FontWeight.w500,
                             ),
                           ),

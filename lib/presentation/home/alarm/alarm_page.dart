@@ -11,8 +11,8 @@ class AlarmPage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.white,
-        title: const Text("Alarm Alerzt"),
-        leading: BackButton(),
+        title: const Text("Alarm Alert"),
+        leading: const BackButton(),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1.0),
           child: Container(color: AppColors.grey300, height: 1.0),
@@ -183,7 +183,7 @@ class LegendItem extends StatelessWidget {
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('$label', style: const TextStyle(fontWeight: FontWeight.w500)),
+            Text(label, style: const TextStyle(fontWeight: FontWeight.w500)),
             const SizedBox(width: 8),
             Text(
               '$count Person',

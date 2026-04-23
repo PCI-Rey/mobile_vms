@@ -78,7 +78,7 @@ class _AlarmListPageState extends State<AlarmListPage> {
                             selectedGedung = result['gedung'];
                           });
 
-                          print(
+                          debugPrint(
                             'Applying filter - Gedung: $selectedGedung, Start: $startDate, End: $endDate',
                           );
 
@@ -89,7 +89,7 @@ class _AlarmListPageState extends State<AlarmListPage> {
                             gedung: selectedGedung,
                           );
                         } catch (e) {
-                          print('Error applying filter: $e');
+                          debugPrint('Error applying filter: $e');
                           // Fallback to load all alarms
                           controller.loadAlarms();
                         }
@@ -233,12 +233,12 @@ class _AlarmListPageState extends State<AlarmListPage> {
           final alarm = alarms[index];
 
           return AlarmAlertCard(
-            visitorName: alarm.visitorName ?? 'Unknown Visitor',
-            alarmDescription: alarm.alarmDescription ?? 'No description',
-            location: alarm.location ?? 'Unknown location',
-            date: alarm.date ?? 'Unknown date',
-            timeRange: alarm.timeRange ?? 'Unknown time',
-            status: alarm.status ?? AlarmStatus.low,
+            visitorName: alarm.visitorName,
+            alarmDescription: alarm.alarmDescription,
+            location: alarm.location,
+            date: alarm.date,
+            timeRange: alarm.timeRange,
+            status: alarm.status,
             key: ValueKey('alarm_${alarm.id}_$index'),
             onDeny: (alarm.isDenied == true || alarm.isApproved == true)
                 ? null
@@ -246,8 +246,8 @@ class _AlarmListPageState extends State<AlarmListPage> {
                     _showConfirmationDialog(
                       context,
                       'Deny Alarm',
-                      'Apakah Anda yakin ingin menolak alarm dari ${alarm.visitorName ?? 'visitor ini'}?',
-                      () => controller.denyAlarm(alarm.id ?? ''),
+                      'Apakah Anda yakin ingin menolak alarm dari ${alarm.visitorName}?',
+                      () => controller.denyAlarm(alarm.id),
                     );
                   },
             onApprove: (alarm.isDenied == true || alarm.isApproved == true)
@@ -256,12 +256,12 @@ class _AlarmListPageState extends State<AlarmListPage> {
                     _showConfirmationDialog(
                       context,
                       'Approve Alarm',
-                      'Apakah Anda yakin ingin menyetujui alarm dari ${alarm.visitorName ?? 'visitor ini'}?',
-                      () => controller.approveAlarm(alarm.id ?? ''),
+                      'Apakah Anda yakin ingin menyetujui alarm dari ${alarm.visitorName}?',
+                      () => controller.approveAlarm(alarm.id),
                     );
                   },
             onTrackVisitor: () {
-              controller.trackVisitor(alarm.id ?? '');
+              controller.trackVisitor(alarm.id);
             },
           );
         },
@@ -321,7 +321,7 @@ class _AlarmListPageState extends State<AlarmListPage> {
   void _applyFilter() {
     try {
       if (selectedGedung != null || startDate != null || endDate != null) {
-        print(
+        debugPrint(
           'Reloading with filters - Gedung: $selectedGedung, Start: $startDate, End: $endDate',
         );
         controller.loadAlarmsWithFilter(
@@ -330,11 +330,11 @@ class _AlarmListPageState extends State<AlarmListPage> {
           gedung: selectedGedung,
         );
       } else {
-        print('Reloading all alarms');
+        debugPrint('Reloading all alarms');
         controller.loadAlarms();
       }
     } catch (e) {
-      print('Error in applyFilter: $e');
+      debugPrint('Error in applyFilter: $e');
       controller.loadAlarms();
     }
   }

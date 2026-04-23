@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../../../core/core.dart';
 
 class SearchResultVisitorPage extends StatefulWidget {
+  const SearchResultVisitorPage({super.key});
+
   @override
   State<SearchResultVisitorPage> createState() =>
       _SearchResultVisitorPageState();

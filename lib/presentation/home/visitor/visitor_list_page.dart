@@ -145,7 +145,7 @@ class _ListVisitorPageState extends State<ListVisitorPage> {
 
                 return ListView.separated(
                   itemCount: visitors.length,
-                  separatorBuilder: (_, __) => const SpaceHeight(12),
+                  separatorBuilder: (_, _) => const SpaceHeight(12),
                   itemBuilder: (context, index) {
                     final visitor = visitors[index];
                     return Container(

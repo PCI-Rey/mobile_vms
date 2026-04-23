@@ -154,12 +154,15 @@ class Button extends StatelessWidget {
                   icon ?? const SizedBox.shrink(),
                   if (icon != null && label.isNotEmpty)
                     const SizedBox(width: 10.0),
-                  Text(
-                    label,
-                    style: TextStyle(
-                      color: textColor,
-                      fontSize: fontSize,
-                      fontWeight: FontWeight.w500,
+                  Flexible(
+                    child: Text(
+                      label,
+                      style: TextStyle(
+                        color: textColor,
+                        fontSize: fontSize,
+                        fontWeight: FontWeight.w500,
+                      ),
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
                   if (suffixIcon != null && label.isNotEmpty)
@@ -183,12 +186,15 @@ class Button extends StatelessWidget {
                   icon ?? const SizedBox.shrink(),
                   if (icon != null && label.isNotEmpty)
                     const SizedBox(width: 10.0),
-                  Text(
-                    label,
-                    style: TextStyle(
-                      color: textColor,
-                      fontSize: fontSize,
-                      fontWeight: FontWeight.w500,
+                  Flexible(
+                    child: Text(
+                      label,
+                      style: TextStyle(
+                        color: textColor,
+                        fontSize: fontSize,
+                        fontWeight: FontWeight.w500,
+                      ),
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
                   if (suffixIcon != null && label.isNotEmpty)

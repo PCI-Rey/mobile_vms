@@ -1,8 +1,9 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import '../../presentation/auth/take_selfie_page.dart';
+// import '../../presentation/auth/take_selfie_page.dart';
 import 'package:image_picker/image_picker.dart';
+import '../../presentation/auth/controller/user_controller.dart';
 import '../../core/core.dart';
 
 class DetailProfilePage extends StatefulWidget {
@@ -23,6 +24,23 @@ class _DetailProfilePageState extends State<DetailProfilePage> {
 
   File? _imageFile;
   final ImagePicker _picker = ImagePicker();
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserData();
+  }
+
+  Future<void> _loadUserData() async {
+    final user = UserController.to.user.value;
+    if (user != null) {
+      setState(() {
+        namaController.text = user.fullname ?? '';
+        emailController.text = user.email ?? '';
+        // Other fields if available in UserModel
+      });
+    }
+  }
 
   Future<void> _pickImage() async {
     final pickedFile = await _picker.pickImage(source: ImageSource.gallery);

@@ -6,9 +6,10 @@ import '../presentation/home/home_page.dart';
 import 'parking/as_operator/parking_page.dart';
 import '../presentation/profile/profile_page.dart';
 import '../core/core.dart';
-import 'widgets/is_block_page.dart';
+// import 'widgets/is_block_page.dart';
 import '../data/datasources/auth_datasource.dart';
 import '../presentation/auth/login_page.dart';
+import 'package:get/get.dart';
 
 class Dashboard extends StatefulWidget {
   const Dashboard({super.key});
@@ -22,7 +23,6 @@ class _DashboardState extends State<Dashboard> {
 
   String? _role;
   late List<Widget> _widgets = [];
-  late List<BottomNavigationBarItem> _navItems = [];
 
   @override
   void initState() {
@@ -43,7 +43,7 @@ class _DashboardState extends State<Dashboard> {
       return;
     }
 
-    final role = user.role ?? '';
+    final role = user.roleAccess ?? 'guest';
     if (!mounted) return;
 
     setState(() {
@@ -61,57 +61,12 @@ class _DashboardState extends State<Dashboard> {
       const ProfilePage(),
     ];
 
-    List<BottomNavigationBarItem> items = [
-      BottomNavigationBarItem(
-        icon: Assets.icons.home.image(height: 24, width: 24),
-        activeIcon: Assets.icons.homeSelected.image(height: 24, width: 24),
-        label: 'Home',
-      ),
-      BottomNavigationBarItem(
-        icon: Assets.icons.parking.image(height: 24, width: 24),
-        activeIcon: Assets.icons.parkingSelected.image(height: 24, width: 24),
-        label: 'Parking',
-      ),
-      BottomNavigationBarItem(
-        icon: Assets.icons.history.image(height: 24, width: 24),
-        activeIcon: Assets.icons.historySelected.image(height: 24, width: 24),
-        label: 'History',
-      ),
-      BottomNavigationBarItem(
-        icon: Assets.icons.profile.image(height: 24, width: 24),
-        activeIcon: Assets.icons.profileSelected.image(height: 24, width: 24),
-        label: 'Profile',
-      ),
-    ];
-
     if (role == 'guest') {
       widgets = [
         GuestHomePage(),
         GuestParkingPage(),
         const HistoryPage(),
         const ProfilePage(),
-      ];
-      items = [
-        BottomNavigationBarItem(
-          icon: Assets.icons.home.image(height: 24, width: 24),
-          activeIcon: Assets.icons.homeSelected.image(height: 24, width: 24),
-          label: 'Home',
-        ),
-        BottomNavigationBarItem(
-          icon: Assets.icons.parking.image(height: 24, width: 24),
-          activeIcon: Assets.icons.parkingSelected.image(height: 24, width: 24),
-          label: 'Parking',
-        ),
-        BottomNavigationBarItem(
-          icon: Assets.icons.history.image(height: 24, width: 24),
-          activeIcon: Assets.icons.historySelected.image(height: 24, width: 24),
-          label: 'History',
-        ),
-        BottomNavigationBarItem(
-          icon: Assets.icons.profile.image(height: 24, width: 24),
-          activeIcon: Assets.icons.profileSelected.image(height: 24, width: 24),
-          label: 'Profile',
-        ),
       ];
     } else if (role == 'operator') {
       widgets = [
@@ -120,36 +75,37 @@ class _DashboardState extends State<Dashboard> {
         HistoryPage(),
         const ProfilePage(),
       ];
-      items = [
-        BottomNavigationBarItem(
-          icon: Assets.icons.home.image(height: 24, width: 24),
-          activeIcon: Assets.icons.homeSelected.image(height: 24, width: 24),
-          label: 'Home',
-        ),
-        BottomNavigationBarItem(
-          icon: Assets.icons.parking.image(height: 24, width: 24),
-          activeIcon: Assets.icons.parkingSelected.image(height: 24, width: 24),
-          label: 'Parking',
-        ),
-        BottomNavigationBarItem(
-          icon: Assets.icons.history.image(height: 24, width: 24),
-          activeIcon: Assets.icons.historySelected.image(height: 24, width: 24),
-          label: 'History',
-        ),
-        BottomNavigationBarItem(
-          icon: Assets.icons.profile.image(height: 24, width: 24),
-          activeIcon: Assets.icons.profileSelected.image(height: 24, width: 24),
-          label: 'Profile',
-        ),
-      ];
     }
 
     setState(() {
       _widgets = widgets;
-      _navItems = items;
-
       if (_selectedIndex >= _widgets.length) _selectedIndex = 0;
     });
+  }
+
+  List<BottomNavigationBarItem> _getNavItems(String role) {
+    return [
+      BottomNavigationBarItem(
+        icon: Assets.icons.home.image(height: 24, width: 24),
+        activeIcon: Assets.icons.homeSelected.image(height: 24, width: 24),
+        label: 'home'.tr,
+      ),
+      BottomNavigationBarItem(
+        icon: Assets.icons.parking.image(height: 24, width: 24),
+        activeIcon: Assets.icons.parkingSelected.image(height: 24, width: 24),
+        label: 'parking'.tr,
+      ),
+      BottomNavigationBarItem(
+        icon: Assets.icons.history.image(height: 24, width: 24),
+        activeIcon: Assets.icons.historySelected.image(height: 24, width: 24),
+        label: 'history'.tr,
+      ),
+      BottomNavigationBarItem(
+        icon: Assets.icons.profile.image(height: 24, width: 24),
+        activeIcon: Assets.icons.profileSelected.image(height: 24, width: 24),
+        label: 'profile'.tr,
+      ),
+    ];
   }
 
   @override
@@ -177,7 +133,7 @@ class _DashboardState extends State<Dashboard> {
             type: BottomNavigationBarType.fixed,
             backgroundColor: Colors.transparent,
             elevation: 0,
-            items: _navItems,
+            items: _getNavItems(_role!),
           ),
         ),
       ),

@@ -209,13 +209,13 @@ class _GeneralInformationPageState extends State<GeneralInformationPage>
                 boxShadow: [
                   if (isSelected)
                     BoxShadow(
-                      color: AppColors.primary500.withOpacity(0.3),
+                      color: AppColors.primary500.withValues(alpha: 0.3),
                       blurRadius: 8,
                       offset: const Offset(0, 4),
                     )
                   else
                     BoxShadow(
-                      color: Colors.grey.withOpacity(0.15),
+                      color: Colors.grey.withValues(alpha: 0.15),
                       blurRadius: 6,
                       offset: const Offset(0, 3),
                     ),
@@ -266,7 +266,7 @@ class _GeneralInformationPageState extends State<GeneralInformationPage>
                                     : 'No email entered',
                                 style: TextStyle(
                                   color: isSelected
-                                      ? Colors.white.withOpacity(0.8)
+                                      ? Colors.white.withValues(alpha: 0.8)
                                       : Colors.grey[600],
                                   fontSize: 12,
                                 ),
@@ -282,7 +282,7 @@ class _GeneralInformationPageState extends State<GeneralInformationPage>
                             child: Container(
                               padding: const EdgeInsets.all(6),
                               decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.2),
+                                color: Colors.white.withValues(alpha: 0.2),
                                 borderRadius: BorderRadius.circular(20),
                               ),
                               child: const Icon(
@@ -502,7 +502,7 @@ class _GeneralInformationPageState extends State<GeneralInformationPage>
                       vertical: 8,
                     ),
                     decoration: BoxDecoration(
-                      color: AppColors.primary500.withOpacity(0.1),
+                      color: AppColors.primary500.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
@@ -682,7 +682,7 @@ class _GeneralInformationPageState extends State<GeneralInformationPage>
               color: Colors.white,
               boxShadow: [
                 BoxShadow(
-                  color: Colors.grey.withOpacity(0.1),
+                  color: Colors.grey.withValues(alpha: 0.1),
                   spreadRadius: 1,
                   blurRadius: 3,
                   offset: const Offset(0, -1),

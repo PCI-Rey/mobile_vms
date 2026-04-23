@@ -4,6 +4,8 @@ import '../../../../core/extensions/extensions.dart';
 import '../../../../presentation/parking/as_operator/search_result_parking_page.dart';
 
 class SearchParkingPage extends StatefulWidget {
+  const SearchParkingPage({super.key});
+
   @override
   State<SearchParkingPage> createState() => _SearchParkingPageState();
 }
@@ -12,7 +14,7 @@ class _SearchParkingPageState extends State<SearchParkingPage> {
   @override
   Widget build(BuildContext context) {
     TextEditingController platNumberController = TextEditingController();
-    TextEditingController areaParkingController = TextEditingController();
+    // TextEditingController areaParkingController = TextEditingController();
     TextEditingController parkInTimeController = TextEditingController();
     return Scaffold(
       appBar: AppBar(
