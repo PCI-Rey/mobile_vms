@@ -111,6 +111,8 @@ class ProfilePage extends StatelessWidget {
                   onPressed: isLoading
                       ? null
                       : () async {
+                          if (Get.isDialogOpen == true) return;
+                          
                           final confirm = await Get.dialog<bool>(
                             AlertDialog(
                               title: Text('confirm_exit'.tr),
@@ -122,11 +124,15 @@ class ProfilePage extends StatelessWidget {
                                   onPressed: () => Get.back(result: false),
                                   child: Text('cancel'.tr),
                                 ),
-                                TextButton(
+                                ElevatedButton(
                                   onPressed: () => Get.back(result: true),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.red,
+                                    elevation: 0,
+                                  ),
                                   child: Text(
                                     'logout'.tr,
-                                    style: const TextStyle(color: Colors.red),
+                                    style: const TextStyle(color: Colors.white),
                                   ),
                                 ),
                               ],

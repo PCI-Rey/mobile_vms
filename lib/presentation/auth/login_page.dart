@@ -80,6 +80,7 @@ class _LoginPageState extends State<LoginPage> {
                               () => CustomTextField(
                                 controller: controller.usernameController,
                                 label: 'username'.tr,
+                                isRequired: true,
                                 errorText: controller.usernameError.value,
                               ),
                             ),
@@ -88,6 +89,7 @@ class _LoginPageState extends State<LoginPage> {
                               () => CustomTextField(
                                 controller: controller.passwordController,
                                 label: 'password'.tr,
+                                isRequired: true,
                                 isObscure: controller.obscurePassword.value,
                                 suffixIconData: controller.obscurePassword.value
                                     ? FontAwesomeIcons.eyeSlash

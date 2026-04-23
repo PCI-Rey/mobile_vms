@@ -8,7 +8,7 @@ class AuthDatasource {
   final ApiService _apiService = ApiService();
   final HiveService _hiveService = HiveService();
 
-  Future<(UserModel?, String?)> login(String username, String password) async {
+  Future<(UserModel?, String?, String?)> login(String username, String password) async {
     try {
       final response = await _apiService.login(username, password);
 
@@ -23,16 +23,24 @@ class AuthDatasource {
           });
           // Save complete data to Hive
           await _hiveService.saveUser(userModel);
-          return (userModel, data['msg'] as String? ?? 'Berhasil masuk');
+          return (userModel, data['title'] as String?, data['msg'] as String? ?? 'Berhasil masuk');
         } else {
-          return (null, (data['msg'] as String?) ?? 'Login gagal');
+          return (null, data['title'] as String?, (data['msg'] as String?) ?? 'Login gagal');
         }
       } else {
-        return (null, 'Server Error: ${response.statusCode}');
+        // Even for non-200 status codes (like 400), the API might return a JSON with a 'msg'
+        if (response.data != null && response.data is Map) {
+          final title = response.data['title'] as String?;
+          final msg = response.data['msg'] as String?;
+          if (msg != null && msg.isNotEmpty) {
+            return (null, title, msg);
+          }
+        }
+        return (null, 'Error', 'Server Error: ${response.statusCode}');
       }
     } catch (e) {
       debugPrint('Login Error: $e');
-      return (null, 'Terjadi kesalahan koneksi');
+      return (null, 'Error', 'Terjadi kesalahan koneksi');
     }
   }
 
@@ -114,16 +122,19 @@ class AuthDatasource {
       final user = _hiveService.getUser();
       final token = user?.token;
 
+      bool isSuccess = true;
       String? revokeMsg;
+      
       // Call revoke token API if token exists (works for both Employee and Visitor)
       if (token != null && token.isNotEmpty) {
-        final (success, msg) = await _apiService.revokeToken(token);
+        final (apiSuccess, msg) = await _apiService.revokeToken(token);
+        isSuccess = apiSuccess;
         revokeMsg = msg;
       }
 
       // Always clear local session regardless of API result
       await _hiveService.removeUser();
-      return (true, revokeMsg ?? 'Berhasil Logout');
+      return (isSuccess, revokeMsg ?? 'Berhasil Logout');
     } catch (e) {
       debugPrint('Logout Error: $e');
       // Still remove local data even if API call fails

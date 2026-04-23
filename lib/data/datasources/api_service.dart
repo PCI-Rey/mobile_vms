@@ -75,19 +75,32 @@ class ApiService {
 
   Future<(bool, String?)> revokeToken(String token) async {
     try {
-      final response = await _dio.post(
+      final response = await _dio.get(
         '/$pathApi/_Auth/RevokeToken',
         options: Options(headers: {'Authorization': 'Bearer $token'}),
       );
-      final msg = response.data?['msg']?.toString();
-      final isSuccess = response.statusCode == 200 &&
-          response.data?['status'] == 'success';
+      
+      String? msg;
+      bool isSuccess = false;
+      
+      if (response.data is Map) {
+        msg = response.data['msg']?.toString();
+        isSuccess = response.statusCode == 200 && response.data['status'] == 'success';
+      }
+      
       return (isSuccess, msg);
     } on DioException catch (e) {
       debugPrint('Dio Error revokeToken: ${e.message}');
-      final msg = e.response?.data?['msg']?.toString() ?? e.message;
-      // Even if revoke fails we still clear local session
+      String? msg;
+      if (e.response?.data is Map) {
+        msg = e.response?.data['msg']?.toString();
+      }
+      msg ??= e.message;
+      
       return (false, msg);
+    } catch (e) {
+      debugPrint('Unknown Error revokeToken: $e');
+      return (false, e.toString());
     }
   }
 

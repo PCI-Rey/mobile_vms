@@ -39,14 +39,14 @@ class LoginController extends GetxController {
 
     isLoading.value = true;
 
-    final (userModel, message) = await authDatasource.login(email, password);
+    final (userModel, title, message) = await authDatasource.login(email, password);
     isLoading.value = false;
 
     if (userModel != null) {
       final userCtrl = Get.isRegistered<UserController>() ? Get.find<UserController>() : Get.put(UserController());
       await userCtrl.loadUser();
       Get.snackbar(
-        'Berhasil',
+        title ?? 'Berhasil',
         message ?? 'Berhasil masuk',
         backgroundColor: Colors.green,
         colorText: Colors.white,
@@ -56,21 +56,26 @@ class LoginController extends GetxController {
       Get.offAll(() => const Dashboard());
     } else {
       final errorMessage = message ?? 'Gagal Login';
+      final rawTitle = title ?? 'Gagal Login';
+      final errorTitle = rawTitle.isEmpty ? rawTitle : rawTitle[0].toUpperCase() + rawTitle.substring(1);
 
       if (errorMessage.toLowerCase().contains('username') ||
+          errorMessage.toLowerCase().contains('user') ||
+          errorMessage.toLowerCase().contains('not found') ||
           errorMessage.toLowerCase().contains('sandi') ||
           errorMessage.toLowerCase().contains('password')) {
         usernameError.value = errorMessage;
         passwordError.value = errorMessage;
-      } else {
-        Get.snackbar(
-          'Gagal Login',
-          errorMessage,
-          backgroundColor: Colors.red,
-          colorText: Colors.white,
-          snackPosition: SnackPosition.BOTTOM,
-        );
       }
+      
+      // Always show snackbar for all login errors for consistency
+      Get.snackbar(
+        errorTitle,
+        errorMessage,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+        snackPosition: SnackPosition.TOP,
+      );
     }
   }
 

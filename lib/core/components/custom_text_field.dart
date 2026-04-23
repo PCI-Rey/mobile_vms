@@ -19,6 +19,7 @@ class CustomTextField extends StatelessWidget {
   final bool isObscure;
   final IconData? suffixIconData;
   final String? errorText;
+  final bool isRequired;
 
   const CustomTextField({
     super.key,
@@ -38,6 +39,7 @@ class CustomTextField extends StatelessWidget {
     this.isObscure = false,
     this.suffixIconData,
     this.errorText,
+    this.isRequired = false,
   });
 
   @override
@@ -47,9 +49,22 @@ class CustomTextField extends StatelessWidget {
       children: [
         const SpaceHeight(10.0),
         if (showLabel) ...[
-          Text(
-            label,
-            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+          RichText(
+            text: TextSpan(
+              text: label,
+              style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.black),
+              children: [
+                if (isRequired)
+                  const TextSpan(
+                    text: ' *',
+                    style: TextStyle(
+                        color: Colors.red, fontWeight: FontWeight.bold),
+                  ),
+              ],
+            ),
           ),
           const SpaceHeight(10.0),
         ],

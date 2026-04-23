@@ -208,20 +208,11 @@ class _GuestHomePageState extends State<GuestHomePage> {
                                   items: ['us', 'id'].map((code) {
                                     return DropdownMenuItem<String>(
                                       value: code,
-                                      child: Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          CountryFlag.fromCountryCode(
-                                            code.toUpperCase(),
-                                            height: 20,
-                                            width: 28,
-                                            shape: RoundedRectangle(10),
-                                          ),
-                                          const SizedBox(width: 8),
-                                          Text(
-                                            code.toUpperCase(),
-                                          ),
-                                        ],
+                                      child: CountryFlag.fromCountryCode(
+                                        code.toUpperCase(),
+                                        height: 20,
+                                        width: 28,
+                                        shape: RoundedRectangle(10),
                                       ),
                                     );
                                   }).toList(),
