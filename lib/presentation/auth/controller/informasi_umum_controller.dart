@@ -321,9 +321,10 @@ class InformasiUmumController extends GetxController {
       // Read success msg from API response (e.g. "Submit invitation successfully")
       final submitMsg = submitResponse.data?['msg']?.toString()
           ?? 'Form berhasil dikirim';
+      final submitTitle = submitResponse.data?['title']?.toString();
 
       // After submit success, re-check invitation code to get the token
-      final (newUser, isPraregisterDone, _, error) =
+      final (newUser, isPraregisterDone, _, error, checkTitle) =
           await authDatasource.checkVisitorCode(invitationCode);
 
       if (newUser != null && isPraregisterDone && newUser.token != null) {
@@ -331,7 +332,7 @@ class InformasiUmumController extends GetxController {
         final userCtrl = Get.isRegistered<UserController>() ? Get.find<UserController>() : Get.put(UserController());
         await userCtrl.loadUser();
         Get.snackbar(
-          'Berhasil',
+          (submitTitle ?? checkTitle ?? 'success').capitalizeFirst ?? 'Success',
           submitMsg, // use msg from submit API response
           backgroundColor: Colors.green,
           colorText: Colors.white,

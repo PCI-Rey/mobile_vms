@@ -33,7 +33,7 @@ class VerificationCodeController extends GetxController {
     }
 
     isLoading.value = true;
-    final (userModel, isPraregisterDone, rawData, message) = await authDatasource.checkVisitorCode(code);
+    final (userModel, isPraregisterDone, rawData, message, title) = await authDatasource.checkVisitorCode(code);
     isLoading.value = false;
 
     if (userModel != null) {
@@ -43,7 +43,7 @@ class VerificationCodeController extends GetxController {
         final userCtrl = Get.isRegistered<UserController>() ? Get.find<UserController>() : Get.put(UserController());
         await userCtrl.loadUser();
         Get.snackbar(
-          'Berhasil',
+          (title ?? 'success').capitalizeFirst ?? 'Success',
           message ?? 'Berhasil masuk',
           backgroundColor: Colors.green,
           colorText: Colors.white,

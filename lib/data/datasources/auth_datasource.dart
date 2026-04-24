@@ -44,7 +44,7 @@ class AuthDatasource {
     }
   }
 
-  Future<(UserModel?, bool, Map<String, dynamic>?, String?)> checkVisitorCode(String invitationCode) async {
+  Future<(UserModel?, bool, Map<String, dynamic>?, String?, String?)> checkVisitorCode(String invitationCode) async {
     try {
       final response = await _apiService.checkVisitorCode(invitationCode);
 
@@ -80,23 +80,23 @@ class AuthDatasource {
           // Save to Hive immediately (even for fiil_form so session is cached)
           await _hiveService.saveUser(userModel);
 
-          return (userModel, isPraregisterDone, collection, data['msg'] as String? ?? 'Berhasil masuk');
+          return (userModel, isPraregisterDone, collection, data['msg'] as String?, data['title'] as String?);
         } else {
-          return (null, false, null, (data['msg'] as String?) ?? 'Kode undangan belum terdaftar');
+          return (null, false, null, (data['msg'] as String?), data['title'] as String?);
         }
       } else {
         // Handle error responses like 400 Bad Request
-        if (response.data is Map && response.data['msg'] != null) {
-          final msg = response.data['msg'].toString();
-          if (msg != 'bad_request') {
-            return (null, false, null, msg);
-          }
+        String? title;
+        String? msg;
+        if (response.data is Map) {
+          title = response.data['title']?.toString();
+          msg = response.data['msg']?.toString();
         }
-        return (null, false, null, 'Kode undangan belum terdaftar atau tidak valid');
+        return (null, false, null, msg ?? 'Kode undangan belum terdaftar atau tidak valid', title ?? 'Error');
       }
     } catch (e) {
       debugPrint('Check Visitor Code Error: $e');
-      return (null, false, null, 'Terjadi kesalahan koneksi');
+      return (null, false, null, 'Terjadi kesalahan koneksi', 'Error');
     }
   }
 
@@ -116,7 +116,7 @@ class AuthDatasource {
     return _hiveService.hasUser();
   }
 
-  Future<(bool, String?)> logout() async {
+  Future<(bool, String?, String?)> logout() async {
     try {
       // Get the current token before clearing
       final user = _hiveService.getUser();
@@ -124,24 +124,28 @@ class AuthDatasource {
 
       bool isSuccess = true;
       String? revokeMsg;
+      String? revokeTitle;
       
       // Call revoke token API if token exists (works for both Employee and Visitor)
       if (token != null && token.isNotEmpty) {
-        final (apiSuccess, msg) = await _apiService.revokeToken(token);
-        isSuccess = apiSuccess;
-        revokeMsg = msg;
+        final response = await _apiService.logoutResponse(token); // Use a new method that returns full Response
+        if (response.data is Map) {
+          revokeMsg = response.data['msg']?.toString();
+          revokeTitle = response.data['title']?.toString();
+          isSuccess = response.statusCode == 200 && response.data['status'] == 'success';
+        }
       }
 
       // Always clear local session regardless of API result
       await _hiveService.removeUser();
-      return (isSuccess, revokeMsg ?? 'Berhasil Logout');
+      return (isSuccess, revokeMsg ?? 'Berhasil Logout', revokeTitle ?? (isSuccess ? 'Success' : 'Pemberitahuan'));
     } catch (e) {
       debugPrint('Logout Error: $e');
       // Still remove local data even if API call fails
       try {
         await _hiveService.removeUser();
       } catch (_) {}
-      return (false, 'Terjadi kesalahan saat logout');
+      return (false, 'Terjadi kesalahan saat logout', 'Error');
     }
   }
 

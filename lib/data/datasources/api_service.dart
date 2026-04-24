@@ -73,6 +73,19 @@ class ApiService {
     }
   }
 
+  Future<Response> logoutResponse(String token) async {
+    try {
+      final response = await _dio.get(
+        '/$pathApi/_Auth/RevokeToken',
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+      return response;
+    } on DioException catch (e) {
+      if (e.response != null) return e.response!;
+      rethrow;
+    }
+  }
+
   Future<(bool, String?)> revokeToken(String token) async {
     try {
       final response = await _dio.get(

@@ -27,7 +27,7 @@ class UserController extends GetxController {
 
   Future<void> clearUser() async {
     isLoggingOut.value = true;
-    final (success, msg) = await _authDatasource.logout(); // revoke token + clear local session
+    final (success, msg, title) = await _authDatasource.logout(); // revoke token + clear local session
     user.value = null;
     isLoggingOut.value = false;
 
@@ -38,7 +38,7 @@ class UserController extends GetxController {
 
     // Show dynamic message from API response
     Get.snackbar(
-      success ? 'Berhasil' : 'Pemberitahuan',
+      (title ?? (success ? 'success' : 'pemberitahuan')).capitalizeFirst ?? (success ? 'Success' : 'Pemberitahuan'),
       msg ?? 'Berhasil keluar',
       backgroundColor: success ? Colors.green : Colors.orange,
       colorText: Colors.white,

@@ -82,7 +82,11 @@ class ProfilePage extends StatelessWidget {
               child: Column(
                 children: [
                   TileMenu(
-                    icon: const Icon(Icons.person, color: Colors.white, size: 25),
+                    icon: const Icon(
+                      Icons.person,
+                      color: Colors.white,
+                      size: 25,
+                    ),
                     label: 'account'.tr,
                     onTap: () {
                       context.push(DetailProfilePage());
@@ -94,11 +98,37 @@ class ProfilePage extends StatelessWidget {
                     label: 'security'.tr,
                     onTap: () {},
                   ),
+                  const SizedBox(height: 12),
+                  TileMenu(
+                    icon: const Icon(
+                      Icons.notifications_none,
+                      color: Colors.white,
+                      size: 25,
+                    ),
+                    label: 'Pemberitahuan'.tr,
+                    onTap: () {},
+                  ),
+                  const SizedBox(height: 12),
+                  TileMenu(
+                    icon: const Icon(
+                      Icons.help_outline,
+                      color: Colors.white,
+                      size: 25,
+                    ),
+                    label: 'Help Center'.tr,
+                    onTap: () {},
+                  ),
                 ],
               ),
             ),
 
             const Spacer(),
+
+            const Text(
+              'Versi 1.0.0',
+              style: TextStyle(color: Colors.grey, fontSize: 12),
+            ),
+            const SizedBox(height: 8),
 
             // Logout button
             Container(
@@ -112,13 +142,11 @@ class ProfilePage extends StatelessWidget {
                       ? null
                       : () async {
                           if (Get.isDialogOpen == true) return;
-                          
+
                           final confirm = await Get.dialog<bool>(
                             AlertDialog(
                               title: Text('confirm_exit'.tr),
-                              content: Text(
-                                'confirm_logout'.tr,
-                              ),
+                              content: Text('confirm_logout'.tr),
                               actions: [
                                 TextButton(
                                   onPressed: () => Get.back(result: false),

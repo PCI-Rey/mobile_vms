@@ -38,7 +38,7 @@ class DetailProfilePage extends StatelessWidget {
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
                               border: Border.all(
-                                color: context.theme.primaryColor.withOpacity(0.2),
+                                color: context.theme.primaryColor.withValues(alpha: 0.2),
                                 width: 2,
                               ),
                             ),
@@ -65,7 +65,7 @@ class DetailProfilePage extends StatelessWidget {
                                           horizontal: 12, vertical: 4),
                                       decoration: BoxDecoration(
                                         color: context.theme.primaryColor
-                                            .withOpacity(0.1),
+                                            .withValues(alpha: 0.1),
                                         borderRadius: BorderRadius.circular(20),
                                       ),
                                       child: Text(

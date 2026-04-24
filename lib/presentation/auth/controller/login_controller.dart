@@ -46,7 +46,7 @@ class LoginController extends GetxController {
       final userCtrl = Get.isRegistered<UserController>() ? Get.find<UserController>() : Get.put(UserController());
       await userCtrl.loadUser();
       Get.snackbar(
-        title ?? 'Berhasil',
+        (title ?? 'success').capitalizeFirst ?? 'Success',
         message ?? 'Berhasil masuk',
         backgroundColor: Colors.green,
         colorText: Colors.white,
@@ -56,8 +56,7 @@ class LoginController extends GetxController {
       Get.offAll(() => const Dashboard());
     } else {
       final errorMessage = message ?? 'Gagal Login';
-      final rawTitle = title ?? 'Gagal Login';
-      final errorTitle = rawTitle.isEmpty ? rawTitle : rawTitle[0].toUpperCase() + rawTitle.substring(1);
+      final errorTitle = (title ?? 'Error').capitalizeFirst ?? 'Error';
 
       if (errorMessage.toLowerCase().contains('username') ||
           errorMessage.toLowerCase().contains('user') ||

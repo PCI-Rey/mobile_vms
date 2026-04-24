@@ -4,7 +4,6 @@ import 'package:get/get.dart';
 import '../../../data/datasources/auth_datasource.dart';
 import '../../../core/components/gender_toggle_button.dart';
 import '../../auth/controller/user_controller.dart';
-import '../../../data/models/user_model.dart';
 
 class DetailProfileController extends GetxController {
   final AuthDatasource _authDatasource = AuthDatasource();
