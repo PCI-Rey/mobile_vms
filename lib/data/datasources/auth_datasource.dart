@@ -77,8 +77,10 @@ class AuthDatasource {
             extraData: json.encode(collection),
           );
 
-          // Save to Hive immediately (even for fiil_form so session is cached)
-          await _hiveService.saveUser(userModel);
+          // Save to Hive only if already fully registered (has token)
+          if (isPraregisterDone) {
+            await _hiveService.saveUser(userModel);
+          }
 
           return (userModel, isPraregisterDone, collection, data['msg'] as String?, data['title'] as String?);
         } else {
@@ -113,7 +115,8 @@ class AuthDatasource {
   }
 
   Future<bool> isAuthDataExist() async {
-    return _hiveService.hasUser();
+    final user = await getAuthData();
+    return user != null && user.token != null && user.token!.isNotEmpty;
   }
 
   Future<(bool, String?, String?)> logout() async {

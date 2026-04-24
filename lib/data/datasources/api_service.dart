@@ -1,16 +1,19 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
+import 'dart:io';
 
 class ApiService {
-  final Dio _dio = Dio(BaseOptions(
-    baseUrl: 'https://be-vms.app.bio-experience.com',
-    connectTimeout: const Duration(seconds: 10),
-    receiveTimeout: const Duration(seconds: 10),
-    headers: {
-      'Content-Type': 'application/json',
-      'Accept': 'application/json',
-    },
-  ));
+  final Dio _dio = Dio(
+    BaseOptions(
+      baseUrl: 'https://be-vms.app.bio-experience.com',
+      connectTimeout: const Duration(seconds: 10),
+      receiveTimeout: const Duration(seconds: 10),
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+    ),
+  );
 
   static const String pathApi = 'api';
 
@@ -18,10 +21,7 @@ class ApiService {
     try {
       final response = await _dio.post(
         '/$pathApi/_Auth/RequestToken',
-        data: {
-          'username': username,
-          'password': password,
-        },
+        data: {'username': username, 'password': password},
       );
       return response;
     } on DioException catch (e) {
@@ -37,9 +37,7 @@ class ApiService {
     try {
       final response = await _dio.post(
         '/$pathApi/on-portal/VisitorRequest',
-        data: {
-          'code': invitationCode,
-        },
+        data: {'code': invitationCode},
       );
       return response;
     } on DioException catch (e) {
@@ -53,7 +51,9 @@ class ApiService {
 
   Future<Response> submitPraForm(Map<String, dynamic> payload) async {
     try {
-      debugPrint('submitPraForm payload trx_visitor_id: ${payload['trx_visitor_id']}');
+      debugPrint(
+        'submitPraForm payload trx_visitor_id: ${payload['trx_visitor_id']}',
+      );
       final response = await _dio.post(
         '/$pathApi/on-portal/submit/pra-form',
         data: payload,
@@ -64,7 +64,8 @@ class ApiService {
       debugPrint('Response status: ${e.response?.statusCode}');
       debugPrint('Response data: ${e.response?.data}');
       if (e.response != null) {
-        final msg = e.response?.data?['msg']?.toString() ??
+        final msg =
+            e.response?.data?['msg']?.toString() ??
             e.response?.data?['message']?.toString() ??
             'Gagal submit form (${e.response?.statusCode})';
         throw Exception(msg);
@@ -92,15 +93,16 @@ class ApiService {
         '/$pathApi/_Auth/RevokeToken',
         options: Options(headers: {'Authorization': 'Bearer $token'}),
       );
-      
+
       String? msg;
       bool isSuccess = false;
-      
+
       if (response.data is Map) {
         msg = response.data['msg']?.toString();
-        isSuccess = response.statusCode == 200 && response.data['status'] == 'success';
+        isSuccess =
+            response.statusCode == 200 && response.data['status'] == 'success';
       }
-      
+
       return (isSuccess, msg);
     } on DioException catch (e) {
       debugPrint('Dio Error revokeToken: ${e.message}');
@@ -109,7 +111,7 @@ class ApiService {
         msg = e.response?.data['msg']?.toString();
       }
       msg ??= e.message;
-      
+
       return (false, msg);
     } catch (e) {
       debugPrint('Unknown Error revokeToken: $e');
@@ -135,7 +137,10 @@ class ApiService {
     }
   }
 
-  Future<Response> updateProfile(String token, Map<String, dynamic> payload) async {
+  Future<Response> updateProfile(
+    String token,
+    Map<String, dynamic> payload,
+  ) async {
     try {
       final response = await _dio.post(
         '/$pathApi/profile/update',
@@ -145,6 +150,26 @@ class ApiService {
       return response;
     } on DioException catch (e) {
       debugPrint('Dio Error updateProfile: ${e.message}');
+      if (e.response != null) {
+        return e.response!;
+      }
+      rethrow;
+    }
+  }
+
+  Future<Response> uploadFile(File file) async {
+    try {
+      String fileName = file.path.split('/').last;
+      FormData formData = FormData.fromMap({
+        "file_name": fileName,
+        "file": await MultipartFile.fromFile(file.path, filename: fileName),
+        "path": "face",
+      });
+
+      final response = await _dio.post('/cdn/upload', data: formData);
+      return response;
+    } on DioException catch (e) {
+      debugPrint('Dio Error uploadFile: ${e.message}');
       if (e.response != null) {
         return e.response!;
       }

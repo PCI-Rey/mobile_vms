@@ -493,6 +493,13 @@ class _Step4 extends StatelessWidget {
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Obx(() {
+                if (ctrl.isUploadingSelfie.value) {
+                  return const Center(
+                    child: CircularProgressIndicator(
+                      color: AppColors.primary500,
+                    ),
+                  );
+                }
                 if (ctrl.selfieImage.value != null) {
                   return ClipRRect(
                     borderRadius: BorderRadius.circular(8),
@@ -585,6 +592,13 @@ class _Step5 extends StatelessWidget {
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Obx(() {
+                if (ctrl.isUploadingIdentity.value) {
+                  return const Center(
+                    child: CircularProgressIndicator(
+                      color: AppColors.primary500,
+                    ),
+                  );
+                }
                 if (ctrl.identityImage.value != null) {
                   return ClipRRect(
                     borderRadius: BorderRadius.circular(8),

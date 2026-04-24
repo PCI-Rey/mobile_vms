@@ -66,5 +66,11 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<key>NSCameraUsageDescription</key>
+	<string>Aplikasi ini memerlukan akses kamera untuk mengambil foto selfie dan identitas pengunjung.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Aplikasi ini memerlukan akses galeri untuk mengunggah foto identitas pengunjung.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Aplikasi ini memerlukan akses mikrofon jika Anda merekam video.</string>
 </dict>
 </plist>

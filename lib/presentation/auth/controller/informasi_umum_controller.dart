@@ -48,6 +48,10 @@ class InformasiUmumController extends GetxController {
   final identityImage = Rxn<File>();
 
   final isLoading = false.obs;
+  final isUploadingSelfie = false.obs;
+  final isUploadingIdentity = false.obs;
+  final selfieUrl = Rxn<String>();
+  final identityUrl = Rxn<String>();
   final fieldErrors = RxMap<String, String?>();
 
   void initializeData(UserModel user, String code, Map<String, dynamic>? data) {
@@ -60,6 +64,10 @@ class InformasiUmumController extends GetxController {
     fieldErrors.clear();
     selfieImage.value = null;
     identityImage.value = null;
+    selfieUrl.value = null;
+    identityUrl.value = null;
+    isUploadingSelfie.value = false;
+    isUploadingIdentity.value = false;
     isDriving.value = rawData?['is_driving'] ?? false;
     vehicleType.value = rawData?['vehicle_type']?.toString() ?? 'Car';
 
@@ -226,14 +234,91 @@ class InformasiUmumController extends GetxController {
   Future<void> pickSelfie(ImageSource source) async {
     final picked = await _picker.pickImage(source: source);
     if (picked != null) {
-      selfieImage.value = File(picked.path);
+      final file = File(picked.path);
+      selfieImage.value = file;
+      await uploadImage(file, true);
     }
   }
 
   Future<void> pickIdentity(ImageSource source) async {
     final picked = await _picker.pickImage(source: source);
     if (picked != null) {
-      identityImage.value = File(picked.path);
+      final file = File(picked.path);
+      identityImage.value = file;
+      await uploadImage(file, false);
+    }
+  }
+
+  Future<void> uploadImage(File file, bool isSelfie) async {
+    if (isSelfie) {
+      isUploadingSelfie.value = true;
+    } else {
+      isUploadingIdentity.value = true;
+    }
+
+    try {
+      final response = await apiService.uploadFile(file);
+      debugPrint('Upload Response Data Type: ${response.data.runtimeType}');
+      debugPrint('Upload Response Data: ${response.data}');
+
+      var data = response.data;
+      if (data is String) {
+        try {
+          data = jsonDecode(data);
+        } catch (_) {
+          throw Exception('Format respon tidak valid (bukan JSON)');
+        }
+      }
+
+      // If data is a List, take the first element (common in some APIs)
+      Map<String, dynamic> responseMap;
+      if (data is List && data.isNotEmpty) {
+        responseMap = data[0] as Map<String, dynamic>;
+      } else if (data is Map) {
+        responseMap = data as Map<String, dynamic>;
+      } else {
+        throw Exception('Respon server tidak dikenali: $data');
+      }
+
+      if (response.statusCode == 200 && responseMap['status'] == 'success') {
+        final collection = responseMap['collection'];
+        String? url;
+
+        if (collection is Map) {
+          url = collection['file_url']?.toString();
+        } else if (collection is List && collection.isNotEmpty) {
+          url = collection[0]['file_url']?.toString();
+        }
+
+        if (url != null) {
+          if (isSelfie) {
+            selfieUrl.value = url;
+          } else {
+            identityUrl.value = url;
+          }
+          debugPrint('Upload Success: $url');
+        } else {
+          throw Exception('URL file tidak ditemukan dalam respon');
+        }
+      } else {
+        final msg = responseMap['msg'] ?? responseMap['message'] ?? 'Gagal upload file';
+        throw Exception(msg);
+      }
+    } catch (e) {
+      debugPrint('Upload Error Detail: $e');
+      Get.snackbar(
+        'Upload Gagal',
+        e.toString().replaceFirst('Exception: ', ''),
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+        snackPosition: SnackPosition.TOP,
+      );
+    } finally {
+      if (isSelfie) {
+        isUploadingSelfie.value = false;
+      } else {
+        isUploadingIdentity.value = false;
+      }
     }
   }
 
@@ -249,61 +334,100 @@ class InformasiUmumController extends GetxController {
         questionPage = jsonDecode(jsonEncode(rawData!['question_page']));
       }
 
-      // Helper function to update answers
-      void updateAnswer(String stepName, String fieldShortName, dynamic value, {bool isFile = false}) {
+      // Helper function to update answers (more flexible: search all pages if needed)
+      void updateAnswer(String fieldShortName, dynamic value, {bool isFile = false}) {
+        bool found = false;
         for (var page in questionPage) {
-          if (page['name'] == stepName) {
-            for (var formField in page['form']) {
-              if (formField['short_name'] == fieldShortName) {
-                if (isFile) {
-                  formField['answer_file'] = value;
-                } else {
-                  formField['answer_text'] = value?.toString();
-                }
+          for (var formField in page['form']) {
+            if (formField['short_name'].toString().toLowerCase().trim() == fieldShortName.toLowerCase().trim()) {
+              if (isFile) {
+                formField['answer_file'] = value;
+              } else {
+                formField['answer_text'] = value?.toString();
               }
+              debugPrint('Updated Answer: $fieldShortName -> $value');
+              found = true;
             }
           }
         }
+        if (!found) {
+          debugPrint('Warning: Field not found in questionPage: $fieldShortName');
+        }
       }
+
+      // Log all rawData keys for debugging
+      debugPrint('rawData keys: ${rawData?.keys.toList()}');
+
+      // Log nested objects for debugging
+      debugPrint('host_data: ${rawData?['host_data']}');
+      debugPrint('host: ${rawData?['host']}');
+      debugPrint('trx_visitor_sites: ${rawData?['trx_visitor_sites']}');
 
       // Map Step 1 fields
-      updateAnswer('Visitor Information', 'Full Name', fullNameController.text);
-      updateAnswer('Visitor Information', 'Email', emailController.text);
-      updateAnswer('Visitor Information', 'Phone', phoneController.text);
-      updateAnswer('Visitor Information', 'Organization', organizationController.text);
-      updateAnswer('Visitor Information', 'Indentity Id', identityIdController.text);
+      updateAnswer('Full Name', fullNameController.text);
+      updateAnswer('Email', emailController.text);
+      updateAnswer('Phone', phoneController.text);
+      updateAnswer('Organization', organizationController.text);
+      updateAnswer('Indentity Id', identityIdController.text);
 
-      // Step 2 is read-only, we don't update them, we keep API defaults.
+      // Map Step 2 (Purpose of Visit)
+      updateAnswer('PIC/Host Name', rawData?['host_name']);
+      updateAnswer('Host Name', rawData?['host_name']);
+      updateAnswer('Host', rawData?['host_name']);
+      updateAnswer('Agenda', rawData?['agenda']);
+      updateAnswer('Destination', rawData?['site_place_name']);
+      updateAnswer('Destination Site', rawData?['site_place_name']);
+      updateAnswer('Visit Start', rawData?['visitor_period_start']); // Correct key from logs
+      updateAnswer('Visit End', rawData?['visitor_period_end']);     // Correct key from logs
 
-      // Map Step 3 fields
-      updateAnswer('Vehicle/Parking Information', 'Is Driving/Riding', isDriving.value.toString());
-      updateAnswer('Vehicle/Parking Information', 'Vehicle Type', vehicleType.value);
-      updateAnswer('Vehicle/Parking Information', 'Vehicle Plate', vehiclePlateController.text);
+      // Map Step 3 fields (Vehicle Information)
+      updateAnswer('Is Driving/Riding', isDriving.value.toString());
+      updateAnswer('Vehicle Type', vehicleType.value);
+      updateAnswer('Vehicle Plate', vehiclePlateController.text);
 
-      // Map Step 4 & 5 (We send base64 if selected, otherwise null)
-      String? selfieBase64;
-      if (selfieImage.value != null) {
+      // Map Step 4 & 5 (Selfie & Identity)
+      String? selfieValue = selfieUrl.value;
+      if (selfieValue == null && selfieImage.value != null) {
         final bytes = await selfieImage.value!.readAsBytes();
-        selfieBase64 = "data:image/jpeg;base64,${base64Encode(bytes)}";
+        selfieValue = "data:image/jpeg;base64,${base64Encode(bytes)}";
       }
-      updateAnswer('Selfie Image', 'Selfie Image', selfieBase64, isFile: true);
+      updateAnswer('Selfie Image', selfieValue, isFile: true);
 
-      String? identityBase64;
-      if (identityImage.value != null) {
+      String? identityValue = identityUrl.value;
+      if (identityValue == null && identityImage.value != null) {
         final bytes = await identityImage.value!.readAsBytes();
-        identityBase64 = "data:image/jpeg;base64,${base64Encode(bytes)}";
+        identityValue = "data:image/jpeg;base64,${base64Encode(bytes)}";
       }
-      updateAnswer('Upload Identity (KTP)', 'Identity Image', identityBase64, isFile: true);
+      updateAnswer('Identity Image', identityValue, isFile: true);
+      updateAnswer('Identity Upload', identityValue, isFile: true);
+      updateAnswer('Upload Identity (KTP)', identityValue, isFile: true);
+
+      // Extract site_id
+      dynamic siteId = rawData!['site_id'];
+      if (siteId == null && rawData!['trx_visitor_sites'] is List && (rawData!['trx_visitor_sites'] as List).isNotEmpty) {
+        siteId = rawData!['trx_visitor_sites'][0]['site_id'];
+      }
+
+      // Extract host_id
+      dynamic hostId = rawData!['host_id'];
+      if (hostId == null) {
+        if (rawData!['host_data'] != null && rawData!['host_data'] is Map) {
+          hostId = rawData!['host_data']['id'];
+        } else if (rawData!['host'] != null && rawData!['host'] is Map) {
+          hostId = rawData!['host']['id'];
+        }
+      }
 
       // Build payload
-      // trx_visitor_id = the 'id' field at bottom of collection (NOT transaction_visitor_id)
       final payload = {
-        "trx_visitor_id": rawData!['id'],          // collection's own id (bottom field)
+        "trx_visitor_id": rawData!['id'] ?? rawData!['visitor_id'] ?? rawData!['transaction_visitor_id'],
         "visitor_type": rawData!['visitor_type'],
         "type_registered": 0,
         "is_group": rawData!['is_group'] ?? false,
         "tz": rawData!['tz'] ?? "Asia/Jakarta",
         "flow": "SubmitPraregister",
+        "site_id": siteId,
+        "host_id": hostId,
         "data_visitor": [
           {
             "question_page": questionPage
@@ -312,15 +436,22 @@ class InformasiUmumController extends GetxController {
       };
 
       debugPrint('=== SUBMIT PRA FORM ===');
-      debugPrint('trx_visitor_id (id): ${rawData!['id']}');
-      debugPrint('visitor_type: ${rawData!['visitor_type']}');
-      debugPrint('code: $invitationCode');
+      debugPrint('Payload: ${jsonEncode(payload)}');
 
-      // Submit form (no auth header needed - endpoint is public)
+      // Submit form
       final submitResponse = await apiService.submitPraForm(payload);
-      // Read success msg from API response (e.g. "Submit invitation successfully")
-      final submitMsg = submitResponse.data?['msg']?.toString()
-          ?? 'Form berhasil dikirim';
+      
+      if (submitResponse.statusCode != 200 || submitResponse.data['status'] == 'bad_request') {
+        final errorMsg = submitResponse.data?['msg']?.toString() ?? 'Bad Request';
+        final collection = submitResponse.data?['collection'];
+        if (collection is List && collection.isNotEmpty) {
+          final detail = collection.map((e) => e['message']).join(', ');
+          throw Exception('$errorMsg: $detail');
+        }
+        throw Exception(errorMsg);
+      }
+
+      final submitMsg = submitResponse.data?['msg']?.toString() ?? 'Form berhasil dikirim';
       final submitTitle = submitResponse.data?['title']?.toString();
 
       // After submit success, re-check invitation code to get the token
