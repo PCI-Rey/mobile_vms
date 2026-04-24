@@ -138,8 +138,73 @@ class AuthDatasource {
     } catch (e) {
       debugPrint('Logout Error: $e');
       // Still remove local data even if API call fails
-      try { await _hiveService.removeUser(); } catch (_) {}
+      try {
+        await _hiveService.removeUser();
+      } catch (_) {}
       return (false, 'Terjadi kesalahan saat logout');
+    }
+  }
+
+  Future<(Map<String, dynamic>?, String?)> getProfile() async {
+    try {
+      final user = _hiveService.getUser();
+      final token = user?.token;
+      if (token == null) return (null, 'Token tidak ditemukan');
+
+      final response = await _apiService.getProfile(token);
+      if (response.statusCode == 200) {
+        final data = response.data;
+        if (data['status'] == 'success') {
+          final collection = data['collection'] as Map<String, dynamic>;
+          // Update Hive with new collection data if needed
+          if (user != null) {
+            final updatedUser = UserModel.fromJson({
+              ...user.toJson(), // Start with old data
+              ...collection, // Overwrite with fresh API data
+              'extra_data': json.encode(collection),
+            });
+            await _hiveService.saveUser(updatedUser);
+          }
+          return (collection, data['msg'] as String?);
+        }
+        return (null, data['msg'] as String? ?? 'Gagal mengambil profil');
+      }
+      return (null, 'Server Error: ${response.statusCode}');
+    } catch (e) {
+      debugPrint('getProfile Error: $e');
+      return (null, 'Terjadi kesalahan koneksi');
+    }
+  }
+
+  Future<(bool, String?, String?)> updateProfile(
+      Map<String, dynamic> payload) async {
+    try {
+      final user = _hiveService.getUser();
+      final token = user?.token;
+      if (token == null) return (false, 'Error', 'Token tidak ditemukan');
+
+      final response = await _apiService.updateProfile(token, payload);
+      if (response.statusCode == 200) {
+        final data = response.data;
+        if (data['status'] == 'success') {
+          // Refresh Hive data after update
+          await getProfile();
+          return (
+            true,
+            data['title'] as String?,
+            data['msg'] as String? ?? 'Berhasil update profil'
+          );
+        }
+        return (
+          false,
+          data['title'] as String?,
+          data['msg'] as String? ?? 'Gagal update profil'
+        );
+      }
+      return (false, 'Error', 'Server Error: ${response.statusCode}');
+    } catch (e) {
+      debugPrint('updateProfile Error: $e');
+      return (false, 'Error', 'Terjadi kesalahan koneksi');
     }
   }
 }

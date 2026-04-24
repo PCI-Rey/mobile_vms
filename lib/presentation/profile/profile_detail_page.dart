@@ -1,158 +1,111 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
-// import '../../presentation/auth/take_selfie_page.dart';
-import 'package:image_picker/image_picker.dart';
-import '../../presentation/auth/controller/user_controller.dart';
+import 'package:get/get.dart';
 import '../../core/core.dart';
+import 'controller/detail_profile_controller.dart';
 
-class DetailProfilePage extends StatefulWidget {
+class DetailProfilePage extends StatelessWidget {
   const DetailProfilePage({super.key});
 
   @override
-  State<DetailProfilePage> createState() => _DetailProfilePageState();
-}
-
-class _DetailProfilePageState extends State<DetailProfilePage> {
-  TextEditingController namaController = TextEditingController();
-  TextEditingController emailController = TextEditingController();
-  TextEditingController nomorHpController = TextEditingController();
-  TextEditingController organisasiController = TextEditingController();
-  TextEditingController genderController = TextEditingController();
-  TextEditingController nikController = TextEditingController();
-  Gender selectedGender = Gender.male;
-
-  File? _imageFile;
-  final ImagePicker _picker = ImagePicker();
-
-  @override
-  void initState() {
-    super.initState();
-    _loadUserData();
-  }
-
-  Future<void> _loadUserData() async {
-    final user = UserController.to.user.value;
-    if (user != null) {
-      setState(() {
-        namaController.text = user.fullname ?? '';
-        emailController.text = user.email ?? '';
-        // Other fields if available in UserModel
-      });
-    }
-  }
-
-  Future<void> _pickImage() async {
-    final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
-
-    if (pickedFile != null) {
-      setState(() {
-        _imageFile = File(pickedFile.path);
-      });
-    }
-  }
-
-  @override
   Widget build(BuildContext context) {
+    final controller = Get.put(DetailProfileController());
+
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.white,
         title: const Text('Akun'),
         elevation: 0,
-        leading: const BackButton(),
+        automaticallyImplyLeading: false, // Hapus icon back kiri atas
       ),
-      body: SingleChildScrollView(
-        keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Align(
-              alignment: Alignment.center,
-              child: Stack(
-                children: [
-                  // Foto profil utama
-                  CircleAvatar(
-                    radius: 40, // 80 / 2
-                    backgroundImage: _imageFile != null
-                        ? FileImage(_imageFile!)
-                        : const AssetImage('assets/images/ava_person1.png')
-                              as ImageProvider,
-                  ),
-                  // Ikon kamera di pojok kanan bawah
-                  Positioned(
-                    bottom: 0,
-                    right: 0,
-                    child: GestureDetector(
-                      onTap: _pickImage,
-                      child: Container(
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: Colors.white,
-                        ),
-                        padding: const EdgeInsets.all(4),
-                        child: Icon(
-                          Icons.camera_alt,
-                          size: 20,
-                          color: AppColors.primary500,
-                        ),
-                      ),
+      body: Column(
+        children: [
+          Expanded(
+            child: Obx(() {
+              if (controller.isLoading.value) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              return SingleChildScrollView(
+                keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    CustomTextField(
+                      controller: controller.namaController,
+                      label: 'Nama',
+                      readOnly: true,
+                      hintText: 'Nama Anda',
                     ),
-                  ),
-                ],
-              ),
-            ),
-            CustomTextField(
-              controller: namaController,
-              label: 'Nama',
-              hintText: 'Nama Anda',
-            ),
-            CustomTextField(
-              controller: emailController,
-              label: 'Email',
-              hintText: 'nama@email.com',
-            ),
-            CustomTextField(
-              controller: nomorHpController,
-              label: 'Nomor HP',
-              hintText: '0812 3456 7890',
-            ),
-            CustomTextField(
-              controller: organisasiController,
-              label: 'Organisasi',
-              hintText: 'PT Maju Jaya, Universitas ABC...',
-            ),
-            const SpaceHeight(16),
-            const Text(
-              'Jenis Kelamin',
-              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
-            ),
-            const SpaceHeight(12),
-            GenderToggleButton(
-              selectedGender: selectedGender,
-              onChanged: (gender) {
-                setState(() {
-                  selectedGender = gender;
-                });
-              },
-            ),
-            CustomTextField(
-              controller: nikController,
-              label: 'NIK KTP',
-              hintText: '3201234567890001',
-            ),
-
-            const SpaceHeight(32),
-            Button.filled(
-              label: 'Simpan',
+                    CustomTextField(
+                      controller: controller.emailController,
+                      label: 'Email',
+                      readOnly: true,
+                      hintText: 'nama@email.com',
+                      keyboardType: TextInputType.emailAddress,
+                    ),
+                    CustomTextField(
+                      controller: controller.nomorHpController,
+                      label: 'Nomor Handphone',
+                      readOnly: true,
+                      hintText: '0812 3456 7890',
+                      keyboardType: TextInputType.phone,
+                    ),
+                    CustomTextField(
+                      controller: controller.alamatController,
+                      label: 'Alamat Rumah',
+                      readOnly: true,
+                      hintText: 'Jl. Melati No. 123',
+                    ),
+                    CustomTextField(
+                      controller: controller.districtController,
+                      label: 'Kecamatan / Daerah',
+                      readOnly: true,
+                      hintText: 'Kecamatan ABC',
+                    ),
+                    CustomTextField(
+                      controller: controller.organisasiController,
+                      label: 'Organisasi',
+                      readOnly: true,
+                      hintText: 'PT Maju Jaya',
+                    ),
+                    CustomTextField(
+                      controller: controller.departemenController,
+                      label: 'Departemen',
+                      readOnly: true,
+                      hintText: 'IT Support',
+                    ),
+                    const SpaceHeight(16),
+                    const Text(
+                      'Jenis Kelamin',
+                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                    ),
+                    const SpaceHeight(12),
+                    Obx(() => IgnorePointer(
+                      child: GenderToggleButton(
+                        selectedGender: controller.selectedGender.value,
+                        onChanged: (gender) {},
+                      ),
+                    )),
+                    const SpaceHeight(20),
+                  ],
+                ),
+              );
+            }),
+          ),
+          
+          // Sticky Bottom Button
+          Padding(
+            padding: const EdgeInsets.all(20),
+            child: Button.filled(
+              label: 'Kembali',
               onPressed: () {
-                context.pop();
+                Get.back();
               },
             ),
-            const SpaceHeight(20),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 }
+

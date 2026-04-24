@@ -19,6 +19,7 @@ class Button extends StatelessWidget {
     this.suffixIcon,
     this.disabled = false,
     this.fontSize = 18.0,
+    this.isLoading = false,
   });
 
   const Button.filledRed({
@@ -36,6 +37,7 @@ class Button extends StatelessWidget {
     this.suffixIcon,
     this.disabled = false,
     this.fontSize = 18.0,
+    this.isLoading = false,
   });
 
   const Button.outlined({
@@ -53,6 +55,7 @@ class Button extends StatelessWidget {
     this.suffixIcon,
     this.disabled = false,
     this.fontSize = 18.0,
+    this.isLoading = false,
   });
 
   const Button.outlinedRed({
@@ -70,6 +73,7 @@ class Button extends StatelessWidget {
     this.suffixIcon,
     this.disabled = false,
     this.fontSize = 18.0,
+    this.isLoading = false,
   });
 
   const Button.iconOnly({
@@ -83,6 +87,7 @@ class Button extends StatelessWidget {
     this.height = 44.0,
     this.width = 44.0,
     this.style = ButtonStyleType.filled,
+    this.isLoading = false,
   }) : label = '',
        suffixIcon = null,
        textColor = Colors.white,
@@ -101,6 +106,7 @@ class Button extends StatelessWidget {
   final Widget? suffixIcon;
   final bool disabled;
   final double fontSize;
+  final bool isLoading;
 
   @override
   Widget build(BuildContext context) {
@@ -141,35 +147,44 @@ class Button extends StatelessWidget {
       width: width,
       child: style == ButtonStyleType.filled
           ? ElevatedButton(
-              onPressed: disabled ? null : onPressed,
+              onPressed: (disabled || isLoading) ? null : onPressed,
               style: ElevatedButton.styleFrom(
                 backgroundColor: color,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(borderRadius),
                 ),
               ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  icon ?? const SizedBox.shrink(),
-                  if (icon != null && label.isNotEmpty)
-                    const SizedBox(width: 10.0),
-                  Flexible(
-                    child: Text(
-                      label,
-                      style: TextStyle(
+              child: isLoading
+                  ? SizedBox(
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(
                         color: textColor,
-                        fontSize: fontSize,
-                        fontWeight: FontWeight.w500,
+                        strokeWidth: 2,
                       ),
-                      overflow: TextOverflow.ellipsis,
+                    )
+                  : Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        icon ?? const SizedBox.shrink(),
+                        if (icon != null && label.isNotEmpty)
+                          const SizedBox(width: 10.0),
+                        Flexible(
+                          child: Text(
+                            label,
+                            style: TextStyle(
+                              color: textColor,
+                              fontSize: fontSize,
+                              fontWeight: FontWeight.w500,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        if (suffixIcon != null && label.isNotEmpty)
+                          const SizedBox(width: 10.0),
+                        suffixIcon ?? const SizedBox.shrink(),
+                      ],
                     ),
-                  ),
-                  if (suffixIcon != null && label.isNotEmpty)
-                    const SizedBox(width: 10.0),
-                  suffixIcon ?? const SizedBox.shrink(),
-                ],
-              ),
             )
           : OutlinedButton(
               onPressed: disabled ? null : onPressed,

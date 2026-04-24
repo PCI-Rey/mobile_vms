@@ -20,7 +20,7 @@ extension NavigatorExt on BuildContext {
       this,
       MaterialPageRoute(
         builder: (context) => widget,
-        settings: RouteSettings(name: name),
+        settings: RouteSettings(name: name ?? widget.runtimeType.toString()),
       ),
     );
   }

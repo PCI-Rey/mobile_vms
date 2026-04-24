@@ -39,7 +39,6 @@ class SelectableAgendaCard extends StatelessWidget {
     // Dynamic sizing based on screen size
     final cardPadding = isSmallScreen ? 8.0 : isMediumScreen ? 10.0 : 12.0;
     final verticalSpacing = isSmallScreen ? 5.0 : isMediumScreen ? 8.0 : 10.0;
-    final imageHeight = isSmallScreen ? 100.0 : isMediumScreen ? 120.0 : 160.0;
     final buttonHeight = isSmallScreen ? 32.0 : isMediumScreen ? 36.0 : 40.0;
     
     // Dynamic font sizes
@@ -91,8 +90,10 @@ class SelectableAgendaCard extends StatelessWidget {
 
                   SizedBox(height: verticalSpacing),
 
-                  // Image Section
-                  _buildImageSection(imageHeight),
+                  // Image Section - Made Expanded to prevent overflow
+                  Expanded(
+                    child: _buildImageSection(),
+                  ),
 
                   SizedBox(height: verticalSpacing),
 
@@ -219,12 +220,11 @@ class SelectableAgendaCard extends StatelessWidget {
     );
   }
 
-  Widget _buildImageSection(double imageHeight) {
+  Widget _buildImageSection() {
     return ClipRRect(
       borderRadius: BorderRadius.circular(8),
       child: SizedBox(
         width: double.infinity,
-        height: imageHeight,
         child: FittedBox(fit: BoxFit.cover, child: image),
       ),
     );

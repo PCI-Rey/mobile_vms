@@ -23,7 +23,46 @@ void main() async {
   Get.put(UserController());
   Get.put(LanguageController());
 
-  runApp(MyApp());
+  runApp(const MyApp());
+}
+
+// Custom Observer to log page navigation to terminal
+class PageLogObserver extends GetObserver {
+  @override
+  void didPush(Route<dynamic> route, Route<dynamic>? previousRoute) {
+    super.didPush(route, previousRoute);
+    _logNavigation(route);
+  }
+
+  @override
+  void didPop(Route<dynamic> route, Route<dynamic>? previousRoute) {
+    super.didPop(route, previousRoute);
+    if (previousRoute != null) {
+      _logNavigation(previousRoute);
+    }
+  }
+
+  @override
+  void didReplace({Route<dynamic>? newRoute, Route<dynamic>? oldRoute}) {
+    super.didReplace(newRoute: newRoute, oldRoute: oldRoute);
+    if (newRoute != null) {
+      _logNavigation(newRoute);
+    }
+  }
+
+  void _logNavigation(Route<dynamic> route) {
+    String? name = route.settings.name;
+    
+    // If it's a GetPageRoute, we can get the actual widget name
+    if (route is GetPageRoute) {
+      name = route.page!().runtimeType.toString();
+    }
+    
+    // If still null or generic, use the runtime type but clean it up
+    name ??= route.runtimeType.toString().replaceAll('PageRoute', '').replaceAll('<Object>', '');
+    
+    debugPrint('🚀 [NAVIGATION] Current Page: $name');
+  }
 }
 
 class MyApp extends StatefulWidget {
@@ -48,6 +87,7 @@ class _MyAppState extends State<MyApp> {
 
     return GetMaterialApp(
       title: 'Visitor App',
+      navigatorObservers: [PageLogObserver()],
       translations: AppTranslations(),
       locale: initialLocale,
       fallbackLocale: const Locale('en', 'US'),
