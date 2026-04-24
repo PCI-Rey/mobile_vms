@@ -68,10 +68,7 @@ class _SplashscreenState extends State<Splashscreen>
         : const LanguageSelectionPage();
 
     // Always use pushReplacement to remove splashscreen from stack
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (_) => nextScreen),
-    );
+    context.pushReplacement(nextScreen);
   }
 
   @override

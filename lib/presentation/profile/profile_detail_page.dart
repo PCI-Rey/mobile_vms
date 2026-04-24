@@ -30,6 +30,59 @@ class DetailProfilePage extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    Center(
+                      child: Column(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(4),
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: context.theme.primaryColor.withOpacity(0.2),
+                                width: 2,
+                              ),
+                            ),
+                            child: CustomCircleImage(
+                              image: Assets.images.avaPerson1.image(),
+                              size: 100,
+                            ),
+                          ),
+                          const SpaceHeight(16),
+                          Obx(() => Text(
+                                controller.namaHeader.value,
+                                style: const TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              )),
+                          Obx(() => controller.roleLabel.value.isEmpty
+                              ? const SizedBox.shrink()
+                              : Column(
+                                  children: [
+                                    const SpaceHeight(4),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 12, vertical: 4),
+                                      decoration: BoxDecoration(
+                                        color: context.theme.primaryColor
+                                            .withOpacity(0.1),
+                                        borderRadius: BorderRadius.circular(20),
+                                      ),
+                                      child: Text(
+                                        controller.roleLabel.value.toUpperCase(),
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w600,
+                                          color: context.theme.primaryColor,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                )),
+                        ],
+                      ),
+                    ),
+                    const SpaceHeight(32),
                     CustomTextField(
                       controller: controller.namaController,
                       label: 'Nama',
@@ -58,9 +111,9 @@ class DetailProfilePage extends StatelessWidget {
                     ),
                     CustomTextField(
                       controller: controller.districtController,
-                      label: 'Kecamatan / Daerah',
+                      label: 'Nama Distrik',
                       readOnly: true,
-                      hintText: 'Kecamatan ABC',
+                      hintText: 'Nama Distrik',
                     ),
                     CustomTextField(
                       controller: controller.organisasiController,

@@ -36,10 +36,7 @@ class _DashboardState extends State<Dashboard> {
     if (!mounted) return;
 
     if (user == null) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const LoginPage()),
-      );
+      context.pushReplacement(const LoginPage());
       return;
     }
 

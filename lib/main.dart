@@ -52,15 +52,28 @@ class PageLogObserver extends GetObserver {
 
   void _logNavigation(Route<dynamic> route) {
     String? name = route.settings.name;
-    
+
     // If it's a GetPageRoute, we can get the actual widget name
     if (route is GetPageRoute) {
       name = route.page!().runtimeType.toString();
     }
-    
-    // If still null or generic, use the runtime type but clean it up
-    name ??= route.runtimeType.toString().replaceAll('PageRoute', '').replaceAll('<Object>', '');
-    
+
+    // If still null or generic, try to clean up the runtimeType
+    if (name == null || name.contains('Material') || name.contains('PageRoute')) {
+      name = route.settings.name ??
+          route.runtimeType
+              .toString()
+              .replaceAll('PageRoute', '')
+              .replaceAll('<dynamic>', '')
+              .replaceAll('<Object>', '');
+    }
+
+    // If it's still generic, skip logging or use a better fallback
+    if (name == 'Material' || name == 'GetPage') {
+      // Don't log generic GetX/Material internal routes if they don't have names
+      return;
+    }
+
     debugPrint('🚀 [NAVIGATION] Current Page: $name');
   }
 }

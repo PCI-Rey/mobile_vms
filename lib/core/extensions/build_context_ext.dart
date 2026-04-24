@@ -30,7 +30,10 @@ extension NavigatorExt on BuildContext {
   ) async {
     return Navigator.pushReplacement<T, TO>(
       this,
-      MaterialPageRoute(builder: (context) => widget),
+      MaterialPageRoute(
+        builder: (context) => widget,
+        settings: RouteSettings(name: widget.runtimeType.toString()),
+      ),
     );
   }
 
@@ -40,7 +43,10 @@ extension NavigatorExt on BuildContext {
   ) async {
     return Navigator.pushAndRemoveUntil<T>(
       this,
-      MaterialPageRoute(builder: (context) => widget),
+      MaterialPageRoute(
+        builder: (context) => widget,
+        settings: RouteSettings(name: widget.runtimeType.toString()),
+      ),
       predicate,
     );
   }
