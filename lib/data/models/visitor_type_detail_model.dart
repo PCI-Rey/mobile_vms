@@ -78,22 +78,40 @@ class VisitFormField {
     );
   }
 
-  Map<String, dynamic> toJson() => {
-        'sort': sort,
-        'short_name': shortName,
-        'long_display_text': longDisplayText,
-        'field_type': fieldType,
-        'is_primary': isPrimary,
-        'is_enable': isEnable,
-        'mandatory': mandatory,
-        'remarks': remarks,
-        'custom_field_id': customFieldId,
-        'multiple_option_fields':
-            multipleOptionFields.map((e) => e.toJson()).toList(),
-        'visitor_form_type': visitorFormType,
-        'answer_text': answerText,
-        'answer_datetime': answerDatetime,
-      };
+  Map<String, dynamic> toJson() {
+    // Strip milliseconds from strings if present
+    String cleanText = answerText;
+    if (cleanText.contains('.')) {
+      cleanText = cleanText.replaceAll(RegExp(r'\.\d+'), '');
+    }
+
+    String? cleanDt;
+    if (answerDatetime.isNotEmpty) {
+      cleanDt = answerDatetime;
+      if (cleanDt.contains('.')) {
+        cleanDt = cleanDt.replaceAll(RegExp(r'\.\d+'), '');
+      }
+    } else {
+      cleanDt = null;
+    }
+
+    return {
+      'sort': sort,
+      'short_name': shortName,
+      'long_display_text': longDisplayText,
+      'field_type': fieldType,
+      'is_primary': isPrimary,
+      'is_enable': isEnable,
+      'mandatory': mandatory,
+      'remarks': remarks,
+      'custom_field_id': customFieldId,
+      'multiple_option_fields':
+          multipleOptionFields.map((e) => e.toJson()).toList(),
+      'visitor_form_type': visitorFormType,
+      'answer_text': cleanText,
+      'answer_datetime': cleanDt,
+    };
+  }
 }
 
 class SectionPageVisitorType {
@@ -116,17 +134,18 @@ class SectionPageVisitorType {
   });
 
   factory SectionPageVisitorType.fromJson(Map<String, dynamic> json) {
-    final forms = (json['visit_form'] as List<dynamic>? ?? [])
+    final forms = ((json['VisitForm'] ?? json['visit_form']) as List<dynamic>? ?? [])
         .map((e) => VisitFormField.fromJson(e as Map<String, dynamic>))
         .toList();
 
     return SectionPageVisitorType(
-      id: json['id']?.toString() ?? '',
-      sort: (json['sort'] as num?)?.toInt() ?? 0,
-      name: json['name']?.toString() ?? '',
-      isDocument: json['is_document'] == true,
-      canMultipleUsed: json['can_multiple_used'] == true,
-      foreignId: json['foreign_id']?.toString() ?? '',
+      id: (json['Id'] ?? json['id'])?.toString() ?? '',
+      sort: (json['Sort'] ?? json['sort'] as num?)?.toInt() ?? 0,
+      name: (json['Name'] ?? json['name'])?.toString() ?? '',
+      isDocument: (json['IsDocument'] ?? json['is_document']) == true,
+      canMultipleUsed:
+          (json['CanMultipleUsed'] ?? json['can_multiple_used']) == true,
+      foreignId: (json['ForeignId'] ?? json['foreign_id'])?.toString() ?? '',
       visitForm: forms,
     );
   }

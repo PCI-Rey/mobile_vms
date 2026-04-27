@@ -6,8 +6,8 @@ class ApiService {
   final Dio _dio = Dio(
     BaseOptions(
       baseUrl: 'https://be-vms.app.bio-experience.com',
-      connectTimeout: const Duration(seconds: 10),
-      receiveTimeout: const Duration(seconds: 10),
+      connectTimeout: const Duration(seconds: 15),
+      receiveTimeout: const Duration(seconds: 30),
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
@@ -55,7 +55,7 @@ class ApiService {
         'submitPraForm payload trx_visitor_id: ${payload['trx_visitor_id']}',
       );
       final response = await _dio.post(
-        '/$pathApi/on-portal/submit/pra-form',
+        '/$pathApi/_Auth/submit/pra-form',
         data: payload,
       );
       return response;
@@ -246,6 +246,21 @@ class ApiService {
       return response;
     } on DioException catch (e) {
       debugPrint('Dio Error submitPraFormOperator: ${e.message}');
+      if (e.response != null) return e.response!;
+      rethrow;
+    }
+  }
+
+  Future<Response> submitNewVisit(String token, Map<String, dynamic> body) async {
+    try {
+      final response = await _dio.post(
+        '/$pathApi/operator-invitation/new-visit',
+        data: body,
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+      return response;
+    } on DioException catch (e) {
+      debugPrint('Dio Error submitNewVisit: ${e.message}');
       if (e.response != null) return e.response!;
       rethrow;
     }

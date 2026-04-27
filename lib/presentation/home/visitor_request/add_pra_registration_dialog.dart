@@ -29,7 +29,11 @@ Future<void> showAddPraRegistrationDialog(BuildContext context) {
 class _AddPraRegistrationDialog extends StatelessWidget {
   const _AddPraRegistrationDialog();
 
-  static const _stepTitles = ['User Type', 'Visitor Information', 'Purpose Visit'];
+  static const _stepTitles = [
+    'User Type',
+    'Visitor Information',
+    'Purpose Visit',
+  ];
 
   @override
   Widget build(BuildContext context) {
@@ -39,66 +43,76 @@ class _AddPraRegistrationDialog extends StatelessWidget {
       backgroundColor: Colors.white,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 32),
-      child: Obx(() {
-        final step = ctrl.currentStep.value;
-        return Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // ── Header ──────────────────────────────────────────────────
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 16, 12, 0),
-              child: Row(
-                children: [
-                  const Expanded(
-                    child: Text(
-                      'Add Pra Registration',
-                      style: TextStyle(
-                          fontSize: 16, fontWeight: FontWeight.w700),
+      child: SizedBox(
+        height: MediaQuery.of(context).size.height * 0.85,
+        child: Obx(() {
+          final step = ctrl.currentStep.value;
+          return Column(
+            mainAxisSize: MainAxisSize.max,
+            children: [
+              // ── Header ────────────────────────────────────────────
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 16, 12, 0),
+                child: Row(
+                  children: [
+                    const Expanded(
+                      child: Text(
+                        'Add Pra Registration',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
                     ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.close, size: 20),
-                    onPressed: () => Navigator.of(context).pop(),
-                  ),
-                ],
+                    IconButton(
+                      icon: const Icon(Icons.close, size: 20),
+                      onPressed: () => Navigator.of(context).pop(),
+                    ),
+                  ],
+                ),
               ),
-            ),
 
-            const Divider(height: 1),
+              const Divider(height: 1),
 
-            // ── Step title + dots ─────────────────────────────────────
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              child: Column(
-                children: [
-                  Text(
-                    _stepTitles[step],
-                    style: const TextStyle(
-                        fontSize: 16, fontWeight: FontWeight.w600),
+              // ── Step title + dots ─────────────────────────────────
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                child: Column(
+                  children: [
+                    Text(
+                      _stepTitles[step],
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    _StepDots(currentStep: step, total: 3),
+                  ],
+                ),
+              ),
+
+              const Divider(height: 1),
+
+              // ── Content ─────────────────────────────────────────
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 16,
                   ),
-                  const SizedBox(height: 6),
-                  _StepDots(currentStep: step, total: 3),
-                ],
+                  child: _StepContent(step: step, controller: ctrl),
+                ),
               ),
-            ),
 
-            const Divider(height: 1),
+              const Divider(height: 1),
 
-            // ── Content ───────────────────────────────────────────────
-            Flexible(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                child: _StepContent(step: step, controller: ctrl),
-              ),
-            ),
-
-            const Divider(height: 1),
-
-            // ── Navigation Buttons ────────────────────────────────────
-            _BottomNav(step: step, controller: ctrl, context: context),
-          ],
-        );
-      }),
+              // ── Navigation Buttons ───────────────────────────────
+              _BottomNav(step: step, controller: ctrl, context: context),
+            ],
+          );
+        }),
+      ),
     );
   }
 }
@@ -121,11 +135,11 @@ class _StepDots extends StatelessWidget {
         return AnimatedContainer(
           duration: const Duration(milliseconds: 250),
           margin: const EdgeInsets.symmetric(horizontal: 4),
-          width: active ? 20 : 8,
+          width: 8,
           height: 8,
           decoration: BoxDecoration(
             color: active ? AppColors.primary500 : AppColors.grey300,
-            borderRadius: BorderRadius.circular(4),
+            shape: BoxShape.circle,
           ),
         );
       }),
@@ -168,6 +182,12 @@ class _Step0UserType extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Obx(() {
+      // IMPORTANT: Read reactive values HERE (in Obx builder body)
+      // so GetX tracks them. Reads inside itemBuilder are NOT tracked
+      // because itemBuilder runs lazily during layout, not during Obx build.
+      final selectedId = controller.selectedVisitorTypeId.value;
+      final isLoadingDetail = controller.isLoadingDetail.value;
+
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -177,40 +197,44 @@ class _Step0UserType extends StatelessWidget {
 
           if (controller.isLoadingTypes.value)
             const Center(
-                child: Padding(
-              padding: EdgeInsets.all(16),
-              child: CircularProgressIndicator(),
-            ))
+              child: Padding(
+                padding: EdgeInsets.all(16),
+                child: CircularProgressIndicator(),
+              ),
+            )
           else
             ListView.separated(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               itemCount: controller.visitorTypes.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 4),
+              separatorBuilder: (_, index) => const SizedBox(height: 4),
               itemBuilder: (_, i) {
                 final type = controller.visitorTypes[i];
-                final isSelected =
-                    controller.selectedVisitorTypeId.value == type.id;
-                return InkWell(
+                final isSelected = selectedId == type.id;
+                return GestureDetector(
+                  behavior: HitTestBehavior.opaque,
                   onTap: () =>
                       controller.onSelectVisitorType(type.id, type.name),
-                  borderRadius: BorderRadius.circular(8),
                   child: Row(
                     children: [
-                      Radio<String>(
-                        value: type.id,
-                        groupValue: controller.selectedVisitorTypeId.value,
-                        activeColor: AppColors.primary500,
-                        onChanged: (v) {
-                          if (v != null) {
-                            controller.onSelectVisitorType(type.id, type.name);
-                          }
-                        },
+                      Padding(
+                        padding: const EdgeInsets.all(12),
+                        child: Icon(
+                          isSelected
+                              ? Icons.radio_button_checked
+                              : Icons.radio_button_unchecked,
+                          color: isSelected
+                              ? AppColors.primary500
+                              : AppColors.grey400,
+                          size: 22,
+                        ),
                       ),
                       Expanded(
                         child: Container(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 12, vertical: 8),
+                            horizontal: 12,
+                            vertical: 8,
+                          ),
                           decoration: BoxDecoration(
                             border: Border.all(
                               color: isSelected
@@ -228,8 +252,7 @@ class _Step0UserType extends StatelessWidget {
                                   style: const TextStyle(fontSize: 14),
                                 ),
                               ),
-                              if (isSelected &&
-                                  controller.isLoadingDetail.value)
+                              if (isSelected && isLoadingDetail)
                                 const SizedBox(
                                   width: 16,
                                   height: 16,
@@ -255,25 +278,59 @@ class _Step0UserType extends StatelessWidget {
           const SizedBox(height: 8),
           Row(
             children: [
-              Radio<bool>(
-                value: false,
-                groupValue: controller.isGroup.value,
-                activeColor: AppColors.primary500,
-                onChanged: (v) => controller.isGroup.value = false,
+              GestureDetector(
+                onTap: () => controller.isGroup.value = false,
+                child: Row(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.all(8),
+                      child: Icon(
+                        controller.isGroup.value == false
+                            ? Icons.radio_button_checked
+                            : Icons.radio_button_unchecked,
+                        color: controller.isGroup.value == false
+                            ? AppColors.primary500
+                            : AppColors.grey400,
+                        size: 22,
+                      ),
+                    ),
+                    const Icon(
+                      Icons.person_outline,
+                      size: 18,
+                      color: AppColors.grey500,
+                    ),
+                    const SizedBox(width: 4),
+                    const Text('Single', style: TextStyle(fontSize: 14)),
+                  ],
+                ),
               ),
-              const Icon(Icons.person_outline, size: 18, color: AppColors.grey500),
-              const SizedBox(width: 4),
-              const Text('Single', style: TextStyle(fontSize: 14)),
               const SizedBox(width: 16),
-              Radio<bool>(
-                value: true,
-                groupValue: controller.isGroup.value,
-                activeColor: AppColors.primary500,
-                onChanged: (v) => controller.isGroup.value = true,
+              GestureDetector(
+                onTap: () => controller.isGroup.value = true,
+                child: Row(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.all(8),
+                      child: Icon(
+                        controller.isGroup.value == true
+                            ? Icons.radio_button_checked
+                            : Icons.radio_button_unchecked,
+                        color: controller.isGroup.value == true
+                            ? AppColors.primary500
+                            : AppColors.grey400,
+                        size: 22,
+                      ),
+                    ),
+                    const Icon(
+                      Icons.group_outlined,
+                      size: 18,
+                      color: AppColors.grey500,
+                    ),
+                    const SizedBox(width: 4),
+                    const Text('Group', style: TextStyle(fontSize: 14)),
+                  ],
+                ),
               ),
-              const Icon(Icons.group_outlined, size: 18, color: AppColors.grey500),
-              const SizedBox(width: 4),
-              const Text('Group', style: TextStyle(fontSize: 14)),
             ],
           ),
         ],
@@ -301,7 +358,8 @@ class _Step1VisitorInfo extends StatelessWidget {
       // Find the first section that contains 'visitor' in name (case-insensitive)
       // or fall back to first section
       final sections = detail.sectionPageVisitorTypes;
-      final section = sections.firstWhereOrNull(
+      final section =
+          sections.firstWhereOrNull(
             (s) => s.name.toLowerCase().contains('visitor'),
           ) ??
           sections.firstOrNull;
@@ -314,7 +372,13 @@ class _Step1VisitorInfo extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: section.visitForm
             .where((f) => f.isEnable)
-            .map((f) => _FormFieldWidget(field: f, context: context))
+            .map(
+              (f) => _FormFieldWidget(
+                field: f,
+                context: context,
+                controller: controller,
+              ),
+            )
             .toList(),
       );
     });
@@ -338,7 +402,8 @@ class _Step2PurposeVisit extends StatelessWidget {
       }
 
       final sections = detail.sectionPageVisitorTypes;
-      final section = sections.firstWhereOrNull(
+      final section =
+          sections.firstWhereOrNull(
             (s) => s.name.toLowerCase().contains('purpose'),
           ) ??
           (sections.length > 1 ? sections[1] : null);
@@ -351,7 +416,13 @@ class _Step2PurposeVisit extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: section.visitForm
             .where((f) => f.isEnable)
-            .map((f) => _FormFieldWidget(field: f, context: context))
+            .map(
+              (f) => _FormFieldWidget(
+                field: f,
+                context: context,
+                controller: controller,
+              ),
+            )
             .toList(),
       );
     });
@@ -365,7 +436,12 @@ class _Step2PurposeVisit extends StatelessWidget {
 class _FormFieldWidget extends StatelessWidget {
   final VisitFormField field;
   final BuildContext context;
-  const _FormFieldWidget({required this.field, required this.context});
+  final PraRegistrationController controller;
+  const _FormFieldWidget({
+    required this.field,
+    required this.context,
+    required this.controller,
+  });
 
   @override
   Widget build(BuildContext ctx) {
@@ -381,15 +457,18 @@ class _FormFieldWidget extends StatelessWidget {
                   ? field.shortName
                   : field.longDisplayText,
               style: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.black87),
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: Colors.black87,
+              ),
               children: [
-                if (field.mandatory)
+                if (field.mandatory || controller.currentStep.value == 2)
                   const TextSpan(
                     text: ' *',
                     style: TextStyle(
-                        color: Colors.red, fontWeight: FontWeight.bold),
+                      color: Colors.red,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
               ],
             ),
@@ -415,8 +494,8 @@ class _FormFieldWidget extends StatelessWidget {
           keyboardType: field.fieldType == 1
               ? TextInputType.number
               : field.fieldType == 2
-                  ? TextInputType.emailAddress
-                  : TextInputType.text,
+              ? TextInputType.emailAddress
+              : TextInputType.text,
         );
 
       case 5: // Radio
@@ -446,8 +525,10 @@ class _FormFieldWidget extends StatelessWidget {
       initialValue: field.answerText,
       keyboardType: keyboardType,
       decoration: InputDecoration(
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 12,
+          vertical: 10,
+        ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
           borderSide: const BorderSide(color: AppColors.grey300),
@@ -458,11 +539,13 @@ class _FormFieldWidget extends StatelessWidget {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide:
-              const BorderSide(color: AppColors.primary500, width: 1.5),
+          borderSide: const BorderSide(color: AppColors.primary500, width: 1.5),
         ),
       ),
-      onChanged: (v) => field.answerText = v,
+      onChanged: (v) {
+        field.answerText = v;
+        controller.updateForm();
+      },
     );
   }
 
@@ -480,6 +563,7 @@ class _FormFieldWidget extends StatelessWidget {
               if (v != null) {
                 field.answerText = v;
                 setState(() {});
+                controller.updateForm();
               }
             },
           ),
@@ -498,6 +582,7 @@ class _FormFieldWidget extends StatelessWidget {
         onChanged: (v) {
           field.answerText = (v == true).toString();
           setState(() {});
+          controller.updateForm();
         },
       ),
     );
@@ -513,12 +598,19 @@ class _FormFieldWidget extends StatelessWidget {
         controller: displayCtrl,
         readOnly: true,
         decoration: InputDecoration(
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          hintText: withTime ? 'EEEE, DD MMMM YYYY, HH:mm' : 'EEEE, DD MMMM YYYY',
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 12,
+            vertical: 10,
+          ),
+          hintText: withTime
+              ? 'EEEE, DD MMMM YYYY, HH:mm'
+              : 'EEEE, DD MMMM YYYY',
           hintStyle: const TextStyle(color: AppColors.grey400, fontSize: 13),
-          suffixIcon: const Icon(Icons.calendar_today_outlined,
-              color: AppColors.grey500, size: 18),
+          suffixIcon: const Icon(
+            Icons.calendar_today_outlined,
+            color: AppColors.grey500,
+            size: 18,
+          ),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(8),
             borderSide: const BorderSide(color: AppColors.grey300),
@@ -529,8 +621,10 @@ class _FormFieldWidget extends StatelessWidget {
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(8),
-            borderSide:
-                const BorderSide(color: AppColors.primary500, width: 1.5),
+            borderSide: const BorderSide(
+              color: AppColors.primary500,
+              width: 1.5,
+            ),
           ),
         ),
         onTap: () async {
@@ -545,7 +639,10 @@ class _FormFieldWidget extends StatelessWidget {
   }
 
   Future<void> _pickDate(
-      BuildContext ctx, StateSetter setState, TextEditingController ctrl) async {
+    BuildContext ctx,
+    StateSetter setState,
+    TextEditingController ctrl,
+  ) async {
     final now = DateTime.now();
     final picked = await showDatePicker(
       context: ctx,
@@ -560,16 +657,23 @@ class _FormFieldWidget extends StatelessWidget {
       ),
     );
     if (picked != null) {
-      final iso = picked.toIso8601String();
+      final isUTC = field.remarks == "visitor_period_start" ||
+          field.remarks == "visitor_period_end";
+      final dt = isUTC ? picked.toUtc() : picked;
+      final iso = dt.toIso8601String().replaceAll(RegExp(r'\.\d+'), '');
       field.answerDatetime = iso;
       field.answerText = iso;
       ctrl.text = _formatDisplay(iso, false);
       setState(() {});
+      controller.updateForm();
     }
   }
 
   Future<void> _pickDateTime(
-      BuildContext ctx, StateSetter setState, TextEditingController ctrl) async {
+    BuildContext ctx,
+    StateSetter setState,
+    TextEditingController ctrl,
+  ) async {
     final now = DateTime.now();
     final date = await showDatePicker(
       context: ctx,
@@ -597,20 +701,24 @@ class _FormFieldWidget extends StatelessWidget {
     );
     if (time == null) return;
 
-    final dt = DateTime(date.year, date.month, date.day, time.hour, time.minute);
-    final iso = dt.toIso8601String();
+    if (!ctx.mounted) return;
+
+    final dtRaw =
+        DateTime(date.year, date.month, date.day, time.hour, time.minute);
+    final isUTC = field.remarks == "visitor_period_start" ||
+        field.remarks == "visitor_period_end";
+    final dt = isUTC ? dtRaw.toUtc() : dtRaw;
+    final iso = dt.toIso8601String().replaceAll(RegExp(r'\.\d+'), '');
     field.answerDatetime = iso;
     field.answerText = iso;
     ctrl.text = _formatDisplay(iso, true);
     setState(() {});
+    controller.updateForm();
   }
 
   Widget _buildFileUploadField() {
     // field.fieldType: 10 = camera only, 11 = file, 12 = image (camera + gallery)
-    return _FileUploadState(
-      field: field,
-      cameraOnly: field.fieldType == 10,
-    );
+    return _FileUploadState(field: field, cameraOnly: field.fieldType == 10);
   }
 
   String _formatDisplay(String iso, bool withTime) {
@@ -663,28 +771,37 @@ class _FileUploadStateState extends State<_FileUploadState> {
       if (status == 'success') {
         final path = response.data['collection']?.toString() ?? '';
         widget.field.answerText = path;
-        debugPrint('Upload berhasil [${widget.field.shortName}]: ${widget.field.answerText}');
+        debugPrint(
+          'Upload berhasil [${widget.field.shortName}]: ${widget.field.answerText}',
+        );
         setState(() => _isUploading = false);
+        Get.find<PraRegistrationController>().updateForm();
       } else {
         final msg = response.data['msg']?.toString() ?? 'Upload gagal';
         setState(() {
           _isUploading = false;
           _pickedFile = null;
         });
-        Get.snackbar('Error', msg,
-            backgroundColor: Colors.red,
-            colorText: Colors.white,
-            snackPosition: SnackPosition.TOP);
+        Get.snackbar(
+          'Error',
+          msg,
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+          snackPosition: SnackPosition.TOP,
+        );
       }
     } catch (e) {
       setState(() {
         _isUploading = false;
         _pickedFile = null;
       });
-      Get.snackbar('Error', 'Gagal mengupload file: $e',
-          backgroundColor: Colors.red,
-          colorText: Colors.white,
-          snackPosition: SnackPosition.TOP);
+      Get.snackbar(
+        'Error',
+        'Gagal mengupload file: $e',
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+        snackPosition: SnackPosition.TOP,
+      );
     }
   }
 
@@ -695,8 +812,10 @@ class _FileUploadStateState extends State<_FileUploadState> {
         child: Wrap(
           children: [
             ListTile(
-              leading: const Icon(Icons.camera_alt_outlined,
-                  color: AppColors.primary500),
+              leading: const Icon(
+                Icons.camera_alt_outlined,
+                color: AppColors.primary500,
+              ),
               title: const Text('Kamera'),
               onTap: () {
                 Get.back();
@@ -704,8 +823,10 @@ class _FileUploadStateState extends State<_FileUploadState> {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.photo_library_outlined,
-                  color: AppColors.primary500),
+              leading: const Icon(
+                Icons.photo_library_outlined,
+                color: AppColors.primary500,
+              ),
               title: const Text('Galeri'),
               onTap: () {
                 Get.back();
@@ -771,7 +892,8 @@ class _FileUploadStateState extends State<_FileUploadState> {
         height: 80,
         decoration: BoxDecoration(
           border: Border.all(
-              color: _isUploading ? AppColors.primary500 : AppColors.grey300),
+            color: _isUploading ? AppColors.primary500 : AppColors.grey300,
+          ),
           borderRadius: BorderRadius.circular(8),
           color: AppColors.primary50,
         ),
@@ -784,12 +906,15 @@ class _FileUploadStateState extends State<_FileUploadState> {
                       width: 24,
                       height: 24,
                       child: CircularProgressIndicator(
-                          strokeWidth: 2, color: AppColors.primary500),
+                        strokeWidth: 2,
+                        color: AppColors.primary500,
+                      ),
                     ),
                     SizedBox(height: 6),
-                    Text('Mengupload...',
-                        style:
-                            TextStyle(color: AppColors.grey500, fontSize: 12)),
+                    Text(
+                      'Mengupload...',
+                      style: TextStyle(color: AppColors.grey500, fontSize: 12),
+                    ),
                   ],
                 ),
               )
@@ -807,9 +932,10 @@ class _FileUploadStateState extends State<_FileUploadState> {
                   Text(
                     widget.cameraOnly ? 'Buka Kamera' : 'Pilih File / Foto',
                     style: const TextStyle(
-                        color: AppColors.primary500,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w500),
+                      color: AppColors.primary500,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
                 ],
               ),
@@ -826,19 +952,21 @@ class _BottomNav extends StatelessWidget {
   final int step;
   final PraRegistrationController controller;
   final BuildContext context;
-  const _BottomNav(
-      {required this.step,
-      required this.controller,
-      required this.context});
+  const _BottomNav({
+    required this.step,
+    required this.controller,
+    required this.context,
+  });
 
   @override
   Widget build(BuildContext ctx) {
     return Obx(() {
       final isLast = step == 2;
+      // Next enabled as long as a type is selected and status is selected
       final canProceed = step == 0
           ? controller.selectedVisitorTypeId.value.isNotEmpty &&
-              !controller.isLoadingDetail.value
-          : true;
+                controller.isGroup.value != null
+          : controller.validateCurrentStep();
       final isSubmitting = controller.isSubmitting.value;
 
       return Padding(
@@ -850,12 +978,16 @@ class _BottomNav extends StatelessWidget {
               onPressed: step == 0 ? null : controller.prevStep,
               style: OutlinedButton.styleFrom(
                 side: BorderSide(
-                    color: step == 0 ? AppColors.grey300 : AppColors.primary500),
+                  color: step == 0 ? AppColors.grey300 : AppColors.primary500,
+                ),
                 foregroundColor: AppColors.primary500,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 10,
+                ),
                 shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8)),
+                  borderRadius: BorderRadius.circular(8),
+                ),
               ),
               icon: const Icon(Icons.arrow_back, size: 16),
               label: const Text('Back'),
@@ -880,17 +1012,23 @@ class _BottomNav extends StatelessWidget {
               style: FilledButton.styleFrom(
                 backgroundColor: AppColors.primary500,
                 disabledBackgroundColor: AppColors.grey300,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 10,
+                ),
                 shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8)),
+                  borderRadius: BorderRadius.circular(8),
+                ),
               ),
               icon: isSubmitting
                   ? const SizedBox(
                       width: 16,
                       height: 16,
                       child: CircularProgressIndicator(
-                          strokeWidth: 2, color: Colors.white))
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
                   : Icon(isLast ? Icons.check : Icons.arrow_forward, size: 16),
               label: Text(isLast ? 'Submit' : 'Next'),
             ),
@@ -914,16 +1052,15 @@ class _SectionHeader extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.only(left: 10),
       decoration: const BoxDecoration(
-        border: Border(
-          left: BorderSide(color: AppColors.primary500, width: 3),
-        ),
+        border: Border(left: BorderSide(color: AppColors.primary500, width: 3)),
       ),
       child: Text(
         title,
         style: const TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-            color: Colors.black87),
+          fontSize: 14,
+          fontWeight: FontWeight.w600,
+          color: Colors.black87,
+        ),
       ),
     );
   }
