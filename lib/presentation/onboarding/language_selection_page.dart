@@ -31,11 +31,14 @@ class LanguageSelectionPage extends StatelessWidget {
               ),
             ),
           ),
-          
+
           // Content section
           Expanded(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 10),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 24.0,
+                vertical: 10,
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -50,35 +53,34 @@ class LanguageSelectionPage extends StatelessWidget {
                   const SizedBox(height: 12),
                   Text(
                     'language_subtitle_desc'.tr,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      color: Colors.grey,
-                    ),
+                    style: const TextStyle(fontSize: 16, color: Colors.grey),
                   ),
                   const SizedBox(height: 30),
-                  
+
                   // English Option
-                  Obx(() => _LanguageOption(
-                        title: 'English',
-                        subtitle: 'United States',
-                        flagCode: 'US',
-                        isSelected: langCtrl.selectedLang.value == 'en',
-                        onTap: () => langCtrl.changeLanguage('en'),
-                      )),
-                  
+                  Obx(
+                    () => _LanguageOption(
+                      title: 'English',
+                      flagCode: 'US',
+                      isSelected: langCtrl.selectedLang.value == 'en',
+                      onTap: () => langCtrl.changeLanguage('en'),
+                    ),
+                  ),
+
                   const SizedBox(height: 16),
-                  
+
                   // Indonesia Option
-                  Obx(() => _LanguageOption(
-                        title: 'Indonesia',
-                        subtitle: 'Indonesian',
-                        flagCode: 'ID',
-                        isSelected: langCtrl.selectedLang.value == 'id',
-                        onTap: () => langCtrl.changeLanguage('id'),
-                      )),
-                  
+                  Obx(
+                    () => _LanguageOption(
+                      title: 'Indonesia',
+                      flagCode: 'ID',
+                      isSelected: langCtrl.selectedLang.value == 'id',
+                      onTap: () => langCtrl.changeLanguage('id'),
+                    ),
+                  ),
+
                   const Spacer(),
-                  
+
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
@@ -115,14 +117,12 @@ class LanguageSelectionPage extends StatelessWidget {
 
 class _LanguageOption extends StatelessWidget {
   final String title;
-  final String subtitle;
   final String flagCode;
   final bool isSelected;
   final VoidCallback onTap;
 
   const _LanguageOption({
     required this.title,
-    required this.subtitle,
     required this.flagCode,
     required this.isSelected,
     required this.onTap,
@@ -161,31 +161,16 @@ class _LanguageOption extends StatelessWidget {
             ),
             const SizedBox(width: 16),
             Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  Text(
-                    subtitle,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey,
-                    ),
-                  ),
-                ],
+              child: Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
             if (isSelected)
-              const Icon(
-                Icons.check_circle,
-                color: AppColors.primary500,
-              ),
+              const Icon(Icons.check_circle, color: AppColors.primary500),
           ],
         ),
       ),

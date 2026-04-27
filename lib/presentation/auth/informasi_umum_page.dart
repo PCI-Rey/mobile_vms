@@ -2,7 +2,9 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:dropdown_button2/dropdown_button2.dart';
 import 'controller/informasi_umum_controller.dart';
+import 'controller/language_controller.dart';
 import '../../data/models/user_model.dart';
 import '../../../core/core.dart';
 
@@ -50,8 +52,45 @@ class _InformasiUmumPageState extends State<InformasiUmumPage> {
       appBar: AppBar(
         backgroundColor: Colors.white,
         title: Text('informasi_umum'.tr),
+        centerTitle: true,
         elevation: 0,
         leading: const BackButton(),
+        actions: [
+          Obx(() {
+            final langCtrl = LanguageController.to;
+            final isId = langCtrl.selectedLang.value == 'id';
+            return Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10),
+                decoration: BoxDecoration(
+                  border: Border.all(color: AppColors.primary500, width: 1.5),
+                  borderRadius: BorderRadius.circular(8),
+                  color: AppColors.primary50,
+                ),
+                child: DropdownButton<String>(
+                  value: isId ? 'id' : 'en',
+                  underline: const SizedBox.shrink(),
+                  icon: const Icon(Icons.arrow_drop_down, size: 18, color: AppColors.primary500),
+                  isDense: true,
+                  items: const [
+                    DropdownMenuItem(
+                      value: 'en',
+                      child: Text('🇬🇧 ENG', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+                    ),
+                    DropdownMenuItem(
+                      value: 'id',
+                      child: Text('🇮🇩 ID', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+                    ),
+                  ],
+                  onChanged: (v) {
+                    if (v != null) langCtrl.changeLanguage(v);
+                  },
+                ),
+              ),
+            );
+          }),
+        ],
       ),
       body: SafeArea(
         child: Column(
@@ -66,7 +105,7 @@ class _InformasiUmumPageState extends State<InformasiUmumPage> {
                   Assets.images.iconApp.image(height: 64),
                   const SizedBox(height: 6),
                   Text(
-                    'Invitation Code: ${widget.invitationCode ?? "-"}',
+                    '${'invitation_code'.tr}: ${widget.invitationCode ?? "-"}',
                     style: const TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.bold,
@@ -151,7 +190,7 @@ class _InformasiUmumPageState extends State<InformasiUmumPage> {
 
                   // Next / Submit button (fixed width)
                   SizedBox(
-                    width: 80,
+                    width: 110,
                     child: Obx(() {
                       if (_ctrl.isLoading.value) {
                         return const Center(
@@ -414,46 +453,79 @@ class _Step3 extends StatelessWidget {
             ),
             // Conditionally show vehicle fields only if driving
             if (ctrl.isDriving.value) ...[
-              _requiredLabel('Jenis Kendaraan'),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                decoration: BoxDecoration(
-                  color: AppColors.primary50,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: AppColors.grey300, width: 1.5),
-                ),
-                child: DropdownButtonHideUnderline(
-                  child: DropdownButton<String>(
-                    value: ctrl.vehicleType.value,
-                    isExpanded: true,
-                    items:
-                        [
-                              'Car',
-                              'Bus',
-                              'Motor',
-                              'Bicycle',
-                              'Truck',
-                              'Private Car',
-                              'Other',
-                            ]
-                            .map(
-                              (e) => DropdownMenuItem(value: e, child: Text(e)),
-                            )
-                            .toList(),
-                    onChanged: (v) {
-                      if (v != null) ctrl.vehicleType.value = v;
-                    },
+              _requiredLabel('vehicle_type'.tr),
+              () {
+                const labelMap = {
+                  'vehicle_car': 'vehicle_car',
+                  'vehicle_bus': 'vehicle_bus',
+                  'vehicle_motor': 'vehicle_motor',
+                  'vehicle_bicycle': 'vehicle_bicycle',
+                  'vehicle_truck': 'vehicle_truck',
+                  'vehicle_private_car': 'vehicle_private_car',
+                  'vehicle_other': 'vehicle_other',
+                  // Legacy English keys from old API format
+                  'Car': 'vehicle_car',
+                  'Bus': 'vehicle_bus',
+                  'Motor': 'vehicle_motor',
+                  'Bicycle': 'vehicle_bicycle',
+                  'Truck': 'vehicle_truck',
+                  'Private Car': 'vehicle_private_car',
+                  'Other': 'vehicle_other',
+                };
+                const apiKeys = [
+                  'vehicle_car',
+                  'vehicle_bus',
+                  'vehicle_motor',
+                  'vehicle_bicycle',
+                  'vehicle_truck',
+                  'vehicle_private_car',
+                  'vehicle_other',
+                ];
+                final normalizedValue = labelMap.containsKey(ctrl.vehicleType.value)
+                    ? (apiKeys.contains(ctrl.vehicleType.value)
+                        ? ctrl.vehicleType.value
+                        : labelMap[ctrl.vehicleType.value]!)
+                    : 'vehicle_car';
+
+                return DropdownButton2<String>(
+                  isExpanded: true,
+                  value: normalizedValue,
+                  items: apiKeys
+                      .map((key) => DropdownMenuItem<String>(
+                            value: key,
+                            child: Text(key.tr),
+                          ))
+                      .toList(),
+                  onChanged: (v) {
+                    if (v != null) ctrl.vehicleType.value = v;
+                  },
+                  buttonStyleData: ButtonStyleData(
+                    height: 50,
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary50,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: AppColors.grey300, width: 1.5),
+                    ),
                   ),
-                ),
-              ),
-              _requiredLabel('Plat Nomor Kendaraan'),
+                  dropdownStyleData: DropdownStyleData(
+                    maxHeight: 250,
+                    offset: const Offset(0, -10),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  underline: const SizedBox.shrink(),
+                );
+              }(),
+              _requiredLabel('vehicle_plate'.tr),
               CustomTextField(
                 controller: ctrl.vehiclePlateController,
                 label: '',
                 showLabel: false,
                 hintText: 'B 1234 XX',
                 errorText: ctrl.fieldErrors['vehiclePlate'],
-                onChanged: (v) => ctrl.validateField('vehiclePlate', v, 'Plat Nomor Kendaraan'),
+                onChanged: (v) => ctrl.validateField('vehiclePlate', v, 'vehicle_plate'.tr),
               ),
             ],
             const SizedBox(height: 20),
@@ -477,13 +549,39 @@ class _Step4 extends StatelessWidget {
         children: [
           Center(
             child: Text(
-              'selfie_image'.tr,
+              'face_photo_title'.tr,
               style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
           ),
           const SizedBox(height: 16),
           GestureDetector(
-            onTap: () => ctrl.pickSelfie(ImageSource.camera),
+            onTap: () {
+              Get.bottomSheet(
+                Container(
+                  color: Colors.white,
+                  child: Wrap(
+                    children: [
+                      ListTile(
+                        leading: const Icon(Icons.camera_alt),
+                        title: Text('source_camera'.tr),
+                        onTap: () {
+                          Get.back();
+                          ctrl.pickSelfie(ImageSource.camera);
+                        },
+                      ),
+                      ListTile(
+                        leading: const Icon(Icons.photo),
+                        title: Text('source_gallery'.tr),
+                        onTap: () {
+                          Get.back();
+                          ctrl.pickSelfie(ImageSource.gallery);
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
             child: Container(
               height: 220,
               width: double.infinity,
@@ -519,11 +617,17 @@ class _Step4 extends StatelessWidget {
                     ),
                     const SizedBox(height: 10),
                     Text(
-                      'use_camera'.tr,
+                      'upload_file'.tr,
                       style: TextStyle(
                         color: AppColors.primary500,
                         fontWeight: FontWeight.bold,
                       ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'upload_file_support'.tr,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(fontSize: 12, color: Colors.grey),
                     ),
                   ],
                 );
@@ -564,7 +668,7 @@ class _Step5 extends StatelessWidget {
                     children: [
                       ListTile(
                         leading: const Icon(Icons.camera_alt),
-                        title: const Text('Camera'),
+                        title: Text('source_camera'.tr),
                         onTap: () {
                           Get.back();
                           ctrl.pickIdentity(ImageSource.camera);
@@ -572,7 +676,7 @@ class _Step5 extends StatelessWidget {
                       ),
                       ListTile(
                         leading: const Icon(Icons.photo),
-                        title: const Text('Gallery'),
+                        title: Text('source_gallery'.tr),
                         onTap: () {
                           Get.back();
                           ctrl.pickIdentity(ImageSource.gallery);
@@ -618,17 +722,17 @@ class _Step5 extends StatelessWidget {
                     ),
                     const SizedBox(height: 10),
                     Text(
-                      'Upload File',
+                      'upload_file'.tr,
                       style: TextStyle(
                         color: AppColors.primary500,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
                     const SizedBox(height: 4),
-                    const Text(
-                      'Supports: JPG, PNG, JPEG. Up to 100KB\nUse Camera',
+                    Text(
+                      'upload_file_support'.tr,
                       textAlign: TextAlign.center,
-                      style: TextStyle(fontSize: 12, color: Colors.grey),
+                      style: const TextStyle(fontSize: 12, color: Colors.grey),
                     ),
                   ],
                 );

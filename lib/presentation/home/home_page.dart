@@ -1,4 +1,4 @@
-import 'package:country_flags/country_flags.dart';
+
 import 'package:date_picker_timeline/date_picker_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -57,68 +57,6 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    final List<Map<String, dynamic>> menuItems = [
-      {
-        'icon': Assets.icons.id.image(height: 32),
-        'menuName': 'access_pass'.tr,
-        'onTap': () {
-          showAccessPassDialog(
-            context: context,
-            name: UserController.to.fullName,
-            date: 'Mon, 19 Jul 2025',
-            time: '10:00 - 13:00',
-            invitationCode: '729038',
-            cardNumber: '6789209930',
-            vehiclePlateNo: 'B1245K',
-            parkingSlot: 'Slot A1',
-            buildingName: 'Gedung HQ',
-            visitorId: '7E20A56D62B',
-            profileImagePath: 'assets/images/ava_person1.png', // optional
-            isTracked: true,
-            isLowBattery: true,
-          );
-        },
-      },
-      {
-        'icon': Assets.icons.invitation.image(height: 32),
-        'menuName': 'invitation'.tr,
-        'onTap': () => context.push(SendInvitationPage()),
-      },
-      {
-        'icon': Assets.icons.approved.image(height: 32),
-        'menuName': 'approval'.tr,
-        'onTap': () => debugPrint('Delivery clicked'),
-      },
-      {
-        'icon': Assets.icons.healthCheck.image(height: 32),
-        'menuName': 'report'.tr,
-        'onTap': () => context.push(VisitorReportPage()),
-      },
-      {
-        'icon': Assets.icons.parkingLot.image(height: 32),
-        'menuName': 'parking'.tr,
-        'onTap': () => context.push(
-          UserController.to.user.value?.roleAccess == 'guest'
-              ? GuestParkingPage()
-              : ParkingPage(),
-        ),
-      },
-      {
-        'icon': Assets.icons.location.image(height: 32),
-        'menuName': 'visitor'.tr,
-        'onTap': () => context.push(VisitorPage()),
-      },
-      {
-        'icon': Assets.icons.alarm.image(height: 32),
-        'menuName': 'alarm'.tr,
-        'onTap': () => context.push(AlarmListPage()),
-      },
-      {
-        'icon': Assets.icons.evacuate.image(height: 32),
-        'menuName': 'evacuate'.tr,
-        'onTap': () => context.push(EvacuatePage()),
-      },
-    ];
     return Scaffold(
       body: Stack(
         children: [
@@ -171,55 +109,73 @@ class _HomePageState extends State<HomePage> {
                         children: [
                           Container(
                             decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(30),
+                              border: Border.all(color: Colors.white, width: 1.5),
+                              borderRadius: BorderRadius.circular(8),
+                              color: Colors.white.withValues(alpha: 0.15),
                             ),
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 4,
-                            ),
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
                             child: Obx(
                               () => DropdownButtonHideUnderline(
                                 child: DropdownButton<String>(
-                                  value: langCtrl.selectedLang.value == 'id' ? 'id' : 'us',
+                                  value: langCtrl.selectedLang.value == 'id' ? 'id' : 'en',
                                   icon: const Icon(
-                                    Icons.keyboard_arrow_down,
+                                    Icons.arrow_drop_down,
                                     size: 18,
-                                    color: Colors.black,
+                                    color: Colors.white,
                                   ),
                                   dropdownColor: Colors.white,
-                                  borderRadius: BorderRadius.circular(12),
-                                  style: const TextStyle(color: Colors.black),
+                                  borderRadius: BorderRadius.circular(8),
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                  ),
                                   isDense: true,
-
-                                  selectedItemBuilder: (BuildContext context) {
-                                    return ['us', 'id'].map<Widget>((
-                                      String value,
-                                    ) {
-                                      return CountryFlag.fromCountryCode(
-                                        value.toUpperCase(),
-                                        height: 20,
-                                        width: 28,
-                                        shape: RoundedRectangle(10),
-                                      );
-                                    }).toList();
-                                  },
-
-                                  items: ['us', 'id'].map((code) {
-                                    return DropdownMenuItem<String>(
-                                      value: code,
-                                      child: CountryFlag.fromCountryCode(
-                                        code.toUpperCase(),
-                                        height: 20,
-                                        width: 28,
-                                        shape: RoundedRectangle(10),
+                                  items: const [
+                                    DropdownMenuItem(
+                                      value: 'en',
+                                      child: Text(
+                                        '🇬🇧 ENG',
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w600,
+                                          color: Colors.black87,
+                                        ),
                                       ),
-                                    );
-                                  }).toList(),
-
+                                    ),
+                                    DropdownMenuItem(
+                                      value: 'id',
+                                      child: Text(
+                                        '🇮🇩 ID',
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w600,
+                                          color: Colors.black87,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                  selectedItemBuilder: (context) => [
+                                    const Text(
+                                      '🇬🇧 ENG',
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w600,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                    const Text(
+                                      '🇮🇩 ID',
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w600,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                  ],
                                   onChanged: (value) {
                                     if (value != null) {
-                                      langCtrl.changeLanguage(value == 'us' ? 'en' : 'id');
+                                      langCtrl.changeLanguage(value);
                                     }
                                   },
                                 ),
@@ -259,67 +215,133 @@ class _HomePageState extends State<HomePage> {
                   ),
 
                   // Menu Grid
-                  Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 20),
-                    padding: const EdgeInsets.symmetric(
-                      vertical: 20,
-                      horizontal: 10,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(20),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.05),
-                          blurRadius: 10,
-                          offset: const Offset(0, 5),
+                  Obx(() {
+                    // Access langCtrl.selectedLang.value inside Obx to make grid reactive
+                    langCtrl.selectedLang.value;
+                    final List<Map<String, dynamic>> reactiveMenuItems = [
+                      {
+                        'icon': Assets.icons.id.image(height: 32),
+                        'menuName': 'access_pass'.tr,
+                        'onTap': () {
+                          showAccessPassDialog(
+                            context: context,
+                            name: UserController.to.fullName,
+                            date: 'Mon, 19 Jul 2025',
+                            time: '10:00 - 13:00',
+                            invitationCode: '729038',
+                            cardNumber: '6789209930',
+                            vehiclePlateNo: 'B1245K',
+                            parkingSlot: 'Slot A1',
+                            buildingName: 'Gedung HQ',
+                            visitorId: '7E20A56D62B',
+                            profileImagePath: 'assets/images/ava_person1.png',
+                            isTracked: true,
+                            isLowBattery: true,
+                          );
+                        },
+                      },
+                      {
+                        'icon': Assets.icons.invitation.image(height: 32),
+                        'menuName': 'invitation'.tr,
+                        'onTap': () => context.push(SendInvitationPage()),
+                      },
+                      {
+                        'icon': Assets.icons.approved.image(height: 32),
+                        'menuName': 'approval'.tr,
+                        'onTap': () => debugPrint('Delivery clicked'),
+                      },
+                      {
+                        'icon': Assets.icons.healthCheck.image(height: 32),
+                        'menuName': 'report'.tr,
+                        'onTap': () => context.push(VisitorReportPage()),
+                      },
+                      {
+                        'icon': Assets.icons.parkingLot.image(height: 32),
+                        'menuName': 'parking'.tr,
+                        'onTap': () => context.push(
+                          UserController.to.user.value?.roleAccess == 'guest'
+                              ? GuestParkingPage()
+                              : ParkingPage(),
                         ),
-                      ],
-                    ),
-                    child: GridView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      gridDelegate:
-                          const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 4,
-                        mainAxisSpacing: 20,
-                        crossAxisSpacing: 10,
-                        childAspectRatio: 0.72,
+                      },
+                      {
+                        'icon': Assets.icons.location.image(height: 32),
+                        'menuName': 'visitor'.tr,
+                        'onTap': () => context.push(VisitorPage()),
+                      },
+                      {
+                        'icon': Assets.icons.alarm.image(height: 32),
+                        'menuName': 'alarm'.tr,
+                        'onTap': () => context.push(AlarmListPage()),
+                      },
+                      {
+                        'icon': Assets.icons.evacuate.image(height: 32),
+                        'menuName': 'evacuate'.tr,
+                        'onTap': () => context.push(EvacuatePage()),
+                      },
+                    ];
+                    return Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 20),
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 20,
+                        horizontal: 10,
                       ),
-                      itemCount: menuItems.length,
-                      itemBuilder: (context, index) {
-                        return GestureDetector(
-                          onTap: menuItems[index]['onTap'],
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.all(8),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFE3F2FD),
-                                  borderRadius: BorderRadius.circular(15),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.05),
+                            blurRadius: 10,
+                            offset: const Offset(0, 5),
+                          ),
+                        ],
+                      ),
+                      child: GridView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        gridDelegate:
+                            const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 4,
+                          mainAxisSpacing: 20,
+                          crossAxisSpacing: 10,
+                          childAspectRatio: 0.72,
+                        ),
+                        itemCount: reactiveMenuItems.length,
+                        itemBuilder: (context, index) {
+                          return GestureDetector(
+                            onTap: reactiveMenuItems[index]['onTap'],
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFE3F2FD),
+                                    borderRadius: BorderRadius.circular(15),
+                                  ),
+                                  child: reactiveMenuItems[index]['icon'],
                                 ),
-                                child: menuItems[index]['icon'],
-                              ),
-                              const SizedBox(height: 6),
-                              Flexible(
-                                child: Text(
-                                  menuItems[index]['menuName'],
-                                  textAlign: TextAlign.center,
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w500,
+                                const SizedBox(height: 6),
+                                Flexible(
+                                  child: Text(
+                                    reactiveMenuItems[index]['menuName'],
+                                    textAlign: TextAlign.center,
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w500,
+                                    ),
                                   ),
                                 ),
-                              ),
-                            ],
-                          ),
-                        );
-                      },
-                    ),
-                  ),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+                    );
+                  }),
 
                   const SizedBox(height: 25),
 

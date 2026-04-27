@@ -9,6 +9,7 @@ import '../core/core.dart';
 // import 'widgets/is_block_page.dart';
 import '../data/datasources/auth_datasource.dart';
 import '../presentation/auth/login_page.dart';
+import '../presentation/auth/controller/language_controller.dart';
 import 'package:get/get.dart';
 
 class Dashboard extends StatefulWidget {

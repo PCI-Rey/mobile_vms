@@ -74,6 +74,30 @@ class ApiService {
     }
   }
 
+  /// GET /api/invitation-site/public
+  /// Public endpoint — no Bearer token required.
+  /// Uses invitation code as query param for visitor context.
+  Future<Response> getSites(String invitationCode) async {
+    try {
+      final response = await _dio.get(
+        '/$pathApi/invitation-site/public',
+        queryParameters: {
+          'token': invitationCode,
+          'data-type': 'InvitationLink',
+        },
+      );
+      return response;
+    } on DioException catch (e) {
+      debugPrint('Dio Error getSites: ${e.message}');
+      debugPrint('Response status: ${e.response?.statusCode}');
+      debugPrint('Response data: ${e.response?.data}');
+      if (e.response != null) {
+        return e.response!;
+      }
+      rethrow;
+    }
+  }
+
   Future<Response> logoutResponse(String token) async {
     try {
       final response = await _dio.get(

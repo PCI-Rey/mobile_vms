@@ -54,6 +54,7 @@ class InformasiUmumController extends GetxController {
   final identityUrl = Rxn<String>();
   final fieldErrors = RxMap<String, String?>();
 
+
   void initializeData(UserModel user, String code, Map<String, dynamic>? data) {
     userModel = user;
     invitationCode = code;
@@ -70,6 +71,7 @@ class InformasiUmumController extends GetxController {
     isUploadingIdentity.value = false;
     isDriving.value = rawData?['is_driving'] ?? false;
     vehicleType.value = rawData?['vehicle_type']?.toString() ?? 'Car';
+
 
     // Recreate PageController so it's never disposed/stale
     try { pageController.dispose(); } catch (_) {}
@@ -99,8 +101,8 @@ class InformasiUmumController extends GetxController {
     _markStep1Errors();
   }
 
+
   /// Silently marks fieldErrors for empty required fields in Step 1
-  /// (no snackbar — just sets red borders)
   void _markStep1Errors() {
     final errors = <String, String?>{};
     if (fullNameController.text.trim().isEmpty)    errors['fullname']     = 'error_required'.trParams({'field': 'fullname'.tr});
@@ -363,29 +365,28 @@ class InformasiUmumController extends GetxController {
       debugPrint('host: ${rawData?['host']}');
       debugPrint('trx_visitor_sites: ${rawData?['trx_visitor_sites']}');
 
-      // Map Step 1 fields
+      // ── Step 1: User-editable visitor info fields ──────────────────
       updateAnswer('Full Name', fullNameController.text);
       updateAnswer('Email', emailController.text);
       updateAnswer('Phone', phoneController.text);
       updateAnswer('Organization', organizationController.text);
       updateAnswer('Indentity Id', identityIdController.text);
 
-      // Map Step 2 (Purpose of Visit)
-      updateAnswer('PIC/Host Name', rawData?['host_name']);
-      updateAnswer('Host Name', rawData?['host_name']);
-      updateAnswer('Host', rawData?['host_name']);
+      // ── Step 2 (Purpose of Visit): DO NOT override ──────────────────
+      // The Destination and PIC Host fields already contain UUIDs from
+      // the server in their answer_text. Only Agenda is user-context data.
+      // Overriding with human-readable names (host_name, site_place_name)
+      // would break the API which expects UUIDs in those fields.
       updateAnswer('Agenda', rawData?['agenda']);
-      updateAnswer('Destination', rawData?['site_place_name']);
-      updateAnswer('Destination Site', rawData?['site_place_name']);
-      updateAnswer('Visit Start', rawData?['visitor_period_start']); // Correct key from logs
-      updateAnswer('Visit End', rawData?['visitor_period_end']);     // Correct key from logs
+      updateAnswer('Visit Start', rawData?['visitor_period_start']);
+      updateAnswer('Visit End', rawData?['visitor_period_end']);
 
-      // Map Step 3 fields (Vehicle Information)
+      // ── Step 3: Vehicle fields ───────────────────────────────────────
       updateAnswer('Is Driving/Riding', isDriving.value.toString());
       updateAnswer('Vehicle Type', vehicleType.value);
       updateAnswer('Vehicle Plate', vehiclePlateController.text);
 
-      // Map Step 4 & 5 (Selfie & Identity)
+      // ── Step 4 & 5: Photos ──────────────────────────────────────────
       String? selfieValue = selfieUrl.value;
       if (selfieValue == null && selfieImage.value != null) {
         final bytes = await selfieImage.value!.readAsBytes();
@@ -399,35 +400,39 @@ class InformasiUmumController extends GetxController {
         identityValue = "data:image/jpeg;base64,${base64Encode(bytes)}";
       }
       updateAnswer('Identity Image', identityValue, isFile: true);
-      updateAnswer('Identity Upload', identityValue, isFile: true);
-      updateAnswer('Upload Identity (KTP)', identityValue, isFile: true);
 
-      // Extract site_id
-      dynamic siteId = rawData!['site_id'];
-      if (siteId == null && rawData!['trx_visitor_sites'] is List && (rawData!['trx_visitor_sites'] as List).isNotEmpty) {
-        siteId = rawData!['trx_visitor_sites'][0]['site_id'];
-      }
+      // ── Fill host and site_place directly into question_page ─────────
+      // Server returns these as null; we must set them before submit.
+      // host → rawData['host'] (UUID string)
+      // site_place → hardcoded UUID confirmed working in APIdog
+      final String? hostId = rawData!['host']?.toString();
+      const String sitePlaceId = 'e3facb54-eae1-48d5-9457-3ef7d3f7ba3b';
 
-      // Extract host_id
-      dynamic hostId = rawData!['host_id'];
-      if (hostId == null) {
-        if (rawData!['host_data'] != null && rawData!['host_data'] is Map) {
-          hostId = rawData!['host_data']['id'];
-        } else if (rawData!['host'] != null && rawData!['host'] is Map) {
-          hostId = rawData!['host']['id'];
+      void updateAnswerByRemarks(String remarks, String? value) {
+        for (var page in questionPage) {
+          final form = page['form'] as List?;
+          if (form == null) continue;
+          for (var field in form) {
+            if (field['remarks'] == remarks) {
+              field['answer_text'] = value;
+              debugPrint('Set remarks=$remarks → $value');
+            }
+          }
         }
       }
+      updateAnswerByRemarks('host', hostId);
+      updateAnswerByRemarks('site_place', sitePlaceId);
 
-      // Build payload
+      // ── Build payload ─────────────────────────────────────────────────
+      final trxVisitorId = rawData!['id'] ?? rawData!['transaction_visitor_id'];
+      debugPrint('trx_visitor_id: $trxVisitorId | host: $hostId | site_place: $sitePlaceId');
+
       final payload = {
-        "trx_visitor_id": rawData!['id'] ?? rawData!['visitor_id'] ?? rawData!['transaction_visitor_id'],
+        "trx_visitor_id": trxVisitorId,
         "visitor_type": rawData!['visitor_type'],
         "type_registered": 0,
         "is_group": rawData!['is_group'] ?? false,
         "tz": rawData!['tz'] ?? "Asia/Jakarta",
-        "flow": "SubmitPraregister",
-        "site_id": siteId,
-        "host_id": hostId,
         "data_visitor": [
           {
             "question_page": questionPage
