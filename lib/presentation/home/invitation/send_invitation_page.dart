@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../../presentation/home/invitation/add_invitation_page.dart';
+import '../../../../presentation/home/visitor_request/add_pra_registration_dialog.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
 import '../../../core/components/custom_card.dart';
@@ -32,7 +32,7 @@ class _SendInvitationPageState extends State<SendInvitationPage> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          context.push(AddInvitationPage());
+          showAddPraRegistrationDialog(context);
         },
         backgroundColor: AppColors.primary500,
         child: const Icon(Icons.add, color: Colors.white),

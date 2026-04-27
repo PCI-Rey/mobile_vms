@@ -200,4 +200,54 @@ class ApiService {
       rethrow;
     }
   }
+
+  // ─── Pra Registration ────────────────────────────────────────────────────
+
+  Future<Response> getVisitorTypes(String token) async {
+    try {
+      final response = await _dio.get(
+        '/$pathApi/invitation-visitor-type',
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+      return response;
+    } on DioException catch (e) {
+      debugPrint('Dio Error getVisitorTypes: ${e.message}');
+      if (e.response != null) return e.response!;
+      rethrow;
+    }
+  }
+
+  Future<Response> getVisitorTypeById(String token, String id) async {
+    try {
+      final response = await _dio.get(
+        '/$pathApi/visitor-type/$id',
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+      return response;
+    } on DioException catch (e) {
+      debugPrint('Dio Error getVisitorTypeById: ${e.message}');
+      if (e.response != null) return e.response!;
+      rethrow;
+    }
+  }
+
+  Future<Response> submitPraFormOperator(
+    String token,
+    String visitorTypeId,
+    Map<String, dynamic> body,
+  ) async {
+    try {
+      final response = await _dio.post(
+        '/$pathApi/_Auth/submit/pra-form',
+        queryParameters: {'id': visitorTypeId},
+        data: body,
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+      return response;
+    } on DioException catch (e) {
+      debugPrint('Dio Error submitPraFormOperator: ${e.message}');
+      if (e.response != null) return e.response!;
+      rethrow;
+    }
+  }
 }
