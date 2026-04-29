@@ -1,11 +1,12 @@
 import 'dart:developer';
-import 'package:dio/dio.dart';
+import 'package:dio/dio.dart' as dio;
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'dart:io';
 import 'package:image_picker/image_picker.dart';
 import 'dart:convert';
+import 'package:intl/intl.dart';
 import '../../../data/datasources/auth_datasource.dart';
 import '../../../data/datasources/api_service.dart';
 import '../../../data/models/user_model.dart';
@@ -100,10 +101,12 @@ class InformasiUmumController extends GetxController {
       agendaController.text = collection['agenda']?.toString() ?? '';
       destinationController.text =
           collection['site_place_name']?.toString() ?? '';
-      visitStartController.text =
-          collection['visitor_period_start']?.toString() ?? '';
-      visitEndController.text =
-          collection['visitor_period_end']?.toString() ?? '';
+      visitStartController.text = _formatUtcToLocal(
+        collection['visitor_period_start']?.toString(),
+      );
+      visitEndController.text = _formatUtcToLocal(
+        collection['visitor_period_end']?.toString(),
+      );
 
       // Step 3 (isDriving and vehicleType already set above)
       vehiclePlateController.text =
@@ -112,6 +115,23 @@ class InformasiUmumController extends GetxController {
 
     // Eagerly mark empty required fields so red borders show on page open
     _markStep1Errors();
+  }
+
+  /// Konversi UTC datetime string ke local time dan format seperti web:
+  /// "Rabu, 29 April 2026, 10:49"
+  String _formatUtcToLocal(String? utcString) {
+    if (utcString == null || utcString.isEmpty) return '';
+    try {
+      // Pastikan string diparse sebagai UTC
+      String normalized = utcString;
+      if (!normalized.endsWith('Z') && !normalized.contains('+')) {
+        normalized = '${normalized}Z';
+      }
+      final utcDt = DateTime.parse(normalized).toLocal();
+      return DateFormat('EEEE, dd MMMM yyyy, HH:mm', 'id').format(utcDt);
+    } catch (_) {
+      return utcString; // fallback: tampilkan raw jika parse gagal
+    }
   }
 
   /// Silently marks fieldErrors for empty required fields in Step 1
@@ -359,7 +379,7 @@ class InformasiUmumController extends GetxController {
             responseMap['msg'] ?? responseMap['message'] ?? 'Gagal upload file';
         throw Exception(msg);
       }
-    } on DioException catch (e) {
+    } on dio.DioException catch (e) {
       if (e.response != null) {
         log('Error Response: ${e.response?.data}');
       }
@@ -428,6 +448,7 @@ class InformasiUmumController extends GetxController {
           final form = page['form'];
           if (form is! List) continue;
           for (var formField in form) {
+            if (formField is! Map) continue;
             if (formField['short_name'].toString().toLowerCase().trim() ==
                 fieldShortName.toLowerCase().trim()) {
               final fieldType = formField['field_type'];
@@ -439,7 +460,7 @@ class InformasiUmumController extends GetxController {
                 formField.remove('answer_datetime');
               } else if (fieldType == 9) {
                 if (value != null && value.toString().isNotEmpty) {
-                  // Ensure UTC 'Z' suffix so the backend can parse the datetime correctly
+                  // Nilai dari API sudah UTC, cukup pastikan ada suffix 'Z'
                   String dtVal = value.toString();
                   if (!dtVal.endsWith('Z') && !dtVal.contains('+')) {
                     dtVal = '${dtVal}Z';
@@ -517,6 +538,7 @@ class InformasiUmumController extends GetxController {
         final form = page['form'];
         if (form is! List) continue;
         for (var field in form) {
+          if (field is! Map) continue;
           if (field['remarks'] == 'site_place') {
             sitePlaceId = field['answer_text']?.toString();
             debugPrint('site_place from question_page: $sitePlaceId');
@@ -535,11 +557,12 @@ class InformasiUmumController extends GetxController {
           final form = page['form'];
           if (form is! List) continue;
           for (var field in form) {
+            if (field is! Map) continue;
             if (field['remarks'] == remarks) {
               final fieldType = field['field_type'];
               if (fieldType == 9) {
                 if (value != null && value.isNotEmpty) {
-                  // Ensure UTC 'Z' suffix
+                  // Nilai dari API sudah UTC, cukup pastikan ada suffix 'Z'
                   String dtVal = value;
                   if (!dtVal.endsWith('Z') && !dtVal.contains('+')) {
                     dtVal = '${dtVal}Z';
@@ -582,6 +605,7 @@ class InformasiUmumController extends GetxController {
         final form = page['form'];
         if (form is! List) continue;
         for (var field in form) {
+          if (field is! Map) continue;
           final fType = field['field_type'];
           if (fType == 9) {
             // Datetime: ensure answer_text is NOT present if we have datetime
@@ -625,12 +649,25 @@ class InformasiUmumController extends GetxController {
       debugPrint('=== SUBMIT PRA FORM ===');
       log(jsonEncode(payload));
 
-      // Submit form
-      final submitResponse = await apiService.submitPraForm(
-        payload,
-        visitorTypeId: visitorTypeId,
-      );
-      log('Submit Response: ${submitResponse.data}');
+      // Submit form — retry sampai 2x karena backend kadang butuh percobaan kedua
+      dio.Response? submitResponse;
+      for (int attempt = 1; attempt <= 3; attempt++) {
+        try {
+          submitResponse = await apiService.submitPraForm(payload);
+          if (submitResponse.statusCode == 200) break; // sukses, stop retry
+          debugPrint(
+            'Submit attempt $attempt: status ${submitResponse.statusCode}, retrying...',
+          );
+        } catch (e) {
+          debugPrint('Submit attempt $attempt failed: $e');
+          if (attempt == 3) rethrow; // gagal semua, lempar error
+        }
+        await Future.delayed(const Duration(milliseconds: 800));
+      }
+      log('Submit Response: ${submitResponse?.data}');
+
+      if (submitResponse == null)
+        throw Exception('Tidak ada response dari server');
 
       if (submitResponse.statusCode != 200 ||
           submitResponse.data['status'] == 'bad_request') {

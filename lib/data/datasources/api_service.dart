@@ -59,29 +59,27 @@ class ApiService {
       debugPrint(
         'submitPraForm payload trx_visitor_id: ${payload['trx_visitor_id']}',
       );
-      log('/$pathApi/_Auth/submit/pra-form');
+      log('/$pathApi/on-portal/submit/pra-form');
 
       final response = await _dio.post(
-        '/$pathApi/_Auth/submit/pra-form',
-        queryParameters: visitorTypeId != null ? {'id': visitorTypeId} : null,
+        '/$pathApi/on-portal/submit/pra-form',
+        // visitor_type sudah ada di dalam body payload, tidak perlu query param ?id=
         data: payload,
       );
+      debugPrint('response: $response');
       return response;
     } on DioException catch (e) {
+      // if (e.response != null) {
+      //   log('Error Response Data: ${e.response?.data}');
+      // }
+      // debugPrint('Dio Error submitPraForm: ${e.message}');
+      // debugPrint('Response status: ${e.response?.statusCode}');
+      // debugPrint('Response data: ${e.response?.data}');
+      // // Kembalikan response asli (termasuk 500) supaya retry loop di controller bisa handle
       if (e.response != null) {
-        log('Error Response Data: ${e.response?.data}');
+        return e.response!;
       }
-      debugPrint('Dio Error submitPraForm: ${e.message}');
-      debugPrint('Response status: ${e.response?.statusCode}');
-      debugPrint('Response data: ${e.response?.data}');
-      if (e.response != null) {
-        final msg =
-            e.response?.data?['msg']?.toString() ??
-            e.response?.data?['message']?.toString() ??
-            'Gagal submit form (${e.response?.statusCode})';
-        throw Exception(msg);
-      }
-      throw Exception('Terjadi kesalahan saat submit form');
+      rethrow;
     }
   }
 
@@ -249,7 +247,7 @@ class ApiService {
   ) async {
     try {
       final response = await _dio.post(
-        '/$pathApi/_Auth/submit/pra-form',
+        '/$pathApi/on-portal/submit/pra-form',
         queryParameters: {'id': visitorTypeId},
         data: body,
         options: Options(headers: {'Authorization': 'Bearer $token'}),
