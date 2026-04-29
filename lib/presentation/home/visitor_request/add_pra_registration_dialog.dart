@@ -688,6 +688,7 @@ class _FormFieldWidget extends StatelessWidget {
       ),
     );
     if (date == null) return;
+    if (!ctx.mounted) return;
 
     final time = await showTimePicker(
       context: ctx,

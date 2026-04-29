@@ -13,10 +13,16 @@ class ProfilePage extends StatelessWidget {
     return Scaffold(
       backgroundColor: const Color(0xffFAFCFF),
       appBar: AppBar(
-        backgroundColor: const Color(0xFFE3F3FB),
+        backgroundColor: Colors.white,
         elevation: 0,
-        automaticallyImplyLeading: false,
-        title: Text('profile'.tr, style: const TextStyle(color: Colors.black)),
+        iconTheme: const IconThemeData(color: Colors.black),
+        title: Text(
+          'profile'.tr,
+          style: const TextStyle(
+            color: Colors.black,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
       ),
       body: Obx(() {
         final user = UserController.to.user.value;
@@ -116,6 +122,16 @@ class ProfilePage extends StatelessWidget {
                       size: 25,
                     ),
                     label: 'Help Center'.tr,
+                    onTap: () {},
+                  ),
+                  const SizedBox(height: 12),
+                  TileMenu(
+                    icon: const Icon(
+                      Icons.qr_code_scanner,
+                      color: Colors.white,
+                      size: 25,
+                    ),
+                    label: 'Barcode'.tr,
                     onTap: () {},
                   ),
                 ],

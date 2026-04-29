@@ -17,6 +17,7 @@ void main() async {
   await Hive.initFlutter();
   // Open boxes
   await Hive.openBox('authBox');
+  await Hive.openBox('dashboardBox');
   await initializeDateFormatting('id_ID', null);
   
   // Inject Controllers

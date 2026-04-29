@@ -8,6 +8,7 @@ import '../../../data/datasources/api_service.dart';
 import '../../../data/models/user_model.dart';
 import '../../dashboard.dart';
 import 'user_controller.dart';
+import '../../home/controllers/guest_home_controller.dart';
 
 class InformasiUmumController extends GetxController {
   final AuthDatasource authDatasource = AuthDatasource();
@@ -474,6 +475,10 @@ class InformasiUmumController extends GetxController {
           colorText: Colors.white,
           duration: const Duration(seconds: 3),
         );
+        
+        // Ensure guest home data is fresh
+        Get.delete<GuestHomeController>(force: true);
+        
         Get.offAll(() => const Dashboard());
       } else {
         // Submit sukses tapi token belum tersedia

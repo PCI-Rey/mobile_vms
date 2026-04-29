@@ -1,8 +1,10 @@
 import 'package:hive_flutter/hive_flutter.dart';
 import '../models/user_model.dart';
+import '../models/access_pass_model.dart';
 
 class HiveService {
   static const String authBoxName = 'authBox';
+  static const String dashboardBoxName = 'dashboardBox';
 
   Future<void> saveUser(UserModel user) async {
     final box = Hive.box(authBoxName);
@@ -13,7 +15,7 @@ class HiveService {
   UserModel? getUser() {
     final box = Hive.box(authBoxName);
     final userJson = box.get('user');
-    
+
     // Deserialize JSON string back to object
     if (userJson != null && userJson is String) {
       try {
@@ -33,5 +35,36 @@ class HiveService {
   bool hasUser() {
     final box = Hive.box(authBoxName);
     return box.containsKey('user');
+  }
+
+  // --- Dashboard Persistence ---
+
+  Future<void> saveAccessPasses(List<AccessPassModel> passes) async {
+    final box = Hive.box(dashboardBoxName);
+    final List<String> passesJson = passes.map((e) => e.toRawJson()).toList();
+    await box.put('access_passes', passesJson);
+  }
+
+  List<AccessPassModel> getAccessPasses() {
+    final box = Hive.box(dashboardBoxName);
+    final List<dynamic>? passesJson = box.get('access_passes');
+
+    if (passesJson == null) return [];
+
+    return passesJson
+        .map((e) {
+          try {
+            return AccessPassModel.fromRawJson(e as String);
+          } catch (_) {
+            return null;
+          }
+        })
+        .whereType<AccessPassModel>()
+        .toList();
+  }
+
+  Future<void> clearDashboardData() async {
+    final box = Hive.box(dashboardBoxName);
+    await box.clear();
   }
 }

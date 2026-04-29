@@ -5,6 +5,7 @@ import '../controller/informasi_umum_controller.dart';
 import '../informasi_umum_page.dart';
 import '../../dashboard.dart';
 import 'user_controller.dart';
+import '../../home/controllers/guest_home_controller.dart';
 
 class VerificationCodeController extends GetxController {
   final AuthDatasource authDatasource = AuthDatasource();
@@ -50,6 +51,10 @@ class VerificationCodeController extends GetxController {
           snackPosition: SnackPosition.TOP,
           duration: const Duration(seconds: 3),
         );
+        
+        // Ensure guest home data is fresh
+        Get.delete<GuestHomeController>(force: true);
+        
         Get.offAll(() => const Dashboard());
       } else {
         // Always create a fresh controller (delete old one first if exists)

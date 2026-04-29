@@ -247,7 +247,9 @@ class _SearchableDropdownState extends State<SearchableDropdown> {
   void _removeOverlay() {
     _overlayEntry?.remove();
     _overlayEntry = null;
-    setState(() => isDropdownOpen = false);
+    if (mounted) {
+      setState(() => isDropdownOpen = false);
+    }
   }
 
   void _updateOverlay() {

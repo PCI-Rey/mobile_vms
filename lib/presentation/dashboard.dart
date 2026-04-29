@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
-import '../../presentation/home/guest_home_page.dart';
-import '../../presentation/parking/as_guest/guest_parking_page.dart';
-import '../presentation/history/history_page.dart';
-import '../presentation/home/home_page.dart';
+import 'home/guest_home_page.dart';
+import 'history/history_page.dart';
+import 'home/home_page.dart';
 import 'parking/as_operator/parking_page.dart';
-import '../presentation/profile/profile_page.dart';
+import 'profile/profile_page.dart';
 import '../core/core.dart';
 // import 'widgets/is_block_page.dart';
 import '../data/datasources/auth_datasource.dart';
@@ -41,7 +40,7 @@ class _DashboardState extends State<Dashboard> {
       return;
     }
 
-    final role = user.roleAccess ?? 'guest';
+    final role = (user.roleAccess ?? 'guest').toLowerCase();
     if (!mounted) return;
 
     setState(() {
@@ -59,18 +58,16 @@ class _DashboardState extends State<Dashboard> {
       const ProfilePage(),
     ];
 
-    if (role == 'guest') {
+    if (role == 'guest' || role == 'visitor') {
       widgets = [
-        GuestHomePage(),
-        GuestParkingPage(),
-        const HistoryPage(),
+        const GuestHomePage(),
         const ProfilePage(),
       ];
     } else if (role == 'operator') {
       widgets = [
         const HomePage(),
         ParkingPage(),
-        HistoryPage(),
+        const HistoryPage(),
         const ProfilePage(),
       ];
     }
@@ -82,7 +79,7 @@ class _DashboardState extends State<Dashboard> {
   }
 
   List<BottomNavigationBarItem> _getNavItems(String role) {
-    return [
+    final items = [
       BottomNavigationBarItem(
         icon: Assets.icons.home.image(height: 24, width: 24),
         activeIcon: Assets.icons.homeSelected.image(height: 24, width: 24),
@@ -104,6 +101,12 @@ class _DashboardState extends State<Dashboard> {
         label: 'profile'.tr,
       ),
     ];
+
+    if (role == 'guest' || role == 'visitor') {
+      return [items[0], items[3]];
+    }
+
+    return items;
   }
 
   @override
@@ -112,29 +115,42 @@ class _DashboardState extends State<Dashboard> {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
+    final bool isGuest = _role == 'guest' || _role == 'visitor';
+
     return Scaffold(
+      backgroundColor: isGuest ? const Color(0xFF1976D2) : Colors.white,
       body: IndexedStack(index: _selectedIndex, children: _widgets),
-      bottomNavigationBar: Container(
-        padding: const EdgeInsets.only(bottom: 10.0),
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(16.0)),
-        ),
-        child: Theme(
-          data: ThemeData(
-            splashColor: Colors.white,
-            highlightColor: Colors.white,
-          ),
-          child: BottomNavigationBar(
-            currentIndex: _selectedIndex,
-            onTap: (value) => setState(() => _selectedIndex = value),
-            type: BottomNavigationBarType.fixed,
-            backgroundColor: Colors.transparent,
-            elevation: 0,
-            items: _getNavItems(_role!),
-          ),
-        ),
-      ),
+      bottomNavigationBar: isGuest
+          ? null
+          : Container(
+              padding: const EdgeInsets.only(bottom: 10.0),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius:
+                    const BorderRadius.vertical(top: Radius.circular(20.0)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.05),
+                    blurRadius: 10,
+                    offset: const Offset(0, -5),
+                  ),
+                ],
+              ),
+              child: Theme(
+                data: ThemeData(
+                  splashColor: Colors.white,
+                  highlightColor: Colors.white,
+                ),
+                child: BottomNavigationBar(
+                  currentIndex: _selectedIndex,
+                  onTap: (value) => setState(() => _selectedIndex = value),
+                  type: BottomNavigationBarType.fixed,
+                  backgroundColor: Colors.transparent,
+                  elevation: 0,
+                  items: _getNavItems(_role!),
+                ),
+              ),
+            ),
     );
   }
 }

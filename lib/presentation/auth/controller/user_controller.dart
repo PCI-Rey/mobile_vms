@@ -5,6 +5,7 @@ import '../../../data/datasources/auth_datasource.dart';
 import 'login_controller.dart';
 import 'verification_code_controller.dart';
 import 'informasi_umum_controller.dart';
+import '../../home/controllers/guest_home_controller.dart';
 
 class UserController extends GetxController {
   static UserController get to => Get.find();
@@ -35,6 +36,10 @@ class UserController extends GetxController {
     Get.delete<LoginController>(force: true);
     Get.delete<VerificationCodeController>(force: true);
     Get.delete<InformasiUmumController>(force: true);
+    Get.delete<GuestHomeController>(force: true);
+
+    // Clear Hive dashboard data
+    await _authDatasource.clearDashboardData();
 
     // Show dynamic message from API response
     Get.snackbar(

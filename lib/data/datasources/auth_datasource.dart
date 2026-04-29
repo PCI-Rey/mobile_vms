@@ -214,4 +214,8 @@ class AuthDatasource {
       return (false, 'Error', 'Terjadi kesalahan koneksi');
     }
   }
+
+  Future<void> clearDashboardData() async {
+    await _hiveService.clearDashboardData();
+  }
 }

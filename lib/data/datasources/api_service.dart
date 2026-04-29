@@ -265,4 +265,18 @@ class ApiService {
       rethrow;
     }
   }
+
+  Future<Response> getAccessPass(String token) async {
+    try {
+      final response = await _dio.get(
+        '/$pathApi/dashboard/access-pass',
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+      return response;
+    } on DioException catch (e) {
+      debugPrint('Dio Error getAccessPass: ${e.message}');
+      if (e.response != null) return e.response!;
+      rethrow;
+    }
+  }
 }
