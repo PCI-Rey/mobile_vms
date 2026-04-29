@@ -233,7 +233,7 @@ class _SplashscreenState extends State<Splashscreen>
               right: 0,
               child: AnimatedBuilder(
                 animation: _opacityAnimation,
-                builder: (_, __) => Opacity(
+                builder: (_, _) => Opacity(
                   opacity: _opacityAnimation.value,
                   child: Text(
                     '© 2026 VMS. All rights reserved.',

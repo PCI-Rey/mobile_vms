@@ -25,6 +25,7 @@ class UserModel {
   final String? hostName;
   final String? sitePlaceName;
   final String? visitorStatus;
+  final String? faceUrl;
 
   /// Stores the complete raw API collection JSON string (for both Employee & Visitor)
   final String? extraData;
@@ -53,6 +54,7 @@ class UserModel {
     this.hostName,
     this.sitePlaceName,
     this.visitorStatus,
+    this.faceUrl,
     this.extraData,
   });
 
@@ -89,6 +91,7 @@ class UserModel {
       hostName: json['host_name']?.toString(),
       sitePlaceName: json['site_place_name']?.toString(),
       visitorStatus: json['visitor_status']?.toString(),
+      faceUrl: json['visitor_face']?.toString() ?? json['face_url']?.toString(),
       extraData: json['extra_data']?.toString(),
     );
   }
@@ -118,6 +121,7 @@ class UserModel {
       'host_name': hostName,
       'site_place_name': sitePlaceName,
       'visitor_status': visitorStatus,
+      'visitor_face': faceUrl,
       'extra_data': extraData,
     };
   }

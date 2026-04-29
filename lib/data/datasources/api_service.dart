@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'dart:io';
@@ -49,17 +51,26 @@ class ApiService {
     }
   }
 
-  Future<Response> submitPraForm(Map<String, dynamic> payload) async {
+  Future<Response> submitPraForm(
+    Map<String, dynamic> payload, {
+    String? visitorTypeId,
+  }) async {
     try {
       debugPrint(
         'submitPraForm payload trx_visitor_id: ${payload['trx_visitor_id']}',
       );
+      log('/$pathApi/_Auth/submit/pra-form');
+
       final response = await _dio.post(
         '/$pathApi/_Auth/submit/pra-form',
+        queryParameters: visitorTypeId != null ? {'id': visitorTypeId} : null,
         data: payload,
       );
       return response;
     } on DioException catch (e) {
+      if (e.response != null) {
+        log('Error Response Data: ${e.response?.data}');
+      }
       debugPrint('Dio Error submitPraForm: ${e.message}');
       debugPrint('Response status: ${e.response?.statusCode}');
       debugPrint('Response data: ${e.response?.data}');
@@ -251,7 +262,10 @@ class ApiService {
     }
   }
 
-  Future<Response> submitNewVisit(String token, Map<String, dynamic> body) async {
+  Future<Response> submitNewVisit(
+    String token,
+    Map<String, dynamic> body,
+  ) async {
     try {
       final response = await _dio.post(
         '/$pathApi/operator-invitation/new-visit',

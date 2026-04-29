@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../presentation/auth/forgot_password/input_email_page.dart';
 import '../../presentation/auth/verification_code_page.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'controller/login_controller.dart';
 import '../../core/core.dart';
+import '../../core/helper/responsive_helper.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -19,7 +19,6 @@ class _LoginPageState extends State<LoginPage> {
   @override
   void initState() {
     super.initState();
-    // Register controller once — safe even if already registered
     controller = Get.isRegistered<LoginController>()
         ? Get.find<LoginController>()
         : Get.put(LoginController());
@@ -27,139 +26,372 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
+    final sw = MediaQuery.of(context).size.width;
 
     return Scaffold(
       resizeToAvoidBottomInset: true,
-      backgroundColor: Colors.white,
+      backgroundColor: const Color(0xFF1976D2),
       body: LayoutBuilder(
         builder: (context, constraints) {
-          return SingleChildScrollView(
-            child: ConstrainedBox(
-              constraints: BoxConstraints(minHeight: constraints.maxHeight),
-              child: IntrinsicHeight(
+          final heroHeight = constraints.maxHeight * 0.40;
+
+          return Stack(
+            children: [
+              // 1. Blue Header Background (Gradient)
+              Container(
+                width: double.infinity,
+                height: constraints.maxHeight,
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [Color(0xFF1976D2), Color(0xFF0E5DB5)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                ),
+              ),
+
+              // 2. Decorative Circles (For depth)
+              Positioned(
+                top: -sw * 0.2,
+                right: -sw * 0.1,
+                child: Container(
+                  width: sw * 0.5,
+                  height: sw * 0.5,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.06),
+                    shape: BoxShape.circle,
+                  ),
+                ),
+              ),
+              Positioned(
+                bottom: constraints.maxHeight * 0.55,
+                left: -sw * 0.15,
+                child: Container(
+                  width: sw * 0.4,
+                  height: sw * 0.4,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.06),
+                    shape: BoxShape.circle,
+                  ),
+                ),
+              ),
+
+              // 3. Hero Content
+              Container(
+                width: double.infinity,
+                height: heroHeight,
+                padding: EdgeInsets.symmetric(horizontal: sw * 0.08),
                 child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    // Header section - fixed height
-                    ClipPath(
-                      clipper: BottomWaveClipper(),
-                      child: Container(
-                        width: double.infinity,
-                        height: MediaQuery.of(context).size.height * 0.35,
-                        color: AppColors.primary500,
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Assets.images.iconApp.image(height: 100),
-                            const SizedBox(height: 10),
-                          ],
-                        ),
+                    // Logo Circle
+                    Container(
+                      width: sw * 0.28,
+                      height: sw * 0.28,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.white,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.12),
+                            blurRadius: 20,
+                            offset: const Offset(0, 8),
+                          ),
+                          BoxShadow(
+                            color: Colors.white.withValues(alpha: 0.3),
+                            blurRadius: 30,
+                            spreadRadius: 4,
+                          ),
+                        ],
+                      ),
+                      padding: EdgeInsets.all(sw * 0.05),
+                      child: Image.asset(
+                        'assets/images/VMS.png',
+                        fit: BoxFit.contain,
                       ),
                     ),
-
-                    // Content section
-                    Expanded(
-                      child: Padding(
-                        padding: const EdgeInsets.all(20),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            // Title section
-                            Text(
-                              'welcome_back'.tr,
-                              style: TextStyles.headline4,
-                              textAlign: TextAlign.center,
-                            ),
-                            Text(
-                              'login_subtitle'.tr,
-                              textAlign: TextAlign.center,
-                            ),
-                            const SpaceHeight(20),
-
-                            // Form section
-                            Obx(
-                              () => CustomTextField(
-                                controller: controller.usernameController,
-                                label: 'username'.tr,
-                                isRequired: true,
-                                errorText: controller.usernameError.value,
-                              ),
-                            ),
-                            const SpaceHeight(10),
-                            Obx(
-                              () => CustomTextField(
-                                controller: controller.passwordController,
-                                label: 'password'.tr,
-                                isRequired: true,
-                                isObscure: controller.obscurePassword.value,
-                                suffixIconData: controller.obscurePassword.value
-                                    ? FontAwesomeIcons.eyeSlash
-                                    : FontAwesomeIcons.eye,
-                                onTapSuffixIcon: () {
-                                  controller.togglePasswordVisibility();
-                                },
-                                errorText: controller.passwordError.value,
-                              ),
-                            ),
-
-                            const SpaceHeight(15),
-
-                            GestureDetector(
-                              onTap: () {
-                                context.push(InputEmailPage());
-                              },
-                              child: Align(
-                                alignment: Alignment.centerRight,
-                                child: Text(
-                                  'forgot_password'.tr,
-                                  style: TextStyles.subtitle3,
-                                ),
-                              ),
-                            ),
-
-                            // Push buttons to the bottom
-                            const Spacer(),
-                            const SpaceHeight(20),
-
-                            // Login button
-                            Obx(() {
-                              if (controller.isLoading.value) {
-                                return const Center(
-                                  child: CircularProgressIndicator(
-                                    color: AppColors.primary500,
-                                  ),
-                                );
-                              }
-                              return Button.filled(
-                                height: 41,
-                                onPressed: () {
-                                  controller.login();
-                                },
-                                label: 'login'.tr,
-                              );
-                            }),
-
-                            const SpaceHeight(15),
-                            
-                            // Guest button
-                            Button.outlined(
-                              height: 41,
-                              onPressed: () {
-                                context.push(VerificationCodePage());
-                              },
-                              label: 'login_as_guest'.tr,
-                            ),
-                            
-                            const SpaceHeight(10),
-                          ],
-                        ),
+                    SizedBox(height: sw * 0.05),
+                    Text(
+                      'VMS',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: rfs(context, 22),
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 1.5,
+                      ),
+                    ),
+                    SizedBox(height: sw * 0.015),
+                    Text(
+                      'login_hero_tagline'.tr,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.70),
+                        fontSize: rfs(context, 13),
+                        fontWeight: FontWeight.w400,
                       ),
                     ),
                   ],
                 ),
               ),
-            ),
+
+              // 4. White Content Card
+              Positioned(
+                top: heroHeight * 0.92, // Slight overlap
+                left: 0,
+                right: 0,
+                bottom: 0,
+                child: Container(
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(32),
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.04),
+                        blurRadius: 12,
+                        offset: const Offset(0, -4),
+                      ),
+                    ],
+                  ),
+                  child: SingleChildScrollView(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: sw * 0.06,
+                      vertical: sw * 0.07,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        SizedBox(height: sw * 0.02),
+                        Text(
+                          'welcome_back'.tr,
+                          style: TextStyle(
+                            fontSize: rfs(context, 18),
+                            fontWeight: FontWeight.w700,
+                            color: const Color(0xFF1E293B),
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        SizedBox(height: sw * 0.01),
+                        Text(
+                          'login_subtitle'.tr,
+                          style: TextStyle(
+                            fontSize: rfs(context, 14),
+                            color: const Color(0xFF64748B),
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        SizedBox(height: sw * 0.08),
+
+                        // Form Fields
+                        Obx(() => _buildTextField(
+                          controller: controller.usernameController,
+                          label: 'username'.tr,
+                          hintText: 'login_username_hint'.tr,
+                          prefixIcon: Icons.person_outline,
+                          errorText: controller.usernameError.value,
+                          sw: sw,
+                          context: context,
+                        )),
+                        SizedBox(height: sw * 0.04),
+                        Obx(() => _buildTextField(
+                          controller: controller.passwordController,
+                          label: 'password'.tr,
+                          hintText: 'login_password_hint'.tr,
+                          prefixIcon: Icons.lock_outline,
+                          isObscure: controller.obscurePassword.value,
+                          suffixIcon: IconButton(
+                            onPressed: () => controller.togglePasswordVisibility(),
+                            icon: Icon(
+                              controller.obscurePassword.value
+                                  ? Icons.visibility_off_outlined
+                                  : Icons.visibility_outlined,
+                              color: const Color(0xFF64748B),
+                              size: sw * 0.05,
+                            ),
+                          ),
+                          errorText: controller.passwordError.value,
+                          sw: sw,
+                          context: context,
+                        )),
+
+                        SizedBox(height: sw * 0.03),
+                        GestureDetector(
+                          onTap: () => context.push(const InputEmailPage()),
+                          child: Align(
+                            alignment: Alignment.centerRight,
+                            child: Text(
+                              'forgot_password'.tr,
+                              style: TextStyle(
+                                color: const Color(0xFF1976D2),
+                                fontSize: rfs(context, 13),
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                        ),
+
+                        SizedBox(height: sw * 0.08),
+
+                        // Login Button
+                        Obx(() {
+                          if (controller.isLoading.value) {
+                            return const Center(
+                              child: CircularProgressIndicator(
+                                color: Color(0xFF1976D2),
+                              ),
+                            );
+                          }
+                          return _buildPrimaryButton(
+                            onPressed: () => controller.login(),
+                            label: 'login'.tr,
+                            sw: sw,
+                            context: context,
+                          );
+                        }),
+
+                        SizedBox(height: sw * 0.04),
+
+                        // Guest Button
+                        GestureDetector(
+                          onTap: () => context.push(const VerificationCodePage()),
+                          child: Container(
+                            width: double.infinity,
+                            height: sw * 0.135,
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(sw * 0.035),
+                              border: Border.all(
+                                color: const Color(0xFF1976D2).withValues(alpha: 0.2),
+                              ),
+                            ),
+                            child: Center(
+                              child: Text(
+                                'login_as_guest'.tr,
+                                style: TextStyle(
+                                  color: const Color(0xFF1976D2),
+                                  fontSize: rfs(context, 15),
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        SizedBox(height: MediaQuery.of(context).padding.bottom),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
           );
         },
+      ),
+    );
+  }
+
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String label,
+    required String hintText,
+    required IconData prefixIcon,
+    required double sw,
+    required BuildContext context,
+    bool isObscure = false,
+    Widget? suffixIcon,
+    String? errorText,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: EdgeInsets.only(left: sw * 0.01, bottom: sw * 0.02),
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: rfs(context, 14),
+              fontWeight: FontWeight.w600,
+              color: const Color(0xFF1E293B),
+            ),
+          ),
+        ),
+        TextField(
+          controller: controller,
+          obscureText: isObscure,
+          decoration: InputDecoration(
+            hintText: hintText,
+            hintStyle: TextStyle(
+              color: const Color(0xFF64748B),
+              fontSize: rfs(context, 14),
+            ),
+            prefixIcon: Icon(
+              prefixIcon,
+              color: const Color(0xFF1976D2),
+              size: sw * 0.05,
+            ),
+            suffixIcon: suffixIcon,
+            filled: true,
+            fillColor: const Color(0xFFF4F7FB),
+            contentPadding: EdgeInsets.symmetric(
+              horizontal: sw * 0.04,
+              vertical: sw * 0.04,
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(sw * 0.035),
+              borderSide: BorderSide(color: Colors.grey.shade200),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(sw * 0.035),
+              borderSide: const BorderSide(
+                color: Color(0xFF1976D2),
+                width: 1.5,
+              ),
+            ),
+            errorText: errorText,
+            errorStyle: const TextStyle(height: 0.8),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPrimaryButton({
+    required VoidCallback onPressed,
+    required String label,
+    required double sw,
+    required BuildContext context,
+  }) {
+    return GestureDetector(
+      onTap: onPressed,
+      child: Container(
+        width: double.infinity,
+        height: sw * 0.135,
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [Color(0xFF1976D2), Color(0xFF0E5DB5)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(sw * 0.035),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF1976D2).withValues(alpha: 0.35),
+              blurRadius: 12,
+              offset: const Offset(0, 5),
+            ),
+          ],
+        ),
+        child: Center(
+          child: Text(
+            label,
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: rfs(context, 15),
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
       ),
     );
   }

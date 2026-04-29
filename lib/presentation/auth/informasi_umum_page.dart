@@ -38,7 +38,11 @@ class _InformasiUmumPageState extends State<InformasiUmumPage> {
       _ctrl = Get.put(InformasiUmumController());
       // If widget.userModel is provided (e.g. direct construction), initialize data
       if (widget.userModel != null) {
-        _ctrl.initializeData(widget.userModel!, widget.invitationCode ?? '', widget.rawData);
+        _ctrl.initializeData(
+          widget.userModel!,
+          widget.invitationCode ?? '',
+          widget.rawData,
+        );
       }
     }
     // Note: red border indicators on empty fields are already set by initializeData().
@@ -71,16 +75,32 @@ class _InformasiUmumPageState extends State<InformasiUmumPage> {
                 child: DropdownButton<String>(
                   value: isId ? 'id' : 'en',
                   underline: const SizedBox.shrink(),
-                  icon: const Icon(Icons.arrow_drop_down, size: 18, color: AppColors.primary500),
+                  icon: const Icon(
+                    Icons.arrow_drop_down,
+                    size: 18,
+                    color: AppColors.primary500,
+                  ),
                   isDense: true,
                   items: const [
                     DropdownMenuItem(
                       value: 'en',
-                      child: Text('🇬🇧 ENG', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+                      child: Text(
+                        '🇬🇧 ENG',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                     ),
                     DropdownMenuItem(
                       value: 'id',
-                      child: Text('🇮🇩 ID', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+                      child: Text(
+                        '🇮🇩 ID',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                     ),
                   ],
                   onChanged: (v) {
@@ -266,7 +286,10 @@ class _Step1 extends StatelessWidget {
             Center(
               child: Text(
                 'visitor_information'.tr,
-                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
             const SizedBox(height: 16),
@@ -277,7 +300,8 @@ class _Step1 extends StatelessWidget {
               showLabel: false,
               hintText: 'nama_lengkap'.tr,
               errorText: ctrl.fieldErrors['fullname'],
-              onChanged: (v) => ctrl.validateField('fullname', v, 'fullname'.tr),
+              onChanged: (v) =>
+                  ctrl.validateField('fullname', v, 'fullname'.tr),
             ),
             _requiredLabel('email'.tr),
             CustomTextField(
@@ -306,7 +330,8 @@ class _Step1 extends StatelessWidget {
               showLabel: false,
               hintText: 'instansi_hint'.tr,
               errorText: ctrl.fieldErrors['organization'],
-              onChanged: (v) => ctrl.validateField('organization', v, 'organization'.tr),
+              onChanged: (v) =>
+                  ctrl.validateField('organization', v, 'organization'.tr),
             ),
             _requiredLabel('identity_id'.tr),
             CustomTextField(
@@ -316,7 +341,8 @@ class _Step1 extends StatelessWidget {
               hintText: '32012345...',
               keyboardType: TextInputType.number,
               errorText: ctrl.fieldErrors['identityId'],
-              onChanged: (v) => ctrl.validateField('identityId', v, 'identity_id'.tr),
+              onChanged: (v) =>
+                  ctrl.validateField('identityId', v, 'identity_id'.tr),
             ),
             const SizedBox(height: 20),
           ],
@@ -330,8 +356,23 @@ class _Step2 extends StatelessWidget {
   final InformasiUmumController ctrl;
   const _Step2({required this.ctrl});
 
-  Widget _label(String text) => Padding(padding: const EdgeInsets.only(top: 10, bottom: 4), child: Text(text, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.black87)));
-  Widget _readOnlyField(TextEditingController controller) => CustomTextField(controller: controller, label: '', showLabel: false, readOnly: true);
+  Widget _label(String text) => Padding(
+    padding: const EdgeInsets.only(top: 10, bottom: 4),
+    child: Text(
+      text,
+      style: const TextStyle(
+        fontSize: 14,
+        fontWeight: FontWeight.w600,
+        color: Colors.black87,
+      ),
+    ),
+  );
+  Widget _readOnlyField(TextEditingController controller) => CustomTextField(
+    controller: controller,
+    label: '',
+    showLabel: false,
+    readOnly: true,
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -399,7 +440,10 @@ class _Step3 extends StatelessWidget {
             Center(
               child: Text(
                 'vehicle_information'.tr,
-                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
             const SizedBox(height: 16),
@@ -433,7 +477,11 @@ class _Step3 extends StatelessWidget {
                   onChanged: (v) {
                     ctrl.isDriving.value = v!;
                     if (ctrl.vehiclePlateController.text.trim().isEmpty) {
-                      ctrl.validateField('vehiclePlate', '', 'vehicle_plate'.tr);
+                      ctrl.validateField(
+                        'vehiclePlate',
+                        '',
+                        'vehicle_plate'.tr,
+                      );
                     }
                   },
                 ),
@@ -481,20 +529,23 @@ class _Step3 extends StatelessWidget {
                   'vehicle_private_car',
                   'vehicle_other',
                 ];
-                final normalizedValue = labelMap.containsKey(ctrl.vehicleType.value)
+                final normalizedValue =
+                    labelMap.containsKey(ctrl.vehicleType.value)
                     ? (apiKeys.contains(ctrl.vehicleType.value)
-                        ? ctrl.vehicleType.value
-                        : labelMap[ctrl.vehicleType.value]!)
+                          ? ctrl.vehicleType.value
+                          : labelMap[ctrl.vehicleType.value]!)
                     : 'vehicle_car';
 
                 return DropdownButton2<String>(
                   isExpanded: true,
                   value: normalizedValue,
                   items: apiKeys
-                      .map((key) => DropdownMenuItem<String>(
-                            value: key,
-                            child: Text(key.tr),
-                          ))
+                      .map(
+                        (key) => DropdownMenuItem<String>(
+                          value: key,
+                          child: Text(key.tr),
+                        ),
+                      )
                       .toList(),
                   onChanged: (v) {
                     if (v != null) ctrl.vehicleType.value = v;
@@ -525,7 +576,8 @@ class _Step3 extends StatelessWidget {
                 showLabel: false,
                 hintText: 'B 1234 XX',
                 errorText: ctrl.fieldErrors['vehiclePlate'],
-                onChanged: (v) => ctrl.validateField('vehiclePlate', v, 'vehicle_plate'.tr),
+                onChanged: (v) =>
+                    ctrl.validateField('vehiclePlate', v, 'vehicle_plate'.tr),
               ),
             ],
             const SizedBox(height: 20),

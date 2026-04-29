@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../auth/controller/language_controller.dart';
-import '../../core/core.dart';
+import '../../core/helper/responsive_helper.dart';
 import '../auth/login_page.dart';
 
 class LanguageSelectionPage extends StatelessWidget {
@@ -10,106 +10,202 @@ class LanguageSelectionPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final langCtrl = LanguageController.to;
+    final sw = MediaQuery.of(context).size.width;
 
     return Scaffold(
-      backgroundColor: Colors.white,
-      body: Column(
-        children: [
-          // Blue wavy header for the logo
-          ClipPath(
-            clipper: BottomWaveClipper(),
-            child: Container(
-              width: double.infinity,
-              height: MediaQuery.of(context).size.height * 0.35,
-              color: AppColors.primary500,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Assets.images.iconApp.image(height: 100),
-                  const SizedBox(height: 10),
-                ],
+      backgroundColor: const Color(0xFF1976D2),
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          final heroHeight = constraints.maxHeight * 0.40;
+
+          return Stack(
+            children: [
+              // 1. Blue Header Background (Gradient)
+              Container(
+                width: double.infinity,
+                height: constraints.maxHeight,
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [Color(0xFF1976D2), Color(0xFF0E5DB5)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                ),
               ),
-            ),
-          ),
 
-          // Content section
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 24.0,
-                vertical: 10,
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'choose_language'.tr,
-                    style: const TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    'language_subtitle_desc'.tr,
-                    style: const TextStyle(fontSize: 16, color: Colors.grey),
-                  ),
-                  const SizedBox(height: 30),
-
-                  // English Option
-                  Obx(
-                    () => _LanguageOption(
-                      title: 'English',
-                      flagCode: 'US',
-                      isSelected: langCtrl.selectedLang.value == 'en',
-                      onTap: () => langCtrl.changeLanguage('en'),
-                    ),
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  // Indonesia Option
-                  Obx(
-                    () => _LanguageOption(
-                      title: 'Indonesia',
-                      flagCode: 'ID',
-                      isSelected: langCtrl.selectedLang.value == 'id',
-                      onTap: () => langCtrl.changeLanguage('id'),
-                    ),
-                  ),
-
-                  const Spacer(),
-
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: () {
-                        Get.to(() => const LoginPage());
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primary500,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
+              // 2. Hero Content
+              Container(
+                width: double.infinity,
+                height: heroHeight,
+                padding: EdgeInsets.symmetric(horizontal: sw * 0.08),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    // Logo Circle
+                    Container(
+                      width: sw * 0.28,
+                      height: sw * 0.28,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.white,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.12),
+                            blurRadius: 20,
+                            offset: const Offset(0, 8),
+                          ),
+                          BoxShadow(
+                            color: Colors.white.withValues(alpha: 0.3),
+                            blurRadius: 30,
+                            spreadRadius: 4,
+                          ),
+                        ],
                       ),
-                      child: Text(
-                        'next'.tr,
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
+                      padding: EdgeInsets.all(sw * 0.05),
+                      child: Image.asset(
+                        'assets/images/VMS.png',
+                        fit: BoxFit.contain,
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 20),
-                ],
+                    SizedBox(height: sw * 0.05),
+                    Text(
+                      'VMS',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: rfs(context, 22),
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 1.5,
+                      ),
+                    ),
+                    SizedBox(height: sw * 0.015),
+                    Text(
+                      'select_language_tagline'.tr,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.70),
+                        fontSize: rfs(context, 13),
+                        fontWeight: FontWeight.w400,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-          ),
-        ],
+
+              // 3. White Content Card
+              Positioned(
+                top: heroHeight * 0.92, // Slight overlap
+                left: 0,
+                right: 0,
+                bottom: 0,
+                child: Container(
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(32),
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.04),
+                        blurRadius: 12,
+                        offset: const Offset(0, -4),
+                      ),
+                    ],
+                  ),
+                  child: SafeArea(
+                    top: false,
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: sw * 0.06,
+                        vertical: sw * 0.07,
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'choose_language'.tr,
+                            style: TextStyle(
+                              fontSize: rfs(context, 16),
+                              fontWeight: FontWeight.w700,
+                              color: const Color(0xFF1E293B),
+                            ),
+                          ),
+                          SizedBox(height: sw * 0.06),
+
+                          // English Option
+                          Obx(
+                            () => _LanguageOption(
+                              title: 'English',
+                              flagCode: 'us',
+                              isSelected: langCtrl.selectedLang.value == 'en',
+                              onTap: () => langCtrl.changeLanguage('en'),
+                              sw: sw,
+                            ),
+                          ),
+
+                          SizedBox(height: sw * 0.04),
+
+                          // Indonesia Option
+                          Obx(
+                            () => _LanguageOption(
+                              title: 'Indonesia',
+                              flagCode: 'id',
+                              isSelected: langCtrl.selectedLang.value == 'id',
+                              onTap: () => langCtrl.changeLanguage('id'),
+                              sw: sw,
+                            ),
+                          ),
+
+                          const Spacer(),
+
+                          // Confirm Button
+                          GestureDetector(
+                            onTap: () => Get.to(() => const LoginPage()),
+                            child: Container(
+                              width: double.infinity,
+                              height: sw * 0.135,
+                              decoration: BoxDecoration(
+                                gradient: const LinearGradient(
+                                  colors: [Color(0xFF1976D2), Color(0xFF0E5DB5)],
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                ),
+                                borderRadius: BorderRadius.circular(sw * 0.035),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: const Color(0xFF1976D2)
+                                        .withValues(alpha: 0.35),
+                                    blurRadius: 12,
+                                    offset: const Offset(0, 5),
+                                  ),
+                                ],
+                              ),
+                              child: Center(
+                                child: Text(
+                                  'next'.tr,
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: rfs(context, 15),
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                          SizedBox(
+                            height: MediaQuery.of(context).padding.bottom > 0
+                                ? 0
+                                : sw * 0.02,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
@@ -120,57 +216,82 @@ class _LanguageOption extends StatelessWidget {
   final String flagCode;
   final bool isSelected;
   final VoidCallback onTap;
+  final double sw;
 
   const _LanguageOption({
     required this.title,
     required this.flagCode,
     required this.isSelected,
     required this.onTap,
+    required this.sw,
   });
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(16),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 250),
+        height: sw * 0.16,
+        padding: EdgeInsets.symmetric(horizontal: sw * 0.05),
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFFE3F2FD) : Colors.white,
-          borderRadius: BorderRadius.circular(12),
+          color: isSelected ? const Color(0xFFE8F1FD) : Colors.white,
+          borderRadius: BorderRadius.circular(sw * 0.04),
           border: Border.all(
-            color: isSelected ? AppColors.primary500 : Colors.grey.shade300,
-            width: 2,
+            color: isSelected ? const Color(0xFF1976D2) : Colors.grey.shade100,
+            width: isSelected ? 1.5 : 1,
           ),
+          boxShadow: [
+            if (isSelected)
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.06),
+                blurRadius: 16,
+                offset: const Offset(0, 6),
+              ),
+          ],
         ),
         child: Row(
           children: [
-            Container(
-              width: 48,
-              height: 32,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(4),
-                border: Border.all(color: Colors.grey.shade200),
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(4),
-                child: Image.network(
-                  'https://flagcdn.com/w80/${flagCode.toLowerCase()}.png',
-                  fit: BoxFit.cover,
+            if (isSelected)
+              Container(
+                width: 4,
+                height: sw * 0.08,
+                margin: EdgeInsets.only(right: sw * 0.03),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1976D2),
+                  borderRadius: BorderRadius.circular(2),
                 ),
               ),
+            // Flag
+            ClipRRect(
+              borderRadius: BorderRadius.circular(4),
+              child: Image.network(
+                'https://flagcdn.com/w80/${flagCode.toLowerCase()}.png',
+                width: sw * 0.08,
+                height: sw * 0.055,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) =>
+                    const Icon(Icons.flag),
+              ),
             ),
-            const SizedBox(width: 16),
+            SizedBox(width: sw * 0.04),
             Expanded(
               child: Text(
                 title,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
+                style: TextStyle(
+                  fontSize: rfs(context, 14),
+                  fontWeight: FontWeight.w600,
+                  color: isSelected
+                      ? const Color(0xFF1976D2)
+                      : const Color(0xFF1E293B),
                 ),
               ),
             ),
-            if (isSelected)
-              const Icon(Icons.check_circle, color: AppColors.primary500),
+            Icon(
+              isSelected ? Icons.check_circle_rounded : Icons.chevron_right,
+              color: isSelected ? const Color(0xFF1976D2) : Colors.grey,
+              size: sw * 0.05,
+            ),
           ],
         ),
       ),

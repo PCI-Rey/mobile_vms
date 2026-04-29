@@ -3,6 +3,8 @@ import 'package:intl/intl.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import '../../../core/helper/responsive_helper.dart';
 import '../../auth/controller/user_controller.dart';
+import '../../../core/components/custom_circle_image.dart';
+import '../../../core/gen/assets.gen.dart';
 
 class AccessPassModal {
   static const _blue = Color(0xFF1976D2);
@@ -135,6 +137,24 @@ class AccessPassModal {
                                 ],
                               ),
                             ),
+                            SizedBox(width: sw * 0.04),
+                            CustomCircleImage(
+                              image: UserController.to.faceUrl != null
+                                  ? Image.network(
+                                      UserController.to.faceUrl!,
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (_, _, _) =>
+                                          Assets.images.avaPerson1.image(
+                                            fit: BoxFit.cover,
+                                          ),
+                                    )
+                                  : Assets.images.avaPerson1.image(
+                                      fit: BoxFit.cover,
+                                    ),
+                              size: sw * 0.16,
+                              borderWidth: 2,
+                            ),
+                            const SizedBox(width: 8),
                             Container(
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 10,

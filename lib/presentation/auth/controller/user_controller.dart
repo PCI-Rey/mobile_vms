@@ -54,4 +54,6 @@ class UserController extends GetxController {
 
   // Helper method to get fullname or default
   String get fullName => user.value?.fullname ?? 'User';
+
+  String? get faceUrl => user.value?.faceUrl;
 }

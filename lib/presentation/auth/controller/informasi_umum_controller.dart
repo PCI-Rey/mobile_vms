@@ -1,3 +1,6 @@
+import 'dart:developer';
+import 'package:dio/dio.dart';
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'dart:io';
@@ -55,7 +58,6 @@ class InformasiUmumController extends GetxController {
   final identityUrl = Rxn<String>();
   final fieldErrors = RxMap<String, String?>();
 
-
   void initializeData(UserModel user, String code, Map<String, dynamic>? data) {
     userModel = user;
     invitationCode = code;
@@ -73,9 +75,10 @@ class InformasiUmumController extends GetxController {
     isDriving.value = rawData?['is_driving'] ?? false;
     vehicleType.value = rawData?['vehicle_type']?.toString() ?? 'Car';
 
-
     // Recreate PageController so it's never disposed/stale
-    try { pageController.dispose(); } catch (_) {}
+    try {
+      pageController.dispose();
+    } catch (_) {}
     pageController = PageController(initialPage: 0);
 
     // Prefill Step 1
@@ -84,33 +87,52 @@ class InformasiUmumController extends GetxController {
 
     if (rawData != null) {
       phoneController.text = rawData?['visitor_phone']?.toString() ?? '';
-      organizationController.text = rawData?['visitor_organization_name']?.toString() ?? '';
-      identityIdController.text = rawData?['visitor_identity_id']?.toString() ?? '';
+      organizationController.text =
+          rawData?['visitor_organization_name']?.toString() ?? '';
+      identityIdController.text =
+          rawData?['visitor_identity_id']?.toString() ?? '';
 
       // Step 2
       picHostController.text = rawData?['host_name']?.toString() ?? '';
       agendaController.text = rawData?['agenda']?.toString() ?? '';
-      destinationController.text = rawData?['site_place_name']?.toString() ?? '';
-      visitStartController.text = rawData?['visitor_period_start']?.toString() ?? '';
-      visitEndController.text = rawData?['visitor_period_end']?.toString() ?? '';
+      destinationController.text =
+          rawData?['site_place_name']?.toString() ?? '';
+      visitStartController.text =
+          rawData?['visitor_period_start']?.toString() ?? '';
+      visitEndController.text =
+          rawData?['visitor_period_end']?.toString() ?? '';
 
       // Step 3 (isDriving and vehicleType already set above)
-      vehiclePlateController.text = rawData?['vehicle_plate_number']?.toString() ?? '';
+      vehiclePlateController.text =
+          rawData?['vehicle_plate_number']?.toString() ?? '';
     }
 
     // Eagerly mark empty required fields so red borders show on page open
     _markStep1Errors();
   }
 
-
   /// Silently marks fieldErrors for empty required fields in Step 1
   void _markStep1Errors() {
     final errors = <String, String?>{};
-    if (fullNameController.text.trim().isEmpty)    errors['fullname']     = 'error_required'.trParams({'field': 'fullname'.tr});
-    if (emailController.text.trim().isEmpty)       errors['email']        = 'error_required'.trParams({'field': 'email'.tr});
-    if (phoneController.text.trim().isEmpty)       errors['phone']        = 'error_required'.trParams({'field': 'phone'.tr});
-    if (organizationController.text.trim().isEmpty) errors['organization'] = 'error_required'.trParams({'field': 'organization'.tr});
-    if (identityIdController.text.trim().isEmpty)  errors['identityId']   = 'error_required'.trParams({'field': 'identity_id'.tr});
+    if (fullNameController.text.trim().isEmpty) {
+      errors['fullname'] = 'error_required'.trParams({'field': 'fullname'.tr});
+    }
+    if (emailController.text.trim().isEmpty) {
+      errors['email'] = 'error_required'.trParams({'field': 'email'.tr});
+    }
+    if (phoneController.text.trim().isEmpty) {
+      errors['phone'] = 'error_required'.trParams({'field': 'phone'.tr});
+    }
+    if (organizationController.text.trim().isEmpty) {
+      errors['organization'] = 'error_required'.trParams({
+        'field': 'organization'.tr,
+      });
+    }
+    if (identityIdController.text.trim().isEmpty) {
+      errors['identityId'] = 'error_required'.trParams({
+        'field': 'identity_id'.tr,
+      });
+    }
     fieldErrors.assignAll(errors);
   }
 
@@ -118,7 +140,7 @@ class InformasiUmumController extends GetxController {
   void validateField(String key, String value, String label) {
     if (value.trim().isEmpty) {
       fieldErrors[key] = 'error_required'.trParams({'field': label});
-      
+
       // Show snackbar for the specific field that was just cleared
       if (Get.isSnackbarOpen) Get.closeAllSnackbars();
       Get.snackbar(
@@ -139,11 +161,21 @@ class InformasiUmumController extends GetxController {
   /// Called after first frame — marks errors AND shows snackbar if any required field is empty
   void showStep1WarningIfNeeded() {
     final emptyFields = <String>[];
-    if (fullNameController.text.trim().isEmpty)    emptyFields.add('fullname'.tr);
-    if (emailController.text.trim().isEmpty)       emptyFields.add('email'.tr);
-    if (phoneController.text.trim().isEmpty)       emptyFields.add('phone'.tr);
-    if (organizationController.text.trim().isEmpty) emptyFields.add('organization'.tr);
-    if (identityIdController.text.trim().isEmpty)  emptyFields.add('identity_id'.tr);
+    if (fullNameController.text.trim().isEmpty) {
+      emptyFields.add('fullname'.tr);
+    }
+    if (emailController.text.trim().isEmpty) {
+      emptyFields.add('email'.tr);
+    }
+    if (phoneController.text.trim().isEmpty) {
+      emptyFields.add('phone'.tr);
+    }
+    if (organizationController.text.trim().isEmpty) {
+      emptyFields.add('organization'.tr);
+    }
+    if (identityIdController.text.trim().isEmpty) {
+      emptyFields.add('identity_id'.tr);
+    }
 
     if (emptyFields.isEmpty) return;
 
@@ -170,17 +202,30 @@ class InformasiUmumController extends GetxController {
     if (currentPage.value == 2 && !validateStep3()) return;
 
     if (currentPage.value < 4) {
-      pageController.nextPage(duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
+      pageController.nextPage(
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+      );
     }
   }
 
   bool validateStep1() {
     final errors = <String, String?>{};
-    if (fullNameController.text.trim().isEmpty)    errors['fullname']     = 'Fullname';
-    if (emailController.text.trim().isEmpty)       errors['email']        = 'Email';
-    if (phoneController.text.trim().isEmpty)       errors['phone']        = 'Phone';
-    if (organizationController.text.trim().isEmpty) errors['organization'] = 'Instansi/Organization';
-    if (identityIdController.text.trim().isEmpty)  errors['identityId']   = 'Identity Id (KTP)';
+    if (fullNameController.text.trim().isEmpty) {
+      errors['fullname'] = 'Fullname';
+    }
+    if (emailController.text.trim().isEmpty) {
+      errors['email'] = 'Email';
+    }
+    if (phoneController.text.trim().isEmpty) {
+      errors['phone'] = 'Phone';
+    }
+    if (organizationController.text.trim().isEmpty) {
+      errors['organization'] = 'Instansi/Organization';
+    }
+    if (identityIdController.text.trim().isEmpty) {
+      errors['identityId'] = 'Identity Id (KTP)';
+    }
 
     // Set red borders on all empty fields
     fieldErrors.assignAll(
@@ -230,7 +275,10 @@ class InformasiUmumController extends GetxController {
 
   void previousPage() {
     if (currentPage.value > 0) {
-      pageController.previousPage(duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
+      pageController.previousPage(
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+      );
     }
   }
 
@@ -304,9 +352,22 @@ class InformasiUmumController extends GetxController {
           throw Exception('URL file tidak ditemukan dalam respon');
         }
       } else {
-        final msg = responseMap['msg'] ?? responseMap['message'] ?? 'Gagal upload file';
+        final msg =
+            responseMap['msg'] ?? responseMap['message'] ?? 'Gagal upload file';
         throw Exception(msg);
       }
+    } on DioException catch (e) {
+      if (e.response != null) {
+        log('Error Response: ${e.response?.data}');
+      }
+      debugPrint('Dio Error uploadImage: ${e.message}');
+      Get.snackbar(
+        'Upload Gagal',
+        e.toString(),
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+        snackPosition: SnackPosition.TOP,
+      );
     } catch (e) {
       debugPrint('Upload Error Detail: $e');
       Get.snackbar(
@@ -338,23 +399,58 @@ class InformasiUmumController extends GetxController {
       }
 
       // Helper function to update answers (more flexible: search all pages if needed)
-      void updateAnswer(String fieldShortName, dynamic value, {bool isFile = false}) {
+      void updateAnswer(
+        String fieldShortName,
+        dynamic value, {
+        bool isFile = false,
+      }) {
         bool found = false;
         for (var page in questionPage) {
-          for (var formField in page['form']) {
-            if (formField['short_name'].toString().toLowerCase().trim() == fieldShortName.toLowerCase().trim()) {
-              if (isFile) {
-                formField['answer_file'] = value;
-              } else {
-                formField['answer_text'] = value?.toString();
+          final form = page['form'] as List?;
+          if (form == null) continue;
+          for (var formField in form) {
+            if (formField['short_name'].toString().toLowerCase().trim() ==
+                fieldShortName.toLowerCase().trim()) {
+              final fieldType = formField['field_type'];
+
+              // 1. field_type 10, 11, 12 -> answer_file
+              if (fieldType == 10 || fieldType == 11 || fieldType == 12) {
+                formField['answer_file'] = value?.toString();
+                formField.remove('answer_text');
+                formField.remove('answer_datetime');
               }
+              // 2. field_type 9 -> answer_datetime
+              else if (fieldType == 9) {
+                if (value != null && value.toString().isNotEmpty) {
+                  try {
+                    final dt = DateTime.parse(value.toString());
+                    formField['answer_datetime'] = dt.toUtc().toIso8601String();
+                    formField.remove('answer_text');
+                    formField.remove('answer_file');
+                  } catch (e) {
+                    debugPrint('Error parsing date for $fieldShortName: $e');
+                    formField['answer_text'] = value.toString();
+                  }
+                } else {
+                  formField.remove('answer_datetime');
+                }
+              }
+              // 3. rest -> answer_text
+              else {
+                formField['answer_text'] = value?.toString();
+                formField.remove('answer_datetime');
+                formField.remove('answer_file');
+              }
+
               debugPrint('Updated Answer: $fieldShortName -> $value');
               found = true;
             }
           }
         }
         if (!found) {
-          debugPrint('Warning: Field not found in questionPage: $fieldShortName');
+          debugPrint(
+            'Warning: Field not found in questionPage: $fieldShortName',
+          );
         }
       }
 
@@ -373,11 +469,7 @@ class InformasiUmumController extends GetxController {
       updateAnswer('Organization', organizationController.text);
       updateAnswer('Indentity Id', identityIdController.text);
 
-      // ── Step 2 (Purpose of Visit): DO NOT override ──────────────────
-      // The Destination and PIC Host fields already contain UUIDs from
-      // the server in their answer_text. Only Agenda is user-context data.
-      // Overriding with human-readable names (host_name, site_place_name)
-      // would break the API which expects UUIDs in those fields.
+      // ── Step 2 (Purpose of Visit) ──────────────────────────────────
       updateAnswer('Agenda', rawData?['agenda']);
       updateAnswer('Visit Start', rawData?['visitor_period_start']);
       updateAnswer('Visit End', rawData?['visitor_period_end']);
@@ -402,12 +494,24 @@ class InformasiUmumController extends GetxController {
       }
       updateAnswer('Identity Image', identityValue, isFile: true);
 
-      // ── Fill host and site_place directly into question_page ─────────
-      // Server returns these as null; we must set them before submit.
-      // host → rawData['host'] (UUID string)
-      // site_place → hardcoded UUID confirmed working in APIdog
-      final String? hostId = rawData!['host']?.toString();
-      const String sitePlaceId = 'e3facb54-eae1-48d5-9457-3ef7d3f7ba3b';
+      // ── Dynamic Site Detection ───────────────────────────────────────
+      String? sitePlaceId;
+      try {
+        final siteResp = await apiService.getSites(invitationCode);
+        if (siteResp.statusCode == 200 &&
+            siteResp.data['status'] == 'success') {
+          final collection = siteResp.data['collection'] as List?;
+          if (collection != null && collection.isNotEmpty) {
+            sitePlaceId = collection[0]['id']?.toString();
+            debugPrint('Dynamically found site ID: $sitePlaceId');
+          }
+        }
+      } catch (e) {
+        debugPrint('Warning: Failed to fetch sites dynamically: $e');
+      }
+
+      // Fallback to null if empty, server might prefer null over "" for unknown site
+      final String rootSiteId = sitePlaceId ?? "";
 
       void updateAnswerByRemarks(String remarks, String? value) {
         for (var page in questionPage) {
@@ -415,40 +519,107 @@ class InformasiUmumController extends GetxController {
           if (form == null) continue;
           for (var field in form) {
             if (field['remarks'] == remarks) {
-              field['answer_text'] = value;
-              debugPrint('Set remarks=$remarks → $value');
+              final fieldType = field['field_type'];
+              if (fieldType == 9) {
+                if (value != null && value.isNotEmpty) {
+                  try {
+                    final dt = DateTime.parse(value);
+                    field['answer_datetime'] = dt.toUtc().toIso8601String();
+                    field.remove('answer_text');
+                  } catch (e) {
+                    field['answer_text'] = value;
+                  }
+                }
+              } else if (fieldType == 10 || fieldType == 11 || fieldType == 12) {
+                field['answer_file'] = value;
+                field.remove('answer_text');
+              } else {
+                field['answer_text'] = value;
+              }
+              debugPrint('Set remarks=$remarks → $value (type $fieldType)');
             }
           }
         }
       }
+
+      final String? hostId = rawData!['host']?.toString();
       updateAnswerByRemarks('host', hostId);
       updateAnswerByRemarks('site_place', sitePlaceId);
 
       // ── Build payload ─────────────────────────────────────────────────
-      final trxVisitorId = rawData!['id'] ?? rawData!['transaction_visitor_id'];
-      debugPrint('trx_visitor_id: $trxVisitorId | host: $hostId | site_place: $sitePlaceId');
+      // Prefer transaction_visitor_id for the root field
+      final trxVisitorId = rawData!['transaction_visitor_id'] ?? rawData!['id'];
+      final visitorTypeId = rawData!['visitor_type']?.toString();
+
+      // PraRegistrationController uses NAME for visitor_type in payload
+      final visitorTypeName = rawData!['visitor_type_name']?.toString() ?? 
+                             visitorTypeId;
+      
+      final visitorRole = rawData!['visitor_role'] ?? "Visitor";
+
+      debugPrint(
+        'trx_visitor_id: $trxVisitorId | site_place: $rootSiteId | visitor_type: $visitorTypeName',
+      );
+
+      // Final defensive check on questionPage: ensure no nulls, but respect field_type rules
+      for (var page in questionPage) {
+        final form = page['form'] as List?;
+        if (form == null) continue;
+        for (var field in form) {
+          final fType = field['field_type'];
+          if (fType == 9) {
+            // Datetime: ensure answer_text is NOT present if we have datetime
+            if (field['answer_datetime'] == null) {
+              field['answer_datetime'] = "";
+            }
+            field.remove('answer_text');
+          } else if (fType == 10 || fType == 11 || fType == 12) {
+            // File: ensure answer_text is NOT present
+            if (field['answer_file'] == null) {
+              field['answer_file'] = "";
+            }
+            field.remove('answer_text');
+          } else {
+            // Text: ensure answer_text is never null
+            if (field['answer_text'] == null) {
+              field['answer_text'] = "";
+            }
+            field.remove('answer_datetime');
+            field.remove('answer_file');
+          }
+        }
+      }
 
       final payload = {
         "trx_visitor_id": trxVisitorId,
-        "visitor_type": rawData!['visitor_type'],
+        "visitor_type": visitorTypeName,
         "type_registered": 0,
         "is_group": rawData!['is_group'] ?? false,
         "tz": rawData!['tz'] ?? "Asia/Jakarta",
+        "registered_site": rootSiteId,
+        "flow": "Invitation",
+        "visitor_role": visitorRole,
         "data_visitor": [
           {
-            "question_page": questionPage
-          }
-        ]
+            "question_page": questionPage,
+          },
+        ],
       };
 
       debugPrint('=== SUBMIT PRA FORM ===');
-      debugPrint('Payload: ${jsonEncode(payload)}');
+      log(jsonEncode(payload));
 
       // Submit form
-      final submitResponse = await apiService.submitPraForm(payload);
-      
-      if (submitResponse.statusCode != 200 || submitResponse.data['status'] == 'bad_request') {
-        final errorMsg = submitResponse.data?['msg']?.toString() ?? 'Bad Request';
+      final submitResponse = await apiService.submitPraForm(
+        payload,
+        visitorTypeId: visitorTypeId,
+      );
+      log('Submit Response: ${submitResponse.data}');
+
+      if (submitResponse.statusCode != 200 ||
+          submitResponse.data['status'] == 'bad_request') {
+        final errorMsg =
+            submitResponse.data?['msg']?.toString() ?? 'Bad Request';
         final collection = submitResponse.data?['collection'];
         if (collection is List && collection.isNotEmpty) {
           final detail = collection.map((e) => e['message']).join(', ');
@@ -457,7 +628,8 @@ class InformasiUmumController extends GetxController {
         throw Exception(errorMsg);
       }
 
-      final submitMsg = submitResponse.data?['msg']?.toString() ?? 'Form berhasil dikirim';
+      final submitMsg =
+          submitResponse.data?['msg']?.toString() ?? 'Form berhasil dikirim';
       final submitTitle = submitResponse.data?['title']?.toString();
 
       // After submit success, re-check invitation code to get the token
@@ -466,7 +638,9 @@ class InformasiUmumController extends GetxController {
 
       if (newUser != null && isPraregisterDone && newUser.token != null) {
         // checkVisitorCode already saved to Hive, just reload UserController
-        final userCtrl = Get.isRegistered<UserController>() ? Get.find<UserController>() : Get.put(UserController());
+        final userCtrl = Get.isRegistered<UserController>()
+            ? Get.find<UserController>()
+            : Get.put(UserController());
         await userCtrl.loadUser();
         Get.snackbar(
           (submitTitle ?? checkTitle ?? 'success').capitalizeFirst ?? 'Success',
@@ -475,14 +649,17 @@ class InformasiUmumController extends GetxController {
           colorText: Colors.white,
           duration: const Duration(seconds: 3),
         );
-        
+
         // Ensure guest home data is fresh
         Get.delete<GuestHomeController>(force: true);
-        
+
         Get.offAll(() => const Dashboard());
       } else {
         // Submit sukses tapi token belum tersedia
-        throw Exception(error ?? 'Form berhasil dikirim, namun login otomatis gagal. Coba masukkan kode undangan kembali.');
+        throw Exception(
+          error ??
+              'Form berhasil dikirim, namun login otomatis gagal. Coba masukkan kode undangan kembali.',
+        );
       }
     } catch (e) {
       Get.snackbar(
@@ -499,7 +676,9 @@ class InformasiUmumController extends GetxController {
 
   @override
   void onClose() {
-    try { pageController.dispose(); } catch (_) {}
+    try {
+      pageController.dispose();
+    } catch (_) {}
     fullNameController.dispose();
     emailController.dispose();
     phoneController.dispose();

@@ -23,7 +23,14 @@ class GuestHeader extends StatelessWidget {
           GestureDetector(
             onTap: () => Get.to(() => const ProfilePage()),
             child: CustomCircleImage(
-              image: Assets.images.avaPerson1.image(fit: BoxFit.cover),
+              image: userCtrl.faceUrl != null
+                  ? Image.network(
+                      userCtrl.faceUrl!,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, _, _) =>
+                          Assets.images.avaPerson1.image(fit: BoxFit.cover),
+                    )
+                  : Assets.images.avaPerson1.image(fit: BoxFit.cover),
               size: sw * 0.11,
             ),
           ),

@@ -6,6 +6,8 @@ import '../../../core/helper/responsive_helper.dart';
 import '../../auth/controller/user_controller.dart';
 import '../../auth/controller/language_controller.dart';
 import '../controllers/guest_home_controller.dart';
+import '../../../core/components/custom_circle_image.dart';
+import '../../../core/gen/assets.gen.dart';
 
 class AccessPassSection extends StatelessWidget {
   final double sw;
@@ -243,6 +245,19 @@ class AccessPassCard extends StatelessWidget {
                   ),
                 ],
               ),
+            ),
+            SizedBox(width: sw * 0.04),
+            CustomCircleImage(
+              image: userCtrl.faceUrl != null
+                  ? Image.network(
+                      userCtrl.faceUrl!,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, _, _) =>
+                          Assets.images.avaPerson1.image(fit: BoxFit.cover),
+                    )
+                  : Assets.images.avaPerson1.image(fit: BoxFit.cover),
+              size: sw * 0.12,
+              borderWidth: 1.5,
             ),
             SizedBox(width: sw * 0.04),
             Container(
