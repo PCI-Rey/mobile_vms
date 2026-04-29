@@ -40,8 +40,17 @@ class _VerificationCodePageState extends State<VerificationCodePage> {
         builder: (context, constraints) {
           return Stack(
             children: [
-              // ── Blue top zone ─────────────────────────────────
-              Container(height: constraints.maxHeight * 0.42, color: _blue),
+              // ── Blue top zone (Gradient) ───────────────────────
+              Container(
+                height: constraints.maxHeight * 0.42,
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [_blue, _blueDark],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                ),
+              ),
 
               // ── Decorative circles ────────────────────────────
               Positioned(
@@ -80,7 +89,7 @@ class _VerificationCodePageState extends State<VerificationCodePage> {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          // Logo — clean single white circle
+                          // Logo Circle
                           Container(
                             width: sw * 0.28,
                             height: sw * 0.28,
@@ -90,33 +99,32 @@ class _VerificationCodePageState extends State<VerificationCodePage> {
                               boxShadow: [
                                 BoxShadow(
                                   color: Colors.black.withValues(alpha: 0.12),
-                                  blurRadius: 24,
+                                  blurRadius: 20,
                                   offset: const Offset(0, 8),
                                 ),
                                 BoxShadow(
-                                  color: Colors.white.withValues(alpha: 0.9),
-                                  blurRadius: 0,
-                                  spreadRadius: 3,
+                                  color: Colors.white.withValues(alpha: 0.3),
+                                  blurRadius: 30,
+                                  spreadRadius: 4,
                                 ),
                               ],
                             ),
-                            padding: EdgeInsets.all(sw * 0.04),
+                            padding: EdgeInsets.all(sw * 0.05),
                             child: Image.asset(
                               'assets/images/VMS.png',
                               fit: BoxFit.contain,
                             ),
                           ),
 
-                          SizedBox(height: sw * 0.04),
+                          SizedBox(height: sw * 0.05),
 
                           Text(
-                            'VISITOR MANAGEMENT SYSTEM',
-                            textAlign: TextAlign.center,
+                            'VMS',
                             style: TextStyle(
                               color: Colors.white,
-                              fontSize: rfs(context, 18),
+                              fontSize: rfs(context, 22),
                               fontWeight: FontWeight.w800,
-                              letterSpacing: 1.2,
+                              letterSpacing: 1.5,
                             ),
                           ),
 

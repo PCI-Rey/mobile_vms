@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import '../presentation/onboarding/language_selection_page.dart';
 import '../data/datasources/auth_datasource.dart';
 import '../presentation/dashboard.dart';
@@ -18,7 +19,7 @@ class _SplashscreenState extends State<Splashscreen>
   late Animation<double> _scaleAnimation;
 
   static const Duration _animationDuration = Duration(milliseconds: 1200);
-  static const Duration _minSplashDuration = Duration(seconds: 3);
+  static const Duration _minSplashDuration = Duration(seconds: 5);
 
   static const _blue = Color(0xFF1976D2);
   static const _blueDark = Color(0xFF0E5DB5);
@@ -77,7 +78,13 @@ class _SplashscreenState extends State<Splashscreen>
     final nextScreen = isAuthenticated
         ? const Dashboard()
         : const LanguageSelectionPage();
-    context.pushReplacement(nextScreen);
+
+    Get.off(
+      () => nextScreen,
+      transition: Transition.fade,
+      duration: const Duration(milliseconds: 1200),
+      curve: Curves.easeIn,
+    );
   }
 
   @override
@@ -141,7 +148,7 @@ class _SplashscreenState extends State<Splashscreen>
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        // Logo circle — clean, minimal, no halo rings
+                        // Logo circle
                         Container(
                           width: sw * 0.30,
                           height: sw * 0.30,
@@ -151,17 +158,17 @@ class _SplashscreenState extends State<Splashscreen>
                             boxShadow: [
                               BoxShadow(
                                 color: Colors.black.withValues(alpha: 0.12),
-                                blurRadius: 24,
+                                blurRadius: 20,
                                 offset: const Offset(0, 8),
                               ),
                               BoxShadow(
-                                color: Colors.white.withValues(alpha: 0.9),
-                                blurRadius: 0,
-                                spreadRadius: 3,
+                                color: Colors.white.withValues(alpha: 0.3),
+                                blurRadius: 30,
+                                spreadRadius: 4,
                               ),
                             ],
                           ),
-                          padding: EdgeInsets.all(sw * 0.045),
+                          padding: EdgeInsets.all(sw * 0.05),
                           child: Image.asset(
                             'assets/images/VMS.png',
                             fit: BoxFit.contain,

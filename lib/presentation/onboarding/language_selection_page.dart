@@ -122,12 +122,14 @@ class LanguageSelectionPage extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            'choose_language'.tr,
-                            style: TextStyle(
-                              fontSize: rfs(context, 16),
-                              fontWeight: FontWeight.w700,
-                              color: const Color(0xFF1E293B),
+                          Center(
+                            child: Text(
+                              'choose_language'.tr,
+                              style: TextStyle(
+                                fontSize: rfs(context, 16),
+                                fontWeight: FontWeight.w700,
+                                color: const Color(0xFF1E293B),
+                              ),
                             ),
                           ),
                           SizedBox(height: sw * 0.06),
@@ -252,16 +254,7 @@ class _LanguageOption extends StatelessWidget {
         ),
         child: Row(
           children: [
-            if (isSelected)
-              Container(
-                width: 4,
-                height: sw * 0.08,
-                margin: EdgeInsets.only(right: sw * 0.03),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF1976D2),
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
+
             // Flag
             ClipRRect(
               borderRadius: BorderRadius.circular(4),
@@ -287,10 +280,26 @@ class _LanguageOption extends StatelessWidget {
                 ),
               ),
             ),
-            Icon(
-              isSelected ? Icons.check_circle_rounded : Icons.chevron_right,
-              color: isSelected ? const Color(0xFF1976D2) : Colors.grey,
-              size: sw * 0.05,
+            Container(
+              width: sw * 0.055,
+              height: sw * 0.055,
+              decoration: BoxDecoration(
+                color: isSelected ? const Color(0xFF1976D2) : Colors.white,
+                borderRadius: BorderRadius.circular(4),
+                border: Border.all(
+                  color: isSelected
+                      ? const Color(0xFF1976D2)
+                      : Colors.grey.shade300,
+                  width: 1.5,
+                ),
+              ),
+              child: isSelected
+                  ? Icon(
+                      Icons.check,
+                      color: Colors.white,
+                      size: sw * 0.04,
+                    )
+                  : null,
             ),
           ],
         ),
