@@ -170,24 +170,30 @@ class _VerificationCodePageState extends State<VerificationCodePage> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               // Section title
-                              Text(
-                                'enter_invitation_code'.tr,
-                                style: TextStyle(
-                                  fontSize: rfs(context, 20),
-                                  fontWeight: FontWeight.w700,
-                                  color: const Color(0xFF1E293B),
+                              Center(
+                                child: Text(
+                                  'enter_invitation_code'.tr,
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    fontSize: rfs(context, 20),
+                                    fontWeight: FontWeight.w700,
+                                    color: const Color(0xFF1E293B),
+                                  ),
                                 ),
                               ),
-                              SizedBox(height: sw * 0.01),
-                              Text(
-                                'enter_invitation_code_desc'.tr,
-                                style: TextStyle(
-                                  fontSize: rfs(context, 13),
-                                  color: const Color(0xFF64748B),
+                              SizedBox(height: sw * 0.015),
+                              Center(
+                                child: Text(
+                                  'enter_invitation_code_desc'.tr,
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    fontSize: rfs(context, 13),
+                                    color: const Color(0xFF64748B),
+                                  ),
                                 ),
                               ),
 
-                              SizedBox(height: sw * 0.06),
+                              SizedBox(height: sw * 0.08),
 
                               // Code input field label
                               Text(
@@ -210,13 +216,13 @@ class _VerificationCodePageState extends State<VerificationCodePage> {
                                     color: const Color(0xFF1E293B),
                                   ),
                                   decoration: InputDecoration(
-                                    hintText: 'invitation_code'.tr,
+                                    hintText: 'enter_code_hint'.tr,
                                     hintStyle: TextStyle(
                                       color: const Color(0xFF64748B),
                                       fontSize: rfs(context, 14),
                                     ),
                                     prefixIcon: Icon(
-                                      Icons.qr_code_outlined,
+                                      Icons.vpn_key_outlined,
                                       color: _blue,
                                       size: sw * 0.055,
                                     ),

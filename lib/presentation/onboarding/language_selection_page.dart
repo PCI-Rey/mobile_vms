@@ -33,7 +33,33 @@ class LanguageSelectionPage extends StatelessWidget {
                 ),
               ),
 
-              // 2. Hero Content
+              // 2. Decorative Circles (For depth)
+              Positioned(
+                top: -sw * 0.2,
+                right: -sw * 0.1,
+                child: Container(
+                  width: sw * 0.5,
+                  height: sw * 0.5,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.06),
+                    shape: BoxShape.circle,
+                  ),
+                ),
+              ),
+              Positioned(
+                bottom: constraints.maxHeight * 0.55,
+                left: -sw * 0.15,
+                child: Container(
+                  width: sw * 0.4,
+                  height: sw * 0.4,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.06),
+                    shape: BoxShape.circle,
+                  ),
+                ),
+              ),
+
+              // 3. Hero Content
               Container(
                 width: double.infinity,
                 height: heroHeight,
@@ -91,7 +117,7 @@ class LanguageSelectionPage extends StatelessWidget {
                 ),
               ),
 
-              // 3. White Content Card
+              // 4. White Content Card
               Positioned(
                 top: heroHeight * 0.92, // Slight overlap
                 left: 0,
