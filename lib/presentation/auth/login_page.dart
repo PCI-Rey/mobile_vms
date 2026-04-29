@@ -111,13 +111,16 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                     ),
                     SizedBox(height: sw * 0.05),
-                    Text(
-                      'VMS',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: rfs(context, 22),
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: 1.5,
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        'VIRTUAL MANAGEMENT SYSTEM',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: rfs(context, 20),
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 1.2,
+                        ),
                       ),
                     ),
                     SizedBox(height: sw * 0.015),
@@ -185,36 +188,41 @@ class _LoginPageState extends State<LoginPage> {
                         SizedBox(height: sw * 0.08),
 
                         // Form Fields
-                        Obx(() => _buildTextField(
-                          controller: controller.usernameController,
-                          label: 'username'.tr,
-                          hintText: 'login_username_hint'.tr,
-                          prefixIcon: Icons.person_outline,
-                          errorText: controller.usernameError.value,
-                          sw: sw,
-                          context: context,
-                        )),
-                        SizedBox(height: sw * 0.04),
-                        Obx(() => _buildTextField(
-                          controller: controller.passwordController,
-                          label: 'password'.tr,
-                          hintText: 'login_password_hint'.tr,
-                          prefixIcon: Icons.lock_outline,
-                          isObscure: controller.obscurePassword.value,
-                          suffixIcon: IconButton(
-                            onPressed: () => controller.togglePasswordVisibility(),
-                            icon: Icon(
-                              controller.obscurePassword.value
-                                  ? Icons.visibility_off_outlined
-                                  : Icons.visibility_outlined,
-                              color: const Color(0xFF64748B),
-                              size: sw * 0.05,
-                            ),
+                        Obx(
+                          () => _buildTextField(
+                            controller: controller.usernameController,
+                            label: 'username'.tr,
+                            hintText: 'login_username_hint'.tr,
+                            prefixIcon: Icons.person_outline,
+                            errorText: controller.usernameError.value,
+                            sw: sw,
+                            context: context,
                           ),
-                          errorText: controller.passwordError.value,
-                          sw: sw,
-                          context: context,
-                        )),
+                        ),
+                        SizedBox(height: sw * 0.04),
+                        Obx(
+                          () => _buildTextField(
+                            controller: controller.passwordController,
+                            label: 'password'.tr,
+                            hintText: 'login_password_hint'.tr,
+                            prefixIcon: Icons.lock_outline,
+                            isObscure: controller.obscurePassword.value,
+                            suffixIcon: IconButton(
+                              onPressed: () =>
+                                  controller.togglePasswordVisibility(),
+                              icon: Icon(
+                                controller.obscurePassword.value
+                                    ? Icons.visibility_off_outlined
+                                    : Icons.visibility_outlined,
+                                color: const Color(0xFF64748B),
+                                size: sw * 0.05,
+                              ),
+                            ),
+                            errorText: controller.passwordError.value,
+                            sw: sw,
+                            context: context,
+                          ),
+                        ),
 
                         SizedBox(height: sw * 0.03),
                         GestureDetector(
@@ -255,7 +263,8 @@ class _LoginPageState extends State<LoginPage> {
 
                         // Guest Button
                         GestureDetector(
-                          onTap: () => context.push(const VerificationCodePage()),
+                          onTap: () =>
+                              context.push(const VerificationCodePage()),
                           child: Container(
                             width: double.infinity,
                             height: sw * 0.135,
@@ -263,7 +272,9 @@ class _LoginPageState extends State<LoginPage> {
                               color: Colors.white,
                               borderRadius: BorderRadius.circular(sw * 0.035),
                               border: Border.all(
-                                color: const Color(0xFF1976D2).withValues(alpha: 0.2),
+                                color: const Color(
+                                  0xFF1976D2,
+                                ).withValues(alpha: 0.2),
                               ),
                             ),
                             child: Center(

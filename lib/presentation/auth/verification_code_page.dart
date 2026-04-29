@@ -118,13 +118,16 @@ class _VerificationCodePageState extends State<VerificationCodePage> {
 
                           SizedBox(height: sw * 0.05),
 
-                          Text(
-                            'VMS',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: rfs(context, 22),
-                              fontWeight: FontWeight.w800,
-                              letterSpacing: 1.5,
+                          FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Text(
+                              'VIRTUAL MANAGEMENT SYSTEM',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: rfs(context, 20),
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: 1.2,
+                              ),
                             ),
                           ),
 

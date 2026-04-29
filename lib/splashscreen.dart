@@ -178,22 +178,16 @@ class _SplashscreenState extends State<Splashscreen>
                         SizedBox(height: sw * 0.06),
 
                         // App name
-                        Text(
-                          'VISITOR MANAGEMENT',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: sw * 0.054,
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: 1.5,
-                          ),
-                        ),
-                        Text(
-                          'SYSTEM',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: sw * 0.054,
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: 1.5,
+                        FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Text(
+                            'VIRTUAL MANAGEMENT SYSTEM',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: sw * 0.054,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 1.5,
+                            ),
                           ),
                         ),
 
