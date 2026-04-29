@@ -72,8 +72,11 @@ class InformasiUmumController extends GetxController {
     identityUrl.value = null;
     isUploadingSelfie.value = false;
     isUploadingIdentity.value = false;
-    isDriving.value = rawData?['is_driving'] ?? false;
-    vehicleType.value = rawData?['vehicle_type']?.toString() ?? 'Car';
+    final collection =
+        rawData?['collection'] as Map<String, dynamic>? ?? rawData;
+
+    isDriving.value = collection?['is_driving'] ?? false;
+    vehicleType.value = collection?['vehicle_type']?.toString() ?? 'Car';
 
     // Recreate PageController so it's never disposed/stale
     try {
@@ -85,26 +88,26 @@ class InformasiUmumController extends GetxController {
     fullNameController.text = user.fullname ?? '';
     emailController.text = user.email ?? '';
 
-    if (rawData != null) {
-      phoneController.text = rawData?['visitor_phone']?.toString() ?? '';
+    if (collection != null) {
+      phoneController.text = collection['visitor_phone']?.toString() ?? '';
       organizationController.text =
-          rawData?['visitor_organization_name']?.toString() ?? '';
+          collection['visitor_organization_name']?.toString() ?? '';
       identityIdController.text =
-          rawData?['visitor_identity_id']?.toString() ?? '';
+          collection['visitor_identity_id']?.toString() ?? '';
 
       // Step 2
-      picHostController.text = rawData?['host_name']?.toString() ?? '';
-      agendaController.text = rawData?['agenda']?.toString() ?? '';
+      picHostController.text = collection['host_name']?.toString() ?? '';
+      agendaController.text = collection['agenda']?.toString() ?? '';
       destinationController.text =
-          rawData?['site_place_name']?.toString() ?? '';
+          collection['site_place_name']?.toString() ?? '';
       visitStartController.text =
-          rawData?['visitor_period_start']?.toString() ?? '';
+          collection['visitor_period_start']?.toString() ?? '';
       visitEndController.text =
-          rawData?['visitor_period_end']?.toString() ?? '';
+          collection['visitor_period_end']?.toString() ?? '';
 
       // Step 3 (isDriving and vehicleType already set above)
       vehiclePlateController.text =
-          rawData?['vehicle_plate_number']?.toString() ?? '';
+          collection['vehicle_plate_number']?.toString() ?? '';
     }
 
     // Eagerly mark empty required fields so red borders show on page open
@@ -391,11 +394,14 @@ class InformasiUmumController extends GetxController {
     try {
       if (rawData == null) throw Exception("Data tidak lengkap (rawData null)");
 
+      final collection =
+          rawData!['collection'] as Map<String, dynamic>? ?? rawData!;
+
       // Copy question_page array to modify it
       List<dynamic> questionPage = [];
-      if (rawData!['question_page'] != null) {
+      if (collection['question_page'] != null) {
         // Deep copy via JSON encode/decode to avoid modifying original safely
-        questionPage = jsonDecode(jsonEncode(rawData!['question_page']));
+        questionPage = jsonDecode(jsonEncode(collection['question_page']));
       }
 
       // Helper function to update answers (more flexible: search all pages if needed)
@@ -418,19 +424,16 @@ class InformasiUmumController extends GetxController {
                 formField['answer_file'] = value?.toString();
                 formField.remove('answer_text');
                 formField.remove('answer_datetime');
-              }
-              // 2. field_type 9 -> answer_datetime
-              else if (fieldType == 9) {
+              } else if (fieldType == 9) {
                 if (value != null && value.toString().isNotEmpty) {
-                  try {
-                    final dt = DateTime.parse(value.toString());
-                    formField['answer_datetime'] = dt.toUtc().toIso8601String();
-                    formField.remove('answer_text');
-                    formField.remove('answer_file');
-                  } catch (e) {
-                    debugPrint('Error parsing date for $fieldShortName: $e');
-                    formField['answer_text'] = value.toString();
+                  // Ensure UTC 'Z' suffix so the backend can parse the datetime correctly
+                  String dtVal = value.toString();
+                  if (!dtVal.endsWith('Z') && !dtVal.contains('+')) {
+                    dtVal = '${dtVal}Z';
                   }
+                  formField['answer_datetime'] = dtVal;
+                  formField.remove('answer_text');
+                  formField.remove('answer_file');
                 } else {
                   formField.remove('answer_datetime');
                 }
@@ -470,9 +473,9 @@ class InformasiUmumController extends GetxController {
       updateAnswer('Indentity Id', identityIdController.text);
 
       // ── Step 2 (Purpose of Visit) ──────────────────────────────────
-      updateAnswer('Agenda', rawData?['agenda']);
-      updateAnswer('Visit Start', rawData?['visitor_period_start']);
-      updateAnswer('Visit End', rawData?['visitor_period_end']);
+      updateAnswer('Agenda', collection['agenda']);
+      updateAnswer('Visit Start', collection['visitor_period_start']);
+      updateAnswer('Visit End', collection['visitor_period_end']);
 
       // ── Step 3: Vehicle fields ───────────────────────────────────────
       updateAnswer('Is Driving/Riding', isDriving.value.toString());
@@ -496,22 +499,21 @@ class InformasiUmumController extends GetxController {
 
       // ── Dynamic Site Detection ───────────────────────────────────────
       String? sitePlaceId;
-      try {
-        final siteResp = await apiService.getSites(invitationCode);
-        if (siteResp.statusCode == 200 &&
-            siteResp.data['status'] == 'success') {
-          final collection = siteResp.data['collection'] as List?;
-          if (collection != null && collection.isNotEmpty) {
-            sitePlaceId = collection[0]['id']?.toString();
-            debugPrint('Dynamically found site ID: $sitePlaceId');
+      for (var page in questionPage) {
+        final form = page['form'] as List?;
+        if (form == null) continue;
+        for (var field in form) {
+          if (field['remarks'] == 'site_place') {
+            sitePlaceId = field['answer_text']?.toString();
+            debugPrint('site_place from question_page: $sitePlaceId');
+            break;
           }
         }
-      } catch (e) {
-        debugPrint('Warning: Failed to fetch sites dynamically: $e');
+        if (sitePlaceId != null) break;
       }
 
-      // Fallback to null if empty, server might prefer null over "" for unknown site
       final String rootSiteId = sitePlaceId ?? "";
+      debugPrint('Final registered_site: $rootSiteId');
 
       void updateAnswerByRemarks(String remarks, String? value) {
         for (var page in questionPage) {
@@ -522,15 +524,17 @@ class InformasiUmumController extends GetxController {
               final fieldType = field['field_type'];
               if (fieldType == 9) {
                 if (value != null && value.isNotEmpty) {
-                  try {
-                    final dt = DateTime.parse(value);
-                    field['answer_datetime'] = dt.toUtc().toIso8601String();
-                    field.remove('answer_text');
-                  } catch (e) {
-                    field['answer_text'] = value;
+                  // Ensure UTC 'Z' suffix
+                  String dtVal = value;
+                  if (!dtVal.endsWith('Z') && !dtVal.contains('+')) {
+                    dtVal = '${dtVal}Z';
                   }
+                  field['answer_datetime'] = dtVal;
+                  field.remove('answer_text');
                 }
-              } else if (fieldType == 10 || fieldType == 11 || fieldType == 12) {
+              } else if (fieldType == 10 ||
+                  fieldType == 11 ||
+                  fieldType == 12) {
                 field['answer_file'] = value;
                 field.remove('answer_text');
               } else {
@@ -542,23 +546,19 @@ class InformasiUmumController extends GetxController {
         }
       }
 
-      final String? hostId = rawData!['host']?.toString();
+      final String? hostId = collection['host']?.toString();
       updateAnswerByRemarks('host', hostId);
-      updateAnswerByRemarks('site_place', sitePlaceId);
 
       // ── Build payload ─────────────────────────────────────────────────
-      // Prefer transaction_visitor_id for the root field
-      final trxVisitorId = rawData!['transaction_visitor_id'] ?? rawData!['id'];
-      final visitorTypeId = rawData!['visitor_type']?.toString();
-
-      // PraRegistrationController uses NAME for visitor_type in payload
-      final visitorTypeName = rawData!['visitor_type_name']?.toString() ?? 
-                             visitorTypeId;
-      
-      final visitorRole = rawData!['visitor_role'] ?? "Visitor";
+      // Always use 'id' field for trx_visitor_id
+      final trxVisitorId = collection['id']?.toString();
+      final visitorTypeId = collection['visitor_type']?.toString();
+      final visitorRole = collection['visitor_role'] ?? "Visitor";
+      final applicationId = collection['application_id']?.toString();
+      final visitorId = collection['visitor_id']?.toString();
 
       debugPrint(
-        'trx_visitor_id: $trxVisitorId | site_place: $rootSiteId | visitor_type: $visitorTypeName',
+        'trx_visitor_id: $trxVisitorId | site_place: $rootSiteId | visitor_type: $visitorTypeId',
       );
 
       // Final defensive check on questionPage: ensure no nulls, but respect field_type rules
@@ -592,17 +592,17 @@ class InformasiUmumController extends GetxController {
 
       final payload = {
         "trx_visitor_id": trxVisitorId,
-        "visitor_type": visitorTypeName,
+        "visitor_id": visitorId,
+        "application_id": applicationId,
+        "visitor_type": visitorTypeId,
         "type_registered": 0,
-        "is_group": rawData!['is_group'] ?? false,
-        "tz": rawData!['tz'] ?? "Asia/Jakarta",
+        "is_group": collection['is_group'] ?? false,
+        "tz": collection['tz'] ?? "Asia/Jakarta",
         "registered_site": rootSiteId,
         "flow": "Invitation",
         "visitor_role": visitorRole,
         "data_visitor": [
-          {
-            "question_page": questionPage,
-          },
+          {"question_page": questionPage},
         ],
       };
 
