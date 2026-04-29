@@ -400,8 +400,19 @@ class InformasiUmumController extends GetxController {
       // Copy question_page array to modify it
       List<dynamic> questionPage = [];
       if (collection['question_page'] != null) {
-        // Deep copy via JSON encode/decode to avoid modifying original safely
-        questionPage = jsonDecode(jsonEncode(collection['question_page']));
+        final raw = collection['question_page'];
+        // question_page bisa datang sebagai List atau Map (tergantung API response)
+        List<dynamic> pageList;
+        if (raw is List) {
+          pageList = raw;
+        } else if (raw is Map) {
+          // Kalau Map, ambil values-nya sebagai List
+          pageList = raw.values.toList();
+        } else {
+          pageList = [];
+        }
+        // Deep copy via JSON encode/decode agar tidak memodifikasi data original
+        questionPage = jsonDecode(jsonEncode(pageList));
       }
 
       // Helper function to update answers (more flexible: search all pages if needed)
@@ -412,8 +423,10 @@ class InformasiUmumController extends GetxController {
       }) {
         bool found = false;
         for (var page in questionPage) {
-          final form = page['form'] as List?;
-          if (form == null) continue;
+          // Guard: page harus Map, bukan String (bisa terjadi kalau iterasi Map keys)
+          if (page is! Map) continue;
+          final form = page['form'];
+          if (form is! List) continue;
           for (var formField in form) {
             if (formField['short_name'].toString().toLowerCase().trim() ==
                 fieldShortName.toLowerCase().trim()) {
@@ -500,8 +513,9 @@ class InformasiUmumController extends GetxController {
       // ── Dynamic Site Detection ───────────────────────────────────────
       String? sitePlaceId;
       for (var page in questionPage) {
-        final form = page['form'] as List?;
-        if (form == null) continue;
+        if (page is! Map) continue;
+        final form = page['form'];
+        if (form is! List) continue;
         for (var field in form) {
           if (field['remarks'] == 'site_place') {
             sitePlaceId = field['answer_text']?.toString();
@@ -517,8 +531,9 @@ class InformasiUmumController extends GetxController {
 
       void updateAnswerByRemarks(String remarks, String? value) {
         for (var page in questionPage) {
-          final form = page['form'] as List?;
-          if (form == null) continue;
+          if (page is! Map) continue;
+          final form = page['form'];
+          if (form is! List) continue;
           for (var field in form) {
             if (field['remarks'] == remarks) {
               final fieldType = field['field_type'];
@@ -563,8 +578,9 @@ class InformasiUmumController extends GetxController {
 
       // Final defensive check on questionPage: ensure no nulls, but respect field_type rules
       for (var page in questionPage) {
-        final form = page['form'] as List?;
-        if (form == null) continue;
+        if (page is! Map) continue;
+        final form = page['form'];
+        if (form is! List) continue;
         for (var field in form) {
           final fType = field['field_type'];
           if (fType == 9) {
