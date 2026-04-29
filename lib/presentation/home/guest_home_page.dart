@@ -24,6 +24,7 @@ class _GuestHomePageState extends State<GuestHomePage> {
   final userCtrl = UserController.to;
 
   static const _blue = Color(0xFF1976D2);
+  static const _blueDark = Color(0xFF0E5DB5);
   static const _bgPage = Color(0xFFF4F7FB);
 
   @override
@@ -33,13 +34,22 @@ class _GuestHomePageState extends State<GuestHomePage> {
     final bottom = mq.padding.bottom; // safe area below navbar
 
     return Scaffold(
-      backgroundColor: _blue,
       body: LayoutBuilder(
         builder: (context, constraints) {
           return Stack(
             children: [
-              // Blue header zone — top 40%
-              Container(height: constraints.maxHeight * 0.40, color: _blue),
+              // Full background gradient
+              Container(
+                width: double.infinity,
+                height: constraints.maxHeight,
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [_blue, _blueDark],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                ),
+              ),
 
               SafeArea(
                 bottom: false,
