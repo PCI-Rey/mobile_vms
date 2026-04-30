@@ -400,7 +400,7 @@ class _Step1VisitorInfo extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Obx(() {
-      final detail = controller.selectedTypeDetail.value;
+      final detail = controller.formStructure.value;
       if (detail == null) {
         return const Center(child: CircularProgressIndicator());
       }
@@ -420,7 +420,7 @@ class _Step1VisitorInfo extends StatelessWidget {
 
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: section.visitForm
+        children: section.praForm // FIX: pra_form, not visit_form
             .where((f) => f.isEnable)
             .map(
               (f) => _FormFieldWidget(
@@ -446,7 +446,7 @@ class _Step2PurposeVisit extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Obx(() {
-      final detail = controller.selectedTypeDetail.value;
+      final detail = controller.formStructure.value;
       if (detail == null) {
         return const Center(child: CircularProgressIndicator());
       }
@@ -464,7 +464,7 @@ class _Step2PurposeVisit extends StatelessWidget {
 
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: section.visitForm
+        children: section.praForm // FIX: pra_form, not visit_form
             .where((f) => f.isEnable)
             .map(
               (f) => _FormFieldWidget(
@@ -535,6 +535,50 @@ class _FormFieldWidget extends StatelessWidget {
   Widget _buildInputWidget(BuildContext ctx) {
     // 0=Text, 1=Number, 2=Email, 3=Dropdown, 4=DatePicker,
     // 5=Radio, 6=Checkbox, 9=DateTime, 10=Camera, 11=File, 12=Image
+
+    // Special case: API-backed dropdowns by remarks
+    if (field.remarks == 'host') return _buildApiDropdown(
+      items: controller.hosts,
+      selectedId: controller.selectedHostId,
+      onSelected: (id, name) {
+        controller.selectedHostId.value = id;
+        field.answerText = id;
+        controller.updateForm();
+      },
+      hint: 'Pilih PIC Host',
+    );
+
+    if (field.remarks == 'site_place') return _buildApiDropdown(
+      items: controller.sites,
+      selectedId: controller.selectedSiteId,
+      onSelected: (id, name) {
+        controller.selectedSiteId.value = id;
+        field.answerText = id;
+        controller.updateForm();
+      },
+      hint: 'Pilih Destinasi',
+    );
+
+    // Employee name dropdown — shown when visitor type is Employee
+    if (field.remarks == 'employee_name' || field.remarks == 'employee') {
+      return _buildApiDropdown(
+        items: controller.employees,
+        selectedId: controller.selectedEmployeeId,
+        onSelected: (id, name) {
+          controller.selectedEmployeeId.value = id;
+          field.answerText = id;
+          controller.name.value = name;
+          debugPrint('[EMPLOYEE] Selected → id="$id" (UUID), name="$name"');
+          debugPrint('[EMPLOYEE] field.answerText is now: "${field.answerText}"');
+          controller.updateForm();
+        },
+        hint: 'Pilih Employee',
+      );
+    }
+
+    // Static agenda dropdown with 'Other' free-text option
+    if (field.remarks == 'agenda') return _buildAgendaDropdown();
+
     switch (field.fieldType) {
       case 0:
       case 1:
@@ -570,6 +614,244 @@ class _FormFieldWidget extends StatelessWidget {
     }
   }
 
+  /// API dropdown — bottom sheet picker, ALWAYS opens from the bottom.
+  Widget _buildApiDropdown({
+    required RxList<DropdownItem> items,
+    required RxString selectedId,
+    required void Function(String id, String name) onSelected,
+    required String hint,
+  }) {
+    return Obx(() {
+      final list = items.toList();
+      final currentId = selectedId.value;
+      final selectedItem =
+          list.any((e) => e.id == currentId)
+              ? list.firstWhere((e) => e.id == currentId)
+              : null;
+
+      return _buildPickerTrigger(
+        displayText: selectedItem?.name ?? '',
+        hint: hint,
+        onTap: (ctx) async {
+          final result = await _showPickerSheet<DropdownItem>(
+            ctx,
+            title: hint,
+            items: list,
+            labelOf: (e) => e.name,
+            isSelected: (e) => e.id == currentId,
+          );
+          if (result != null) onSelected(result.id, result.name);
+        },
+      );
+    });
+  }
+
+  /// Static agenda picker with 'Other' free-text option.
+  static const _agendaOptions = [
+    'Meeting', 'Presentation', 'Visit', 'Training', 'Report', 'Other',
+  ];
+
+  Widget _buildAgendaDropdown() {
+    return StatefulBuilder(
+      builder: (ctx, setState) {
+        final predefined = _agendaOptions.sublist(0, 5);
+        final selectedLabel = predefined.contains(field.answerText)
+            ? field.answerText
+            : (field.answerText.isEmpty ? '' : 'Other');
+        final showCustomField = selectedLabel == 'Other';
+
+        final textDecoration = InputDecoration(
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: const BorderSide(color: AppColors.grey300)),
+          enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: const BorderSide(color: AppColors.grey300)),
+          focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide:
+                  const BorderSide(color: AppColors.primary500, width: 1.5)),
+        );
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildPickerTrigger(
+              displayText: selectedLabel,
+              hint: 'Pilih Agenda',
+              onTap: (context) async {
+                final result = await _showPickerSheet<String>(
+                  context,
+                  title: 'Pilih Agenda',
+                  items: _agendaOptions,
+                  labelOf: (e) => e,
+                  isSelected: (e) => e == selectedLabel,
+                );
+                if (result != null) {
+                  if (result == 'Other') {
+                    field.answerText = 'Other';
+                    controller.agenda.value = '';
+                  } else {
+                    field.answerText = result;
+                    controller.agenda.value = result;
+                  }
+                  setState(() {});
+                  controller.updateForm();
+                }
+              },
+            ),
+            if (showCustomField) ...[
+              const SizedBox(height: 8),
+              TextFormField(
+                initialValue:
+                    field.answerText == 'Other' ? '' : field.answerText,
+                decoration: textDecoration.copyWith(
+                  hintText: 'Other',
+                  hintStyle:
+                      const TextStyle(color: AppColors.grey400, fontSize: 13),
+                ),
+                style: const TextStyle(fontSize: 14),
+                onChanged: (v) {
+                  field.answerText = v;
+                  controller.agenda.value = v;
+                  controller.updateForm();
+                },
+              ),
+            ],
+          ],
+        );
+      },
+    );
+  }
+
+  /// Trigger widget that looks like a dropdown field but opens a bottom sheet.
+  Widget _buildPickerTrigger({
+    required String displayText,
+    required String hint,
+    required void Function(BuildContext) onTap,
+  }) {
+    return Builder(
+      builder: (ctx) => GestureDetector(
+        onTap: () => onTap(ctx),
+        child: Container(
+          width: double.infinity,
+          padding:
+              const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+          decoration: BoxDecoration(
+            border: Border.all(color: AppColors.grey300),
+            borderRadius: BorderRadius.circular(8),
+            color: Colors.white,
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  displayText.isEmpty ? hint : displayText,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: displayText.isEmpty
+                        ? AppColors.grey400
+                        : Colors.black87,
+                  ),
+                ),
+              ),
+              const Icon(Icons.arrow_drop_down,
+                  color: AppColors.grey400, size: 22),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Bottom sheet list picker — always slides up from the bottom.
+  static Future<T?> _showPickerSheet<T>(
+    BuildContext context, {
+    required String title,
+    required List<T> items,
+    required String Function(T) labelOf,
+    required bool Function(T) isSelected,
+  }) {
+    return showModalBottomSheet<T>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (sheetCtx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Drag handle
+            Container(
+              margin: const EdgeInsets.symmetric(vertical: 10),
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: AppColors.grey300,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            Text(title,
+                style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.black87)),
+            const SizedBox(height: 8),
+            const Divider(height: 1),
+            ConstrainedBox(
+              constraints: BoxConstraints(
+                maxHeight: MediaQuery.of(context).size.height * 0.45,
+              ),
+              child: ListView.builder(
+                shrinkWrap: true,
+                itemCount: items.length,
+                itemBuilder: (_, i) {
+                  final item = items[i];
+                  final label = labelOf(item);
+                  final selected = isSelected(item);
+                  return InkWell(
+                    onTap: () => Navigator.of(sheetCtx).pop(item),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 20, vertical: 14),
+                      color: selected
+                          ? AppColors.primary500.withOpacity(0.08)
+                          : Colors.transparent,
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Text(label,
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: selected
+                                      ? AppColors.primary500
+                                      : Colors.black87,
+                                  fontWeight: selected
+                                      ? FontWeight.w600
+                                      : FontWeight.normal,
+                                )),
+                          ),
+                          if (selected)
+                            const Icon(Icons.check,
+                                size: 18, color: AppColors.primary500),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildTextField({required TextInputType keyboardType}) {
     return TextFormField(
       initialValue: field.answerText,
@@ -594,31 +876,66 @@ class _FormFieldWidget extends StatelessWidget {
       ),
       onChanged: (v) {
         field.answerText = v;
+        // FIX: Also write to dedicated controller observables per remarks
+        switch (field.remarks) {
+          case 'name':
+            controller.name.value = v;
+            break;
+          case 'email':
+            controller.email.value = v;
+            break;
+          case 'phone':
+            controller.phone.value = v;
+            break;
+          case 'organization':
+            controller.organization.value = v;
+            break;
+          case 'indentity_id':
+            controller.identityId.value = v;
+            break;
+          case 'host':
+            controller.selectedHostId.value = v;
+            break;
+          case 'agenda':
+            controller.agenda.value = v;
+            break;
+          case 'site_place':
+            controller.selectedSiteId.value = v;
+            break;
+        }
         controller.updateForm();
       },
     );
   }
 
   Widget _buildRadioGroup() {
-    return Column(
-      children: field.multipleOptionFields.map((opt) {
-        return StatefulBuilder(
-          builder: (ctx, setState) => RadioListTile<String>(
-            value: opt.value,
-            groupValue: field.answerText,
-            activeColor: AppColors.primary500,
-            title: Text(opt.name, style: const TextStyle(fontSize: 14)),
-            contentPadding: EdgeInsets.zero,
-            onChanged: (v) {
-              if (v != null) {
-                field.answerText = v;
-                setState(() {});
-                controller.updateForm();
-              }
-            },
-          ),
+    // FIX: ONE StatefulBuilder wraps ALL options so selecting one rebuilds all.
+    // Previously each option had its own StatefulBuilder → two could appear selected.
+    return StatefulBuilder(
+      builder: (ctx, setState) {
+        return Column(
+          children: field.multipleOptionFields.map((opt) {
+            return RadioListTile<String>(
+              value: opt.value,
+              groupValue: field.answerText, // shared group value
+              activeColor: AppColors.primary500,
+              title: Text(opt.name, style: const TextStyle(fontSize: 14)),
+              contentPadding: EdgeInsets.zero,
+              onChanged: (v) {
+                if (v != null) {
+                  field.answerText = v;
+                  // Also sync isEmployee observable if this is the employee question
+                  if (field.remarks == 'is_employee') {
+                    controller.isEmployee.value = (v == 'true' || v == 'Yes' || v == '1');
+                  }
+                  setState(() {}); // rebuilds ALL options in this group
+                  controller.updateForm();
+                }
+              },
+            );
+          }).toList(),
         );
-      }).toList(),
+      },
     );
   }
 
@@ -721,6 +1038,14 @@ class _FormFieldWidget extends StatelessWidget {
       field.answerDatetime = iso;
       field.answerText = iso;
       ctrl.text = _formatDisplay(iso, false);
+
+      // FIX: Sync to controller observables so isStep3Valid passes
+      if (field.remarks == 'visitor_period_start') {
+        controller.visitStart.value = picked;
+      } else if (field.remarks == 'visitor_period_end') {
+        controller.visitEnd.value = picked;
+      }
+
       setState(() {});
       controller.updateForm();
     }
@@ -777,6 +1102,14 @@ class _FormFieldWidget extends StatelessWidget {
     field.answerDatetime = iso;
     field.answerText = iso;
     ctrl.text = _formatDisplay(iso, true);
+
+    // FIX: Sync to controller observables so isStep3Valid passes
+    if (field.remarks == 'visitor_period_start') {
+      controller.visitStart.value = dtRaw;
+    } else if (field.remarks == 'visitor_period_end') {
+      controller.visitEnd.value = dtRaw;
+    }
+
     setState(() {});
     controller.updateForm();
   }

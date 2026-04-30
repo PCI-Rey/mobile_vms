@@ -226,6 +226,48 @@ class ApiService {
     }
   }
 
+  Future<Response> getEmployees(String token) async {
+    try {
+      final response = await _dio.get(
+        '/$pathApi/invitation-visitor/employee',
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+      return response;
+    } on DioException catch (e) {
+      debugPrint('Dio Error getEmployees: ${e.message}');
+      if (e.response != null) return e.response!;
+      rethrow;
+    }
+  }
+
+  Future<Response> getHosts(String token) async {
+    try {
+      final response = await _dio.get(
+        '/$pathApi/invitation-visitor/host',
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+      return response;
+    } on DioException catch (e) {
+      debugPrint('Dio Error getHosts: ${e.message}');
+      if (e.response != null) return e.response!;
+      rethrow;
+    }
+  }
+
+  Future<Response> getSitesWithToken(String token) async {
+    try {
+      final response = await _dio.get(
+        '/$pathApi/invitation-site',
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+      return response;
+    } on DioException catch (e) {
+      debugPrint('Dio Error getSitesWithToken: ${e.message}');
+      if (e.response != null) return e.response!;
+      rethrow;
+    }
+  }
+
   Future<Response> getVisitorTypeById(String token, String id) async {
     try {
       final response = await _dio.get(

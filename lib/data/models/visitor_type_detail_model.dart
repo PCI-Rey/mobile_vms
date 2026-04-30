@@ -121,7 +121,9 @@ class SectionPageVisitorType {
   final bool isDocument;
   final bool canMultipleUsed;
   final String foreignId;
-  final List<VisitFormField> visitForm;
+  // FIX: Use praForm (pra_form) not visitForm (visit_form).
+  // visit_form is for walk-in; pra_form is for pre-registration.
+  final List<VisitFormField> praForm;
 
   const SectionPageVisitorType({
     required this.id,
@@ -130,13 +132,15 @@ class SectionPageVisitorType {
     required this.isDocument,
     required this.canMultipleUsed,
     required this.foreignId,
-    required this.visitForm,
+    required this.praForm,
   });
 
   factory SectionPageVisitorType.fromJson(Map<String, dynamic> json) {
-    final forms = ((json['VisitForm'] ?? json['visit_form']) as List<dynamic>? ?? [])
-        .map((e) => VisitFormField.fromJson(e as Map<String, dynamic>))
-        .toList();
+    // FIX: Read pra_form / PraForm — not visit_form / VisitForm
+    final forms =
+        ((json['PraForm'] ?? json['pra_form']) as List<dynamic>? ?? [])
+            .map((e) => VisitFormField.fromJson(e as Map<String, dynamic>))
+            .toList();
 
     return SectionPageVisitorType(
       id: (json['Id'] ?? json['id'])?.toString() ?? '',
@@ -146,7 +150,7 @@ class SectionPageVisitorType {
       canMultipleUsed:
           (json['CanMultipleUsed'] ?? json['can_multiple_used']) == true,
       foreignId: (json['ForeignId'] ?? json['foreign_id'])?.toString() ?? '',
-      visitForm: forms,
+      praForm: forms,
     );
   }
 
@@ -157,7 +161,7 @@ class SectionPageVisitorType {
         'is_document': isDocument,
         'can_multiple_used': canMultipleUsed,
         'foreign_id': foreignId,
-        'form': visitForm.map((e) => e.toJson()).toList(),
+        'form': praForm.map((e) => e.toJson()).toList(),
       };
 }
 
