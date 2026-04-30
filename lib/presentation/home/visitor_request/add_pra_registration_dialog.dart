@@ -10,10 +10,12 @@ import 'controllers/pra_registration_controller.dart';
 
 /// Shows the Add Pra Registration dialog.
 Future<void> showAddPraRegistrationDialog(BuildContext context) {
-  // Put fresh controller every time dialog opens
-  final controller = Get.put(PraRegistrationController());
-  controller.resetForm();
-  controller.fetchVisitorTypes();
+  // Always delete the old instance first so onInit re-runs with the current token.
+  // Without this, Get.put returns the cached (stale) controller from the previous session.
+  Get.delete<PraRegistrationController>(force: true);
+
+  // Create a fresh controller — onInit will re-fetch employees/hosts/sites
+  Get.put(PraRegistrationController());
 
   return showDialog(
     context: context,
@@ -560,20 +562,30 @@ class _FormFieldWidget extends StatelessWidget {
     );
 
     // Employee name dropdown — shown when visitor type is Employee
+    // Disabled (greyed out) when user answered 'No' to is_employee
     if (field.remarks == 'employee_name' || field.remarks == 'employee') {
-      return _buildApiDropdown(
-        items: controller.employees,
-        selectedId: controller.selectedEmployeeId,
-        onSelected: (id, name) {
-          controller.selectedEmployeeId.value = id;
-          field.answerText = id;
-          controller.name.value = name;
-          debugPrint('[EMPLOYEE] Selected → id="$id" (UUID), name="$name"');
-          debugPrint('[EMPLOYEE] field.answerText is now: "${field.answerText}"');
-          controller.updateForm();
-        },
-        hint: 'Pilih Employee',
-      );
+      return Obx(() {
+        final enabled = controller.isEmployee.value;
+        return Opacity(
+          opacity: enabled ? 1.0 : 0.4,
+          child: IgnorePointer(
+            ignoring: !enabled,
+            child: _buildApiDropdown(
+              items: controller.employees,
+              selectedId: controller.selectedEmployeeId,
+              onSelected: (id, name) {
+                controller.selectedEmployeeId.value = id;
+                field.answerText = id;
+                controller.name.value = name;
+                debugPrint('[EMPLOYEE] Selected → id="$id" (UUID), name="$name"');
+                debugPrint('[EMPLOYEE] field.answerText is now: "${field.answerText}"');
+                controller.updateForm();
+              },
+              hint: 'Pilih Employee',
+            ),
+          ),
+        );
+      });
     }
 
     // Static agenda dropdown with 'Other' free-text option
@@ -593,6 +605,17 @@ class _FormFieldWidget extends StatelessWidget {
         );
 
       case 5: // Radio
+        // For is_employee: add a visual divider below to separate from next fields
+        if (field.remarks == 'is_employee') {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildRadioGroup(),
+              const SizedBox(height: 4),
+              const Divider(thickness: 1, color: AppColors.grey200),
+            ],
+          );
+        }
         return _buildRadioGroup();
 
       case 4: // Date picker

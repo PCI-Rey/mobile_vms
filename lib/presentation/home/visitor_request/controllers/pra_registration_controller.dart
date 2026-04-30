@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:developer' as dev;
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../../data/datasources/api_service.dart';
@@ -127,8 +128,7 @@ class PraRegistrationController extends GetxController {
     isLoadingDetail.value = true;
     try {
       final response = await _api.getVisitorTypeById(token, id);
-      debugPrint('=== FORM STRUCTURE RESPONSE ===');
-      debugPrint(jsonEncode(response.data));
+      dev.log('=== FORM STRUCTURE RESPONSE ===\n${jsonEncode(response.data)}', name: 'PraReg');
       if (response.data['status'] == 'success') {
         final collection =
             response.data['collection'] as Map<String, dynamic>? ?? {};
@@ -417,15 +417,16 @@ class PraRegistrationController extends GetxController {
           'tz': deviceTz,
           'flow': 'Praregister',
           'visitor_role': resolvedRole,
-          'registered_site': selectedSiteId.value,
+          // Only include registered_site if user actually selected one
+          if (selectedSiteId.value.isNotEmpty)
+            'registered_site': selectedSiteId.value,
           'data_visitor': [
             {'question_page': questionPage},
           ],
         };
       }
 
-      // ignore: avoid_print
-      print('=== SUBMIT PAYLOAD ===\n${jsonEncode(body)}');
+      dev.log('=== SUBMIT PAYLOAD ===\n${jsonEncode(body)}', name: 'PraReg');
 
       final response = (isGroup.value == true)
           ? await _api.submitNewPraInviteGroup(token, body)
