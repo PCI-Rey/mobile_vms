@@ -31,11 +31,6 @@ Future<void> showAddPraRegistrationDialog(BuildContext context) {
 class _AddPraRegistrationDialog extends StatelessWidget {
   const _AddPraRegistrationDialog();
 
-  static const _stepTitles = [
-    'User Type',
-    'Visitor Information',
-    'Purpose Visit',
-  ];
 
   Future<bool> _showExitConfirmation(BuildContext context) async {
     final ctrl = Get.find<PraRegistrationController>();
@@ -130,13 +125,22 @@ class _AddPraRegistrationDialog extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(vertical: 12),
                 child: Column(
                   children: [
-                    Text(
-                      _stepTitles[step],
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
+                    Builder(builder: (_) {
+                      final title = (step == 1 && ctrl.isGroup.value == true)
+                          ? 'Visitor Information (Group)'
+                          : const [
+                              'User Type',
+                              'Visitor Information',
+                              'Purpose Visit',
+                            ][step];
+                      return Text(
+                        title,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      );
+                    }),
                     const SizedBox(height: 6),
                     _StepDots(currentStep: step, total: 3),
                   ],
@@ -244,7 +248,7 @@ class _Step0UserType extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // ── Visitor Type section ─────────────────────────────────
-          _SectionHeader(title: 'Visitor Type'),
+          _SectionHeader(title: 'Visitor Type', isRequired: true),
           const SizedBox(height: 8),
 
           if (controller.isLoadingTypes.value)
@@ -326,7 +330,7 @@ class _Step0UserType extends StatelessWidget {
           const SizedBox(height: 20),
 
           // ── Select Status Visitor ────────────────────────────────
-          _SectionHeader(title: 'Select Status Visitor'),
+          _SectionHeader(title: 'Select Status Visitor', isRequired: true),
           const SizedBox(height: 8),
           Row(
             children: [
@@ -358,7 +362,12 @@ class _Step0UserType extends StatelessWidget {
               ),
               const SizedBox(width: 16),
               GestureDetector(
-                onTap: () => controller.isGroup.value = true,
+                onTap: () {
+                  if (controller.isGroup.value != true) {
+                    controller.isGroup.value = true;
+                    controller.initGroupMode();
+                  }
+                },
                 child: Row(
                   children: [
                     Padding(
@@ -385,9 +394,112 @@ class _Step0UserType extends StatelessWidget {
               ),
             ],
           ),
+
+          // ── Group List (visible when Group selected) ─────────────
+          if (controller.isGroup.value == true) ..._buildGroupList(controller),
         ],
       );
     });
+  }
+
+  List<Widget> _buildGroupList(PraRegistrationController controller) {
+    return [
+      const SizedBox(height: 20),
+      _SectionHeader(title: 'Group List', isRequired: true),
+      const SizedBox(height: 8),
+      Container(
+        decoration: BoxDecoration(
+          border: Border.all(color: AppColors.grey200),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Column(
+          children: [
+            // Table header
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: const BoxDecoration(
+                color: AppColors.grey100,
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(8),
+                  topRight: Radius.circular(8),
+                ),
+              ),
+              child: const Row(
+                children: [
+                  Expanded(
+                    flex: 3,
+                    child: Text(
+                      'Group Name',
+                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.grey600),
+                    ),
+                  ),
+                  SizedBox(width: 8),
+                  SizedBox(
+                    width: 80,
+                    child: Text(
+                      'Code',
+                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.grey600),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Divider(height: 1, color: AppColors.grey200),
+            // Group row
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: Row(
+                children: [
+                  // Group Name input
+                  Expanded(
+                    flex: 3,
+                    child: TextField(
+                      onChanged: (v) => controller.groupName.value = v,
+                      decoration: InputDecoration(
+                        hintText: 'Enter group name',
+                        hintStyle: TextStyle(color: AppColors.grey400, fontSize: 13),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(6),
+                          borderSide: const BorderSide(color: AppColors.grey300),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(6),
+                          borderSide: const BorderSide(color: AppColors.grey300),
+                        ),
+                        isDense: true,
+                      ),
+                      style: const TextStyle(fontSize: 13),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  // Auto-generated code (read-only) — fixed width, no wrap
+                  Obx(() => Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: AppColors.grey100,
+                      border: Border.all(color: AppColors.grey300),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      controller.groupCode.value,
+                      maxLines: 1,
+                      overflow: TextOverflow.clip,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 0.5,
+                        color: AppColors.primary500,
+                      ),
+                    ),
+                  )),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    ];
   }
 }
 
@@ -402,13 +514,17 @@ class _Step1VisitorInfo extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Obx(() {
+      // Group mode — show visitor table
+      if (controller.isGroup.value == true) {
+        return _buildGroupVisitorTable(context);
+      }
+
+      // Single mode — existing form
       final detail = controller.formStructure.value;
       if (detail == null) {
         return const Center(child: CircularProgressIndicator());
       }
 
-      // Find the first section that contains 'visitor' in name (case-insensitive)
-      // or fall back to first section
       final sections = detail.sectionPageVisitorTypes;
       final section =
           sections.firstWhereOrNull(
@@ -422,7 +538,7 @@ class _Step1VisitorInfo extends StatelessWidget {
 
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: section.praForm // FIX: pra_form, not visit_form
+        children: section.praForm
             .where((f) => f.isEnable)
             .map(
               (f) => _FormFieldWidget(
@@ -434,6 +550,238 @@ class _Step1VisitorInfo extends StatelessWidget {
             .toList(),
       );
     });
+  }
+
+  Widget _buildGroupVisitorTable(BuildContext context) {
+    return Obx(() {
+      final visitors = controller.groupVisitors;
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Visitor cards
+          ...List.generate(visitors.length, (i) {
+            final v = visitors[i];
+            return Container(
+              margin: const EdgeInsets.only(bottom: 12),
+              decoration: BoxDecoration(
+                border: Border.all(color: AppColors.grey200),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Column(
+                children: [
+                  // Card header — visitor number + delete
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    decoration: const BoxDecoration(
+                      color: AppColors.grey100,
+                      borderRadius: BorderRadius.only(
+                        topLeft: Radius.circular(10),
+                        topRight: Radius.circular(10),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.person_outline,
+                            size: 16, color: AppColors.primary500),
+                        const SizedBox(width: 6),
+                        Text(
+                          'Visitor ${i + 1}',
+                          style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.grey700,
+                          ),
+                        ),
+                        const Spacer(),
+                        if (visitors.length > 1)
+                          GestureDetector(
+                            onTap: () => controller.removeGroupVisitor(i),
+                            child: Container(
+                              padding: const EdgeInsets.all(4),
+                              decoration: BoxDecoration(
+                                color: Colors.red.shade50,
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Icon(
+                                Icons.delete_outline,
+                                size: 16,
+                                color: Colors.red.shade400,
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+
+                  // Card body — fields in 2-column grid
+                  Padding(
+                    padding: const EdgeInsets.all(14),
+                    child: Column(
+                      children: [
+                        // Row 1: Fullname + Email
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: _GroupTextField(
+                                label: 'Full Name',
+                                controller: v.fullName,
+                                hint: 'Enter full name',
+                                onChanged: (_) => controller.updateForm(),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: _GroupTextField(
+                                label: 'Email',
+                                controller: v.email,
+                                hint: 'Enter email',
+                                keyboardType: TextInputType.emailAddress,
+                                onChanged: (_) => controller.updateForm(),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+
+                        // Row 2: Phone + Organization
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: _GroupTextField(
+                                label: 'Phone',
+                                controller: v.phone,
+                                hint: 'e.g. 08123...',
+                                keyboardType: TextInputType.phone,
+                                onChanged: (_) => controller.updateForm(),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: _GroupTextField(
+                                label: 'Organization',
+                                controller: v.organization,
+                                hint: 'Company / Instansi',
+                                onChanged: (_) => controller.updateForm(),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+
+                        // Row 3: KTP (full width)
+                        _GroupTextField(
+                          label: 'Identity ID (KTP)',
+                          controller: v.identityId,
+                          hint: 'Enter KTP number',
+                          keyboardType: TextInputType.number,
+                          onChanged: (_) => controller.updateForm(),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }),
+
+          // Add New button
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: controller.addGroupVisitor,
+              icon: const Icon(Icons.add, size: 18, color: AppColors.primary500),
+              label: const Text(
+                'Add New Visitor',
+                style: TextStyle(
+                  color: AppColors.primary500,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 13,
+                ),
+              ),
+              style: OutlinedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                side: const BorderSide(color: AppColors.primary200),
+                backgroundColor: AppColors.primary50,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+            ),
+          ),
+        ],
+      );
+    });
+  }
+}
+
+// ─── Group text field with label ──────────────────────────────────────────────
+
+class _GroupTextField extends StatelessWidget {
+  final String label;
+  final TextEditingController controller;
+  final String hint;
+  final TextInputType? keyboardType;
+  final ValueChanged<String>? onChanged;
+  const _GroupTextField({
+    required this.label,
+    required this.controller,
+    required this.hint,
+    this.keyboardType,
+    this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        RichText(
+          text: TextSpan(
+            text: label,
+            style: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: Colors.black87,
+            ),
+            children: const [
+              TextSpan(
+                text: ' *',
+                style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 4),
+        TextField(
+          controller: controller,
+          keyboardType: keyboardType,
+          onChanged: onChanged,
+          style: const TextStyle(fontSize: 13),
+          decoration: InputDecoration(
+            hintText: hint,
+            hintStyle: const TextStyle(fontSize: 12, color: AppColors.grey400),
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: const BorderSide(color: AppColors.grey300),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: const BorderSide(color: AppColors.grey300),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide:
+                  const BorderSide(color: AppColors.primary500, width: 1.5),
+            ),
+            isDense: true,
+          ),
+        ),
+      ],
+    );
   }
 }
 
@@ -539,27 +887,31 @@ class _FormFieldWidget extends StatelessWidget {
     // 5=Radio, 6=Checkbox, 9=DateTime, 10=Camera, 11=File, 12=Image
 
     // Special case: API-backed dropdowns by remarks
-    if (field.remarks == 'host') return _buildApiDropdown(
-      items: controller.hosts,
-      selectedId: controller.selectedHostId,
-      onSelected: (id, name) {
-        controller.selectedHostId.value = id;
-        field.answerText = id;
-        controller.updateForm();
-      },
-      hint: 'Pilih PIC Host',
-    );
+    if (field.remarks == 'host') {
+      return _buildApiDropdown(
+        items: controller.hosts,
+        selectedId: controller.selectedHostId,
+        onSelected: (id, name) {
+          controller.selectedHostId.value = id;
+          field.answerText = id;
+          controller.updateForm();
+        },
+        hint: 'Pilih PIC Host',
+      );
+    }
 
-    if (field.remarks == 'site_place') return _buildApiDropdown(
-      items: controller.sites,
-      selectedId: controller.selectedSiteId,
-      onSelected: (id, name) {
-        controller.selectedSiteId.value = id;
-        field.answerText = id;
-        controller.updateForm();
-      },
-      hint: 'Pilih Destinasi',
-    );
+    if (field.remarks == 'site_place') {
+      return _buildApiDropdown(
+        items: controller.sites,
+        selectedId: controller.selectedSiteId,
+        onSelected: (id, name) {
+          controller.selectedSiteId.value = id;
+          field.answerText = id;
+          controller.updateForm();
+        },
+        hint: 'Pilih Destinasi',
+      );
+    }
 
     // Employee name dropdown — shown when visitor type is Employee
     // Disabled (greyed out) when user answered 'No' to is_employee
@@ -842,7 +1194,7 @@ class _FormFieldWidget extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 20, vertical: 14),
                       color: selected
-                          ? AppColors.primary500.withOpacity(0.08)
+                          ? AppColors.primary500.withValues(alpha: 0.08)
                           : Colors.transparent,
                       child: Row(
                         children: [
@@ -936,27 +1288,29 @@ class _FormFieldWidget extends StatelessWidget {
     // Previously each option had its own StatefulBuilder → two could appear selected.
     return StatefulBuilder(
       builder: (ctx, setState) {
-        return Column(
-          children: field.multipleOptionFields.map((opt) {
-            return RadioListTile<String>(
-              value: opt.value,
-              groupValue: field.answerText, // shared group value
-              activeColor: AppColors.primary500,
-              title: Text(opt.name, style: const TextStyle(fontSize: 14)),
-              contentPadding: EdgeInsets.zero,
-              onChanged: (v) {
-                if (v != null) {
-                  field.answerText = v;
-                  // Also sync isEmployee observable if this is the employee question
-                  if (field.remarks == 'is_employee') {
-                    controller.isEmployee.value = (v == 'true' || v == 'Yes' || v == '1');
-                  }
-                  setState(() {}); // rebuilds ALL options in this group
-                  controller.updateForm();
-                }
-              },
-            );
-          }).toList(),
+        return RadioGroup<String>(
+          groupValue: field.answerText,
+          onChanged: (v) {
+            if (v != null) {
+              field.answerText = v;
+              // Also sync isEmployee observable if this is the employee question
+              if (field.remarks == 'is_employee') {
+                controller.isEmployee.value = (v == 'true' || v == 'Yes' || v == '1');
+              }
+              setState(() {}); // rebuilds ALL options in this group
+              controller.updateForm();
+            }
+          },
+          child: Column(
+            children: field.multipleOptionFields.map((opt) {
+              return RadioListTile<String>(
+                value: opt.value,
+                activeColor: AppColors.primary500,
+                title: Text(opt.name, style: const TextStyle(fontSize: 14)),
+                contentPadding: EdgeInsets.zero,
+              );
+            }).toList(),
+          ),
         );
       },
     );
@@ -1392,11 +1746,22 @@ class _BottomNav extends StatelessWidget {
   Widget build(BuildContext ctx) {
     return Obx(() {
       final isLast = step == 2;
-      // Next enabled as long as a type is selected and status is selected
-      final canProceed = step == 0
-          ? controller.selectedVisitorTypeId.value.isNotEmpty &&
-                controller.isGroup.value != null
-          : controller.validateCurrentStep();
+      // Next enabled based on current step + mode
+      final bool canProceed;
+      if (step == 0) {
+        final typeSelected = controller.selectedVisitorTypeId.value.isNotEmpty;
+        final statusSelected = controller.isGroup.value != null;
+        if (controller.isGroup.value == true) {
+          // Group mode: also require group name to be filled
+          canProceed = typeSelected &&
+              statusSelected &&
+              controller.groupName.value.trim().isNotEmpty;
+        } else {
+          canProceed = typeSelected && statusSelected;
+        }
+      } else {
+        canProceed = controller.validateCurrentStep();
+      }
       final isSubmitting = controller.isSubmitting.value;
 
       return Padding(
@@ -1475,7 +1840,8 @@ class _BottomNav extends StatelessWidget {
 
 class _SectionHeader extends StatelessWidget {
   final String title;
-  const _SectionHeader({required this.title});
+  final bool isRequired;
+  const _SectionHeader({required this.title, this.isRequired = false});
 
   @override
   Widget build(BuildContext context) {
@@ -1484,12 +1850,24 @@ class _SectionHeader extends StatelessWidget {
       decoration: const BoxDecoration(
         border: Border(left: BorderSide(color: AppColors.primary500, width: 3)),
       ),
-      child: Text(
-        title,
-        style: const TextStyle(
-          fontSize: 14,
-          fontWeight: FontWeight.w600,
-          color: Colors.black87,
+      child: RichText(
+        text: TextSpan(
+          text: title,
+          style: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: Colors.black87,
+          ),
+          children: [
+            if (isRequired)
+              const TextSpan(
+                text: ' *',
+                style: TextStyle(
+                  color: Colors.red,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+          ],
         ),
       ),
     );

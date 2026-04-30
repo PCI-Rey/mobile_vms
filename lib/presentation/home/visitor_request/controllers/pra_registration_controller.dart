@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:developer' as dev;
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../../data/datasources/api_service.dart';
@@ -8,12 +9,41 @@ import '../../../../data/models/visitor_type_model.dart';
 import '../../../../data/models/visitor_type_detail_model.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
 
-// Simple model for dropdown items (Employee, Host, Site)
+// ─── Simple model for dropdown items (Employee, Host, Site) ──────────────────
+
 class DropdownItem {
   final String id;
   final String name;
   DropdownItem({required this.id, required this.name});
 }
+
+// ─── Group Visitor Row Model ──────────────────────────────────────────────────
+
+/// Represents one visitor row in group registration mode.
+class GroupVisitorRow {
+  final TextEditingController fullName = TextEditingController();
+  final TextEditingController email = TextEditingController();
+  final TextEditingController phone = TextEditingController();
+  final TextEditingController organization = TextEditingController();
+  final TextEditingController identityId = TextEditingController();
+
+  void dispose() {
+    fullName.dispose();
+    email.dispose();
+    phone.dispose();
+    organization.dispose();
+    identityId.dispose();
+  }
+
+  bool get isValid =>
+      fullName.text.trim().isNotEmpty &&
+      email.text.trim().isNotEmpty &&
+      phone.text.trim().isNotEmpty &&
+      organization.text.trim().isNotEmpty &&
+      identityId.text.trim().isNotEmpty;
+}
+
+// ─── Controller ───────────────────────────────────────────────────────────────
 
 class PraRegistrationController extends GetxController {
   final _api = ApiService();
@@ -67,6 +97,11 @@ class PraRegistrationController extends GetxController {
   final RxBool isLoading = false.obs;
   final RxBool isSubmitting = false.obs;
   final RxInt currentStep = 0.obs;
+
+  // Group mode
+  final RxString groupCode = ''.obs;
+  final RxString groupName = ''.obs;
+  final RxList<GroupVisitorRow> groupVisitors = <GroupVisitorRow>[].obs;
 
   // Trigger for UI reactivity on manual field updates
   final RxInt formUpdateTrigger = 0.obs;
@@ -234,6 +269,37 @@ class PraRegistrationController extends GetxController {
     formUpdateTrigger.value++;
   }
 
+  // ─── Group Management ─────────────────────────────────────────────────────
+
+  String _generateGroupCode() {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    final rand = Random();
+    return List.generate(6, (_) => chars[rand.nextInt(chars.length)]).join();
+  }
+
+  void initGroupMode() {
+    groupCode.value = _generateGroupCode();
+    groupName.value = '';
+    // Start with 1 empty visitor row
+    for (final v in groupVisitors) {
+      v.dispose();
+    }
+    groupVisitors.clear();
+    groupVisitors.add(GroupVisitorRow());
+  }
+
+  void addGroupVisitor() {
+    groupVisitors.add(GroupVisitorRow());
+    updateForm();
+  }
+
+  void removeGroupVisitor(int index) {
+    if (groupVisitors.length <= 1) return; // keep at least 1
+    groupVisitors[index].dispose();
+    groupVisitors.removeAt(index);
+    updateForm();
+  }
+
   // ─── Validation ───────────────────────────────────────────────────────────
 
   // Step 0: visitor type selected AND form loaded AND single/group chosen
@@ -263,19 +329,51 @@ class PraRegistrationController extends GetxController {
     switch (currentStep.value) {
       case 0:
         return isStep1Valid && isGroup.value != null;
+
       case 1:
-        final nameOk = name.value.trim().isNotEmpty;
-        final emailOk = email.value.trim().isNotEmpty;
-        final phoneOk = phone.value.trim().isNotEmpty;
-        final orgOk = organization.value.trim().isNotEmpty;
-        return nameOk && emailOk && phoneOk && orgOk;
+        if (isGroup.value == true) {
+          // Group mode: all visitor rows must be valid + group name filled
+          return groupName.value.trim().isNotEmpty &&
+              groupVisitors.isNotEmpty &&
+              groupVisitors.every((v) => v.isValid);
+        }
+        // Single mode: validate ALL mandatory enabled fields from form structure
+        final detail1 = formStructure.value;
+        if (detail1 == null) return false;
+        final sections1 = detail1.sectionPageVisitorTypes;
+        final visitorSection = sections1.firstWhereOrNull(
+              (s) => s.name.toLowerCase().contains('visitor'),
+            ) ?? sections1.firstOrNull;
+        if (visitorSection == null) return false;
+        for (final f in visitorSection.praForm) {
+          if (!f.isEnable || !f.mandatory) continue;
+          // Skip date/time fields checked separately
+          final isDateTime = f.fieldType == 4 ||
+              f.fieldType == 9 ||
+              f.remarks == 'visitor_period_start' ||
+              f.remarks == 'visitor_period_end';
+          if (isDateTime) {
+            if (f.answerDatetime.isEmpty) return false;
+          } else {
+            // For is_employee: always has a default 'false', so skip mandatory check
+            if (f.remarks == 'is_employee') continue;
+            if (f.answerText.trim().isEmpty) return false;
+          }
+        }
+        return true;
+
       case 2:
-        final hostOk = selectedHostId.value.isNotEmpty;
-        final agendaOk = agenda.value.trim().isNotEmpty;
-        final siteOk = selectedSiteId.value.isNotEmpty;
-        final startOk = visitStart.value != null;
-        final endOk = visitEnd.value != null;
-        return hostOk && agendaOk && siteOk && startOk && endOk;
+        // Validate ALL mandatory enabled fields from purpose visit section
+        final detail2 = formStructure.value;
+        if (detail2 == null) return false;
+        // Core Purpose Visit observables
+        if (selectedHostId.value.isEmpty) return false;
+        if (agenda.value.trim().isEmpty) return false;
+        if (selectedSiteId.value.isEmpty) return false;
+        if (visitStart.value == null) return false;
+        if (visitEnd.value == null) return false;
+        return true;
+
       default:
         return true;
     }
@@ -393,6 +491,83 @@ class PraRegistrationController extends GetxController {
       final Map<String, dynamic> body;
 
       if (isGroup.value == true) {
+        // Build one question_page per visitor row
+        final dataVisitors = groupVisitors.map((visitor) {
+          final visitorAnswers = {
+            'name': visitor.fullName.text.trim(),
+            'email': visitor.email.text.trim(),
+            'phone': visitor.phone.text.trim(),
+            'organization': visitor.organization.text.trim(),
+            'indentity_id': visitor.identityId.text.trim(),
+          };
+
+          final qp = detail.sectionPageVisitorTypes.map((section) {
+            final form = section.praForm.where((f) => f.isEnable).map((f) {
+              final isDateTimeField =
+                  f.fieldType == 4 || f.fieldType == 9 ||
+                  f.remarks == 'visitor_period_start' ||
+                  f.remarks == 'visitor_period_end';
+
+              String answerText = '';
+              String answerDatetime = '';
+
+              if (f.remarks == 'visitor_period_start' && visitStart.value != null) {
+                answerDatetime = visitStart.value!.toUtc().toIso8601String().substring(0, 19);
+              } else if (f.remarks == 'visitor_period_end' && visitEnd.value != null) {
+                answerDatetime = visitEnd.value!.toUtc().toIso8601String().substring(0, 19);
+              } else if (isDateTimeField) {
+                answerDatetime = f.answerDatetime;
+              } else {
+                // Use visitor-specific answers, fall back to form field
+                answerText = visitorAnswers[f.remarks] ?? _answerTextForRemarks(f.remarks, f);
+              }
+
+              final Map<String, dynamic> json = {
+                'sort': f.sort,
+                'short_name': f.shortName,
+                'long_display_text': f.longDisplayText,
+                'field_type': f.fieldType,
+                'is_primary': f.isPrimary,
+                'is_enable': f.isEnable,
+                'mandatory': f.mandatory,
+                'remarks': f.remarks,
+                'custom_field_id': f.customFieldId,
+                'multiple_option_fields':
+                    f.multipleOptionFields.map((o) => o.toJson()).toList(),
+                'visitor_form_type': f.visitorFormType,
+              };
+
+              if (answerDatetime.isNotEmpty) {
+                json['answer_datetime'] = answerDatetime;
+                json['answer_text'] = '';
+              } else {
+                json['answer_text'] = answerText;
+              }
+
+              if ([10, 11, 12].contains(f.fieldType)) {
+                json['answer_file'] = f.answerText;
+                json.remove('answer_text');
+                json.remove('answer_datetime');
+              }
+              return json;
+            }).toList();
+
+            return {
+              'id': section.id,
+              'sort': section.sort,
+              'name': section.name,
+              'status': 0,
+              'is_document': section.isDocument,
+              'can_multiple_used': section.canMultipleUsed,
+              'self_only': false,
+              'foreign_id': section.foreignId,
+              'form': form,
+            };
+          }).toList();
+
+          return {'question_page': qp};
+        }).toList();
+
         body = {
           'list_group': [
             {
@@ -400,12 +575,11 @@ class PraRegistrationController extends GetxController {
               'is_group': true,
               'type_registered': 1,
               'tz': deviceTz,
-              'registered_site': selectedSiteId.value,
-              'group_code': '',
-              'group_name': '',
-              'data_visitor': [
-                {'question_page': questionPage},
-              ],
+              if (selectedSiteId.value.isNotEmpty)
+                'registered_site': selectedSiteId.value,
+              'group_code': groupCode.value,
+              'group_name': groupName.value.trim(),
+              'data_visitor': dataVisitors,
             }
           ],
         };
@@ -513,6 +687,14 @@ class PraRegistrationController extends GetxController {
     identityId.value = '';
     isEmployee.value = false;
     selectedEmployeeId.value = '';
+
+    // Group
+    groupCode.value = '';
+    groupName.value = '';
+    for (final v in groupVisitors) {
+      v.dispose();
+    }
+    groupVisitors.clear();
 
     // Step 2
     selectedHostId.value = '';
