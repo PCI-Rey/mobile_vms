@@ -5,6 +5,7 @@ import '../../../../data/datasources/api_service.dart';
 import '../../../../data/datasources/hive_service.dart';
 import '../../../../data/models/visitor_type_model.dart';
 import '../../../../data/models/visitor_type_detail_model.dart';
+import 'package:flutter_timezone/flutter_timezone.dart';
 
 class PraRegistrationController extends GetxController {
   final _api = ApiService();
@@ -247,11 +248,19 @@ class PraRegistrationController extends GetxController {
         };
       }).toList();
 
+      String deviceTz = 'Asia/Jakarta'; // Fallback default
+      try {
+        final timezoneInfo = await FlutterTimezone.getLocalTimezone();
+        deviceTz = timezoneInfo.identifier;
+      } catch (e) {
+        debugPrint('Error detecting timezone, falling back to Asia/Jakarta: $e');
+      }
+
       final body = {
         'visitor_type': selectedVisitorTypeName.value,
         'type_registered': 1,
         'is_group': isGroup.value ?? false,
-        'tz': 'Asia/Jakarta',
+        'tz': deviceTz,
         'registered_site': '',
         'flow': 'Invitation',
         'visitor_role': 'Visitor',
@@ -267,10 +276,9 @@ class PraRegistrationController extends GetxController {
             i, i + 800 > payloadStr.length ? payloadStr.length : i + 800));
       }
 
-      final response = await _api.submitNewVisit(
-        token,
-        body,
-      );
+      final response = (isGroup.value ?? false)
+          ? await _api.submitNewPraInviteGroup(token, body)
+          : await _api.submitNewPraInvite(token, body);
 
       debugPrint('=== SUBMIT RESPONSE ===');
       debugPrint(jsonEncode(response.data));
@@ -320,5 +328,26 @@ class PraRegistrationController extends GetxController {
     selectedTypeDetail.value = null;
     isGroup.value = null;
     currentStep.value = 0;
+  }
+
+  bool get hasUnsavedChanges {
+    // 1. Check basic selections
+    if (selectedVisitorTypeId.value.isNotEmpty) return true;
+    if (isGroup.value != null) return true;
+
+    // 2. Check form fields if any detail is loaded
+    final detail = selectedTypeDetail.value;
+    if (detail != null) {
+      for (var section in detail.sectionPageVisitorTypes) {
+        for (var field in section.visitForm) {
+          if (field.answerText.trim().isNotEmpty ||
+              field.answerDatetime.isNotEmpty) {
+            return true;
+          }
+        }
+      }
+    }
+
+    return false;
   }
 }

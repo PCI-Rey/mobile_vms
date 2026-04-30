@@ -666,8 +666,9 @@ class InformasiUmumController extends GetxController {
       }
       log('Submit Response: ${submitResponse?.data}');
 
-      if (submitResponse == null)
+      if (submitResponse == null) {
         throw Exception('Tidak ada response dari server');
+      }
 
       if (submitResponse.statusCode != 200 ||
           submitResponse.data['status'] == 'bad_request') {

@@ -35,42 +35,91 @@ class _AddPraRegistrationDialog extends StatelessWidget {
     'Purpose Visit',
   ];
 
+  Future<bool> _showExitConfirmation(BuildContext context) async {
+    final ctrl = Get.find<PraRegistrationController>();
+    if (!ctrl.hasUnsavedChanges) return true;
+
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text(
+          'Batal Registrasi?',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        content: const Text(
+          'Data yang sudah kamu isi akan terhapus. Apakah kamu yakin ingin menutup form ini?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Tidak', style: TextStyle(color: Colors.grey)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text(
+              'Ya, Tutup',
+              style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+            ),
+          ),
+        ],
+      ),
+    );
+    return result ?? false;
+  }
+
   @override
   Widget build(BuildContext context) {
     final ctrl = Get.find<PraRegistrationController>();
 
-    return Dialog(
-      backgroundColor: Colors.white,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 32),
-      child: SizedBox(
-        height: MediaQuery.of(context).size.height * 0.85,
-        child: Obx(() {
-          final step = ctrl.currentStep.value;
-          return Column(
-            mainAxisSize: MainAxisSize.max,
-            children: [
-              // ── Header ────────────────────────────────────────────
-              Padding(
-                padding: const EdgeInsets.fromLTRB(20, 16, 12, 0),
-                child: Row(
-                  children: [
-                    const Expanded(
-                      child: Text(
-                        'Add Pra Registration',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) return;
+        final shouldExit = await _showExitConfirmation(context);
+        if (shouldExit && context.mounted) {
+          Navigator.of(context).pop();
+        }
+      },
+      child: Dialog(
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 32),
+        child: SizedBox(
+          height: MediaQuery.of(context).size.height * 0.85,
+          child: Obx(() {
+            final step = ctrl.currentStep.value;
+            return Column(
+              mainAxisSize: MainAxisSize.max,
+              children: [
+                // ── Header ────────────────────────────────────────────
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 16, 12, 0),
+                  child: Row(
+                    children: [
+                      const Expanded(
+                        child: Text(
+                          'Add Pra Registration',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                          ),
                         ),
                       ),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.close, size: 20),
-                      onPressed: () => Navigator.of(context).pop(),
-                    ),
-                  ],
+                      IconButton(
+                        icon: const Icon(Icons.close, size: 20),
+                        onPressed: () async {
+                          final shouldExit =
+                              await _showExitConfirmation(context);
+                          if (shouldExit && context.mounted) {
+                            Navigator.of(context).pop();
+                          }
+                        },
+                      ),
+                    ],
+                  ),
                 ),
-              ),
 
               const Divider(height: 1),
 
@@ -113,7 +162,8 @@ class _AddPraRegistrationDialog extends StatelessWidget {
           );
         }),
       ),
-    );
+    ),
+  );
   }
 }
 
@@ -659,8 +709,15 @@ class _FormFieldWidget extends StatelessWidget {
     if (picked != null) {
       final isUTC = field.remarks == "visitor_period_start" ||
           field.remarks == "visitor_period_end";
-      final dt = isUTC ? picked.toUtc() : picked;
-      final iso = dt.toIso8601String().replaceAll(RegExp(r'\.\d+'), '');
+      
+      // Simpan sebagai ISO string. Jika remarks adalah period start/end, simpan sebagai UTC.
+      String iso;
+      if (isUTC) {
+        iso = picked.toUtc().toIso8601String().replaceAll(RegExp(r'\.\d+'), '');
+      } else {
+        iso = picked.toIso8601String().replaceAll(RegExp(r'\.\d+'), '');
+      }
+
       field.answerDatetime = iso;
       field.answerText = iso;
       ctrl.text = _formatDisplay(iso, false);
@@ -708,8 +765,15 @@ class _FormFieldWidget extends StatelessWidget {
         DateTime(date.year, date.month, date.day, time.hour, time.minute);
     final isUTC = field.remarks == "visitor_period_start" ||
         field.remarks == "visitor_period_end";
-    final dt = isUTC ? dtRaw.toUtc() : dtRaw;
-    final iso = dt.toIso8601String().replaceAll(RegExp(r'\.\d+'), '');
+    
+    // Simpan sebagai ISO string. Jika remarks adalah period start/end, simpan sebagai UTC.
+    String iso;
+    if (isUTC) {
+      iso = dtRaw.toUtc().toIso8601String().replaceAll(RegExp(r'\.\d+'), '');
+    } else {
+      iso = dtRaw.toIso8601String().replaceAll(RegExp(r'\.\d+'), '');
+    }
+
     field.answerDatetime = iso;
     field.answerText = iso;
     ctrl.text = _formatDisplay(iso, true);
@@ -725,11 +789,20 @@ class _FormFieldWidget extends StatelessWidget {
   String _formatDisplay(String iso, bool withTime) {
     if (iso.isEmpty) return '';
     try {
-      final dt = DateTime.parse(iso);
-      if (withTime) {
-        return DateFormat('EEE, dd MMM yyyy HH:mm').format(dt);
+      // Pastikan string diparse sebagai UTC jika ada indikasi tersebut
+      String normalized = iso;
+      if (!normalized.endsWith('Z') &&
+          !normalized.contains('+') &&
+          (field.remarks == "visitor_period_start" ||
+              field.remarks == "visitor_period_end")) {
+        normalized = '${normalized}Z';
       }
-      return DateFormat('EEE, dd MMM yyyy').format(dt);
+
+      final dt = DateTime.parse(normalized).toLocal();
+      if (withTime) {
+        return DateFormat('EEEE, dd MMMM yyyy, HH:mm', 'id').format(dt);
+      }
+      return DateFormat('EEEE, dd MMMM yyyy', 'id').format(dt);
     } catch (_) {
       return iso;
     }

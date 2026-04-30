@@ -3,7 +3,6 @@ import 'package:get/get.dart';
 import '../presentation/onboarding/language_selection_page.dart';
 import '../data/datasources/auth_datasource.dart';
 import '../presentation/dashboard.dart';
-import 'core/core.dart';
 
 class Splashscreen extends StatefulWidget {
   const Splashscreen({super.key});
