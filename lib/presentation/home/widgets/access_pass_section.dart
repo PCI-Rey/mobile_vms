@@ -31,8 +31,16 @@ class AccessPassSection extends StatelessWidget {
           child: Obx(() {
             // Trigger rebuild when language changes
             LanguageController.to.selectedLang.value;
+            String title = 'access_pass'.tr;
+            
+            if (guestCtrl.accessPasses.isNotEmpty && 
+                guestCtrl.selectedPassIndex.value < guestCtrl.accessPasses.length) {
+              final selectedItem = guestCtrl.accessPasses[guestCtrl.selectedPassIndex.value];
+              title = '${'access_pass'.tr} • ${selectedItem.agenda}';
+            }
+            
             return Text(
-              'access_pass'.tr,
+              title,
               style: TextStyle(
                 color: Colors.white,
                 fontSize: rfs(context, 16),
@@ -51,29 +59,14 @@ class AccessPassSection extends StatelessWidget {
           if (guestCtrl.accessPasses.isEmpty) {
             return _buildPassEmpty(sw, context);
           }
-          if (guestCtrl.accessPasses.length == 1) {
-            return AccessPassCard(
-              item: guestCtrl.accessPasses[0],
-              sw: sw,
-              onTap: () => onTap(guestCtrl.accessPasses[0]),
-            );
-          }
-          return CarouselSlider(
-            options: CarouselOptions(
-              height: sw * 0.36,
-              viewportFraction: 0.90,
-              enableInfiniteScroll: false,
-              enlargeCenterPage: true,
-            ),
-            items: guestCtrl.accessPasses
-                .map(
-                  (item) => AccessPassCard(
-                    item: item,
-                    sw: sw,
-                    onTap: () => onTap(item),
-                  ),
-                )
-                .toList(),
+          
+          final int index = guestCtrl.selectedPassIndex.value;
+          final item = guestCtrl.accessPasses[index < guestCtrl.accessPasses.length ? index : 0];
+          
+          return AccessPassCard(
+            item: item,
+            sw: sw,
+            onTap: () => onTap(item),
           );
         }),
       ],

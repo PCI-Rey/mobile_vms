@@ -38,21 +38,21 @@ Future<bool> _showExitConfirmation(BuildContext context) async {
       backgroundColor: Colors.white,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       title: const Text(
-        'Batal Registrasi?',
+        'Cancel Registration?',
         style: TextStyle(fontWeight: FontWeight.bold),
       ),
       content: const Text(
-        'Data yang sudah kamu isi akan terhapus. Apakah kamu yakin ingin menutup form ini?',
+        'The data you have entered will be lost. Are you sure you want to close this form?',
       ),
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(false),
-          child: const Text('Tidak', style: TextStyle(color: Colors.grey)),
+          child: const Text('No', style: TextStyle(color: Colors.grey)),
         ),
         TextButton(
           onPressed: () => Navigator.of(context).pop(true),
           child: const Text(
-            'Ya, Tutup',
+            'Yes, Close',
             style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
           ),
         ),

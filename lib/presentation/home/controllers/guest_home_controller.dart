@@ -13,6 +13,7 @@ class GuestHomeController extends GetxController {
 
   final RxList<AccessPassModel> accessPasses = <AccessPassModel>[].obs;
   final RxBool isLoading = false.obs;
+  final RxInt selectedPassIndex = 0.obs;
   
   Timer? _refreshTimer;
 
@@ -22,6 +23,12 @@ class GuestHomeController extends GetxController {
     _loadFromHive();
     fetchAccessPass(isSilent: true);
     _startPolling();
+  }
+
+  void selectPass(int index) {
+    if (index >= 0 && index < accessPasses.length) {
+      selectedPassIndex.value = index;
+    }
   }
 
   void _loadFromHive() {
@@ -66,6 +73,10 @@ class GuestHomeController extends GetxController {
         // Update Hive and UI
         accessPasses.assignAll(newPasses);
         _hive.saveAccessPasses(newPasses);
+        
+        if (selectedPassIndex.value >= newPasses.length) {
+          selectedPassIndex.value = 0;
+        }
       } else {
         if (!isSilent) {
           Get.snackbar(

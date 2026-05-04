@@ -394,6 +394,12 @@ class PraRegistrationController extends GetxController {
       } else {
         return name.value.trim().isNotEmpty && email.value.trim().isNotEmpty && phone.value.trim().isNotEmpty && organization.value.trim().isNotEmpty && identityId.value.trim().isNotEmpty;
       }
+    } else if (step == 2) {
+      return selectedHostId.value.isNotEmpty && 
+             agenda.value.trim().isNotEmpty && 
+             selectedSiteId.value.isNotEmpty && 
+             visitStart.value != null && 
+             visitEnd.value != null;
     }
     return true;
   }
@@ -465,10 +471,13 @@ class PraRegistrationController extends GetxController {
 
   Future<bool> submitForm() async {
     final token = _token;
-    if (token == null) return false;
+    if (token == null) {
+      _showError('Sesi berakhir. Silakan login kembali.');
+      return false;
+    }
     final detail = formStructure.value;
     if (detail == null) {
-      _showError('Data form tidak lengkap.');
+      _showError('Struktur form belum dimuat sempurna.');
       return false;
     }
     isSubmitting.value = true;
@@ -483,7 +492,77 @@ class PraRegistrationController extends GetxController {
 
       dev.log('[SUBMIT] Starting submission flow...', name: 'PraReg');
 
+      Map<String, dynamic> body;
+      const resolvedRole = 'Visitor';
+
+      // ── Build question_page for Single (used in data_visitor) ──────────
+      final questionPage = detail.sectionPageVisitorTypes.map((section) {
+        final form = section.praForm.where((f) => f.isEnable).map((f) {
+          String answerText = '';
+          String answerDatetime = '';
+          final isDateTimeField = f.fieldType == 4 ||
+              f.fieldType == 9 ||
+              f.remarks == 'visitor_period_start' ||
+              f.remarks == 'visitor_period_end';
+
+          if (f.remarks == 'visitor_period_start' && visitStart.value != null) {
+            answerDatetime =
+                visitStart.value!.toUtc().toIso8601String().substring(0, 19);
+          } else if (f.remarks == 'visitor_period_end' &&
+              visitEnd.value != null) {
+            answerDatetime =
+                visitEnd.value!.toUtc().toIso8601String().substring(0, 19);
+          } else if (isDateTimeField) {
+            answerDatetime = f.answerDatetime;
+          } else {
+            answerText = _answerTextForRemarks(f.remarks, f);
+          }
+
+          final Map<String, dynamic> json = {
+            'sort': f.sort,
+            'short_name': f.shortName,
+            'long_display_text': f.longDisplayText,
+            'field_type': f.fieldType,
+            'is_primary': f.isPrimary,
+            'is_enable': f.isEnable,
+            'mandatory': f.mandatory,
+            'remarks': f.remarks,
+            'custom_field_id': f.customFieldId,
+            'multiple_option_fields':
+                f.multipleOptionFields.map((o) => o.toJson()).toList(),
+            'visitor_form_type': f.visitorFormType,
+          };
+
+          if (answerDatetime.isNotEmpty) {
+            json['answer_datetime'] = answerDatetime;
+            json['answer_text'] = '';
+          } else {
+            json['answer_text'] = answerText;
+          }
+
+          if ([10, 11, 12].contains(f.fieldType)) {
+            json['answer_file'] = f.answerText;
+            json.remove('answer_text');
+            json.remove('answer_datetime');
+          }
+          return json;
+        }).toList();
+
+        return {
+          'id': section.id,
+          'sort': section.sort,
+          'name': section.name,
+          'status': 0,
+          'is_document': section.isDocument,
+          'can_multiple_used': section.canMultipleUsed,
+          'self_only': false,
+          'foreign_id': section.foreignId,
+          'form': form,
+        };
+      }).toList();
+
       if (isGroup.value == true) {
+        // ── GROUP MODE ─────────────────────────────────────────────────────
         final dataVisitors = groupVisitors.map((visitor) {
           final visitorAnswers = {
             'name': visitor.fullName.text.trim(),
@@ -492,24 +571,38 @@ class PraRegistrationController extends GetxController {
             'organization': visitor.organization.text.trim(),
             'indentity_id': visitor.identityId.text.trim(),
             'is_employee': visitor.isEmployee.value.toString(),
-            'employee_name': visitor.isEmployee.value ? visitor.selectedEmployeeId.value : '',
-            'employee': visitor.isEmployee.value ? visitor.selectedEmployeeId.value : '',
+            'employee_name': visitor.isEmployee.value
+                ? visitor.selectedEmployeeId.value
+                : '',
+            'employee': visitor.isEmployee.value
+                ? visitor.selectedEmployeeId.value
+                : '',
           };
 
           final qp = detail.sectionPageVisitorTypes.map((section) {
             final form = section.praForm.where((f) => f.isEnable).map((f) {
-              final isDateTimeField = f.fieldType == 4 || f.fieldType == 9 || f.remarks == 'visitor_period_start' || f.remarks == 'visitor_period_end';
-              String ansText = '';
-              String ansDt = '';
+              String answerText = '';
+              String answerDatetime = '';
+              final isDateTimeField = f.fieldType == 4 ||
+                  f.fieldType == 9 ||
+                  f.remarks == 'visitor_period_start' ||
+                  f.remarks == 'visitor_period_end';
 
-              if (f.remarks == 'visitor_period_start' && visitStart.value != null) {
-                ansDt = visitStart.value!.toUtc().toIso8601String().substring(0, 19);
-              } else if (f.remarks == 'visitor_period_end' && visitEnd.value != null) {
-                ansDt = visitEnd.value!.toUtc().toIso8601String().substring(0, 19);
+              if (f.remarks == 'visitor_period_start' &&
+                  visitStart.value != null) {
+                answerDatetime = visitStart.value!
+                    .toUtc()
+                    .toIso8601String()
+                    .substring(0, 19);
+              } else if (f.remarks == 'visitor_period_end' &&
+                  visitEnd.value != null) {
+                answerDatetime =
+                    visitEnd.value!.toUtc().toIso8601String().substring(0, 19);
               } else if (isDateTimeField) {
-                ansDt = f.answerDatetime;
+                answerDatetime = f.answerDatetime;
               } else {
-                ansText = _answerTextForRemarksInGroup(f.remarks, f, visitorAnswers);
+                answerText =
+                    _answerTextForRemarksInGroup(f.remarks, f, visitorAnswers);
               }
 
               final Map<String, dynamic> json = {
@@ -522,15 +615,16 @@ class PraRegistrationController extends GetxController {
                 'mandatory': f.mandatory,
                 'remarks': f.remarks,
                 'custom_field_id': f.customFieldId,
-                'multiple_option_fields': f.multipleOptionFields.map((o) => o.toJson()).toList(),
+                'multiple_option_fields':
+                    f.multipleOptionFields.map((o) => o.toJson()).toList(),
                 'visitor_form_type': f.visitorFormType,
               };
 
-              if (ansDt.isNotEmpty) {
-                json['answer_datetime'] = ansDt;
+              if (answerDatetime.isNotEmpty) {
+                json['answer_datetime'] = answerDatetime;
                 json['answer_text'] = '';
               } else {
-                json['answer_text'] = ansText;
+                json['answer_text'] = answerText;
               }
 
               if ([10, 11, 12].contains(f.fieldType)) {
@@ -554,95 +648,79 @@ class PraRegistrationController extends GetxController {
             };
           }).toList();
 
-          return {
-            ...visitorAnswers,
-            'question_page': qp,
-          };
+          return {'question_page': qp};
         }).toList();
 
-        final response = await _api.submitNewPraInviteGroup(token, {
-          'visitor_type': selectedVisitorTypeId.value,
-          'site': selectedSiteId.value,
-          'host': selectedHostId.value,
-          'visitor_role': 'Visitor',
-          'agenda': agenda.value,
-          'timezone': deviceTz,
-          'is_group': true,
-          'group_name': groupName.value,
-          'group_code': groupCode.value,
-          'data_visitors': dataVisitors,
-        });
-        return response.data['status'] == 'success';
+        body = {
+          'list_group': [
+            {
+              'visitor_type': selectedVisitorTypeId.value,
+              'is_group': true,
+              'type_registered': 1,
+              'tz': deviceTz,
+              if (selectedSiteId.value.isNotEmpty)
+                'registered_site': selectedSiteId.value,
+              'group_code': groupCode.value,
+              'group_name': groupName.value.trim(),
+              'data_visitor': dataVisitors,
+            }
+          ],
+        };
       } else {
-        final qp = detail.sectionPageVisitorTypes.map((section) {
-          final form = section.praForm.where((f) => f.isEnable).map((f) {
-            final isDateTimeField = f.fieldType == 4 || f.fieldType == 9 || f.remarks == 'visitor_period_start' || f.remarks == 'visitor_period_end';
-            String ansText = '';
-            String ansDt = '';
-
-            if (f.remarks == 'visitor_period_start' && visitStart.value != null) {
-              ansDt = visitStart.value!.toUtc().toIso8601String().substring(0, 19);
-            } else if (f.remarks == 'visitor_period_end' && visitEnd.value != null) {
-              ansDt = visitEnd.value!.toUtc().toIso8601String().substring(0, 19);
-            } else if (isDateTimeField) {
-              ansDt = f.answerDatetime;
-            } else {
-              ansText = _answerTextForRemarks(f.remarks, f);
-            }
-
-            final Map<String, dynamic> json = {
-              'sort': f.sort,
-              'short_name': f.shortName,
-              'long_display_text': f.longDisplayText,
-              'field_type': f.fieldType,
-              'is_primary': f.isPrimary,
-              'is_enable': f.isEnable,
-              'mandatory': f.mandatory,
-              'remarks': f.remarks,
-              'custom_field_id': f.customFieldId,
-              'multiple_option_fields': f.multipleOptionFields.map((o) => o.toJson()).toList(),
-              'visitor_form_type': f.visitorFormType,
-            };
-
-            if (ansDt.isNotEmpty) {
-              json['answer_datetime'] = ansDt;
-              json['answer_text'] = '';
-            } else {
-              json['answer_text'] = ansText;
-            }
-
-            if ([10, 11, 12].contains(f.fieldType)) {
-              json['answer_file'] = f.answerText;
-              json.remove('answer_text');
-              json.remove('answer_datetime');
-            }
-            return json;
-          }).toList();
-
-          return {
-            'id': section.id,
-            'sort': section.sort,
-            'name': section.name,
-            'status': 0,
-            'is_document': section.isDocument,
-            'can_multiple_used': section.canMultipleUsed,
-            'self_only': false,
-            'foreign_id': section.foreignId,
-            'form': form,
-          };
-        }).toList();
-
-        final response = await _api.submitNewPraInvite(token, {
+        // ── SINGLE MODE ────────────────────────────────────────────────────
+        body = {
           'visitor_type': selectedVisitorTypeId.value,
-          'site': selectedSiteId.value,
-          'host': selectedHostId.value,
-          'visitor_role': 'Visitor',
-          'agenda': agenda.value,
-          'timezone': deviceTz,
+          'type_registered': 0,
           'is_group': false,
-          'question_page': qp,
-        });
-        return response.data['status'] == 'success';
+          'tz': deviceTz,
+          'flow': 'Praregister',
+          'visitor_role': resolvedRole,
+          if (selectedSiteId.value.isNotEmpty)
+            'registered_site': selectedSiteId.value,
+          'data_visitor': [
+            {'question_page': questionPage},
+          ],
+        };
+      }
+
+      dev.log('=== SUBMIT PAYLOAD ===\n${jsonEncode(body)}', name: 'PraReg');
+
+      final response = (isGroup.value == true)
+          ? await _api.submitNewPraInviteGroup(token, body)
+          : await _api.submitNewPraInvite(token, body);
+
+      debugPrint('=== SUBMIT RESPONSE ===');
+      debugPrint(jsonEncode(response.data));
+
+      // Guard: server may return a raw String on internal errors instead of JSON
+      final rawData = response.data;
+      if (rawData is! Map) {
+        debugPrint('Unexpected response type: ${rawData.runtimeType}');
+        _showError('Server error. Silakan coba beberapa saat lagi.');
+        return false;
+      }
+
+      final data = rawData;
+      final status = data['status']?.toString() ?? '';
+      final collectionMap =
+          data['collection'] is Map ? data['collection'] as Map : null;
+      final transactionStatus =
+          collectionMap?['transaction_status']?.toString() ?? '';
+
+      if (status == 'success' || transactionStatus == 'UnderCreated') {
+        final msg = data['msg']?.toString() ?? 'Registrasi berhasil!';
+        Get.snackbar(
+          'Sukses',
+          msg,
+          backgroundColor: Colors.green,
+          colorText: Colors.white,
+          snackPosition: SnackPosition.TOP,
+        );
+        return true;
+      } else {
+        final msg = data['msg']?.toString() ?? 'Terjadi kesalahan.';
+        _showError(msg);
+        return false;
       }
     } catch (e) {
       debugPrint('submitForm error: $e');

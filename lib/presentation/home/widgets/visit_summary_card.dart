@@ -7,11 +7,15 @@ import '../../../../core/helper/responsive_helper.dart';
 class VisitSummaryCard extends StatelessWidget {
   final dynamic item;
   final double sw;
+  final VoidCallback? onTap;
+  final bool isSelected;
 
   const VisitSummaryCard({
     super.key,
     required this.item,
     required this.sw,
+    this.onTap,
+    this.isSelected = false,
   });
 
   static const _blue = Color(0xFF1976D2);
@@ -35,21 +39,26 @@ class VisitSummaryCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final String rawStatus = item.visitorStatus.toString().toLowerCase();
     final bool isCheckin = rawStatus == 'checkin';
-    return Container(
-      padding: EdgeInsets.all(sw * 0.035),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(sw * 0.04),
-        border: Border.all(color: Colors.grey.withValues(alpha: 0.08)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: EdgeInsets.all(sw * 0.035),
+        decoration: BoxDecoration(
+          color: isSelected ? const Color(0xFFF0F7FF) : Colors.white,
+          borderRadius: BorderRadius.circular(sw * 0.04),
+          border: Border.all(
+            color: isSelected ? _blue : Colors.grey.withValues(alpha: 0.08),
+            width: isSelected ? 1.5 : 1.0,
           ),
-        ],
-      ),
-      child: Row(
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Row(
         children: [
           Container(
             width: sw * 0.112,
@@ -150,6 +159,6 @@ class VisitSummaryCard extends StatelessWidget {
           ),
         ],
       ),
-    );
+    ));
   }
 }

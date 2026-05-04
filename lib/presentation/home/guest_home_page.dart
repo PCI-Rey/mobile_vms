@@ -175,7 +175,12 @@ class _GuestHomePageState extends State<GuestHomePage> {
               return Column(
                 children: [
                   for (int i = 0; i < guestCtrl.accessPasses.length; i++) ...[
-                    VisitSummaryCard(item: guestCtrl.accessPasses[i], sw: sw),
+                    Obx(() => VisitSummaryCard(
+                      item: guestCtrl.accessPasses[i],
+                      sw: sw,
+                      isSelected: guestCtrl.selectedPassIndex.value == i,
+                      onTap: () => guestCtrl.selectPass(i),
+                    )),
                     if (i < guestCtrl.accessPasses.length - 1)
                       SizedBox(height: sw * 0.025),
                   ],

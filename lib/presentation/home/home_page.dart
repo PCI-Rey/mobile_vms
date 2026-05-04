@@ -89,17 +89,9 @@ class _HomePageState extends State<HomePage> {
       padding: EdgeInsets.symmetric(horizontal: sw * 0.06, vertical: sw * 0.02),
       child: Row(
         children: [
-          // Profile Pic with elegant border
-          Container(
-            padding: const EdgeInsets.all(2.5),
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              border: Border.all(color: Colors.white.withValues(alpha: 0.4), width: 1.5),
-            ),
-            child: CustomCircleImage(
-              image: Assets.images.avaPerson1.image(fit: BoxFit.cover),
-              size: sw * 0.12,
-            ),
+          CustomCircleImage(
+            image: Assets.images.avaPerson1.image(fit: BoxFit.cover),
+            size: sw * 0.12,
           ),
           SizedBox(width: sw * 0.04),
           // Welcome Text

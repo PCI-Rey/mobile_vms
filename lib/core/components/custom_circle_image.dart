@@ -16,18 +16,9 @@ class CustomCircleImage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return SizedBox(
       width: size,
       height: size,
-      padding: EdgeInsets.all(borderWidth),
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [Color(0xFFFFFFFF), Color(0xFF666666)],
-        ),
-      ),
       child: ClipOval(child: image),
     );
   }
