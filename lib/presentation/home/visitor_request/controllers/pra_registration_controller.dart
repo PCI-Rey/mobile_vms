@@ -27,6 +27,11 @@ class GroupVisitorRow {
   final TextEditingController organization = TextEditingController();
   final TextEditingController identityId = TextEditingController();
 
+  // Employee fields — mirrors single-visitor "Are you Employee?" logic
+  final RxBool isEmployee = false.obs;
+  final RxString selectedEmployeeId = ''.obs;
+  final RxString selectedEmployeeName = ''.obs;
+
   void dispose() {
     fullName.dispose();
     email.dispose();
@@ -190,12 +195,15 @@ class PraRegistrationController extends GetxController {
       if (response.data['status'] == 'success') {
         final collection =
             response.data['collection'] as List<dynamic>? ?? [];
+        // Use UUID 'id' as the identifier — this is the primary key the backend expects.
+        // 'person_id' is the badge/card number, NOT the DB primary key.
         employees.value = collection
             .map((e) => DropdownItem(
                   id: e['id']?.toString() ?? '',
                   name: e['name']?.toString() ?? '',
                 ))
             .toList();
+        dev.log('[EMPLOYEE] Loaded ${employees.length} employees. First id=${employees.firstOrNull?.id}', name: 'PraReg');
       }
     } catch (e) {
       debugPrint('fetchEmployees error: $e');
@@ -407,6 +415,15 @@ class PraRegistrationController extends GetxController {
 
       // Build question_page from pra_form (not visit_form).
       // Match remarks to controller values per spec.
+      // Log all field remarks so we can trace what's being sent
+      dev.log('[SUBMIT] All form field remarks:', name: 'PraReg');
+      for (final section in detail.sectionPageVisitorTypes) {
+        for (final f in section.praForm.where((f) => f.isEnable)) {
+          dev.log('  remarks="${f.remarks}" shortName="${f.shortName}" fieldType=${f.fieldType} answerText="${f.answerText}"', name: 'PraReg');
+        }
+      }
+      dev.log('[SUBMIT] selectedEmployeeId="${selectedEmployeeId.value}" isEmployee=${isEmployee.value}', name: 'PraReg');
+
       final questionPage = detail.sectionPageVisitorTypes.map((section) {
         final form = section.praForm.where((f) => f.isEnable).map((f) {
           final isDateTimeField =
@@ -499,6 +516,14 @@ class PraRegistrationController extends GetxController {
             'phone': visitor.phone.text.trim(),
             'organization': visitor.organization.text.trim(),
             'indentity_id': visitor.identityId.text.trim(),
+            // Employee fields — send UUID if user chose "Yes", else 'false'
+            'is_employee': visitor.isEmployee.value.toString(),
+            'employee_name': visitor.isEmployee.value
+                ? visitor.selectedEmployeeId.value
+                : '',
+            'employee': visitor.isEmployee.value
+                ? visitor.selectedEmployeeId.value
+                : '',
           };
 
           final qp = detail.sectionPageVisitorTypes.map((section) {
@@ -663,6 +688,20 @@ class PraRegistrationController extends GetxController {
       case 'site_place':
         // FIX: Send the site ID for the dropdown field
         return selectedSiteId.value;
+      case 'employee_name':
+      case 'employee':
+        // Send the selected employee ID (UUID) for the employee dropdown field.
+        // field.answerText is set to the UUID when user selects from dropdown.
+        dev.log('[SUBMIT] employee remarks="$remarks" → selectedEmployeeId="${selectedEmployeeId.value}", field.answerText="${field.answerText}"', name: 'PraReg');
+        // Prefer the dedicated observable; fallback to field.answerText if set
+        final empId = selectedEmployeeId.value.isNotEmpty
+            ? selectedEmployeeId.value
+            : field.answerText;
+        dev.log('[SUBMIT] Final employee value sent: "$empId"', name: 'PraReg');
+        return empId;
+      case 'is_employee':
+        // Send 'true'/'false' string based on observable
+        return isEmployee.value.toString();
       default:
         // For any other field, fall back to what was typed directly
         return field.answerText;

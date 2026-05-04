@@ -54,6 +54,7 @@ class ApiService {
   Future<Response> submitPraForm(
     Map<String, dynamic> payload, {
     String? visitorTypeId,
+    String? token,
   }) async {
     try {
       debugPrint(
@@ -63,19 +64,14 @@ class ApiService {
 
       final response = await _dio.post(
         '/$pathApi/on-portal/submit/pra-form',
-        // visitor_type sudah ada di dalam body payload, tidak perlu query param ?id=
         data: payload,
+        options: token != null
+            ? Options(headers: {'Authorization': 'Bearer $token'})
+            : null,
       );
       debugPrint('response: $response');
       return response;
     } on DioException catch (e) {
-      // if (e.response != null) {
-      //   log('Error Response Data: ${e.response?.data}');
-      // }
-      // debugPrint('Dio Error submitPraForm: ${e.message}');
-      // debugPrint('Response status: ${e.response?.statusCode}');
-      // debugPrint('Response data: ${e.response?.data}');
-      // // Kembalikan response asli (termasuk 500) supaya retry loop di controller bisa handle
       if (e.response != null) {
         return e.response!;
       }

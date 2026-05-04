@@ -581,8 +581,7 @@ class _Step1VisitorInfo extends StatelessWidget {
                     ),
                     child: Row(
                       children: [
-                        Icon(Icons.person_outline,
-                            size: 16, color: AppColors.primary500),
+                        Icon(Icons.person_outline, size: 16, color: AppColors.primary500),
                         const SizedBox(width: 6),
                         Text(
                           'Visitor ${i + 1}',
@@ -602,22 +601,212 @@ class _Step1VisitorInfo extends StatelessWidget {
                                 color: Colors.red.shade50,
                                 borderRadius: BorderRadius.circular(6),
                               ),
-                              child: Icon(
-                                Icons.delete_outline,
-                                size: 16,
-                                color: Colors.red.shade400,
-                              ),
+                              child: Icon(Icons.delete_outline, size: 16, color: Colors.red.shade400),
                             ),
                           ),
                       ],
                     ),
                   ),
 
-                  // Card body — fields in 2-column grid
+                  // Card body
                   Padding(
                     padding: const EdgeInsets.all(14),
                     child: Column(
                       children: [
+                        // Row 0: Are you Employee? + Employee Name
+                        // Only show when selected visitor type is "Employee"
+                        Obx(() {
+                          final isEmployeeType = controller
+                              .selectedVisitorTypeName.value
+                              .toLowerCase()
+                              .contains('employee');
+                          if (!isEmployeeType) {
+                            // Reset employee state if type is not employee
+                            if (v.isEmployee.value) {
+                              WidgetsBinding.instance.addPostFrameCallback((_) {
+                                v.isEmployee.value = false;
+                                v.selectedEmployeeId.value = '';
+                                v.selectedEmployeeName.value = '';
+                              });
+                            }
+                            return const SizedBox.shrink();
+                          }
+                          final empEnabled = v.isEmployee.value;
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // Are you Employee? label
+                              RichText(
+                                text: const TextSpan(
+                                  text: 'Are you Employee?',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.black87,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                              Row(
+                                children: [
+                                  // Yes
+                                  GestureDetector(
+                                    onTap: () {
+                                      v.isEmployee.value = true;
+                                      controller.updateForm();
+                                    },
+                                    child: Row(
+                                      children: [
+                                        Icon(
+                                          empEnabled
+                                              ? Icons.radio_button_checked
+                                              : Icons.radio_button_unchecked,
+                                          size: 18,
+                                          color: empEnabled
+                                              ? AppColors.primary500
+                                              : AppColors.grey400,
+                                        ),
+                                        const SizedBox(width: 4),
+                                        const Text('Yes',
+                                            style: TextStyle(fontSize: 13)),
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(width: 20),
+                                  // No
+                                  GestureDetector(
+                                    onTap: () {
+                                      v.isEmployee.value = false;
+                                      v.selectedEmployeeId.value = '';
+                                      v.selectedEmployeeName.value = '';
+                                      controller.updateForm();
+                                    },
+                                    child: Row(
+                                      children: [
+                                        Icon(
+                                          !empEnabled
+                                              ? Icons.radio_button_checked
+                                              : Icons.radio_button_unchecked,
+                                          size: 18,
+                                          color: !empEnabled
+                                              ? AppColors.primary500
+                                              : AppColors.grey400,
+                                        ),
+                                        const SizedBox(width: 4),
+                                        const Text('No',
+                                            style: TextStyle(fontSize: 13)),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 12),
+
+                              // Employee Name dropdown (enabled only when isEmployee = true)
+                              Opacity(
+                                opacity: empEnabled ? 1.0 : 0.4,
+                                child: IgnorePointer(
+                                  ignoring: !empEnabled,
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      RichText(
+                                        text: const TextSpan(
+                                          text: 'Employee Name',
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w600,
+                                            color: Colors.black87,
+                                          ),
+                                          children: [
+                                            TextSpan(
+                                              text: ' *',
+                                              style: TextStyle(
+                                                color: Colors.red,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Obx(() {
+                                        final list =
+                                            controller.employees.toList();
+                                        final currentId =
+                                            v.selectedEmployeeId.value;
+                                        final selectedItem = list.any(
+                                                (e) => e.id == currentId)
+                                            ? list.firstWhere(
+                                                (e) => e.id == currentId)
+                                            : null;
+                                        return GestureDetector(
+                                          onTap: () async {
+                                            final result =
+                                                await _showEmployeePicker(
+                                                    context,
+                                                    controller.employees
+                                                        .toList(),
+                                                    currentId);
+                                            if (result != null) {
+                                              v.selectedEmployeeId.value =
+                                                  result.id;
+                                              v.selectedEmployeeName.value =
+                                                  result.name;
+                                              controller.updateForm();
+                                            }
+                                          },
+                                          child: Container(
+                                            width: double.infinity,
+                                            padding: const EdgeInsets.symmetric(
+                                                horizontal: 12, vertical: 12),
+                                            decoration: BoxDecoration(
+                                              border: Border.all(
+                                                  color: AppColors.grey300),
+                                              borderRadius:
+                                                  BorderRadius.circular(8),
+                                              color: Colors.white,
+                                            ),
+                                            child: Row(
+                                              children: [
+                                                Expanded(
+                                                  child: Text(
+                                                    selectedItem?.name
+                                                            .isNotEmpty ==
+                                                            true
+                                                        ? selectedItem!.name
+                                                        : 'Pilih Employee',
+                                                    style: TextStyle(
+                                                      fontSize: 13,
+                                                      color: selectedItem !=
+                                                              null
+                                                          ? Colors.black87
+                                                          : AppColors.grey400,
+                                                    ),
+                                                  ),
+                                                ),
+                                                const Icon(
+                                                    Icons.arrow_drop_down,
+                                                    color: AppColors.grey400,
+                                                    size: 20),
+                                              ],
+                                            ),
+                                          ),
+                                        );
+                                      }),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              const Divider(
+                                  height: 1, color: AppColors.grey200),
+                              const SizedBox(height: 12),
+                            ],
+                          );
+                        }),
+
                         // Row 1: Fullname + Email
                         Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -713,6 +902,89 @@ class _Step1VisitorInfo extends StatelessWidget {
         ],
       );
     });
+  }
+
+  /// Bottom sheet picker untuk employee — digunakan oleh group visitor rows.
+  static Future<DropdownItem?> _showEmployeePicker(
+    BuildContext context,
+    List<DropdownItem> items,
+    String currentId,
+  ) {
+    return showModalBottomSheet<DropdownItem>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (sheetCtx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              margin: const EdgeInsets.symmetric(vertical: 10),
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: AppColors.grey300,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const Text(
+              'Pilih Employee',
+              style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 8),
+            const Divider(height: 1),
+            ConstrainedBox(
+              constraints: BoxConstraints(
+                maxHeight: MediaQuery.of(context).size.height * 0.45,
+              ),
+              child: ListView.builder(
+                shrinkWrap: true,
+                itemCount: items.length,
+                itemBuilder: (_, i) {
+                  final item = items[i];
+                  final selected = item.id == currentId;
+                  return InkWell(
+                    onTap: () => Navigator.of(sheetCtx).pop(item),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 20, vertical: 14),
+                      color: selected
+                          ? AppColors.primary500.withValues(alpha: 0.08)
+                          : Colors.transparent,
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              item.name,
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: selected
+                                    ? AppColors.primary500
+                                    : Colors.black87,
+                                fontWeight: selected
+                                    ? FontWeight.w600
+                                    : FontWeight.normal,
+                              ),
+                            ),
+                          ),
+                          if (selected)
+                            const Icon(Icons.check,
+                                size: 18, color: AppColors.primary500),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
   }
 }
 
@@ -1333,8 +1605,14 @@ class _FormFieldWidget extends StatelessWidget {
   }
 
   Widget _buildDateField(BuildContext ctx, {required bool withTime}) {
+    DateTime? existingDt;
+    if (field.answerDatetime.isNotEmpty) {
+      try {
+        existingDt = DateTime.parse(field.answerDatetime);
+      } catch (_) {}
+    }
     final displayCtrl = TextEditingController(
-      text: _formatDisplay(field.answerDatetime, withTime),
+      text: existingDt != null ? _formatDisplay(existingDt, withTime) : '',
     );
 
     return StatefulBuilder(
@@ -1401,22 +1679,15 @@ class _FormFieldWidget extends StatelessWidget {
       ),
     );
     if (picked != null) {
-      final isUTC = field.remarks == "visitor_period_start" ||
-          field.remarks == "visitor_period_end";
-      
-      // Simpan sebagai ISO string. Jika remarks adalah period start/end, simpan sebagai UTC.
-      String iso;
-      if (isUTC) {
-        iso = picked.toUtc().toIso8601String().replaceAll(RegExp(r'\.\d+'), '');
-      } else {
-        iso = picked.toIso8601String().replaceAll(RegExp(r'\.\d+'), '');
-      }
+      // Store as LOCAL ISO string — controller will convert to UTC at submit time.
+      // Do NOT convert to UTC here to avoid double-conversion.
+      final iso = picked.toIso8601String().replaceAll(RegExp(r'\.\d+'), '');
 
       field.answerDatetime = iso;
       field.answerText = iso;
-      ctrl.text = _formatDisplay(iso, false);
+      ctrl.text = _formatDisplay(picked, false);
 
-      // FIX: Sync to controller observables so isStep3Valid passes
+      // Sync to controller observables so isStep3Valid passes
       if (field.remarks == 'visitor_period_start') {
         controller.visitStart.value = picked;
       } else if (field.remarks == 'visitor_period_end') {
@@ -1465,22 +1736,16 @@ class _FormFieldWidget extends StatelessWidget {
 
     final dtRaw =
         DateTime(date.year, date.month, date.day, time.hour, time.minute);
-    final isUTC = field.remarks == "visitor_period_start" ||
-        field.remarks == "visitor_period_end";
-    
-    // Simpan sebagai ISO string. Jika remarks adalah period start/end, simpan sebagai UTC.
-    String iso;
-    if (isUTC) {
-      iso = dtRaw.toUtc().toIso8601String().replaceAll(RegExp(r'\.\d+'), '');
-    } else {
-      iso = dtRaw.toIso8601String().replaceAll(RegExp(r'\.\d+'), '');
-    }
+
+    // Store as LOCAL ISO string — controller will convert to UTC at submit time.
+    // Do NOT convert to UTC here to avoid double-conversion.
+    final iso = dtRaw.toIso8601String().replaceAll(RegExp(r'\.\d+'), '');
 
     field.answerDatetime = iso;
     field.answerText = iso;
-    ctrl.text = _formatDisplay(iso, true);
+    ctrl.text = _formatDisplay(dtRaw, true);
 
-    // FIX: Sync to controller observables so isStep3Valid passes
+    // Sync to controller observables so isStep3Valid passes
     if (field.remarks == 'visitor_period_start') {
       controller.visitStart.value = dtRaw;
     } else if (field.remarks == 'visitor_period_end') {
@@ -1496,26 +1761,11 @@ class _FormFieldWidget extends StatelessWidget {
     return _FileUploadState(field: field, cameraOnly: field.fieldType == 10);
   }
 
-  String _formatDisplay(String iso, bool withTime) {
-    if (iso.isEmpty) return '';
-    try {
-      // Pastikan string diparse sebagai UTC jika ada indikasi tersebut
-      String normalized = iso;
-      if (!normalized.endsWith('Z') &&
-          !normalized.contains('+') &&
-          (field.remarks == "visitor_period_start" ||
-              field.remarks == "visitor_period_end")) {
-        normalized = '${normalized}Z';
-      }
-
-      final dt = DateTime.parse(normalized).toLocal();
-      if (withTime) {
-        return DateFormat('EEEE, dd MMMM yyyy, HH:mm', 'id').format(dt);
-      }
-      return DateFormat('EEEE, dd MMMM yyyy', 'id').format(dt);
-    } catch (_) {
-      return iso;
+  String _formatDisplay(DateTime dt, bool withTime) {
+    if (withTime) {
+      return DateFormat('EEEE, dd MMMM yyyy, HH:mm', 'id').format(dt);
     }
+    return DateFormat('EEEE, dd MMMM yyyy', 'id').format(dt);
   }
 }
 

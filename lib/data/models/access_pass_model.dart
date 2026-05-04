@@ -56,10 +56,10 @@ class AccessPassModel {
       isGroup: json['is_group'] == true,
       groupName: json['group_name']?.toString() ?? '',
       visitorPeriodStart: json['visitor_period_start'] != null
-          ? DateTime.parse(json['visitor_period_start'].toString())
+          ? _parseUtcToLocal(json['visitor_period_start'].toString())
           : DateTime.now(),
       visitorPeriodEnd: json['visitor_period_end'] != null
-          ? DateTime.parse(json['visitor_period_end'].toString())
+          ? _parseUtcToLocal(json['visitor_period_end'].toString())
           : DateTime.now(),
       visitorNumber: json['visitor_number']?.toString() ?? '',
       visitorCode: json['visitor_code']?.toString() ?? '',
@@ -96,4 +96,19 @@ class AccessPassModel {
         'is_driving': isDriving,
         'tz': tz,
       };
+
+  /// Parse a datetime string from the API as UTC and convert to device local time.
+  /// The API may return strings without timezone suffix (e.g. "2026-05-04T04:04:00"),
+  /// which Dart would incorrectly treat as local time. We force UTC by appending 'Z'
+  /// if no timezone information is present.
+  static DateTime _parseUtcToLocal(String s) {
+    try {
+      final hasTimezone = s.endsWith('Z') || s.contains('+') ||
+          (s.length > 19 && s[19] == '-' && s.contains('T'));
+      final utcStr = hasTimezone ? s : '${s}Z';
+      return DateTime.parse(utcStr).toLocal();
+    } catch (_) {
+      return DateTime.now();
+    }
+  }
 }

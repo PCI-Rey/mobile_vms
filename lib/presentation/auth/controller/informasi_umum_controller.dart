@@ -653,7 +653,10 @@ class InformasiUmumController extends GetxController {
       dio.Response? submitResponse;
       for (int attempt = 1; attempt <= 3; attempt++) {
         try {
-          submitResponse = await apiService.submitPraForm(payload);
+          submitResponse = await apiService.submitPraForm(
+            payload,
+            token: userModel.token,
+          );
           if (submitResponse.statusCode == 200) break; // sukses, stop retry
           debugPrint(
             'Submit attempt $attempt: status ${submitResponse.statusCode}, retrying...',
