@@ -119,10 +119,10 @@ class _InformasiUmumPageState extends State<InformasiUmumPage> {
             Container(
               width: double.infinity,
               padding: const EdgeInsets.symmetric(vertical: 16),
-              color: AppColors.primary500,
+              color: const Color(0xFF00529C), // Senada dengan warna background logo BI/VMS.png
               child: Column(
                 children: [
-                  Assets.images.iconApp.image(height: 64),
+                  Image.asset('assets/images/VMS.png', height: 64),
                   const SizedBox(height: 6),
                   Text(
                     '${'invitation_code'.tr}: ${widget.invitationCode ?? "-"}',

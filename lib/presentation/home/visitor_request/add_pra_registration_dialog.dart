@@ -10,11 +10,7 @@ import 'controllers/pra_registration_controller.dart';
 
 /// Shows the Add Pra Registration dialog.
 Future<void> showAddPraRegistrationDialog(BuildContext context) {
-  // Always delete the old instance first so onInit re-runs with the current token.
-  // Without this, Get.put returns the cached (stale) controller from the previous session.
   Get.delete<PraRegistrationController>(force: true);
-
-  // Create a fresh controller — onInit will re-fetch employees/hosts/sites
   Get.put(PraRegistrationController());
 
   return showDialog(
@@ -24,47 +20,86 @@ Future<void> showAddPraRegistrationDialog(BuildContext context) {
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Root dialog widget
-// ─────────────────────────────────────────────────────────────────────────────
+// ─── Utility: Exit Confirmation ───────────────────────────────────────────
+
+Future<bool> _showExitConfirmation(BuildContext context) async {
+  final ctrl = Get.find<PraRegistrationController>();
+  // If the controller has an 'hasUnsavedChanges' getter, use it. 
+  // Otherwise, default to showing the dialog to be safe.
+  try {
+    if (!(ctrl as dynamic).hasUnsavedChanges) return true;
+  } catch (_) {
+    // If hasUnsavedChanges doesn't exist, we'll just show the dialog
+  }
+
+  final result = await showDialog<bool>(
+    context: context,
+    builder: (context) => AlertDialog(
+      backgroundColor: Colors.white,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      title: const Text(
+        'Batal Registrasi?',
+        style: TextStyle(fontWeight: FontWeight.bold),
+      ),
+      content: const Text(
+        'Data yang sudah kamu isi akan terhapus. Apakah kamu yakin ingin menutup form ini?',
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(false),
+          child: const Text('Tidak', style: TextStyle(color: Colors.grey)),
+        ),
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(true),
+          child: const Text(
+            'Ya, Tutup',
+            style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+          ),
+        ),
+      ],
+    ),
+  );
+  return result ?? false;
+}
+
+Future<bool> _showBackConfirmation(BuildContext context) async {
+  return await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          backgroundColor: Colors.white,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: Row(
+            children: [
+              const Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 28),
+              const SizedBox(width: 12),
+              const Text('Warning', style: TextStyle(fontWeight: FontWeight.bold)),
+            ],
+          ),
+          content: const Text(
+            'Are you sure you want to go back? Going back to Visitor Type selection will reset the information you have already entered in this step.',
+            style: TextStyle(fontSize: 14, color: Color(0xFF616161)),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Cancel', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.w600)),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text(
+                'Yes, Go Back',
+                style: TextStyle(color: Colors.orange, fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+        ),
+      ) ??
+      false;
+}
 
 class _AddPraRegistrationDialog extends StatelessWidget {
   const _AddPraRegistrationDialog();
 
-
-  Future<bool> _showExitConfirmation(BuildContext context) async {
-    final ctrl = Get.find<PraRegistrationController>();
-    if (!ctrl.hasUnsavedChanges) return true;
-
-    final result = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text(
-          'Batal Registrasi?',
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-        content: const Text(
-          'Data yang sudah kamu isi akan terhapus. Apakah kamu yakin ingin menutup form ini?',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Tidak', style: TextStyle(color: Colors.grey)),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: const Text(
-              'Ya, Tutup',
-              style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
-            ),
-          ),
-        ],
-      ),
-    );
-    return result ?? false;
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -76,129 +111,258 @@ class _AddPraRegistrationDialog extends StatelessWidget {
         if (didPop) return;
         final shouldExit = await _showExitConfirmation(context);
         if (shouldExit && context.mounted) {
+          ctrl.resetFields(); // Ensure data is cleared
           Navigator.of(context).pop();
         }
       },
       child: Dialog(
         backgroundColor: Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 32),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 28),
         child: SizedBox(
-          height: MediaQuery.of(context).size.height * 0.85,
+          height: MediaQuery.of(context).size.height * 0.88,
           child: Obx(() {
             final step = ctrl.currentStep.value;
             return Column(
               mainAxisSize: MainAxisSize.max,
               children: [
                 // ── Header ────────────────────────────────────────────
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 16, 12, 0),
-                  child: Row(
-                    children: [
-                      const Expanded(
-                        child: Text(
-                          'Add Pra Registration',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.close, size: 20),
-                        onPressed: () async {
-                          final shouldExit =
-                              await _showExitConfirmation(context);
-                          if (shouldExit && context.mounted) {
-                            Navigator.of(context).pop();
-                          }
-                        },
-                      ),
-                    ],
+                _DialogHeader(
+                  step: step,
+                  onClose: () async {
+                    final shouldExit = await _showExitConfirmation(context);
+                    if (shouldExit && context.mounted) {
+                      ctrl.resetFields(); // Ensure data is cleared
+                      Navigator.of(context).pop();
+                    }
+                  },
+                  controller: ctrl,
+                ),
+
+                // ── Content ─────────────────────────────────────────
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 20,
+                    ),
+                    child: _StepContent(step: step, controller: ctrl),
                   ),
                 ),
 
-              const Divider(height: 1),
-
-              // ── Step title + dots ─────────────────────────────────
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                child: Column(
-                  children: [
-                    Builder(builder: (_) {
-                      final title = (step == 1 && ctrl.isGroup.value == true)
-                          ? 'Visitor Information (Group)'
-                          : const [
-                              'User Type',
-                              'Visitor Information',
-                              'Purpose Visit',
-                            ][step];
-                      return Text(
-                        title,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      );
-                    }),
-                    const SizedBox(height: 6),
-                    _StepDots(currentStep: step, total: 3),
-                  ],
-                ),
-              ),
-
-              const Divider(height: 1),
-
-              // ── Content ─────────────────────────────────────────
-              Expanded(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 16,
-                  ),
-                  child: _StepContent(step: step, controller: ctrl),
-                ),
-              ),
-
-              const Divider(height: 1),
-
-              // ── Navigation Buttons ───────────────────────────────
-              _BottomNav(step: step, controller: ctrl, context: context),
-            ],
-          );
-        }),
+                // ── Navigation Buttons ───────────────────────────────
+                _BottomNav(step: step, controller: ctrl, context: context),
+              ],
+            );
+          }),
+        ),
       ),
-    ),
-  );
+    );
   }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Step dots indicator
+// Dialog Header — title + step indicator + close button
 // ─────────────────────────────────────────────────────────────────────────────
 
-class _StepDots extends StatelessWidget {
-  final int currentStep;
-  final int total;
-  const _StepDots({required this.currentStep, required this.total});
+class _DialogHeader extends StatelessWidget {
+  final int step;
+  final VoidCallback onClose;
+  final PraRegistrationController controller;
+
+  const _DialogHeader({
+    required this.step,
+    required this.onClose,
+    required this.controller,
+  });
+
+  static const _stepTitles = [
+    'User Type',
+    'Visitor Information',
+    'Purpose Visit',
+  ];
+
+  static const _stepIcons = [
+    Icons.person_outline_rounded,
+    Icons.badge_outlined,
+    Icons.edit_calendar_outlined,
+  ];
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: List.generate(total, (i) {
-        final active = i == currentStep;
-        return AnimatedContainer(
-          duration: const Duration(milliseconds: 250),
-          margin: const EdgeInsets.symmetric(horizontal: 4),
-          width: 8,
-          height: 8,
-          decoration: BoxDecoration(
-            color: active ? AppColors.primary500 : AppColors.grey300,
-            shape: BoxShape.circle,
+    return Obx(() {
+      final currentStep = controller.currentStep.value;
+      final title = (currentStep == 1 && controller.isGroup.value == true)
+          ? 'Visitor Information (Group)'
+          : _stepTitles[currentStep];
+
+      return Column(
+        children: [
+          // Top bar: title + close
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 16, 8, 12),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    'Add Pra Registration',
+                    style: const TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.black87,
+                      letterSpacing: -0.3,
+                    ),
+                  ),
+                ),
+                Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(20),
+                    onTap: onClose,
+                    child: Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade100,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.close_rounded,
+                        size: 18,
+                        color: Colors.black54,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
-        );
-      }),
+
+          // Step progress bar
+          _StepProgressBar(controller: controller, currentStep: currentStep, total: 3),
+
+          const SizedBox(height: 14),
+
+          // Step title + icon
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: AppColors.primary500.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(
+                  _stepIcons[currentStep],
+                  size: 16,
+                  color: AppColors.primary500,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.black87,
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 14),
+          const Divider(height: 1, color: Color(0xFFEEEEEE)),
+        ],
+      );
+    });
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Step progress bar (segmented)
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _StepProgressBar extends StatelessWidget {
+  final PraRegistrationController controller;
+  final int currentStep;
+  final int total;
+
+  const _StepProgressBar({
+    required this.controller,
+    required this.currentStep,
+    required this.total,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+      child: Row(
+        children: List.generate(total, (index) {
+          final isCompleted = index < currentStep;
+          final isCurrent = index == currentStep;
+          final isActive = isCompleted || isCurrent;
+
+          return Expanded(
+            flex: index == total - 1 ? 0 : 1,
+            child: Row(
+              children: [
+                // ── Circle Number ──────────────────────────────────
+                GestureDetector(
+                  onTap: () async {
+                    // Jika user mencoba kembali ke Step 0 (Page 1) dari step manapun yang lebih tinggi
+                    if (currentStep > 0 && index == 0) {
+                      final shouldBack = await _showBackConfirmation(context);
+                      if (shouldBack) {
+                        controller.clearStep1Fields(); // Ini akan mereset Step 1 dan Step 2
+                        controller.goToStep(index);
+                      }
+                    } else {
+                      controller.goToStep(index);
+                    }
+                  },
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 300),
+                    width: 28,
+                    height: 28,
+                    decoration: BoxDecoration(
+                      color: isActive ? AppColors.primary500 : const Color(0xFFBDBDBD),
+                      shape: BoxShape.circle,
+                      boxShadow: isCurrent 
+                        ? [BoxShadow(color: AppColors.primary500.withValues(alpha: 0.3), blurRadius: 8, spreadRadius: 2)]
+                        : [],
+                    ),
+                    child: Center(
+                      child: isCompleted
+                          ? const Icon(Icons.check, size: 16, color: Colors.white)
+                          : Text(
+                              '${index + 1}',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: isCurrent ? FontWeight.bold : FontWeight.normal,
+                                fontSize: 12,
+                              ),
+                            ),
+                    ),
+                  ),
+                ),
+                
+                // ── Connecting Line ────────────────────────────────
+                if (index < total - 1)
+                  Expanded(
+                    child: Container(
+                      height: 2,
+                      margin: const EdgeInsets.symmetric(horizontal: 8),
+                      color: (index < currentStep) 
+                        ? AppColors.primary500 
+                        : const Color(0xFFE0E0E0),
+                    ),
+                  ),
+              ],
+            ),
+          );
+        }),
+      ),
     );
   }
 }
@@ -238,9 +402,6 @@ class _Step0UserType extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Obx(() {
-      // IMPORTANT: Read reactive values HERE (in Obx builder body)
-      // so GetX tracks them. Reads inside itemBuilder are NOT tracked
-      // because itemBuilder runs lazily during layout, not during Obx build.
       final selectedId = controller.selectedVisitorTypeId.value;
       final isLoadingDetail = controller.isLoadingDetail.value;
 
@@ -249,147 +410,128 @@ class _Step0UserType extends StatelessWidget {
         children: [
           // ── Visitor Type section ─────────────────────────────────
           _SectionHeader(title: 'Visitor Type', isRequired: true),
-          const SizedBox(height: 8),
+          const SizedBox(height: 12),
 
           if (controller.isLoadingTypes.value)
             const Center(
               child: Padding(
-                padding: EdgeInsets.all(16),
+                padding: EdgeInsets.all(24),
                 child: CircularProgressIndicator(),
               ),
             )
           else
-            ListView.separated(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: controller.visitorTypes.length,
-              separatorBuilder: (_, index) => const SizedBox(height: 4),
-              itemBuilder: (_, i) {
-                final type = controller.visitorTypes[i];
-                final isSelected = selectedId == type.id;
-                return GestureDetector(
+            ...List.generate(controller.visitorTypes.length, (i) {
+              final type = controller.visitorTypes[i];
+              final isSelected = selectedId == type.id;
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: GestureDetector(
                   behavior: HitTestBehavior.opaque,
                   onTap: () =>
                       controller.onSelectVisitorType(type.id, type.name),
-                  child: Row(
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.all(12),
-                        child: Icon(
-                          isSelected
-                              ? Icons.radio_button_checked
-                              : Icons.radio_button_unchecked,
-                          color: isSelected
-                              ? AppColors.primary500
-                              : AppColors.grey400,
-                          size: 22,
-                        ),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 14,
+                    ),
+                    decoration: BoxDecoration(
+                      color: isSelected
+                          ? AppColors.primary500.withValues(alpha: 0.06)
+                          : Colors.white,
+                      border: Border.all(
+                        color: isSelected
+                            ? AppColors.primary500
+                            : const Color(0xFFE0E0E0),
+                        width: isSelected ? 1.5 : 1,
                       ),
-                      Expanded(
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 8,
-                          ),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      children: [
+                        AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          width: 20,
+                          height: 20,
                           decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: isSelected
+                                ? AppColors.primary500
+                                : Colors.transparent,
                             border: Border.all(
                               color: isSelected
                                   ? AppColors.primary500
-                                  : AppColors.grey300,
-                              width: isSelected ? 1.5 : 1,
+                                  : const Color(0xFFBDBDBD),
+                              width: 2,
                             ),
-                            borderRadius: BorderRadius.circular(8),
                           ),
-                          child: Row(
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  type.name,
-                                  style: const TextStyle(fontSize: 14),
-                                ),
-                              ),
-                              if (isSelected && isLoadingDetail)
-                                const SizedBox(
-                                  width: 16,
-                                  height: 16,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    color: AppColors.primary500,
-                                  ),
-                                ),
-                            ],
+                          child: isSelected
+                              ? const Icon(
+                                  Icons.check,
+                                  size: 12,
+                                  color: Colors.white,
+                                )
+                              : null,
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            type.name,
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: isSelected
+                                  ? FontWeight.w600
+                                  : FontWeight.normal,
+                              color: isSelected
+                                  ? AppColors.primary500
+                                  : Colors.black87,
+                            ),
                           ),
                         ),
-                      ),
-                    ],
+                        if (isSelected && isLoadingDetail)
+                          const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: AppColors.primary500,
+                            ),
+                          ),
+                      ],
+                    ),
                   ),
-                );
-              },
-            ),
+                ),
+              );
+            }),
 
-          const SizedBox(height: 20),
+          const SizedBox(height: 24),
 
           // ── Select Status Visitor ────────────────────────────────
           _SectionHeader(title: 'Select Status Visitor', isRequired: true),
-          const SizedBox(height: 8),
+          const SizedBox(height: 12),
+
           Row(
             children: [
-              GestureDetector(
-                onTap: () => controller.isGroup.value = false,
-                child: Row(
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.all(8),
-                      child: Icon(
-                        controller.isGroup.value == false
-                            ? Icons.radio_button_checked
-                            : Icons.radio_button_unchecked,
-                        color: controller.isGroup.value == false
-                            ? AppColors.primary500
-                            : AppColors.grey400,
-                        size: 22,
-                      ),
-                    ),
-                    const Icon(
-                      Icons.person_outline,
-                      size: 18,
-                      color: AppColors.grey500,
-                    ),
-                    const SizedBox(width: 4),
-                    const Text('Single', style: TextStyle(fontSize: 14)),
-                  ],
+              Expanded(
+                child: _StatusCard(
+                  label: 'Single',
+                  icon: Icons.person_outline_rounded,
+                  isSelected: controller.isGroup.value == false,
+                  onTap: () => controller.isGroup.value = false,
                 ),
               ),
-              const SizedBox(width: 16),
-              GestureDetector(
-                onTap: () {
-                  if (controller.isGroup.value != true) {
-                    controller.isGroup.value = true;
-                    controller.initGroupMode();
-                  }
-                },
-                child: Row(
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.all(8),
-                      child: Icon(
-                        controller.isGroup.value == true
-                            ? Icons.radio_button_checked
-                            : Icons.radio_button_unchecked,
-                        color: controller.isGroup.value == true
-                            ? AppColors.primary500
-                            : AppColors.grey400,
-                        size: 22,
-                      ),
-                    ),
-                    const Icon(
-                      Icons.group_outlined,
-                      size: 18,
-                      color: AppColors.grey500,
-                    ),
-                    const SizedBox(width: 4),
-                    const Text('Group', style: TextStyle(fontSize: 14)),
-                  ],
+              const SizedBox(width: 10),
+              Expanded(
+                child: _StatusCard(
+                  label: 'Group',
+                  icon: Icons.group_outlined,
+                  isSelected: controller.isGroup.value == true,
+                  onTap: () {
+                    if (controller.isGroup.value != true) {
+                      controller.isGroup.value = true;
+                      controller.initGroupMode();
+                    }
+                  },
                 ),
               ),
             ],
@@ -404,24 +546,32 @@ class _Step0UserType extends StatelessWidget {
 
   List<Widget> _buildGroupList(PraRegistrationController controller) {
     return [
-      const SizedBox(height: 20),
+      const SizedBox(height: 24),
       _SectionHeader(title: 'Group List', isRequired: true),
-      const SizedBox(height: 8),
+      const SizedBox(height: 12),
       Container(
         decoration: BoxDecoration(
-          border: Border.all(color: AppColors.grey200),
-          borderRadius: BorderRadius.circular(8),
+          color: Colors.white,
+          border: Border.all(color: const Color(0xFFE0E0E0)),
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.04),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
         ),
         child: Column(
           children: [
             // Table header
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: const BoxDecoration(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              decoration: BoxDecoration(
                 color: AppColors.grey100,
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(8),
-                  topRight: Radius.circular(8),
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(12),
+                  topRight: Radius.circular(12),
                 ),
               ),
               child: const Row(
@@ -430,7 +580,11 @@ class _Step0UserType extends StatelessWidget {
                     flex: 3,
                     child: Text(
                       'Group Name',
-                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.grey600),
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.grey600,
+                      ),
                     ),
                   ),
                   SizedBox(width: 8),
@@ -438,34 +592,53 @@ class _Step0UserType extends StatelessWidget {
                     width: 80,
                     child: Text(
                       'Code',
-                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.grey600),
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.grey600,
+                      ),
                     ),
                   ),
                 ],
               ),
             ),
-            const Divider(height: 1, color: AppColors.grey200),
-            // Group row
+            const Divider(height: 1, color: Color(0xFFEEEEEE)),
             Padding(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(14),
               child: Row(
                 children: [
-                  // Group Name input
                   Expanded(
                     flex: 3,
                     child: TextField(
                       onChanged: (v) => controller.groupName.value = v,
                       decoration: InputDecoration(
                         hintText: 'Enter group name',
-                        hintStyle: TextStyle(color: AppColors.grey400, fontSize: 13),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                        hintStyle: const TextStyle(
+                          color: AppColors.grey400,
+                          fontSize: 13,
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 10,
+                        ),
                         border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(6),
-                          borderSide: const BorderSide(color: AppColors.grey300),
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: const BorderSide(
+                            color: AppColors.grey300,
+                          ),
                         ),
                         enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(6),
-                          borderSide: const BorderSide(color: AppColors.grey300),
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: const BorderSide(
+                            color: AppColors.grey300,
+                          ),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: const BorderSide(
+                            color: AppColors.primary500,
+                            width: 1.5,
+                          ),
                         ),
                         isDense: true,
                       ),
@@ -473,26 +646,30 @@ class _Step0UserType extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 8),
-                  // Auto-generated code (read-only) — fixed width, no wrap
-                  Obx(() => Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-                    decoration: BoxDecoration(
-                      color: AppColors.grey100,
-                      border: Border.all(color: AppColors.grey300),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: Text(
-                      controller.groupCode.value,
-                      maxLines: 1,
-                      overflow: TextOverflow.clip,
-                      style: const TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        letterSpacing: 0.5,
-                        color: AppColors.primary500,
+                  Obx(
+                    () => Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 10,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary500.withValues(alpha: 0.06),
+                        border: Border.all(color: AppColors.primary200),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        controller.groupCode.value,
+                        maxLines: 1,
+                        overflow: TextOverflow.clip,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.5,
+                          color: AppColors.primary500,
+                        ),
                       ),
                     ),
-                  )),
+                  ),
                 ],
               ),
             ),
@@ -500,6 +677,81 @@ class _Step0UserType extends StatelessWidget {
         ),
       ),
     ];
+  }
+}
+
+// ── Status card (Single / Group) ──────────────────────────────────────────────
+
+class _StatusCard extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  const _StatusCard({
+    required this.label,
+    required this.icon,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? AppColors.primary500.withValues(alpha: 0.06)
+              : Colors.white,
+          border: Border.all(
+            color: isSelected ? AppColors.primary500 : const Color(0xFFE0E0E0),
+            width: isSelected ? 1.5 : 1,
+          ),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              icon,
+              size: 18,
+              color: isSelected ? AppColors.primary500 : AppColors.grey500,
+            ),
+            const SizedBox(width: 8),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                color: isSelected ? AppColors.primary500 : Colors.black87,
+              ),
+            ),
+            const SizedBox(width: 8),
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              width: 18,
+              height: 18,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: isSelected ? AppColors.primary500 : Colors.transparent,
+                border: Border.all(
+                  color: isSelected
+                      ? AppColors.primary500
+                      : const Color(0xFFBDBDBD),
+                  width: 2,
+                ),
+              ),
+              child: isSelected
+                  ? const Icon(Icons.check, size: 11, color: Colors.white)
+                  : null,
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 
@@ -514,12 +766,10 @@ class _Step1VisitorInfo extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Obx(() {
-      // Group mode — show visitor table
       if (controller.isGroup.value == true) {
         return _buildGroupVisitorTable(context);
       }
 
-      // Single mode — existing form
       final detail = controller.formStructure.value;
       if (detail == null) {
         return const Center(child: CircularProgressIndicator());
@@ -558,37 +808,64 @@ class _Step1VisitorInfo extends StatelessWidget {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Visitor cards
           ...List.generate(visitors.length, (i) {
             final v = visitors[i];
             return Container(
-              margin: const EdgeInsets.only(bottom: 12),
+              margin: const EdgeInsets.only(bottom: 14),
               decoration: BoxDecoration(
-                border: Border.all(color: AppColors.grey200),
-                borderRadius: BorderRadius.circular(10),
+                color: Colors.white,
+                border: Border.all(color: const Color(0xFFE0E0E0)),
+                borderRadius: BorderRadius.circular(14),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.04),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
               ),
               child: Column(
                 children: [
-                  // Card header — visitor number + delete
+                  // Card header
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                    decoration: const BoxDecoration(
-                      color: AppColors.grey100,
-                      borderRadius: BorderRadius.only(
-                        topLeft: Radius.circular(10),
-                        topRight: Radius.circular(10),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 11,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary500.withValues(alpha: 0.05),
+                      borderRadius: const BorderRadius.only(
+                        topLeft: Radius.circular(14),
+                        topRight: Radius.circular(14),
                       ),
                     ),
                     child: Row(
                       children: [
-                        Icon(Icons.person_outline, size: 16, color: AppColors.primary500),
-                        const SizedBox(width: 6),
+                        Container(
+                          width: 28,
+                          height: 28,
+                          decoration: BoxDecoration(
+                            color: AppColors.primary500,
+                            shape: BoxShape.circle,
+                          ),
+                          child: Center(
+                            child: Text(
+                              '${i + 1}',
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
                         Text(
                           'Visitor ${i + 1}',
                           style: const TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w600,
-                            color: AppColors.grey700,
+                            color: Colors.black87,
                           ),
                         ),
                         const Spacer(),
@@ -596,37 +873,45 @@ class _Step1VisitorInfo extends StatelessWidget {
                           GestureDetector(
                             onTap: () => controller.removeGroupVisitor(i),
                             child: Container(
-                              padding: const EdgeInsets.all(4),
+                              padding: const EdgeInsets.all(5),
                               decoration: BoxDecoration(
                                 color: Colors.red.shade50,
-                                borderRadius: BorderRadius.circular(6),
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(color: Colors.red.shade100),
                               ),
-                              child: Icon(Icons.delete_outline, size: 16, color: Colors.red.shade400),
+                              child: Icon(
+                                Icons.delete_outline_rounded,
+                                size: 16,
+                                color: Colors.red.shade400,
+                              ),
                             ),
                           ),
                       ],
                     ),
                   ),
 
-                  // Card body
                   Padding(
                     padding: const EdgeInsets.all(14),
                     child: Column(
                       children: [
-                        // Row 0: Are you Employee? + Employee Name
-                        // Only show when selected visitor type is "Employee"
+                        // Are you Employee? section
                         Obx(() {
                           final isEmployeeType = controller
-                              .selectedVisitorTypeName.value
+                              .selectedVisitorTypeName
+                              .value
                               .toLowerCase()
                               .contains('employee');
                           if (!isEmployeeType) {
-                            // Reset employee state if type is not employee
                             if (v.isEmployee.value) {
                               WidgetsBinding.instance.addPostFrameCallback((_) {
                                 v.isEmployee.value = false;
                                 v.selectedEmployeeId.value = '';
                                 v.selectedEmployeeName.value = '';
+                                v.fullName.clear();
+                                v.email.clear();
+                                v.phone.clear();
+                                v.organization.clear();
+                                v.identityId.clear();
                               });
                             }
                             return const SizedBox.shrink();
@@ -635,74 +920,54 @@ class _Step1VisitorInfo extends StatelessWidget {
                           return Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              // Are you Employee? label
-                              RichText(
-                                text: const TextSpan(
-                                  text: 'Are you Employee?',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w600,
-                                    color: Colors.black87,
-                                  ),
+                              const Text(
+                                'Are you Employee?',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.black87,
                                 ),
                               ),
-                              const SizedBox(height: 6),
+                              const SizedBox(height: 8),
                               Row(
                                 children: [
-                                  // Yes
-                                  GestureDetector(
+                                  _InlineRadio(
+                                    label: 'Yes',
+                                    isSelected: empEnabled,
                                     onTap: () {
                                       v.isEmployee.value = true;
-                                      controller.updateForm();
-                                    },
-                                    child: Row(
-                                      children: [
-                                        Icon(
-                                          empEnabled
-                                              ? Icons.radio_button_checked
-                                              : Icons.radio_button_unchecked,
-                                          size: 18,
-                                          color: empEnabled
-                                              ? AppColors.primary500
-                                              : AppColors.grey400,
-                                        ),
-                                        const SizedBox(width: 4),
-                                        const Text('Yes',
-                                            style: TextStyle(fontSize: 13)),
-                                      ],
-                                    ),
-                                  ),
-                                  const SizedBox(width: 20),
-                                  // No
-                                  GestureDetector(
-                                    onTap: () {
-                                      v.isEmployee.value = false;
+                                      // Clear existing row fields
                                       v.selectedEmployeeId.value = '';
                                       v.selectedEmployeeName.value = '';
+                                      v.fullName.clear();
+                                      v.email.clear();
+                                      v.phone.clear();
+                                      v.organization.clear();
+                                      v.identityId.clear();
                                       controller.updateForm();
                                     },
-                                    child: Row(
-                                      children: [
-                                        Icon(
-                                          !empEnabled
-                                              ? Icons.radio_button_checked
-                                              : Icons.radio_button_unchecked,
-                                          size: 18,
-                                          color: !empEnabled
-                                              ? AppColors.primary500
-                                              : AppColors.grey400,
-                                        ),
-                                        const SizedBox(width: 4),
-                                        const Text('No',
-                                            style: TextStyle(fontSize: 13)),
-                                      ],
-                                    ),
+                                  ),
+                                  const SizedBox(width: 16),
+                                  _InlineRadio(
+                                    label: 'No',
+                                    isSelected: !empEnabled,
+                                    onTap: () {
+                                      v.isEmployee.value = false;
+                                      // Clear existing row fields
+                                      v.selectedEmployeeId.value = '';
+                                      v.selectedEmployeeName.value = '';
+                                      v.fullName.clear();
+                                      v.email.clear();
+                                      v.phone.clear();
+                                      v.organization.clear();
+                                      v.identityId.clear();
+                                      controller.updateForm();
+                                    },
                                   ),
                                 ],
                               ),
                               const SizedBox(height: 12),
 
-                              // Employee Name dropdown (enabled only when isEmployee = true)
                               Opacity(
                                 opacity: empEnabled ? 1.0 : 0.4,
                                 child: IgnorePointer(
@@ -730,64 +995,37 @@ class _Step1VisitorInfo extends StatelessWidget {
                                           ],
                                         ),
                                       ),
-                                      const SizedBox(height: 4),
+                                      const SizedBox(height: 6),
                                       Obx(() {
-                                        final list =
-                                            controller.employees.toList();
+                                        final list = controller.employees
+                                            .toList();
                                         final currentId =
                                             v.selectedEmployeeId.value;
-                                        final selectedItem = list.any(
-                                                (e) => e.id == currentId)
+                                        final selectedItem =
+                                            list.any((e) => e.id == currentId)
                                             ? list.firstWhere(
-                                                (e) => e.id == currentId)
+                                                (e) => e.id == currentId,
+                                              )
                                             : null;
                                         return GestureDetector(
                                           onTap: () async {
                                             final result =
                                                 await _showEmployeePicker(
-                                                    context,
-                                                    controller.employees
-                                                        .toList(),
-                                                    currentId);
+                                                  context,
+                                                  controller.employees.toList(),
+                                                  currentId,
+                                                );
                                             if (result != null) {
-                                              controller.onGroupEmployeeSelected(v, result.id);
+                                              controller
+                                                  .onGroupEmployeeSelected(
+                                                    v,
+                                                    result.id,
+                                                  );
                                             }
                                           },
-                                          child: Container(
-                                            width: double.infinity,
-                                            padding: const EdgeInsets.symmetric(
-                                                horizontal: 12, vertical: 12),
-                                            decoration: BoxDecoration(
-                                              border: Border.all(
-                                                  color: AppColors.grey300),
-                                              borderRadius:
-                                                  BorderRadius.circular(8),
-                                              color: Colors.white,
-                                            ),
-                                            child: Row(
-                                              children: [
-                                                Expanded(
-                                                  child: Text(
-                                                    selectedItem?.name
-                                                            .isNotEmpty ==
-                                                            true
-                                                        ? selectedItem!.name
-                                                        : 'Pilih Employee',
-                                                    style: TextStyle(
-                                                      fontSize: 13,
-                                                      color: selectedItem !=
-                                                              null
-                                                          ? Colors.black87
-                                                          : AppColors.grey400,
-                                                    ),
-                                                  ),
-                                                ),
-                                                const Icon(
-                                                    Icons.arrow_drop_down,
-                                                    color: AppColors.grey400,
-                                                    size: 20),
-                                              ],
-                                            ),
+                                          child: _DropdownTrigger(
+                                            text: selectedItem?.name ?? '',
+                                            hint: 'Pilih Employee',
                                           ),
                                         );
                                       }),
@@ -797,13 +1035,14 @@ class _Step1VisitorInfo extends StatelessWidget {
                               ),
                               const SizedBox(height: 12),
                               const Divider(
-                                  height: 1, color: AppColors.grey200),
+                                height: 1,
+                                color: Color(0xFFEEEEEE),
+                              ),
                               const SizedBox(height: 12),
                             ],
                           );
                         }),
 
-                        // Row 1: Fullname + Email
                         Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -815,7 +1054,7 @@ class _Step1VisitorInfo extends StatelessWidget {
                                 onChanged: (_) => controller.updateForm(),
                               ),
                             ),
-                            const SizedBox(width: 12),
+                            const SizedBox(width: 10),
                             Expanded(
                               child: _GroupTextField(
                                 label: 'Email',
@@ -827,9 +1066,8 @@ class _Step1VisitorInfo extends StatelessWidget {
                             ),
                           ],
                         ),
-                        const SizedBox(height: 12),
+                        const SizedBox(height: 10),
 
-                        // Row 2: Phone + Organization
                         Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -842,7 +1080,7 @@ class _Step1VisitorInfo extends StatelessWidget {
                                 onChanged: (_) => controller.updateForm(),
                               ),
                             ),
-                            const SizedBox(width: 12),
+                            const SizedBox(width: 10),
                             Expanded(
                               child: _GroupTextField(
                                 label: 'Organization',
@@ -853,9 +1091,8 @@ class _Step1VisitorInfo extends StatelessWidget {
                             ),
                           ],
                         ),
-                        const SizedBox(height: 12),
+                        const SizedBox(height: 10),
 
-                        // Row 3: KTP (full width)
                         _GroupTextField(
                           label: 'Identity ID (KTP)',
                           controller: v.identityId,
@@ -876,7 +1113,11 @@ class _Step1VisitorInfo extends StatelessWidget {
             width: double.infinity,
             child: OutlinedButton.icon(
               onPressed: controller.addGroupVisitor,
-              icon: const Icon(Icons.add, size: 18, color: AppColors.primary500),
+              icon: const Icon(
+                Icons.add_rounded,
+                size: 18,
+                color: AppColors.primary500,
+              ),
               label: const Text(
                 'Add New Visitor',
                 style: TextStyle(
@@ -886,11 +1127,11 @@ class _Step1VisitorInfo extends StatelessWidget {
                 ),
               ),
               style: OutlinedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 12),
+                padding: const EdgeInsets.symmetric(vertical: 13),
                 side: const BorderSide(color: AppColors.primary200),
                 backgroundColor: AppColors.primary50,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(12),
                 ),
               ),
             ),
@@ -900,7 +1141,6 @@ class _Step1VisitorInfo extends StatelessWidget {
     });
   }
 
-  /// Bottom sheet picker untuk employee — digunakan oleh group visitor rows.
   static Future<DropdownItem?> _showEmployeePicker(
     BuildContext context,
     List<DropdownItem> items,
@@ -911,7 +1151,7 @@ class _Step1VisitorInfo extends StatelessWidget {
       isScrollControlled: true,
       backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (sheetCtx) => SafeArea(
         child: Column(
@@ -919,7 +1159,7 @@ class _Step1VisitorInfo extends StatelessWidget {
           children: [
             Container(
               margin: const EdgeInsets.symmetric(vertical: 10),
-              width: 40,
+              width: 36,
               height: 4,
               decoration: BoxDecoration(
                 color: AppColors.grey300,
@@ -928,7 +1168,7 @@ class _Step1VisitorInfo extends StatelessWidget {
             ),
             const Text(
               'Pilih Employee',
-              style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+              style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: 8),
             const Divider(height: 1),
@@ -946,7 +1186,9 @@ class _Step1VisitorInfo extends StatelessWidget {
                     onTap: () => Navigator.of(sheetCtx).pop(item),
                     child: Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 20, vertical: 14),
+                        horizontal: 20,
+                        vertical: 14,
+                      ),
                       color: selected
                           ? AppColors.primary500.withValues(alpha: 0.08)
                           : Colors.transparent,
@@ -967,8 +1209,11 @@ class _Step1VisitorInfo extends StatelessWidget {
                             ),
                           ),
                           if (selected)
-                            const Icon(Icons.check,
-                                size: 18, color: AppColors.primary500),
+                            const Icon(
+                              Icons.check_rounded,
+                              size: 18,
+                              color: AppColors.primary500,
+                            ),
                         ],
                       ),
                     ),
@@ -979,6 +1224,95 @@ class _Step1VisitorInfo extends StatelessWidget {
             const SizedBox(height: 8),
           ],
         ),
+      ),
+    );
+  }
+}
+
+// ── Shared inline radio widget ─────────────────────────────────────────────────
+
+class _InlineRadio extends StatelessWidget {
+  final String label;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  const _InlineRadio({
+    required this.label,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Row(
+        children: [
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            width: 18,
+            height: 18,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: isSelected ? AppColors.primary500 : Colors.transparent,
+              border: Border.all(
+                color: isSelected
+                    ? AppColors.primary500
+                    : const Color(0xFFBDBDBD),
+                width: 2,
+              ),
+            ),
+            child: isSelected
+                ? const Icon(Icons.check, size: 11, color: Colors.white)
+                : null,
+          ),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: const TextStyle(fontSize: 13, color: Colors.black87),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Shared dropdown trigger ─────────────────────────────────────────────────────
+
+class _DropdownTrigger extends StatelessWidget {
+  final String text;
+  final String hint;
+
+  const _DropdownTrigger({required this.text, required this.hint});
+
+  @override
+  Widget build(BuildContext context) {
+    final hasValue = text.isNotEmpty;
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 13),
+      decoration: BoxDecoration(
+        border: Border.all(color: const Color(0xFFDDDDDD)),
+        borderRadius: BorderRadius.circular(10),
+        color: Colors.white,
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              hasValue ? text : hint,
+              style: TextStyle(
+                fontSize: 14,
+                color: hasValue ? Colors.black87 : AppColors.grey400,
+              ),
+            ),
+          ),
+          const Icon(
+            Icons.keyboard_arrow_down_rounded,
+            color: AppColors.grey400,
+            size: 22,
+          ),
+        ],
       ),
     );
   }
@@ -1016,12 +1350,15 @@ class _GroupTextField extends StatelessWidget {
             children: const [
               TextSpan(
                 text: ' *',
-                style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  color: Colors.red,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ],
           ),
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: 5),
         TextField(
           controller: controller,
           keyboardType: keyboardType,
@@ -1030,20 +1367,24 @@ class _GroupTextField extends StatelessWidget {
           decoration: InputDecoration(
             hintText: hint,
             hintStyle: const TextStyle(fontSize: 12, color: AppColors.grey400),
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 12,
+              vertical: 11,
+            ),
             border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(color: AppColors.grey300),
+              borderRadius: BorderRadius.circular(10),
+              borderSide: const BorderSide(color: Color(0xFFDDDDDD)),
             ),
             enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(color: AppColors.grey300),
+              borderRadius: BorderRadius.circular(10),
+              borderSide: const BorderSide(color: Color(0xFFDDDDDD)),
             ),
             focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide:
-                  const BorderSide(color: AppColors.primary500, width: 1.5),
+              borderRadius: BorderRadius.circular(10),
+              borderSide: const BorderSide(
+                color: AppColors.primary500,
+                width: 1.5,
+              ),
             ),
             isDense: true,
           ),
@@ -1082,7 +1423,7 @@ class _Step2PurposeVisit extends StatelessWidget {
 
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: section.praForm // FIX: pra_form, not visit_form
+        children: section.praForm
             .where((f) => f.isEnable)
             .map(
               (f) => _FormFieldWidget(
@@ -1114,7 +1455,7 @@ class _FormFieldWidget extends StatelessWidget {
   @override
   Widget build(BuildContext ctx) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.only(bottom: 18),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1141,9 +1482,7 @@ class _FormFieldWidget extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(height: 6),
-
-          // Field based on type
+          const SizedBox(height: 7),
           _buildInputWidget(ctx),
         ],
       ),
@@ -1151,10 +1490,6 @@ class _FormFieldWidget extends StatelessWidget {
   }
 
   Widget _buildInputWidget(BuildContext ctx) {
-    // 0=Text, 1=Number, 2=Email, 3=Dropdown, 4=DatePicker,
-    // 5=Radio, 6=Checkbox, 9=DateTime, 10=Camera, 11=File, 12=Image
-
-    // Special case: API-backed dropdowns by remarks
     if (field.remarks == 'host') {
       return _buildApiDropdown(
         items: controller.hosts,
@@ -1181,8 +1516,6 @@ class _FormFieldWidget extends StatelessWidget {
       );
     }
 
-    // Employee name dropdown — shown when visitor type is Employee
-    // Disabled (greyed out) when user answered 'No' to is_employee
     if (field.remarks == 'employee_name' || field.remarks == 'employee') {
       return Obx(() {
         final enabled = controller.isEmployee.value;
@@ -1204,7 +1537,6 @@ class _FormFieldWidget extends StatelessWidget {
       });
     }
 
-    // Static agenda dropdown with 'Other' free-text option
     if (field.remarks == 'agenda') return _buildAgendaDropdown();
 
     switch (field.fieldType) {
@@ -1220,27 +1552,26 @@ class _FormFieldWidget extends StatelessWidget {
               : TextInputType.text,
         );
 
-      case 5: // Radio
-        // For is_employee: add a visual divider below to separate from next fields
+      case 5:
         if (field.remarks == 'is_employee') {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _buildRadioGroup(),
               const SizedBox(height: 4),
-              const Divider(thickness: 1, color: AppColors.grey200),
+              const Divider(thickness: 1, color: Color(0xFFEEEEEE)),
             ],
           );
         }
         return _buildRadioGroup();
 
-      case 4: // Date picker
+      case 4:
         return _buildDateField(ctx, withTime: false);
 
-      case 9: // DateTime picker
+      case 9:
         return _buildDateField(ctx, withTime: true);
 
-      case 6: // Checkbox
+      case 6:
         return _buildCheckbox();
 
       case 10:
@@ -1253,7 +1584,6 @@ class _FormFieldWidget extends StatelessWidget {
     }
   }
 
-  /// API dropdown — bottom sheet picker, ALWAYS opens from the bottom.
   Widget _buildApiDropdown({
     required RxList<DropdownItem> items,
     required RxString selectedId,
@@ -1263,10 +1593,9 @@ class _FormFieldWidget extends StatelessWidget {
     return Obx(() {
       final list = items.toList();
       final currentId = selectedId.value;
-      final selectedItem =
-          list.any((e) => e.id == currentId)
-              ? list.firstWhere((e) => e.id == currentId)
-              : null;
+      final selectedItem = list.any((e) => e.id == currentId)
+          ? list.firstWhere((e) => e.id == currentId)
+          : null;
 
       return _buildPickerTrigger(
         displayText: selectedItem?.name ?? '',
@@ -1285,9 +1614,13 @@ class _FormFieldWidget extends StatelessWidget {
     });
   }
 
-  /// Static agenda picker with 'Other' free-text option.
   static const _agendaOptions = [
-    'Meeting', 'Presentation', 'Visit', 'Training', 'Report', 'Other',
+    'Meeting',
+    'Presentation',
+    'Visit',
+    'Training',
+    'Report',
+    'Other',
   ];
 
   Widget _buildAgendaDropdown() {
@@ -1300,18 +1633,25 @@ class _FormFieldWidget extends StatelessWidget {
         final showCustomField = selectedLabel == 'Other';
 
         final textDecoration = InputDecoration(
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 12,
+            vertical: 12,
+          ),
           border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(color: AppColors.grey300)),
+            borderRadius: BorderRadius.circular(10),
+            borderSide: const BorderSide(color: Color(0xFFDDDDDD)),
+          ),
           enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(color: AppColors.grey300)),
+            borderRadius: BorderRadius.circular(10),
+            borderSide: const BorderSide(color: Color(0xFFDDDDDD)),
+          ),
           focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide:
-                  const BorderSide(color: AppColors.primary500, width: 1.5)),
+            borderRadius: BorderRadius.circular(10),
+            borderSide: const BorderSide(
+              color: AppColors.primary500,
+              width: 1.5,
+            ),
+          ),
         );
 
         return Column(
@@ -1344,12 +1684,15 @@ class _FormFieldWidget extends StatelessWidget {
             if (showCustomField) ...[
               const SizedBox(height: 8),
               TextFormField(
-                initialValue:
-                    field.answerText == 'Other' ? '' : field.answerText,
+                initialValue: field.answerText == 'Other'
+                    ? ''
+                    : field.answerText,
                 decoration: textDecoration.copyWith(
                   hintText: 'Other',
-                  hintStyle:
-                      const TextStyle(color: AppColors.grey400, fontSize: 13),
+                  hintStyle: const TextStyle(
+                    color: AppColors.grey400,
+                    fontSize: 13,
+                  ),
                 ),
                 style: const TextStyle(fontSize: 14),
                 onChanged: (v) {
@@ -1365,7 +1708,6 @@ class _FormFieldWidget extends StatelessWidget {
     );
   }
 
-  /// Trigger widget that looks like a dropdown field but opens a bottom sheet.
   Widget _buildPickerTrigger({
     required String displayText,
     required String hint,
@@ -1374,38 +1716,11 @@ class _FormFieldWidget extends StatelessWidget {
     return Builder(
       builder: (ctx) => GestureDetector(
         onTap: () => onTap(ctx),
-        child: Container(
-          width: double.infinity,
-          padding:
-              const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-          decoration: BoxDecoration(
-            border: Border.all(color: AppColors.grey300),
-            borderRadius: BorderRadius.circular(8),
-            color: Colors.white,
-          ),
-          child: Row(
-            children: [
-              Expanded(
-                child: Text(
-                  displayText.isEmpty ? hint : displayText,
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: displayText.isEmpty
-                        ? AppColors.grey400
-                        : Colors.black87,
-                  ),
-                ),
-              ),
-              const Icon(Icons.arrow_drop_down,
-                  color: AppColors.grey400, size: 22),
-            ],
-          ),
-        ),
+        child: _DropdownTrigger(text: displayText, hint: hint),
       ),
     );
   }
 
-  /// Bottom sheet list picker — always slides up from the bottom.
   static Future<T?> _showPickerSheet<T>(
     BuildContext context, {
     required String title,
@@ -1418,27 +1733,29 @@ class _FormFieldWidget extends StatelessWidget {
       isScrollControlled: true,
       backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (sheetCtx) => SafeArea(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Drag handle
             Container(
               margin: const EdgeInsets.symmetric(vertical: 10),
-              width: 40,
+              width: 36,
               height: 4,
               decoration: BoxDecoration(
                 color: AppColors.grey300,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
-            Text(title,
-                style: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.black87)),
+            Text(
+              title,
+              style: const TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w700,
+                color: Colors.black87,
+              ),
+            ),
             const SizedBox(height: 8),
             const Divider(height: 1),
             ConstrainedBox(
@@ -1456,27 +1773,34 @@ class _FormFieldWidget extends StatelessWidget {
                     onTap: () => Navigator.of(sheetCtx).pop(item),
                     child: Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 20, vertical: 14),
+                        horizontal: 20,
+                        vertical: 14,
+                      ),
                       color: selected
                           ? AppColors.primary500.withValues(alpha: 0.08)
                           : Colors.transparent,
                       child: Row(
                         children: [
                           Expanded(
-                            child: Text(label,
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: selected
-                                      ? AppColors.primary500
-                                      : Colors.black87,
-                                  fontWeight: selected
-                                      ? FontWeight.w600
-                                      : FontWeight.normal,
-                                )),
+                            child: Text(
+                              label,
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: selected
+                                    ? AppColors.primary500
+                                    : Colors.black87,
+                                fontWeight: selected
+                                    ? FontWeight.w600
+                                    : FontWeight.normal,
+                              ),
+                            ),
                           ),
                           if (selected)
-                            const Icon(Icons.check,
-                                size: 18, color: AppColors.primary500),
+                            const Icon(
+                              Icons.check_rounded,
+                              size: 18,
+                              color: AppColors.primary500,
+                            ),
                         ],
                       ),
                     ),
@@ -1492,8 +1816,6 @@ class _FormFieldWidget extends StatelessWidget {
   }
 
   Widget _buildTextField({required TextInputType keyboardType}) {
-    // Use dedicated TextEditingController from PraRegistrationController if available.
-    // This allows auto-fill (e.g. selecting an Employee) to update the field reactively.
     final dedicatedCtrl = controller.getFieldController(field.remarks);
 
     void onChanged(String v) {
@@ -1528,23 +1850,22 @@ class _FormFieldWidget extends StatelessWidget {
     }
 
     final decoration = InputDecoration(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
       border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(8),
-        borderSide: const BorderSide(color: AppColors.grey300),
+        borderRadius: BorderRadius.circular(10),
+        borderSide: const BorderSide(color: Color(0xFFDDDDDD)),
       ),
       enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(8),
-        borderSide: const BorderSide(color: AppColors.grey300),
+        borderRadius: BorderRadius.circular(10),
+        borderSide: const BorderSide(color: Color(0xFFDDDDDD)),
       ),
       focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(10),
         borderSide: const BorderSide(color: AppColors.primary500, width: 1.5),
       ),
     );
 
     if (dedicatedCtrl != null) {
-      // Sync initialValue into controller if it hasn't been set yet
       if (dedicatedCtrl.text.isEmpty && field.answerText.isNotEmpty) {
         dedicatedCtrl.text = field.answerText;
       }
@@ -1556,7 +1877,6 @@ class _FormFieldWidget extends StatelessWidget {
       );
     }
 
-    // Fallback for fields without a dedicated controller
     return TextFormField(
       initialValue: field.answerText,
       keyboardType: keyboardType,
@@ -1566,8 +1886,6 @@ class _FormFieldWidget extends StatelessWidget {
   }
 
   Widget _buildRadioGroup() {
-    // FIX: ONE StatefulBuilder wraps ALL options so selecting one rebuilds all.
-    // Previously each option had its own StatefulBuilder → two could appear selected.
     return StatefulBuilder(
       builder: (ctx, setState) {
         return RadioGroup<String>(
@@ -1575,11 +1893,11 @@ class _FormFieldWidget extends StatelessWidget {
           onChanged: (v) {
             if (v != null) {
               field.answerText = v;
-              // Also sync isEmployee observable if this is the employee question
               if (field.remarks == 'is_employee') {
-                controller.isEmployee.value = (v == 'true' || v == 'Yes' || v == '1');
+                controller.isEmployee.value =
+                    (v == 'true' || v == 'Yes' || v == '1');
               }
-              setState(() {}); // rebuilds ALL options in this group
+              setState(() {});
               controller.updateForm();
             }
           },
@@ -1632,7 +1950,7 @@ class _FormFieldWidget extends StatelessWidget {
         decoration: InputDecoration(
           contentPadding: const EdgeInsets.symmetric(
             horizontal: 12,
-            vertical: 10,
+            vertical: 12,
           ),
           hintText: withTime
               ? 'EEEE, DD MMMM YYYY, HH:mm'
@@ -1644,15 +1962,15 @@ class _FormFieldWidget extends StatelessWidget {
             size: 18,
           ),
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8),
-            borderSide: const BorderSide(color: AppColors.grey300),
+            borderRadius: BorderRadius.circular(10),
+            borderSide: const BorderSide(color: Color(0xFFDDDDDD)),
           ),
           enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8),
-            borderSide: const BorderSide(color: AppColors.grey300),
+            borderRadius: BorderRadius.circular(10),
+            borderSide: const BorderSide(color: Color(0xFFDDDDDD)),
           ),
           focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(10),
             borderSide: const BorderSide(
               color: AppColors.primary500,
               width: 1.5,
@@ -1689,21 +2007,15 @@ class _FormFieldWidget extends StatelessWidget {
       ),
     );
     if (picked != null) {
-      // Store as LOCAL ISO string — controller will convert to UTC at submit time.
-      // Do NOT convert to UTC here to avoid double-conversion.
       final iso = picked.toIso8601String().replaceAll(RegExp(r'\.\d+'), '');
-
       field.answerDatetime = iso;
       field.answerText = iso;
       ctrl.text = _formatDisplay(picked, false);
-
-      // Sync to controller observables so isStep3Valid passes
       if (field.remarks == 'visitor_period_start') {
         controller.visitStart.value = picked;
       } else if (field.remarks == 'visitor_period_end') {
         controller.visitEnd.value = picked;
       }
-
       setState(() {});
       controller.updateForm();
     }
@@ -1741,33 +2053,29 @@ class _FormFieldWidget extends StatelessWidget {
       ),
     );
     if (time == null) return;
-
     if (!ctx.mounted) return;
 
-    final dtRaw =
-        DateTime(date.year, date.month, date.day, time.hour, time.minute);
-
-    // Store as LOCAL ISO string — controller will convert to UTC at submit time.
-    // Do NOT convert to UTC here to avoid double-conversion.
+    final dtRaw = DateTime(
+      date.year,
+      date.month,
+      date.day,
+      time.hour,
+      time.minute,
+    );
     final iso = dtRaw.toIso8601String().replaceAll(RegExp(r'\.\d+'), '');
-
     field.answerDatetime = iso;
     field.answerText = iso;
     ctrl.text = _formatDisplay(dtRaw, true);
-
-    // Sync to controller observables so isStep3Valid passes
     if (field.remarks == 'visitor_period_start') {
       controller.visitStart.value = dtRaw;
     } else if (field.remarks == 'visitor_period_end') {
       controller.visitEnd.value = dtRaw;
     }
-
     setState(() {});
     controller.updateForm();
   }
 
   Widget _buildFileUploadField() {
-    // field.fieldType: 10 = camera only, 11 = file, 12 = image (camera + gallery)
     return _FileUploadState(field: field, cameraOnly: field.fieldType == 10);
   }
 
@@ -1780,7 +2088,7 @@ class _FormFieldWidget extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// File / Image upload widget (handles camera, gallery, upload, preview)
+// File / Image upload widget
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _FileUploadState extends StatefulWidget {
@@ -1815,9 +2123,6 @@ class _FileUploadStateState extends State<_FileUploadState> {
       if (status == 'success') {
         final path = response.data['collection']?.toString() ?? '';
         widget.field.answerText = path;
-        debugPrint(
-          'Upload berhasil [${widget.field.shortName}]: ${widget.field.answerText}',
-        );
         setState(() => _isUploading = false);
         Get.find<PraRegistrationController>().updateForm();
       } else {
@@ -1852,13 +2157,39 @@ class _FileUploadStateState extends State<_FileUploadState> {
   void _showSourceSheet() {
     Get.bottomSheet(
       Container(
-        color: Colors.white,
-        child: Wrap(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
+            Container(
+              margin: const EdgeInsets.symmetric(vertical: 10),
+              width: 36,
+              height: 4,
+              decoration: BoxDecoration(
+                color: AppColors.grey300,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const Text(
+              'Pilih Sumber Foto',
+              style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+            ),
+            const SizedBox(height: 8),
+            const Divider(height: 1),
             ListTile(
-              leading: const Icon(
-                Icons.camera_alt_outlined,
-                color: AppColors.primary500,
+              leading: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppColors.primary500.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(
+                  Icons.camera_alt_outlined,
+                  color: AppColors.primary500,
+                ),
               ),
               title: const Text('Kamera'),
               onTap: () {
@@ -1867,9 +2198,16 @@ class _FileUploadStateState extends State<_FileUploadState> {
               },
             ),
             ListTile(
-              leading: const Icon(
-                Icons.photo_library_outlined,
-                color: AppColors.primary500,
+              leading: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppColors.primary500.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(
+                  Icons.photo_library_outlined,
+                  color: AppColors.primary500,
+                ),
               ),
               title: const Text('Galeri'),
               onTap: () {
@@ -1877,6 +2215,7 @@ class _FileUploadStateState extends State<_FileUploadState> {
                 _pickAndUpload(ImageSource.gallery);
               },
             ),
+            const SizedBox(height: 16),
           ],
         ),
       ),
@@ -1885,12 +2224,11 @@ class _FileUploadStateState extends State<_FileUploadState> {
 
   @override
   Widget build(BuildContext context) {
-    // Show preview if file already uploaded
     if (_pickedFile != null && !_isUploading) {
       return Stack(
         children: [
           ClipRRect(
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(10),
             child: Image.file(
               _pickedFile!,
               height: 160,
@@ -1899,8 +2237,8 @@ class _FileUploadStateState extends State<_FileUploadState> {
             ),
           ),
           Positioned(
-            top: 6,
-            right: 6,
+            top: 8,
+            right: 8,
             child: GestureDetector(
               onTap: () {
                 setState(() {
@@ -1909,12 +2247,16 @@ class _FileUploadStateState extends State<_FileUploadState> {
                 });
               },
               child: Container(
-                decoration: const BoxDecoration(
-                  color: Colors.black54,
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(alpha: 0.6),
                   shape: BoxShape.circle,
                 ),
-                padding: const EdgeInsets.all(4),
-                child: const Icon(Icons.close, color: Colors.white, size: 16),
+                padding: const EdgeInsets.all(5),
+                child: const Icon(
+                  Icons.close_rounded,
+                  color: Colors.white,
+                  size: 16,
+                ),
               ),
             ),
           ),
@@ -1933,12 +2275,15 @@ class _FileUploadStateState extends State<_FileUploadState> {
               }
             },
       child: Container(
-        height: 80,
+        height: 90,
         decoration: BoxDecoration(
           border: Border.all(
-            color: _isUploading ? AppColors.primary500 : AppColors.grey300,
+            color: _isUploading
+                ? AppColors.primary500
+                : const Color(0xFFDDDDDD),
+            style: BorderStyle.solid,
           ),
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(10),
           color: AppColors.primary50,
         ),
         child: _isUploading
@@ -1965,14 +2310,21 @@ class _FileUploadStateState extends State<_FileUploadState> {
             : Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(
-                    widget.cameraOnly
-                        ? Icons.camera_alt_outlined
-                        : Icons.upload_outlined,
-                    color: AppColors.primary500,
-                    size: 24,
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary500.withValues(alpha: 0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      widget.cameraOnly
+                          ? Icons.camera_alt_outlined
+                          : Icons.upload_outlined,
+                      color: AppColors.primary500,
+                      size: 22,
+                    ),
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 6),
                   Text(
                     widget.cameraOnly ? 'Buka Kamera' : 'Pilih File / Foto',
                     style: const TextStyle(
@@ -2006,14 +2358,13 @@ class _BottomNav extends StatelessWidget {
   Widget build(BuildContext ctx) {
     return Obx(() {
       final isLast = step == 2;
-      // Next enabled based on current step + mode
       final bool canProceed;
       if (step == 0) {
         final typeSelected = controller.selectedVisitorTypeId.value.isNotEmpty;
         final statusSelected = controller.isGroup.value != null;
         if (controller.isGroup.value == true) {
-          // Group mode: also require group name to be filled
-          canProceed = typeSelected &&
+          canProceed =
+              typeSelected &&
               statusSelected &&
               controller.groupName.value.trim().isNotEmpty;
         } else {
@@ -2024,28 +2375,60 @@ class _BottomNav extends StatelessWidget {
       }
       final isSubmitting = controller.isSubmitting.value;
 
-      return Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+      return Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          border: const Border(top: BorderSide(color: Color(0xFFEEEEEE))),
+          borderRadius: const BorderRadius.only(
+            bottomLeft: Radius.circular(20),
+            bottomRight: Radius.circular(20),
+          ),
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
         child: Row(
           children: [
             // Back button
             OutlinedButton.icon(
-              onPressed: step == 0 ? null : controller.prevStep,
+              onPressed: () async {
+                if (step == 0) {
+                  final shouldExit = await _showExitConfirmation(ctx);
+                  if (shouldExit && ctx.mounted) {
+                    controller.resetFields();
+                    Navigator.of(ctx).pop();
+                  }
+                } else if (step == 1) {
+                  // Kembali dari Page 2 ke Page 1 -> Muncul Warning
+                  final shouldBack = await _showBackConfirmation(ctx);
+                  if (shouldBack) {
+                    controller.clearStep1Fields(); 
+                    controller.prevStep();
+                  }
+                } else {
+                  // Kembali dari Page 3 ke Page 2 -> Langsung Back (Data Aman)
+                  controller.prevStep();
+                }
+              },
               style: OutlinedButton.styleFrom(
                 side: BorderSide(
-                  color: step == 0 ? AppColors.grey300 : AppColors.primary500,
+                  color: step == 0
+                      ? const Color(0xFFDDDDDD)
+                      : AppColors.primary500,
                 ),
                 foregroundColor: AppColors.primary500,
+                disabledForegroundColor: const Color(0xFFBDBDBD),
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 10,
+                  horizontal: 18,
+                  vertical: 12,
                 ),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(10),
                 ),
               ),
-              icon: const Icon(Icons.arrow_back, size: 16),
-              label: const Text('Back'),
+              icon: const Icon(Icons.arrow_back_rounded, size: 16),
+              label: const Text(
+                'Back',
+                style: TextStyle(fontWeight: FontWeight.w600),
+              ),
             ),
 
             const Spacer(),
@@ -2066,13 +2449,13 @@ class _BottomNav extends StatelessWidget {
                     },
               style: FilledButton.styleFrom(
                 backgroundColor: AppColors.primary500,
-                disabledBackgroundColor: AppColors.grey300,
+                disabledBackgroundColor: const Color(0xFFDDDDDD),
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 10,
+                  horizontal: 22,
+                  vertical: 12,
                 ),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(10),
                 ),
               ),
               icon: isSubmitting
@@ -2084,8 +2467,16 @@ class _BottomNav extends StatelessWidget {
                         color: Colors.white,
                       ),
                     )
-                  : Icon(isLast ? Icons.check : Icons.arrow_forward, size: 16),
-              label: Text(isLast ? 'Submit' : 'Next'),
+                  : Icon(
+                      isLast
+                          ? Icons.check_rounded
+                          : Icons.arrow_forward_rounded,
+                      size: 16,
+                    ),
+              label: Text(
+                isLast ? 'Submit' : 'Next',
+                style: const TextStyle(fontWeight: FontWeight.w600),
+              ),
             ),
           ],
         ),

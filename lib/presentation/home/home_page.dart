@@ -2,7 +2,7 @@
 import 'package:date_picker_timeline/date_picker_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../../data/models/agenda_model.dart';
+import '../../core/helper/responsive_helper.dart';
 import '../../presentation/home/alarm/list_alarm_page.dart';
 import '../../presentation/home/evacuate/evacuate_page.dart';
 import '../../presentation/notification/notification_page.dart';
@@ -29,382 +29,456 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   final langCtrl = LanguageController.to;
 
-  final List<AgendaModel> agendaList = [
-    AgendaModel(
-      id: '1',
-      jenis: 'Agenda Kedatangan',
-      picOrHost: 'Jhon',
-      destination: 'Gedung HQ',
-      visitStart: DateTime(2025, 6, 26, 10, 0),
-      visitEnd: DateTime(2025, 6, 26, 13, 0),
-      visitors: [],
-    ),
-    AgendaModel(
-      id: '2',
-      jenis: 'Meeting Internal',
-      picOrHost: 'Sarah',
-      destination: 'Gedung Operasional',
-      visitStart: DateTime(2025, 6, 27, 14, 0),
-      visitEnd: DateTime(2025, 6, 27, 16, 0),
-      visitors: [],
-    ),
-  ];
-
-  @override
-  void initState() {
-    super.initState();
-  }
+  // Design constants
+  static const _blue = Color(0xFF1976D2);
+  static const _blueDark = Color(0xFF0D47A1);
+  static const _bgPage = Color(0xFFF8FAFF);
 
   @override
   Widget build(BuildContext context) {
+    final mq = MediaQuery.of(context);
+    final sw = mq.size.width;
+
     return Scaffold(
+      backgroundColor: _bgPage,
       body: Stack(
         children: [
+          // 1. Full background gradient (Menutupi seluruh layar)
           Container(
+            width: double.infinity,
+            height: mq.size.height,
             decoration: const BoxDecoration(
               gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  Color(0xFF1976D2),
-                  Color(0xFF72B9FF),
-                  Color(0xFF1976D2),
-                ],
+                colors: [_blue, _blueDark],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
               ),
             ),
           ),
 
+          // 2. Main Scrollable Content
           SafeArea(
+            bottom: false,
             child: SingleChildScrollView(
+              physics: const BouncingScrollPhysics(),
               child: Column(
-                mainAxisAlignment: MainAxisAlignment.start,
-                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Padding(
-                    padding: const EdgeInsets.all(20.0),
-                    child: ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      leading: CustomCircleImage(
-                        image: Assets.images.avaPerson1.image(
-                          fit: BoxFit.cover,
-                        ),
-                        size: 40,
-                      ),
-                      title: Text(
-                        'welcome'.tr,
-                        style: const TextStyle(fontSize: 14, color: Colors.white),
-                      ),
-                      subtitle: Obx(
-                        () => Text(
-                          UserController.to.fullName,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
-                      trailing: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Container(
-                            decoration: BoxDecoration(
-                              border: Border.all(color: Colors.white, width: 1.5),
-                              borderRadius: BorderRadius.circular(8),
-                              color: Colors.white.withValues(alpha: 0.15),
-                            ),
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
-                            child: Obx(
-                              () => DropdownButtonHideUnderline(
-                                child: DropdownButton<String>(
-                                  value: langCtrl.selectedLang.value == 'id' ? 'id' : 'en',
-                                  icon: const Icon(
-                                    Icons.arrow_drop_down,
-                                    size: 18,
-                                    color: Colors.white,
-                                  ),
-                                  dropdownColor: Colors.white,
-                                  borderRadius: BorderRadius.circular(8),
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                  isDense: true,
-                                  items: const [
-                                    DropdownMenuItem(
-                                      value: 'en',
-                                      child: Text(
-                                        '🇬🇧 ENG',
-                                        style: TextStyle(
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.w600,
-                                          color: Colors.black87,
-                                        ),
-                                      ),
-                                    ),
-                                    DropdownMenuItem(
-                                      value: 'id',
-                                      child: Text(
-                                        '🇮🇩 ID',
-                                        style: TextStyle(
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.w600,
-                                          color: Colors.black87,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                  selectedItemBuilder: (context) => [
-                                    const Text(
-                                      '🇬🇧 ENG',
-                                      style: TextStyle(
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.w600,
-                                        color: Colors.white,
-                                      ),
-                                    ),
-                                    const Text(
-                                      '🇮🇩 ID',
-                                      style: TextStyle(
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.w600,
-                                        color: Colors.white,
-                                      ),
-                                    ),
-                                  ],
-                                  onChanged: (value) {
-                                    if (value != null) {
-                                      langCtrl.changeLanguage(value);
-                                    }
-                                  },
-                                ),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 10),
-                          Stack(
-                            children: [
-                              GestureDetector(
-                                onTap: () {
-                                  showNotificationDialog(context);
-                                },
-                                child: Icon(
-                                  Icons.notifications_none_outlined,
-                                  color: Colors.white,
-                                  size: 28,
-                                ),
-                              ),
-                              Positioned(
-                                right: 4,
-                                top: 4,
-                                child: Container(
-                                  width: 8,
-                                  height: 8,
-                                  decoration: const BoxDecoration(
-                                    color: Colors.red,
-                                    shape: BoxShape.circle,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
+                  // --- HEADER ---
+                  _buildHeader(context, sw),
+                  
+                  SizedBox(height: sw * 0.06),
 
-                  // Menu Grid
-                  Obx(() {
-                    // Access langCtrl.selectedLang.value inside Obx to make grid reactive
-                    langCtrl.selectedLang.value;
-                    final List<Map<String, dynamic>> reactiveMenuItems = [
-                      {
-                        'icon': Assets.icons.id.image(height: 32),
-                        'menuName': 'access_pass'.tr,
-                        'onTap': () {
-                          showAccessPassDialog(
-                            context: context,
-                            name: UserController.to.fullName,
-                            date: 'Mon, 19 Jul 2025',
-                            time: '10:00 - 13:00',
-                            invitationCode: '729038',
-                            cardNumber: '6789209930',
-                            vehiclePlateNo: 'B1245K',
-                            parkingSlot: 'Slot A1',
-                            buildingName: 'Gedung HQ',
-                            visitorId: '7E20A56D62B',
-                            profileImagePath: 'assets/images/ava_person1.png',
-                            isTracked: true,
-                            isLowBattery: true,
-                          );
-                        },
-                      },
-                      {
-                        'icon': Assets.icons.invitation.image(height: 32),
-                        'menuName': 'invitation'.tr,
-                        'onTap': () => context.push(SendInvitationPage()),
-                      },
-                      {
-                        'icon': Assets.icons.approved.image(height: 32),
-                        'menuName': 'approval'.tr,
-                        'onTap': () => debugPrint('Delivery clicked'),
-                      },
-                      {
-                        'icon': Assets.icons.healthCheck.image(height: 32),
-                        'menuName': 'report'.tr,
-                        'onTap': () => context.push(VisitorReportPage()),
-                      },
-                      {
-                        'icon': Assets.icons.parkingLot.image(height: 32),
-                        'menuName': 'parking'.tr,
-                        'onTap': () => context.push(
-                          UserController.to.user.value?.roleAccess == 'guest'
-                              ? GuestParkingPage()
-                              : ParkingPage(),
-                        ),
-                      },
-                      {
-                        'icon': Assets.icons.location.image(height: 32),
-                        'menuName': 'visitor'.tr,
-                        'onTap': () => context.push(VisitorPage()),
-                      },
-                      {
-                        'icon': Assets.icons.alarm.image(height: 32),
-                        'menuName': 'alarm'.tr,
-                        'onTap': () => context.push(AlarmListPage()),
-                      },
-                      {
-                        'icon': Assets.icons.evacuate.image(height: 32),
-                        'menuName': 'evacuate'.tr,
-                        'onTap': () => context.push(EvacuatePage()),
-                      },
-                    ];
-                    return Container(
-                      margin: const EdgeInsets.symmetric(horizontal: 20),
-                      padding: const EdgeInsets.symmetric(
-                        vertical: 20,
-                        horizontal: 10,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(20),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.05),
-                            blurRadius: 10,
-                            offset: const Offset(0, 5),
-                          ),
-                        ],
-                      ),
-                      child: GridView.builder(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        gridDelegate:
-                            const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 4,
-                          mainAxisSpacing: 20,
-                          crossAxisSpacing: 10,
-                          childAspectRatio: 0.72,
-                        ),
-                        itemCount: reactiveMenuItems.length,
-                        itemBuilder: (context, index) {
-                          return GestureDetector(
-                            onTap: reactiveMenuItems[index]['onTap'],
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.all(8),
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFFE3F2FD),
-                                    borderRadius: BorderRadius.circular(15),
-                                  ),
-                                  child: reactiveMenuItems[index]['icon'],
-                                ),
-                                const SizedBox(height: 6),
-                                Flexible(
-                                  child: Text(
-                                    reactiveMenuItems[index]['menuName'],
-                                    textAlign: TextAlign.center,
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: const TextStyle(
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          );
-                        },
-                      ),
-                    );
-                  }),
+                  // --- MENU GRID ---
+                  _buildMenuGrid(context, sw),
 
-                  const SizedBox(height: 25),
+                  SizedBox(height: sw * 0.08),
 
-                  // Content Area (Date Picker & List)
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(20),
-                    decoration: const BoxDecoration(
-                      color: Color(0xffFAFCFF),
-                      borderRadius: BorderRadius.only(
-                        topLeft: Radius.circular(30),
-                        topRight: Radius.circular(30),
-                      ),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('schedule'.tr, style: TextStyles.headline5),
-                        DatePicker(
-                          DateTime.now(),
-                          initialSelectedDate: DateTime.now(),
-                          daysCount: 30,
-                          selectionColor: Colors.blue,
-                          selectedTextColor: Colors.white,
-                          dayTextStyle: const TextStyle(fontSize: 12),
-                          dateTextStyle: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                          monthTextStyle: const TextStyle(fontSize: 10),
-                          onDateChange: (date) {
-                            debugPrint("Tanggal dipilih: $date");
-                          },
-                        ),
-                        SpaceHeight(10),
-                        Divider(height: 2),
-                        SpaceHeight(20),
-
-                        // List of Visitor List (Agenda)
-                        const VisitorList(),
-
-                        SpaceHeight(20),
-                        Text(
-                          'active_visit'.tr,
-                          style: TextStyles.bodyLarge.copyWith(
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        SpaceHeight(10),
-
-                        // Itinerary List
-                        const IteneraryList(),
-
-                        SpaceHeight(20),
-                      ],
-                    ),
-                  ),
+                  // --- BOTTOM CONTENT (SCHEDULE & AGENDA) ---
+                  _buildBottomContent(context, sw),
                 ],
               ),
             ),
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildHeader(BuildContext context, double sw) {
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: sw * 0.06, vertical: sw * 0.02),
+      child: Row(
+        children: [
+          // Profile Pic with elegant border
+          Container(
+            padding: const EdgeInsets.all(2.5),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(color: Colors.white.withValues(alpha: 0.4), width: 1.5),
+            ),
+            child: CustomCircleImage(
+              image: Assets.images.avaPerson1.image(fit: BoxFit.cover),
+              size: sw * 0.12,
+            ),
+          ),
+          SizedBox(width: sw * 0.04),
+          // Welcome Text
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'welcome'.tr,
+                  style: TextStyle(
+                    fontSize: rfs(context, 12),
+                    color: Colors.white.withValues(alpha: 0.8),
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                Obx(() => Text(
+                  UserController.to.fullName,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: rfs(context, 18),
+                    fontWeight: FontWeight.w800,
+                    color: Colors.white,
+                    letterSpacing: -0.5,
+                  ),
+                )),
+              ],
+            ),
+          ),
+          // Actions
+          _buildActionButtons(context, sw),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActionButtons(BuildContext context, double sw) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        _buildLanguageDropdown(context, sw),
+        SizedBox(width: sw * 0.03),
+        GestureDetector(
+          onTap: () => showNotificationDialog(context),
+          child: Container(
+            padding: const EdgeInsets.all(9),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.12),
+              shape: BoxShape.circle,
+              border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+            ),
+            child: Stack(
+              children: [
+                const Icon(Icons.notifications_none_rounded, color: Colors.white, size: 22),
+                Positioned(
+                  right: 1,
+                  top: 1,
+                  child: Container(
+                    width: 7,
+                    height: 7,
+                    decoration: const BoxDecoration(color: Colors.redAccent, shape: BoxShape.circle),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildLanguageDropdown(BuildContext context, double sw) {
+    return Obx(() {
+      final isId = langCtrl.selectedLang.value == 'id';
+      return Container(
+        decoration: BoxDecoration(
+          border: Border.all(color: Colors.white54),
+          borderRadius: BorderRadius.circular(20),
+          color: Colors.white.withValues(alpha: 0.18),
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+        child: DropdownButtonHideUnderline(
+          child: DropdownButton<String>(
+            value: isId ? 'id' : 'en',
+            icon: const Icon(
+              Icons.arrow_drop_down,
+              size: 16,
+              color: Colors.white,
+            ),
+            dropdownColor: Colors.white,
+            borderRadius: BorderRadius.circular(10),
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: rfs(context, 13),
+              fontWeight: FontWeight.w600,
+            ),
+            isDense: true,
+            onChanged: (v) {
+              if (v != null) langCtrl.changeLanguage(v);
+            },
+            items: const [
+              DropdownMenuItem(
+                value: 'en',
+                child: Text(
+                  '🇬🇧 ENG',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.black87,
+                  ),
+                ),
+              ),
+              DropdownMenuItem(
+                value: 'id',
+                child: Text(
+                  '🇮🇩 ID',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.black87,
+                  ),
+                ),
+              ),
+            ],
+            selectedItemBuilder: (_) => [
+              Text(
+                '🇬🇧 ENG',
+                style: TextStyle(
+                  fontSize: rfs(context, 13),
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
+                ),
+              ),
+              Text(
+                '🇮🇩 ID',
+                style: TextStyle(
+                  fontSize: rfs(context, 13),
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    });
+  }
+
+  Widget _buildMenuGrid(BuildContext context, double sw) {
+    return Obx(() {
+      langCtrl.selectedLang.value; // Track changes
+      
+      final List<Map<String, dynamic>> items = [
+        {
+          'label': 'access_pass'.tr,
+          'icon': Icons.badge_outlined,
+          'bgColor': const Color(0xFFE8F1FD),
+          'iconColor': const Color(0xFF1976D2),
+          'onTap': () => showAccessPassDialog(
+                context: context,
+                name: UserController.to.fullName,
+                date: 'Mon, 19 Jul 2025',
+                time: '10:00 - 13:00',
+                invitationCode: '729038',
+                cardNumber: '6789209930',
+                vehiclePlateNo: 'B1245K',
+                parkingSlot: 'Slot A1',
+                buildingName: 'Gedung HQ',
+                visitorId: '7E20A56D62B',
+                profileImagePath: 'assets/images/ava_person1.png',
+                isTracked: true,
+                isLowBattery: true,
+              ),
+        },
+        {
+          'label': 'invitation'.tr,
+          'icon': Icons.calendar_month_outlined,
+          'bgColor': const Color(0xFFEAF3DE),
+          'iconColor': const Color(0xFF3B6D11),
+          'onTap': () => context.push(const SendInvitationPage()),
+        },
+        {
+          'label': 'approval'.tr,
+          'icon': Icons.fact_check_outlined,
+          'bgColor': const Color(0xFFFAEEDA),
+          'iconColor': const Color(0xFF854F0B),
+          'onTap': () => debugPrint('Approval clicked'),
+        },
+        {
+          'label': 'report'.tr,
+          'icon': Icons.bar_chart_rounded,
+          'bgColor': const Color(0xFFF3EEFE),
+          'iconColor': const Color(0xFF534AB7),
+          'onTap': () => context.push(const VisitorReportPage()),
+        },
+        {
+          'label': 'parking'.tr,
+          'icon': Icons.local_parking_rounded,
+          'bgColor': const Color(0xFFFBEAF0),
+          'iconColor': const Color(0xFF993556),
+          'onTap': () => context.push(
+                UserController.to.user.value?.roleAccess == 'guest'
+                    ? const GuestParkingPage()
+                    : const ParkingPage(),
+              ),
+        },
+        {
+          'label': 'visitor'.tr,
+          'icon': Icons.person_search_outlined,
+          'bgColor': const Color(0xFFE1F5EE),
+          'iconColor': const Color(0xFF0F6E56),
+          'onTap': () => context.push(const VisitorPage()),
+        },
+        {
+          'label': 'alarm'.tr,
+          'icon': Icons.notifications_active_outlined,
+          'bgColor': const Color(0xFFFFEBEB),
+          'iconColor': const Color(0xFFD32F2F),
+          'onTap': () => context.push(const AlarmListPage()),
+        },
+        {
+          'label': 'evacuate'.tr,
+          'icon': Icons.run_circle_outlined,
+          'bgColor': const Color(0xFFF5F5F5),
+          'iconColor': const Color(0xFF616161),
+          'onTap': () => context.push(const EvacuatePage()),
+        },
+      ];
+
+      return Container(
+        margin: EdgeInsets.symmetric(horizontal: sw * 0.05),
+        padding: EdgeInsets.symmetric(vertical: sw * 0.06, horizontal: sw * 0.02),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(sw * 0.07),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.07),
+              blurRadius: 20,
+              offset: const Offset(0, 10),
+            ),
+          ],
+        ),
+        child: Column(
+          children: [
+            // Row 1 (4 items)
+            Row(
+              children: items.take(4).map((item) => Expanded(
+                child: _buildMenuItem(context, sw, item),
+              )).toList(),
+            ),
+            SizedBox(height: sw * 0.06),
+            // Row 2 (4 items)
+            Row(
+              children: items.skip(4).map((item) => Expanded(
+                child: _buildMenuItem(context, sw, item),
+              )).toList(),
+            ),
+          ],
+        ),
+      );
+    });
+  }
+
+  Widget _buildMenuItem(BuildContext context, double sw, Map<String, dynamic> item) {
+    final boxSize = sw * 0.13;
+    final iconSize = sw * 0.065;
+
+    return InkWell(
+      onTap: item['onTap'],
+      borderRadius: BorderRadius.circular(16),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: boxSize,
+            height: boxSize,
+            decoration: BoxDecoration(
+              color: item['bgColor'],
+              borderRadius: BorderRadius.circular(sw * 0.035),
+            ),
+            child: Icon(item['icon'], color: item['iconColor'], size: iconSize),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            item['label'],
+            textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: rfs(context, 10.5),
+              fontWeight: FontWeight.w700,
+              color: const Color(0xFF444441),
+              letterSpacing: -0.3,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBottomContent(BuildContext context, double sw) {
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(36)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 15,
+            offset: const Offset(0, -5),
+          ),
+        ],
+      ),
+      padding: EdgeInsets.fromLTRB(sw * 0.06, sw * 0.08, sw * 0.06, sw * 0.1),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Section: Schedule
+          _buildSectionHeader(context, 'schedule'.tr),
+          const SizedBox(height: 16),
+          DatePicker(
+            DateTime.now(),
+            initialSelectedDate: DateTime.now(),
+            daysCount: 30,
+            selectionColor: AppColors.primary500,
+            selectedTextColor: Colors.white,
+            deactivatedColor: Colors.grey.shade400,
+            dayTextStyle: TextStyle(fontSize: rfs(context, 11), fontWeight: FontWeight.w600),
+            dateTextStyle: TextStyle(fontSize: rfs(context, 16), fontWeight: FontWeight.w800),
+            monthTextStyle: TextStyle(fontSize: rfs(context, 10), fontWeight: FontWeight.w500),
+            onDateChange: (date) => debugPrint("Tanggal dipilih: $date"),
+          ),
+          
+          const SizedBox(height: 24),
+          const Divider(height: 1, color: Color(0xFFF0F0F0)),
+          const SizedBox(height: 24),
+
+          // List of Visitor List (Agenda)
+          const VisitorList(),
+
+          const SizedBox(height: 32),
+          
+          // Section: Active Visit
+          _buildSectionHeader(context, 'active_visit'.tr),
+          const SizedBox(height: 16),
+
+          // Itinerary List
+          const IteneraryList(),
+
+          const SizedBox(height: 20),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSectionHeader(BuildContext context, String title) {
+    return Row(
+      children: [
+        Container(
+          width: 5,
+          height: 20,
+          decoration: BoxDecoration(
+            color: AppColors.primary500,
+            borderRadius: BorderRadius.circular(3),
+          ),
+        ),
+        const SizedBox(width: 10),
+        Text(
+          title,
+          style: TextStyle(
+            fontSize: rfs(context, 17),
+            fontWeight: FontWeight.w900,
+            color: Colors.black87,
+            letterSpacing: -0.5,
+          ),
+        ),
+      ],
     );
   }
 }
