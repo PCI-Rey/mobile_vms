@@ -100,12 +100,31 @@ class VisitSummaryCard extends StatelessWidget {
                   fontSize: rfs(context, 12),
                 ),
               ),
-              Text(
-                DateFormat('HH:mm').format(item.visitorPeriodStart),
-                style: TextStyle(
-                  color: Colors.grey,
-                  fontSize: rfs(context, 11),
-                ),
+              SizedBox(height: sw * 0.005),
+              Row(
+                children: [
+                  Text(
+                    DateFormat('HH:mm').format(item.visitorPeriodStart),
+                    style: TextStyle(
+                      color: Colors.grey,
+                      fontSize: rfs(context, 11),
+                    ),
+                  ),
+                  Text(
+                    ' – ',
+                    style: TextStyle(
+                      color: Colors.grey,
+                      fontSize: rfs(context, 11),
+                    ),
+                  ),
+                  Text(
+                    DateFormat('HH:mm').format(item.visitorPeriodEnd),
+                    style: TextStyle(
+                      color: Colors.grey,
+                      fontSize: rfs(context, 11),
+                    ),
+                  ),
+                ],
               ),
               SizedBox(height: sw * 0.01),
               Container(

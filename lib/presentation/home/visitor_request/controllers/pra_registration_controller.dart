@@ -79,9 +79,32 @@ class PraRegistrationController extends GetxController {
   final RxString identityId = ''.obs;
   final RxBool isEmployee = false.obs;
 
+  // TextEditingControllers per field — so auto-fill can update the UI reactively.
+  // Keyed by field.remarks value.
+  final nameCtrl = TextEditingController();
+  final emailCtrl = TextEditingController();
+  final phoneCtrl = TextEditingController();
+  final organizationCtrl = TextEditingController();
+  final identityIdCtrl = TextEditingController();
+
+  /// Returns the dedicated TextEditingController for a given field remarks,
+  /// or null if the field doesn't have one.
+  TextEditingController? getFieldController(String remarks) {
+    switch (remarks) {
+      case 'name': return nameCtrl;
+      case 'email': return emailCtrl;
+      case 'phone': return phoneCtrl;
+      case 'organization': return organizationCtrl;
+      case 'indentity_id': return identityIdCtrl;
+      default: return null;
+    }
+  }
+
   // Step 1 – Employee dropdown (for "Employee Name" field)
   final RxList<DropdownItem> employees = <DropdownItem>[].obs;
+  final List<Map<String, dynamic>> _rawEmployees = <Map<String, dynamic>>[]; // Simpan data lengkap untuk auto-fill
   final RxString selectedEmployeeId = ''.obs;
+  final RxString selectedEmployeeName = ''.obs;
   final RxBool isLoadingEmployees = false.obs;
 
   // Step 2 – Purpose Visit
@@ -195,8 +218,14 @@ class PraRegistrationController extends GetxController {
       if (response.data['status'] == 'success') {
         final collection =
             response.data['collection'] as List<dynamic>? ?? [];
-        // Use UUID 'id' as the identifier — this is the primary key the backend expects.
-        // 'person_id' is the badge/card number, NOT the DB primary key.
+        _rawEmployees.clear();
+        // Deep copy so nested objects (Organization, Department, District) are preserved
+        _rawEmployees.addAll(
+          collection.map((e) => Map<String, dynamic>.from(
+            jsonDecode(jsonEncode(e)) as Map,
+          )),
+        );
+
         employees.value = collection
             .map((e) => DropdownItem(
                   id: e['id']?.toString() ?? '',
@@ -209,6 +238,83 @@ class PraRegistrationController extends GetxController {
       debugPrint('fetchEmployees error: $e');
     } finally {
       isLoadingEmployees.value = false;
+    }
+  }
+
+  /// Auto-fill fields for Single Registration
+  void onEmployeeSelected(String employeeId) {
+    selectedEmployeeId.value = employeeId;
+    final emp = _rawEmployees.firstWhereOrNull((e) => e['id'].toString() == employeeId);
+    
+    if (emp != null) {
+      debugPrint('[PraReg] Auto-filling for Employee: ${emp['name']}');
+      debugPrint('[PraReg] Raw Emp Data: $emp');
+
+      selectedEmployeeName.value = emp['name']?.toString() ?? '';
+
+      final empName = emp['name']?.toString() ?? '';
+      final empEmail = emp['email']?.toString() ?? '';
+      final empPhone = emp['phone']?.toString() ?? '';
+      
+      // Ambil Nama Organisasi dari nested object 'Organization'
+      String empOrg = '';
+      if (emp['Organization'] != null && emp['Organization'] is Map) {
+        empOrg = emp['Organization']['name']?.toString() ?? '';
+      }
+      
+      final empIdentity = emp['identity_id']?.toString() ?? '';
+
+      debugPrint('[PraReg] Extracted Org: "$empOrg", Email: "$empEmail"');
+
+      // 1. Update TextEditingControllers so UI refreshes immediately
+      nameCtrl.text = empName;
+      emailCtrl.text = empEmail;
+      phoneCtrl.text = empPhone;
+      organizationCtrl.text = empOrg;
+      identityIdCtrl.text = empIdentity;
+
+      // 2. Update RxString observables for validation
+      name.value = empName;
+      email.value = empEmail;
+      phone.value = empPhone;
+      organization.value = empOrg;
+      identityId.value = empIdentity;
+
+      // 3. Update field.answerText inside formStructure so submit payload is correct
+      for (var section in formStructure.value?.sectionPageVisitorTypes ?? <SectionPageVisitorType>[]) {
+        for (var field in section.praForm) {
+          final rem = field.remarks.toLowerCase();
+          if (rem == 'name') field.answerText = empName;
+          if (rem == 'email') field.answerText = empEmail;
+          if (rem == 'phone') field.answerText = empPhone;
+          if (rem == 'organization' || rem == 'company') field.answerText = empOrg;
+          if (rem == 'identity_id' || rem == 'indentity_id') field.answerText = empIdentity;
+        }
+      }
+      updateForm();
+    }
+  }
+
+  /// Auto-fill fields for Group Registration
+  void onGroupEmployeeSelected(GroupVisitorRow row, String employeeId) {
+    row.selectedEmployeeId.value = employeeId;
+    final emp = _rawEmployees.firstWhereOrNull((e) => e['id'].toString() == employeeId);
+    if (emp != null) {
+      row.selectedEmployeeName.value = emp['name']?.toString() ?? '';
+
+      String empOrg = '';
+      if (emp['Organization'] != null && emp['Organization'] is Map) {
+        empOrg = emp['Organization']['name']?.toString() ?? '';
+      }
+
+      // Update TextEditingControllers — these are bound to the UI so they update immediately
+      row.fullName.text = emp['name']?.toString() ?? '';
+      row.email.text = emp['email']?.toString() ?? '';
+      row.phone.text = emp['phone']?.toString() ?? '';
+      row.organization.text = empOrg;
+      row.identityId.text = emp['identity_id']?.toString() ?? '';
+
+      updateForm();
     }
   }
 

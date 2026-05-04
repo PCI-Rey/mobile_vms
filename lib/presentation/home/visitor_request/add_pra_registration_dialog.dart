@@ -750,11 +750,7 @@ class _Step1VisitorInfo extends StatelessWidget {
                                                         .toList(),
                                                     currentId);
                                             if (result != null) {
-                                              v.selectedEmployeeId.value =
-                                                  result.id;
-                                              v.selectedEmployeeName.value =
-                                                  result.name;
-                                              controller.updateForm();
+                                              controller.onGroupEmployeeSelected(v, result.id);
                                             }
                                           },
                                           child: Container(
@@ -1198,12 +1194,8 @@ class _FormFieldWidget extends StatelessWidget {
               items: controller.employees,
               selectedId: controller.selectedEmployeeId,
               onSelected: (id, name) {
-                controller.selectedEmployeeId.value = id;
+                controller.onEmployeeSelected(id);
                 field.answerText = id;
-                controller.name.value = name;
-                debugPrint('[EMPLOYEE] Selected → id="$id" (UUID), name="$name"');
-                debugPrint('[EMPLOYEE] field.answerText is now: "${field.answerText}"');
-                controller.updateForm();
               },
               hint: 'Pilih Employee',
             ),
@@ -1500,58 +1492,76 @@ class _FormFieldWidget extends StatelessWidget {
   }
 
   Widget _buildTextField({required TextInputType keyboardType}) {
+    // Use dedicated TextEditingController from PraRegistrationController if available.
+    // This allows auto-fill (e.g. selecting an Employee) to update the field reactively.
+    final dedicatedCtrl = controller.getFieldController(field.remarks);
+
+    void onChanged(String v) {
+      field.answerText = v;
+      switch (field.remarks) {
+        case 'name':
+          controller.name.value = v;
+          break;
+        case 'email':
+          controller.email.value = v;
+          break;
+        case 'phone':
+          controller.phone.value = v;
+          break;
+        case 'organization':
+          controller.organization.value = v;
+          break;
+        case 'indentity_id':
+          controller.identityId.value = v;
+          break;
+        case 'host':
+          controller.selectedHostId.value = v;
+          break;
+        case 'agenda':
+          controller.agenda.value = v;
+          break;
+        case 'site_place':
+          controller.selectedSiteId.value = v;
+          break;
+      }
+      controller.updateForm();
+    }
+
+    final decoration = InputDecoration(
+      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(8),
+        borderSide: const BorderSide(color: AppColors.grey300),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(8),
+        borderSide: const BorderSide(color: AppColors.grey300),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(8),
+        borderSide: const BorderSide(color: AppColors.primary500, width: 1.5),
+      ),
+    );
+
+    if (dedicatedCtrl != null) {
+      // Sync initialValue into controller if it hasn't been set yet
+      if (dedicatedCtrl.text.isEmpty && field.answerText.isNotEmpty) {
+        dedicatedCtrl.text = field.answerText;
+      }
+      return TextFormField(
+        controller: dedicatedCtrl,
+        keyboardType: keyboardType,
+        decoration: decoration,
+        onChanged: onChanged,
+      );
+    }
+
+    // Fallback for fields without a dedicated controller
     return TextFormField(
       initialValue: field.answerText,
       keyboardType: keyboardType,
-      decoration: InputDecoration(
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 12,
-          vertical: 10,
-        ),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: AppColors.grey300),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: AppColors.grey300),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: AppColors.primary500, width: 1.5),
-        ),
-      ),
-      onChanged: (v) {
-        field.answerText = v;
-        // FIX: Also write to dedicated controller observables per remarks
-        switch (field.remarks) {
-          case 'name':
-            controller.name.value = v;
-            break;
-          case 'email':
-            controller.email.value = v;
-            break;
-          case 'phone':
-            controller.phone.value = v;
-            break;
-          case 'organization':
-            controller.organization.value = v;
-            break;
-          case 'indentity_id':
-            controller.identityId.value = v;
-            break;
-          case 'host':
-            controller.selectedHostId.value = v;
-            break;
-          case 'agenda':
-            controller.agenda.value = v;
-            break;
-          case 'site_place':
-            controller.selectedSiteId.value = v;
-            break;
-        }
-        controller.updateForm();
-      },
+      decoration: decoration,
+      onChanged: onChanged,
     );
   }
 
