@@ -354,7 +354,7 @@ class ApiService {
   Future<Response> getAccessPass(String token) async {
     try {
       final response = await _dio.get(
-        '/$pathApi/dashboard/access-pass',
+        '/$pathApi/invitation/active-invitation',
         options: Options(headers: {'Authorization': 'Bearer $token'}),
       );
       return response;

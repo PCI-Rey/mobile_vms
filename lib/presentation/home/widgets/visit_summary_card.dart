@@ -39,10 +39,14 @@ class VisitSummaryCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final String rawStatus = item.visitorStatus.toString().toLowerCase();
     final bool isCheckin = rawStatus == 'checkin';
+    final bool isDone = item.isPraregisterDone;
+
     return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: EdgeInsets.all(sw * 0.035),
+      onTap: isDone ? onTap : null,
+      child: Opacity(
+        opacity: isDone ? 1.0 : 0.5,
+        child: Container(
+          padding: EdgeInsets.all(sw * 0.035),
         decoration: BoxDecoration(
           color: isSelected ? const Color(0xFFF0F7FF) : Colors.white,
           borderRadius: BorderRadius.circular(sw * 0.04),
@@ -159,6 +163,6 @@ class VisitSummaryCard extends StatelessWidget {
           ),
         ],
       ),
-    ));
+    )));
   }
 }

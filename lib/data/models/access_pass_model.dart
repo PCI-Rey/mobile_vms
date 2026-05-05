@@ -20,6 +20,8 @@ class AccessPassModel {
   final String vehiclePlateNumber;
   final bool isDriving;
   final String tz;
+  final String visitorName;
+  final bool isPraregisterDone;
 
   AccessPassModel({
     required this.id,
@@ -41,6 +43,8 @@ class AccessPassModel {
     required this.vehiclePlateNumber,
     required this.isDriving,
     required this.tz,
+    required this.visitorName,
+    required this.isPraregisterDone,
   });
 
   factory AccessPassModel.fromRawJson(String str) => AccessPassModel.fromJson(json.decode(str));
@@ -72,6 +76,8 @@ class AccessPassModel {
       vehiclePlateNumber: json['vehicle_plate_number']?.toString() ?? '',
       isDriving: json['is_driving'] == true,
       tz: json['tz']?.toString() ?? '',
+      visitorName: json['visitor_name']?.toString() ?? '',
+      isPraregisterDone: json['is_praregister_done'] == true,
     );
   }
 
@@ -95,6 +101,8 @@ class AccessPassModel {
         'vehicle_plate_number': vehiclePlateNumber,
         'is_driving': isDriving,
         'tz': tz,
+        'visitor_name': visitorName,
+        'is_praregister_done': isPraregisterDone,
       };
 
   /// Parse a datetime string from the API as UTC and convert to device local time.

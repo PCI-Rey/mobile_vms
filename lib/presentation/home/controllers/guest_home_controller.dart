@@ -14,7 +14,7 @@ class GuestHomeController extends GetxController {
   final RxList<AccessPassModel> accessPasses = <AccessPassModel>[].obs;
   final RxBool isLoading = false.obs;
   final RxInt selectedPassIndex = 0.obs;
-  
+
   Timer? _refreshTimer;
 
   @override
@@ -64,17 +64,33 @@ class GuestHomeController extends GetxController {
     if (!isSilent) isLoading.value = true;
     try {
       final response = await _api.getAccessPass(token);
+      print("===== GET ACCESS PASS RESPONSE =====");
+      print(response.data);
+      print("====================================");
       if (response.data['status'] == 'success') {
         final collection = response.data['collection'] as List<dynamic>? ?? [];
         final newPasses = collection
             .map((e) => AccessPassModel.fromJson(e as Map<String, dynamic>))
             .toList();
-        
+
         // Update Hive and UI
         accessPasses.assignAll(newPasses);
         _hive.saveAccessPasses(newPasses);
-        
-        if (selectedPassIndex.value >= newPasses.length) {
+
+        if (newPasses.isNotEmpty) {
+          // Cari pass pertama yang sudah selesai pra-register
+          final int firstValidIndex = newPasses.indexWhere((p) => p.isPraregisterDone);
+          
+          if (firstValidIndex != -1) {
+            // Jika ada yang valid, pastikan selectedPassIndex menunjuk ke sana jika sebelumnya tidak valid
+            if (selectedPassIndex.value >= newPasses.length || !newPasses[selectedPassIndex.value].isPraregisterDone) {
+              selectedPassIndex.value = firstValidIndex;
+            }
+          } else {
+            // Jika tidak ada yang valid sama sekali
+            selectedPassIndex.value = 0;
+          }
+        } else {
           selectedPassIndex.value = 0;
         }
       } else {

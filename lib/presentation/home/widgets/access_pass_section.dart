@@ -202,14 +202,24 @@ class AccessPassCard extends StatelessWidget {
                   ),
                   SizedBox(height: sw * 0.02),
                   Obx(
-                    () => Text(
-                      userCtrl.fullName,
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: rfs(context, 16),
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
+                    () {
+                      // Akses observable terlebih dahulu agar diregistrasi oleh Obx
+                      final String defaultName = userCtrl.fullName;
+                      
+                      // Gunakan nama dari data kunjungan jika ada, kalau tidak fallback ke nama profil utama
+                      final String displayName = (item.visitorName as String).isNotEmpty
+                          ? item.visitorName
+                          : defaultName;
+                          
+                      return Text(
+                        displayName,
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: rfs(context, 16),
+                          fontWeight: FontWeight.w600,
+                        ),
+                      );
+                    },
                   ),
                   SizedBox(height: sw * 0.015),
                   Row(

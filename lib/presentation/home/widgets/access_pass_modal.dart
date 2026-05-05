@@ -120,7 +120,9 @@ class AccessPassModal {
                                   ),
                                   SizedBox(height: sw * 0.01),
                                   Text(
-                                    UserController.to.fullName,
+                                    (item.visitorName as String).isNotEmpty
+                                        ? item.visitorName
+                                        : UserController.to.fullName,
                                     style: TextStyle(
                                       color: Colors.white,
                                       fontSize: rfs(context, 20),
