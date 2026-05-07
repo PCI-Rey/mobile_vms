@@ -24,7 +24,7 @@ Future<void> showAddPraRegistrationDialog(BuildContext context) {
 
 Future<bool> _showExitConfirmation(BuildContext context) async {
   final ctrl = Get.find<PraRegistrationController>();
-  // If the controller has an 'hasUnsavedChanges' getter, use it. 
+  // If the controller has an 'hasUnsavedChanges' getter, use it.
   // Otherwise, default to showing the dialog to be safe.
   try {
     if (!(ctrl as dynamic).hasUnsavedChanges) return true;
@@ -67,12 +67,21 @@ Future<bool> _showBackConfirmation(BuildContext context) async {
         context: context,
         builder: (context) => AlertDialog(
           backgroundColor: Colors.white,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
           title: Row(
             children: [
-              const Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 28),
+              const Icon(
+                Icons.warning_amber_rounded,
+                color: Colors.orange,
+                size: 28,
+              ),
               const SizedBox(width: 12),
-              const Text('Warning', style: TextStyle(fontWeight: FontWeight.bold)),
+              const Text(
+                'Warning',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
             ],
           ),
           content: const Text(
@@ -82,13 +91,22 @@ Future<bool> _showBackConfirmation(BuildContext context) async {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context, false),
-              child: const Text('Cancel', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.w600)),
+              child: const Text(
+                'Cancel',
+                style: TextStyle(
+                  color: Colors.grey,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
             ),
             TextButton(
               onPressed: () => Navigator.pop(context, true),
               child: const Text(
                 'Yes, Go Back',
-                style: TextStyle(color: Colors.orange, fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  color: Colors.orange,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
           ],
@@ -102,7 +120,9 @@ Future<bool> _showDeleteVisitorConfirmation(BuildContext context) async {
         context: context,
         builder: (context) => AlertDialog(
           backgroundColor: Colors.white,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
           title: const Text(
             'Delete Visitor?',
             style: TextStyle(fontWeight: FontWeight.bold),
@@ -113,13 +133,22 @@ Future<bool> _showDeleteVisitorConfirmation(BuildContext context) async {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context, false),
-              child: const Text('No', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.w600)),
+              child: const Text(
+                'No',
+                style: TextStyle(
+                  color: Colors.grey,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
             ),
             TextButton(
               onPressed: () => Navigator.pop(context, true),
               child: const Text(
                 'Yes, Delete',
-                style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  color: Colors.red,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
           ],
@@ -130,7 +159,6 @@ Future<bool> _showDeleteVisitorConfirmation(BuildContext context) async {
 
 class _AddPraRegistrationDialog extends StatelessWidget {
   const _AddPraRegistrationDialog();
-
 
   @override
   Widget build(BuildContext context) {
@@ -237,6 +265,7 @@ class _DialogHeader extends StatelessWidget {
                 Expanded(
                   child: Text(
                     'Add Pra Registration',
+                    textAlign: TextAlign.center,
                     style: const TextStyle(
                       fontSize: 17,
                       fontWeight: FontWeight.w700,
@@ -269,7 +298,11 @@ class _DialogHeader extends StatelessWidget {
           ),
 
           // Step progress bar
-          _StepProgressBar(controller: controller, currentStep: currentStep, total: 3),
+          _StepProgressBar(
+            controller: controller,
+            currentStep: currentStep,
+            total: 3,
+          ),
 
           const SizedBox(height: 14),
 
@@ -345,7 +378,8 @@ class _StepProgressBar extends StatelessWidget {
                     if (currentStep > 0 && index == 0) {
                       final shouldBack = await _showBackConfirmation(context);
                       if (shouldBack) {
-                        controller.clearStep1Fields(); // Ini akan mereset Step 1 dan Step 2
+                        controller
+                            .clearStep1Fields(); // Ini akan mereset Step 1 dan Step 2
                         controller.goToStep(index);
                       }
                     } else {
@@ -357,36 +391,52 @@ class _StepProgressBar extends StatelessWidget {
                     width: 28,
                     height: 28,
                     decoration: BoxDecoration(
-                      color: isActive ? AppColors.primary500 : const Color(0xFFBDBDBD),
+                      color: isActive
+                          ? AppColors.primary500
+                          : const Color(0xFFBDBDBD),
                       shape: BoxShape.circle,
-                      boxShadow: isCurrent 
-                        ? [BoxShadow(color: AppColors.primary500.withValues(alpha: 0.3), blurRadius: 8, spreadRadius: 2)]
-                        : [],
+                      boxShadow: isCurrent
+                          ? [
+                              BoxShadow(
+                                color: AppColors.primary500.withValues(
+                                  alpha: 0.3,
+                                ),
+                                blurRadius: 8,
+                                spreadRadius: 2,
+                              ),
+                            ]
+                          : [],
                     ),
                     child: Center(
                       child: isCompleted
-                          ? const Icon(Icons.check, size: 16, color: Colors.white)
+                          ? const Icon(
+                              Icons.check,
+                              size: 16,
+                              color: Colors.white,
+                            )
                           : Text(
                               '${index + 1}',
                               style: TextStyle(
                                 color: Colors.white,
-                                fontWeight: isCurrent ? FontWeight.bold : FontWeight.normal,
+                                fontWeight: isCurrent
+                                    ? FontWeight.bold
+                                    : FontWeight.normal,
                                 fontSize: 12,
                               ),
                             ),
                     ),
                   ),
                 ),
-                
+
                 // ── Connecting Line ────────────────────────────────
                 if (index < total - 1)
                   Expanded(
                     child: Container(
                       height: 2,
                       margin: const EdgeInsets.symmetric(horizontal: 8),
-                      color: (index < currentStep) 
-                        ? AppColors.primary500 
-                        : const Color(0xFFE0E0E0),
+                      color: (index < currentStep)
+                          ? AppColors.primary500
+                          : const Color(0xFFE0E0E0),
                     ),
                   ),
               ],
@@ -2437,7 +2487,7 @@ class _BottomNav extends StatelessWidget {
                   // Kembali dari Page 2 ke Page 1 -> Muncul Warning
                   final shouldBack = await _showBackConfirmation(ctx);
                   if (shouldBack) {
-                    controller.clearStep1Fields(); 
+                    controller.clearStep1Fields();
                     controller.prevStep();
                   }
                 } else {

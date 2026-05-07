@@ -6,7 +6,16 @@ import '../../../data/datasources/hive_service.dart';
 import '../../../core/core.dart';
 
 class FilterBottomSheet extends StatefulWidget {
-  const FilterBottomSheet({super.key});
+  final DateTime? initialStartDate;
+  final DateTime? initialEndDate;
+  final String? initialSiteId;
+
+  const FilterBottomSheet({
+    super.key,
+    this.initialStartDate,
+    this.initialEndDate,
+    this.initialSiteId,
+  });
 
   @override
   State<FilterBottomSheet> createState() => _FilterBottomSheetState();
@@ -22,6 +31,10 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
   @override
   void initState() {
     super.initState();
+    // Set initial values from widget
+    startDate = widget.initialStartDate;
+    endDate = widget.initialEndDate;
+    selectedGedung = widget.initialSiteId;
     _fetchGedung();
   }
 
@@ -151,6 +164,7 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                     },
                     child: FilterDateBox(
                       title: "Dari Tanggal",
+                      isRequired: endDate != null,
                       value: startDate != null
                           ? DateFormat(
                               'dd MMM yyyy',
@@ -179,6 +193,7 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                       },
                       child: FilterDateBox(
                         title: "Sampai Tanggal",
+                        isRequired: startDate != null,
                         value: endDate != null
                             ? DateFormat(
                                 'dd MMM yyyy',
@@ -251,6 +266,29 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                   ),
                 ),
                 onPressed: () {
+                  if (startDate != null && endDate == null) {
+                    Get.snackbar(
+                      'Validation Error',
+                      'Please select "Sampai Tanggal"',
+                      backgroundColor: Colors.red,
+                      colorText: Colors.white,
+                      snackPosition: SnackPosition.BOTTOM,
+                      margin: const EdgeInsets.all(10),
+                    );
+                    return;
+                  }
+                  if (startDate == null && endDate != null) {
+                    Get.snackbar(
+                      'Validation Error',
+                      'Please select "Dari Tanggal"',
+                      backgroundColor: Colors.red,
+                      colorText: Colors.white,
+                      snackPosition: SnackPosition.BOTTOM,
+                      margin: const EdgeInsets.all(10),
+                    );
+                    return;
+                  }
+
                   final selectedSite = gedungList.firstWhereOrNull(
                     (e) => e['id'] == selectedGedung,
                   );
@@ -280,15 +318,37 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
 class FilterDateBox extends StatelessWidget {
   final String title;
   final String value;
+  final bool isRequired;
 
-  const FilterDateBox({super.key, required this.title, required this.value});
+  const FilterDateBox({
+    super.key,
+    required this.title,
+    required this.value,
+    this.isRequired = false,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(title, style: const TextStyle(color: Colors.grey, fontSize: 12)),
+        Row(
+          children: [
+            Text(
+              title,
+              style: const TextStyle(color: Colors.grey, fontSize: 12),
+            ),
+            if (isRequired)
+              const Text(
+                ' *',
+                style: TextStyle(
+                  color: Colors.red,
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+          ],
+        ),
         const SizedBox(height: 6),
         Container(
           width: double.infinity,

@@ -25,19 +25,52 @@ class _SendInvitationPageState extends State<SendInvitationPage> {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.white,
-        title: const Text("Send Invitation"),
-        leading: BackButton(),
+        title: const Text(
+          "Send Invitation",
+          style: TextStyle(
+            fontSize: 25,
+            fontWeight: FontWeight.w700,
+            color: Colors.black87,
+          ),
+        ),
+        centerTitle: true,
+        leading: const BackButton(),
+        actions: [
+          // Tombol Share Link
+          IconButton(
+            onPressed: () {
+              // TODO: Implement share link logic
+            },
+            icon: Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: AppColors.grey100,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: AppColors.grey300),
+              ),
+              child: const Icon(Icons.link, color: AppColors.grey600, size: 20),
+            ),
+          ),
+          // Tombol Tambah +
+          IconButton(
+            onPressed: () {
+              showAddPraRegistrationDialog(context);
+            },
+            icon: Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: AppColors.primary500,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Icon(Icons.add, color: Colors.white, size: 20),
+            ),
+          ),
+          const SizedBox(width: 8),
+        ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1.0),
           child: Container(color: AppColors.grey300, height: 1.0),
         ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          showAddPraRegistrationDialog(context);
-        },
-        backgroundColor: AppColors.primary500,
-        child: const Icon(Icons.add, color: Colors.white),
       ),
       body: RefreshIndicator(
         onRefresh: () async {
@@ -56,6 +89,7 @@ class _SendInvitationPageState extends State<SendInvitationPage> {
                   children: [
                     GestureDetector(
                       onTap: () async {
+                        final inviteCtrl = Get.find<InvitationController>();
                         final result =
                             await showModalBottomSheet<Map<String, dynamic>>(
                               context: context,
@@ -67,11 +101,14 @@ class _SendInvitationPageState extends State<SendInvitationPage> {
                                   top: Radius.circular(16),
                                 ),
                               ),
-                              builder: (context) => const FilterBottomSheet(),
+                              builder: (context) => FilterBottomSheet(
+                                initialStartDate: startDate,
+                                initialEndDate: endDate,
+                                initialSiteId: inviteCtrl.selectedSiteId.value,
+                              ),
                             );
 
                         if (result != null) {
-                          final inviteCtrl = Get.find<InvitationController>();
                           setState(() {
                             startDate = result['startDate'];
                             endDate = result['endDate'];
@@ -87,49 +124,18 @@ class _SendInvitationPageState extends State<SendInvitationPage> {
                       },
                       child: _buildFilterChip('Filter'),
                     ),
-
                     const SizedBox(width: 10),
-
                     Obx(() {
-                      final inviteCtrl =
-                          Get.isRegistered<InvitationController>()
-                          ? Get.find<InvitationController>()
-                          : Get.put(InvitationController());
-
+                      final inviteCtrl = Get.find<InvitationController>();
                       return GestureDetector(
                         onTap: () => inviteCtrl.toggleSort(),
-                        child: Container(
-                          height: 38,
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            border: Border.all(color: Colors.grey.shade400),
-                            borderRadius: BorderRadius.circular(50),
-                          ),
-                          child: Row(
-                            children: [
-                              FaIcon(
-                                inviteCtrl.isNewestFirst.value
-                                    ? FontAwesomeIcons.arrowUpWideShort
-                                    : FontAwesomeIcons.arrowDownWideShort,
-                                size: 14,
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                inviteCtrl.isNewestFirst.value
-                                    ? 'Newest'
-                                    : 'Oldest',
-                                style: const TextStyle(fontSize: 12),
-                              ),
-                            ],
-                          ),
+                        child: _buildSortChip(
+                          inviteCtrl.isNewestFirst.value ? 'Newest' : 'Oldest',
                         ),
                       );
                     }),
-
-                    const SizedBox(width: 10),
-
-                    if (selectedGedung != null)
+                    if (selectedGedung != null) ...[
+                      const SizedBox(width: 10),
                       _buildFilterValueChip(
                         selectedGedung!,
                         onClear: () {
@@ -143,10 +149,9 @@ class _SendInvitationPageState extends State<SendInvitationPage> {
                           );
                         },
                       ),
-
-                    const SizedBox(width: 10),
-
-                    if (startDate != null || endDate != null)
+                    ],
+                    if (startDate != null || endDate != null) ...[
+                      const SizedBox(width: 10),
                       _buildFilterValueChip(
                         _formatDateRange(startDate, endDate),
                         onClear: () {
@@ -163,6 +168,7 @@ class _SendInvitationPageState extends State<SendInvitationPage> {
                           );
                         },
                       ),
+                    ],
                   ],
                 ),
               ),
@@ -308,18 +314,45 @@ class _SendInvitationPageState extends State<SendInvitationPage> {
 
   Widget _buildFilterChip(String label) {
     return Container(
-      height: 38,
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      height: 32,
+      padding: const EdgeInsets.symmetric(horizontal: 12),
       decoration: BoxDecoration(
         color: Colors.white,
-        border: Border.all(color: Colors.grey.shade400),
+        border: Border.all(color: Colors.grey.shade300),
         borderRadius: BorderRadius.circular(50),
       ),
       child: Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Text(label),
-          const SizedBox(width: 8),
-          const Icon(FontAwesomeIcons.chevronDown, size: 14),
+          Text(
+            label,
+            style: const TextStyle(fontSize: 12, color: Colors.black87),
+          ),
+          const SizedBox(width: 6),
+          const Icon(FontAwesomeIcons.chevronDown, size: 12, color: Colors.grey),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSortChip(String label) {
+    return Container(
+      height: 32,
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border.all(color: Colors.grey.shade300),
+        borderRadius: BorderRadius.circular(50),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(FontAwesomeIcons.sort, size: 12, color: Colors.grey),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: const TextStyle(fontSize: 12, color: Colors.black87),
+          ),
         ],
       ),
     );
@@ -327,20 +360,28 @@ class _SendInvitationPageState extends State<SendInvitationPage> {
 
   Widget _buildFilterValueChip(String label, {required VoidCallback onClear}) {
     return Container(
-      height: 38,
-      padding: const EdgeInsets.symmetric(horizontal: 12),
+      height: 32,
+      padding: const EdgeInsets.symmetric(horizontal: 10),
       decoration: BoxDecoration(
         color: Colors.white,
-        border: Border.all(color: Colors.grey.shade400),
+        border: Border.all(color: Colors.grey.shade300),
         borderRadius: BorderRadius.circular(50),
       ),
       child: Row(
+        mainAxisSize: MainAxisSize.min, // Ini kunci agar lebar mengikuti isi
         children: [
-          Text(label, style: const TextStyle(fontSize: 12)),
-          const SizedBox(width: 8),
-          GestureDetector(
+          Text(
+            label.trim(), // Pastikan tidak ada spasi tambahan
+            style: const TextStyle(fontSize: 12, color: Colors.black87),
+          ),
+          const SizedBox(width: 6),
+          InkWell(
             onTap: onClear,
-            child: const Icon(Icons.close, size: 16),
+            borderRadius: BorderRadius.circular(10),
+            child: const Padding(
+              padding: EdgeInsets.all(2),
+              child: Icon(Icons.close, size: 14, color: Colors.grey),
+            ),
           ),
         ],
       ),
