@@ -64,9 +64,9 @@ class GuestHomeController extends GetxController {
     if (!isSilent) isLoading.value = true;
     try {
       final response = await _api.getAccessPass(token);
-      print("===== GET ACCESS PASS RESPONSE =====");
-      print(response.data);
-      print("====================================");
+      debugPrint("===== GET ACCESS PASS RESPONSE =====");
+      debugPrint(response.data.toString());
+      debugPrint("====================================");
       if (response.data['status'] == 'success') {
         final collection = response.data['collection'] as List<dynamic>? ?? [];
         final newPasses = collection

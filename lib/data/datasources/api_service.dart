@@ -364,4 +364,30 @@ class ApiService {
       rethrow;
     }
   }
+  Future<Response> getOngoingInvitation(
+    String token, {
+    String? startDate,
+    String? endDate,
+    String? siteId,
+    String? sitePlaceId,
+  }) async {
+    try {
+      final queryParams = {
+        if (startDate != null) 'start_date': startDate,
+        if (endDate != null) 'end_date': endDate,
+        if (siteId != null) 'site_id': siteId,
+        if (sitePlaceId != null) 'site_place_id': sitePlaceId,
+      };
+      final response = await _dio.get(
+        '/$pathApi/invitation/ongoing-invitation',
+        queryParameters: queryParams,
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+      return response;
+    } on DioException catch (e) {
+      debugPrint('Dio Error getOngoingInvitation: ${e.message}');
+      if (e.response != null) return e.response!;
+      rethrow;
+    }
+  }
 }

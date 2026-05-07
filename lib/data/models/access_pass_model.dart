@@ -20,6 +20,7 @@ class AccessPassModel {
   final String vehiclePlateNumber;
   final bool isDriving;
   final String tz;
+  final String siteId;
   final String visitorName;
   final bool isPraregisterDone;
 
@@ -43,6 +44,7 @@ class AccessPassModel {
     required this.vehiclePlateNumber,
     required this.isDriving,
     required this.tz,
+    required this.siteId,
     required this.visitorName,
     required this.isPraregisterDone,
   });
@@ -76,6 +78,7 @@ class AccessPassModel {
       vehiclePlateNumber: json['vehicle_plate_number']?.toString() ?? '',
       isDriving: json['is_driving'] == true,
       tz: json['tz']?.toString() ?? '',
+      siteId: json['site_id']?.toString() ?? '',
       visitorName: json['visitor_name']?.toString() ?? '',
       isPraregisterDone: json['is_praregister_done'] == true,
     );
@@ -101,6 +104,7 @@ class AccessPassModel {
         'vehicle_plate_number': vehiclePlateNumber,
         'is_driving': isDriving,
         'tz': tz,
+        'site_id': siteId,
         'visitor_name': visitorName,
         'is_praregister_done': isPraregisterDone,
       };

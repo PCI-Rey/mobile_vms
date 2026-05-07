@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-// import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
-
+import 'package:get/get.dart';
+import '../../../data/datasources/api_service.dart';
+import '../../../data/datasources/hive_service.dart';
 import '../../../core/core.dart';
 
 class FilterBottomSheet extends StatefulWidget {
@@ -15,18 +16,89 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
   DateTime? startDate;
   DateTime? endDate;
   String? selectedGedung;
+  final List<Map<String, String>> gedungList = [];
+  bool isLoadingGedung = false;
 
-  final List<String> gedungList = [
-    'Gedung HQ',
-    'Gedung A',
-    'Gedung B',
-    'Gedung C',
-    'Gedung D',
-    'Gedung E',
-    'Tower 1',
-    'Tower 2',
-    'Main Building',
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _fetchGedung();
+  }
+
+  Future<void> _fetchGedung() async {
+    if (!mounted) return;
+    setState(() => isLoadingGedung = true);
+    try {
+      final hive = HiveService();
+      final token = hive.getUser()?.token;
+      if (token != null) {
+        final api = ApiService();
+        final response = await api.getSitesWithToken(token);
+        if (!mounted) return;
+        if (response.data['status'] == 'success') {
+          final collection =
+              response.data['collection'] as List<dynamic>? ?? [];
+          setState(() {
+            gedungList.clear();
+            for (var item in collection) {
+              gedungList.add({
+                'id': item['id']?.toString() ?? '',
+                'name': item['name']?.toString() ?? '',
+              });
+            }
+          });
+        }
+      }
+    } catch (e) {
+      debugPrint('Error fetchGedung: $e');
+    } finally {
+      if (mounted) {
+        setState(() => isLoadingGedung = false);
+      }
+    }
+  }
+
+  void _showGedungSelection(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return Container(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'Pilih Gedung',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+              ),
+              const SizedBox(height: 16),
+              Expanded(
+                child: ListView.builder(
+                  itemCount: gedungList.length,
+                  itemBuilder: (context, index) {
+                    final item = gedungList[index];
+                    return ListTile(
+                      title: Text(item['name'] ?? ''),
+                      trailing: selectedGedung == item['id']
+                          ? const Icon(Icons.check, color: AppColors.primary500)
+                          : null,
+                      onTap: () {
+                        setState(() => selectedGedung = item['id']);
+                        Navigator.pop(context);
+                      },
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -122,13 +194,49 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
             const SizedBox(height: 16),
 
             // Searchable Dropdown Gedung
-            SearchableDropdown(
-              value: selectedGedung,
-              items: gedungList,
-              hintText: 'Pilih Gedung',
-              labelText: 'Gedung',
-              onChanged: (value) => setState(() => selectedGedung = value),
-            ),
+            isLoadingGedung
+                ? const Center(child: CircularProgressIndicator())
+                : GestureDetector(
+                    onTap: () => _showGedungSelection(context),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text("Gedung", style: TextStyles.subtitle2),
+                        const SizedBox(height: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 16,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color(0xffF2F8FD),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                gedungList.firstWhereOrNull(
+                                      (e) => e['id'] == selectedGedung,
+                                    )?['name'] ??
+                                    'Pilih Gedung',
+                                style: TextStyle(
+                                  color: selectedGedung == null
+                                      ? Colors.grey
+                                      : Colors.black,
+                                  fontSize: 14,
+                                ),
+                              ),
+                              const Icon(
+                                Icons.keyboard_arrow_down,
+                                color: Colors.grey,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
 
             const SizedBox(height: 24),
 
@@ -143,10 +251,14 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                   ),
                 ),
                 onPressed: () {
+                  final selectedSite = gedungList.firstWhereOrNull(
+                    (e) => e['id'] == selectedGedung,
+                  );
                   Navigator.pop(context, {
                     'startDate': startDate,
                     'endDate': endDate,
-                    'gedung': selectedGedung,
+                    'siteId': selectedGedung,
+                    'siteName': selectedSite?['name'],
                   });
                 },
                 child: const Text(
@@ -165,214 +277,6 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
   }
 }
 
-class SearchableDropdown extends StatefulWidget {
-  final String? value;
-  final List<String> items;
-  final String hintText;
-  final String labelText;
-  final ValueChanged<String?> onChanged;
-
-  const SearchableDropdown({
-    super.key,
-    required this.value,
-    required this.items,
-    required this.hintText,
-    required this.labelText,
-    required this.onChanged,
-  });
-
-  @override
-  State<SearchableDropdown> createState() => _SearchableDropdownState();
-}
-
-class _SearchableDropdownState extends State<SearchableDropdown> {
-  late TextEditingController _controller;
-  List<String> filteredItems = [];
-  bool isDropdownOpen = false;
-  final LayerLink _layerLink = LayerLink();
-  OverlayEntry? _overlayEntry;
-  final FocusNode _focusNode = FocusNode();
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = TextEditingController(text: widget.value ?? '');
-    filteredItems = widget.items;
-
-    // Listen to focus changes to handle overlay positioning
-    _focusNode.addListener(() {
-      if (_focusNode.hasFocus && !isDropdownOpen) {
-        _showOverlay();
-      }
-    });
-  }
-
-  @override
-  void dispose() {
-    _removeOverlay();
-    _controller.dispose();
-    _focusNode.dispose();
-    super.dispose();
-  }
-
-  void _filterItems(String query) {
-    setState(() {
-      if (query.isEmpty) {
-        filteredItems = widget.items;
-      } else {
-        filteredItems = widget.items
-            .where((item) => item.toLowerCase().contains(query.toLowerCase()))
-            .toList();
-      }
-    });
-    _updateOverlay();
-  }
-
-  void _toggleDropdown() {
-    if (isDropdownOpen) {
-      _removeOverlay();
-    } else {
-      _showOverlay();
-    }
-  }
-
-  void _showOverlay() {
-    if (_overlayEntry != null) return;
-
-    _overlayEntry = _createOverlayEntry();
-    Overlay.of(context).insert(_overlayEntry!);
-    setState(() => isDropdownOpen = true);
-  }
-
-  void _removeOverlay() {
-    _overlayEntry?.remove();
-    _overlayEntry = null;
-    if (mounted) {
-      setState(() => isDropdownOpen = false);
-    }
-  }
-
-  void _updateOverlay() {
-    if (_overlayEntry != null) {
-      _overlayEntry!.markNeedsBuild();
-    }
-  }
-
-  OverlayEntry _createOverlayEntry() {
-    RenderBox renderBox = context.findRenderObject() as RenderBox;
-    Size size = renderBox.size;
-
-    // Hitung tinggi item (misal 48 px per item)
-    double itemHeight = 48;
-    double listHeight =
-        (filteredItems.isEmpty ? 48 : filteredItems.length * itemHeight)
-            .clamp(0, 200)
-            .toDouble();
-
-    return OverlayEntry(
-      builder: (context) => Positioned(
-        width: size.width,
-        child: CompositedTransformFollower(
-          link: _layerLink,
-          showWhenUnlinked: false,
-          offset: Offset(0.0, size.height + 5.0),
-          child: Material(
-            elevation: 4.0,
-            borderRadius: BorderRadius.circular(8),
-            child: ConstrainedBox(
-              constraints: BoxConstraints(maxHeight: listHeight),
-              child: filteredItems.isEmpty
-                  ? Container(
-                      alignment: Alignment.center,
-                      height: 48,
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: const Text(
-                        'Tidak ada data ditemukan',
-                        style: TextStyle(color: Colors.grey),
-                      ),
-                    )
-                  : ListView.builder(
-                      padding: EdgeInsets.zero,
-                      shrinkWrap: true,
-                      itemCount: filteredItems.length,
-                      itemBuilder: (context, index) {
-                        final item = filteredItems[index];
-                        return InkWell(
-                          onTap: () {
-                            _controller.text = item;
-                            widget.onChanged(item);
-                            _focusNode.unfocus();
-                            _removeOverlay();
-                          },
-                          child: Container(
-                            height: itemHeight,
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
-                            alignment: Alignment.centerLeft,
-                            decoration: BoxDecoration(
-                              border: index < filteredItems.length - 1
-                                  ? Border(
-                                      bottom: BorderSide(
-                                        color: Colors.grey.shade200,
-                                        width: 0.5,
-                                      ),
-                                    )
-                                  : null,
-                            ),
-                            child: Text(
-                              item,
-                              style: const TextStyle(fontSize: 16),
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return CompositedTransformTarget(
-      link: _layerLink,
-      child: TextFormField(
-        controller: _controller,
-        focusNode: _focusNode,
-        decoration: InputDecoration(
-          labelText: widget.labelText,
-          hintText: widget.hintText,
-          filled: true,
-          fillColor: const Color(0xffF2F8FD),
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 12,
-            vertical: 16,
-          ),
-          suffixIcon: GestureDetector(
-            onTap: _toggleDropdown,
-            child: Icon(
-              isDropdownOpen
-                  ? Icons.keyboard_arrow_up
-                  : Icons.keyboard_arrow_down,
-            ),
-          ),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8),
-            borderSide: BorderSide.none,
-          ),
-        ),
-        onChanged: _filterItems,
-        onTap: () {
-          if (!isDropdownOpen) {
-            _showOverlay();
-          }
-        },
-      ),
-    );
-  }
-}
-
 class FilterDateBox extends StatelessWidget {
   final String title;
   final String value;
@@ -384,7 +288,7 @@ class FilterDateBox extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(title, style: TextStyles.subtitle2),
+        Text(title, style: const TextStyle(color: Colors.grey, fontSize: 12)),
         const SizedBox(height: 6),
         Container(
           width: double.infinity,
@@ -393,7 +297,10 @@ class FilterDateBox extends StatelessWidget {
             color: const Color(0xffF2F8FD),
             borderRadius: BorderRadius.circular(8),
           ),
-          child: Text(value, style: TextStyles.bodySmall400),
+          child: Text(
+            value,
+            style: const TextStyle(fontSize: 14, color: Colors.black),
+          ),
         ),
       ],
     );

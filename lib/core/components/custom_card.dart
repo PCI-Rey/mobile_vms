@@ -10,6 +10,7 @@ class CustomCard extends StatelessWidget {
   final String additional;
   final String additionalDesc;
   final Color backgroundIconColor;
+  final Widget? trailing;
 
   const CustomCard({
     super.key,
@@ -20,6 +21,7 @@ class CustomCard extends StatelessWidget {
     this.additional = '',
     this.additionalDesc = '',
     this.backgroundIconColor = AppColors.primary50,
+    this.trailing,
   });
 
   // Helper method to get responsive values based on screen size
@@ -177,6 +179,13 @@ class CustomCard extends StatelessWidget {
                   ],
                 ],
               ),
+            ),
+          
+          // Trailing widget
+          if (trailing != null)
+            Padding(
+              padding: const EdgeInsets.only(left: 8),
+              child: trailing!,
             ),
         ],
       ),

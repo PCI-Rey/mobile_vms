@@ -97,6 +97,37 @@ Future<bool> _showBackConfirmation(BuildContext context) async {
       false;
 }
 
+Future<bool> _showDeleteVisitorConfirmation(BuildContext context) async {
+  return await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          backgroundColor: Colors.white,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: const Text(
+            'Delete Visitor?',
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+          content: const Text(
+            'Are you sure you want to delete this visitor? This action cannot be undone.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('No', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.w600)),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text(
+                'Yes, Delete',
+                style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+        ),
+      ) ??
+      false;
+}
+
 class _AddPraRegistrationDialog extends StatelessWidget {
   const _AddPraRegistrationDialog();
 
@@ -871,7 +902,13 @@ class _Step1VisitorInfo extends StatelessWidget {
                         const Spacer(),
                         if (visitors.length > 1)
                           GestureDetector(
-                            onTap: () => controller.removeGroupVisitor(i),
+                            onTap: () async {
+                              final shouldDelete =
+                                  await _showDeleteVisitorConfirmation(context);
+                              if (shouldDelete) {
+                                controller.removeGroupVisitor(i);
+                              }
+                            },
                             child: Container(
                               padding: const EdgeInsets.all(5),
                               decoration: BoxDecoration(

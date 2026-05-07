@@ -304,9 +304,17 @@ class PraRegistrationController extends GetxController {
     final emp = _rawEmployees.firstWhereOrNull((e) => e['id'].toString() == employeeId);
     if (emp != null) {
       selectedEmployeeName.value = emp['name']?.toString() ?? '';
-      String empOrg = (emp['Organization'] != null && emp['Organization'] is Map) 
-          ? (emp['Organization']['name']?.toString() ?? '') 
-          : (emp['organization_name'] ?? emp['company'] ?? emp['department'] ?? emp['office'] ?? '').toString();
+      
+      String empOrg = '';
+      final orgData = emp['organization'] ?? emp['Organization'] ?? emp['organization_name'] ?? emp['company'] ?? emp['department'] ?? emp['office'];
+      if (orgData != null) {
+        if (orgData is Map) {
+          empOrg = orgData['name']?.toString() ?? orgData['code']?.toString() ?? '';
+        } else {
+          empOrg = orgData.toString();
+        }
+      }
+
       nameCtrl.text = emp['name']?.toString() ?? '';
       emailCtrl.text = emp['email']?.toString() ?? '';
       phoneCtrl.text = emp['phone']?.toString() ?? '';
@@ -336,9 +344,17 @@ class PraRegistrationController extends GetxController {
     final emp = _rawEmployees.firstWhereOrNull((e) => e['id'].toString() == employeeId);
     if (emp != null) {
       row.selectedEmployeeName.value = emp['name']?.toString() ?? '';
-      String empOrg = (emp['Organization'] != null && emp['Organization'] is Map) 
-          ? (emp['Organization']['name']?.toString() ?? '') 
-          : (emp['organization_name'] ?? emp['company'] ?? emp['department'] ?? emp['office'] ?? '').toString();
+      
+      String empOrg = '';
+      final orgData = emp['organization'] ?? emp['Organization'] ?? emp['organization_name'] ?? emp['company'] ?? emp['department'] ?? emp['office'];
+      if (orgData != null) {
+        if (orgData is Map) {
+          empOrg = orgData['name']?.toString() ?? orgData['code']?.toString() ?? '';
+        } else {
+          empOrg = orgData.toString();
+        }
+      }
+
       row.fullName.text = emp['name']?.toString() ?? '';
       row.email.text = emp['email']?.toString() ?? '';
       row.phone.text = emp['phone']?.toString() ?? '';
@@ -452,7 +468,9 @@ class PraRegistrationController extends GetxController {
   void initGroupMode() {
     groupCode.value = _generateGroupCode();
     groupName.value = '';
-    for (final v in groupVisitors) v.dispose();
+    for (final v in groupVisitors) {
+      v.dispose();
+    }
     groupVisitors.clear();
     groupVisitors.add(GroupVisitorRow());
   }
