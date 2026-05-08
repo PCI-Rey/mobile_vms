@@ -213,12 +213,28 @@ class _ShareLinkListDialogState extends State<ShareLinkListDialog> {
       isExpired = true;
     }
 
-    String status = isExpired ? 'Expired' : (item['link_status'] ?? 'Active');
-    Color statusColor = isExpired ? Colors.red : Colors.green;
-    IconData statusIcon = isExpired
-        ? Icons.close_rounded
-        : Icons.check_circle_rounded;
+    String getRemainingTime() {
+      // Check if it's "No Expired" (expired_number is 0)
+      final int expiredNumber = item['expired_number'] ?? -1;
+      if (expiredNumber == 0) return 'No Expired';
 
+      if (expiredAt == null) return '00:00:00';
+      final now = DateTime.now();
+      final difference = expiredAt.difference(now);
+      if (difference.isNegative) return '00:00:00';
+
+      String twoDigits(int n) => n.toString().padLeft(2, '0');
+      final hours = twoDigits(difference.inHours);
+      final minutes = twoDigits(difference.inMinutes.remainder(60));
+      final seconds = twoDigits(difference.inSeconds.remainder(60));
+
+      return "$hours:$minutes:$seconds";
+    }
+
+    String status = isExpired ? 'Expired' : (item['link_status'] ?? 'Active');
+    Color statusColor = isExpired
+        ? const Color(0xFFE53935)
+        : const Color(0xFF43A047);
     // Formatting dates
     String formatDate(String? dateStr) {
       if (dateStr == null) return '-';
@@ -256,43 +272,78 @@ class _ShareLinkListDialogState extends State<ShareLinkListDialog> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                CircleAvatar(
-                  radius: 12,
-                  backgroundColor: const Color(
-                    0xFF005596,
-                  ).withValues(alpha: 0.1),
-                  child: Text(
-                    no.toString(),
-                    style: const TextStyle(
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF005596),
-                    ),
-                  ),
-                ),
                 Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 4,
-                  ),
+                  padding: const EdgeInsets.fromLTRB(4, 4, 12, 4),
                   decoration: BoxDecoration(
-                    color: statusColor.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(6),
-                    border: Border.all(
-                      color: statusColor.withValues(alpha: 0.2),
-                    ),
+                    color: statusColor,
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(
+                        color: statusColor.withValues(alpha: 0.2),
+                        blurRadius: 4,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(statusIcon, size: 14, color: statusColor),
+                      Container(
+                        width: 20,
+                        height: 20,
+                        decoration: const BoxDecoration(
+                          color: Colors.white,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Center(
+                          child: Text(
+                            no.toString(),
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                              color: statusColor,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        status.toUpperCase(),
+                        style: const TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w900,
+                          color: Colors.white,
+                          letterSpacing: 0.8,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade50,
+                    borderRadius: BorderRadius.circular(6),
+                    border: Border.all(color: Colors.grey.shade200),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.timer_outlined,
+                        size: 14,
+                        color: isExpired ? Colors.grey : Colors.orange,
+                      ),
                       const SizedBox(width: 4),
                       Text(
-                        status,
+                        getRemainingTime(),
                         style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          color: statusColor,
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          fontFamily: 'monospace',
+                          color: isExpired ? Colors.grey : Colors.black87,
                         ),
                       ),
                     ],
@@ -310,7 +361,12 @@ class _ShareLinkListDialogState extends State<ShareLinkListDialog> {
               children: [
                 _buildInfoRow('Agenda', agenda, isBold: true),
                 const SizedBox(height: 8),
-                _buildInfoRow('Usage', '$maxUsage'),
+                _buildInfoRow(
+                  'Usage',
+                  item['is_single_use'] == true
+                      ? '$maxUsage (Single Use)'
+                      : '$maxUsage',
+                ),
                 const SizedBox(height: 8),
                 _buildInfoRow(
                   'Period Start',
@@ -324,7 +380,9 @@ class _ShareLinkListDialogState extends State<ShareLinkListDialog> {
                 const SizedBox(height: 8),
                 _buildInfoRow(
                   'Expired At',
-                  formatDate(item['expired_at']),
+                  item['expired_number'] == 0
+                      ? 'Never'
+                      : formatDate(item['expired_at']),
                   color: Colors.orange.shade700,
                 ),
               ],

@@ -281,12 +281,14 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
                   ),
                   _buildFieldRow(
                     label: 'Visitor Quota Limit',
-                    isEnabled: isQuotaEnabled,
-                    onToggle: (v) => setState(() => isQuotaEnabled = v),
+                    isEnabled: isSingleUse ? true : isQuotaEnabled,
+                    onToggle: isSingleUse
+                        ? (v) {} // Disable toggle if single use is active
+                        : (v) => setState(() => isQuotaEnabled = v),
                     input: _buildTextField(
                       hint: '0',
                       controller: quotaCtrl,
-                      enabled: isQuotaEnabled,
+                      enabled: isSingleUse ? false : isQuotaEnabled,
                       keyboardType: TextInputType.number,
                     ),
                   ),
@@ -295,7 +297,13 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
                     children: [
                       Switch(
                         value: isSingleUse,
-                        onChanged: (v) => setState(() => isSingleUse = v),
+                        onChanged: (v) => setState(() {
+                          isSingleUse = v;
+                          if (v) {
+                            isQuotaEnabled = true;
+                            quotaCtrl.text = '1';
+                          }
+                        }),
                         activeTrackColor: const Color(
                           0xFF005596,
                         ).withValues(alpha: 0.5),
