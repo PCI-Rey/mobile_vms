@@ -13,11 +13,11 @@ class AccessPassModal {
 
   static void show(BuildContext context, dynamic item, double sw) {
     final startStr = DateFormat(
-      'EEE, dd MMM yyyy HH:mm',
-    ).format(item.visitorPeriodStart);
+      'EEEE, dd MMMM yyyy, HH:mm', 'id'
+    ).format(DateTime.parse('${item.visitorPeriodStart.toIso8601String().split('Z').first}Z').toLocal());
     final endStr = DateFormat(
-      'EEE, dd MMM yyyy HH:mm',
-    ).format(item.visitorPeriodEnd);
+      'EEEE, dd MMMM yyyy, HH:mm', 'id'
+    ).format(DateTime.parse('${item.visitorPeriodEnd.toIso8601String().split('Z').first}Z').toLocal());
 
     showModalBottomSheet(
       context: context,
@@ -80,12 +80,7 @@ class AccessPassModal {
 
               // ── Pass Content ───────────────────────────────
               Padding(
-                padding: EdgeInsets.fromLTRB(
-                  sw * 0.04,
-                  0,
-                  sw * 0.04,
-                  sw * 0.1,
-                ),
+                padding: EdgeInsets.fromLTRB(sw * 0.04, 0, sw * 0.04, sw * 0.1),
                 child: Container(
                   decoration: BoxDecoration(
                     gradient: const LinearGradient(
@@ -145,10 +140,10 @@ class AccessPassModal {
                                   ? Image.network(
                                       UserController.to.faceUrl!,
                                       fit: BoxFit.cover,
-                                      errorBuilder: (_, _, _) =>
-                                          Assets.images.avaPerson1.image(
-                                            fit: BoxFit.cover,
-                                          ),
+                                      errorBuilder: (_, _, _) => Assets
+                                          .images
+                                          .avaPerson1
+                                          .image(fit: BoxFit.cover),
                                     )
                                   : Assets.images.avaPerson1.image(
                                       fit: BoxFit.cover,
@@ -229,102 +224,102 @@ class AccessPassModal {
                         child: Column(
                           children: [
                             AccessPassModal.buildInfoTile(
-                               context,
-                               Icons.vpn_key_outlined,
-                               'Invitation Code',
-                               item.invitationCode,
-                               sw,
-                             ),
-                             SizedBox(height: sw * 0.02),
-                             Row(
-                               children: [
-                                 Expanded(
-                                   child: AccessPassModal.buildInfoTile(
-                                     context,
-                                     Icons.person_outline,
-                                     'Host',
-                                     item.hostName,
-                                     sw,
-                                   ),
-                                 ),
-                                 SizedBox(width: sw * 0.02),
-                                 Expanded(
-                                   child: AccessPassModal.buildInfoTile(
-                                     context,
-                                     Icons.event_note_outlined,
-                                     'Agenda',
-                                     item.agenda,
-                                     sw,
-                                   ),
-                                 ),
-                               ],
-                             ),
-                             SizedBox(height: sw * 0.02),
-                             AccessPassModal.buildInfoTile(
-                               context,
-                               Icons.calendar_today_outlined,
-                               'Visit Period',
-                               '$startStr\n$endStr',
-                               sw,
-                             ),
-                             if (item.isDriving) ...[
-                               SizedBox(height: sw * 0.02),
-                               Row(
-                                 children: [
-                                   Expanded(
-                                     child: AccessPassModal.buildInfoTile(
-                                       context,
-                                       Icons.location_on_outlined,
-                                       'Area',
-                                       item.parkingArea,
-                                       sw,
-                                     ),
-                                   ),
-                                   SizedBox(width: sw * 0.02),
-                                   Expanded(
-                                     child: AccessPassModal.buildInfoTile(
-                                       context,
-                                       Icons.local_parking_outlined,
-                                       'Slot',
-                                       item.parkingSlot,
-                                       sw,
-                                     ),
-                                   ),
-                                   SizedBox(width: sw * 0.02),
-                                   Expanded(
-                                     child: AccessPassModal.buildInfoTile(
-                                       context,
-                                       Icons.directions_car_outlined,
-                                       'Plate',
-                                       item.vehiclePlateNumber,
-                                       sw,
-                                     ),
-                                   ),
-                                 ],
-                               ),
-                             ],
-                           ],
-                         ),
-                       ),
-                       SizedBox(height: sw * 0.05),
-                     ],
-                   ),
-                 ),
-               ),
-             ],
-           ),
-         ),
-       ),
-     );
-   }
- 
-   static Widget buildInfoTile(
-     BuildContext context,
-     IconData icon,
-     String label,
-     String value,
-     double sw,
-   ) {
+                              context,
+                              Icons.vpn_key_outlined,
+                              'Invitation Code',
+                              item.invitationCode,
+                              sw,
+                            ),
+                            SizedBox(height: sw * 0.02),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: AccessPassModal.buildInfoTile(
+                                    context,
+                                    Icons.person_outline,
+                                    'Host',
+                                    item.hostName,
+                                    sw,
+                                  ),
+                                ),
+                                SizedBox(width: sw * 0.02),
+                                Expanded(
+                                  child: AccessPassModal.buildInfoTile(
+                                    context,
+                                    Icons.event_note_outlined,
+                                    'Agenda',
+                                    item.agenda,
+                                    sw,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            SizedBox(height: sw * 0.02),
+                            AccessPassModal.buildInfoTile(
+                              context,
+                              Icons.calendar_today_outlined,
+                              'Visit Period',
+                              '$startStr\n$endStr',
+                              sw,
+                            ),
+                            if (item.isDriving) ...[
+                              SizedBox(height: sw * 0.02),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: AccessPassModal.buildInfoTile(
+                                      context,
+                                      Icons.location_on_outlined,
+                                      'Area',
+                                      item.parkingArea,
+                                      sw,
+                                    ),
+                                  ),
+                                  SizedBox(width: sw * 0.02),
+                                  Expanded(
+                                    child: AccessPassModal.buildInfoTile(
+                                      context,
+                                      Icons.local_parking_outlined,
+                                      'Slot',
+                                      item.parkingSlot,
+                                      sw,
+                                    ),
+                                  ),
+                                  SizedBox(width: sw * 0.02),
+                                  Expanded(
+                                    child: AccessPassModal.buildInfoTile(
+                                      context,
+                                      Icons.directions_car_outlined,
+                                      'Plate',
+                                      item.vehiclePlateNumber,
+                                      sw,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                      SizedBox(height: sw * 0.05),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  static Widget buildInfoTile(
+    BuildContext context,
+    IconData icon,
+    String label,
+    String value,
+    double sw,
+  ) {
     return Container(
       width: double.infinity,
       padding: EdgeInsets.symmetric(

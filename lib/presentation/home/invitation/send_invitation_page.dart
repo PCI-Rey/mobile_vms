@@ -264,7 +264,8 @@ class _SendInvitationPageState extends State<SendInvitationPage> {
                     }
 
                     return GestureDetector(
-                      onTap: () => _showInvitationDetailDialog(item, statusColor),
+                      onTap: () =>
+                          _showInvitationDetailDialog(item, statusColor),
                       child: CustomCard(
                         image: Icon(statusIcon, color: Colors.white),
                         size: 26,
@@ -272,11 +273,13 @@ class _SendInvitationPageState extends State<SendInvitationPage> {
                         subtitle: item.sitePlaceName.isNotEmpty
                             ? item.sitePlaceName
                             : item.groupName,
-                        additional: DateFormat(
-                          'EEE, dd MMM yyyy',
-                        ).format(DateTime.parse('${item.visitorPeriodStart.toIso8601String().split('Z').first}Z').toLocal()),
+                        additional: DateFormat('EEE, dd MMM yyyy').format(
+                          DateTime.parse(
+                            '${item.visitorPeriodStart.toIso8601String().split('Z').first}Z',
+                          ).toLocal(),
+                        ),
                         additionalDesc:
-                            '${DateFormat('HH.mm').format(DateTime.parse('${item.visitorPeriodStart.toIso8601String().split('Z').first}Z').toLocal())} - ${DateFormat('HH.mm').format(DateTime.parse('${item.visitorPeriodEnd.toIso8601String().split('Z').first}Z').toLocal())}',
+                            '${DateFormat('HH:mm').format(DateTime.parse('${item.visitorPeriodStart.toIso8601String().split('Z').first}Z').toLocal())} - ${DateFormat('HH:mm').format(DateTime.parse('${item.visitorPeriodEnd.toIso8601String().split('Z').first}Z').toLocal())}',
                         backgroundIconColor: statusColor,
                         // Additional info like invitation code
                         trailing: Column(
@@ -344,8 +347,16 @@ class _SendInvitationPageState extends State<SendInvitationPage> {
               const Divider(),
               const SizedBox(height: 16),
               _buildDetailRow('Visitor Name', item.visitorName, isBold: true),
-              _buildDetailRow('Invitation Code', item.invitationCode, color: const Color(0xFF005596)),
-              _buildDetailRow('Status', item.visitorStatus, badgeColor: statusColor),
+              _buildDetailRow(
+                'Invitation Code',
+                item.invitationCode,
+                color: const Color(0xFF005596),
+              ),
+              _buildDetailRow(
+                'Status',
+                item.visitorStatus,
+                badgeColor: statusColor,
+              ),
               _buildDetailRow('Host', item.hostName),
               _buildDetailRow('Location', item.sitePlaceName),
               _buildDetailRow('Agenda', item.agenda),
@@ -354,7 +365,10 @@ class _SendInvitationPageState extends State<SendInvitationPage> {
                 '${DateFormat('dd MMM yyyy').format(DateTime.parse('${item.visitorPeriodStart.toIso8601String().split('Z').first}Z').toLocal())}\n${DateFormat('HH.mm').format(DateTime.parse('${item.visitorPeriodStart.toIso8601String().split('Z').first}Z').toLocal())} - ${DateFormat('HH.mm').format(DateTime.parse('${item.visitorPeriodEnd.toIso8601String().split('Z').first}Z').toLocal())}',
               ),
               if (item.parkingArea.isNotEmpty || item.parkingSlot.isNotEmpty)
-                _buildDetailRow('Parking', '${item.parkingArea} - ${item.parkingSlot}'),
+                _buildDetailRow(
+                  'Parking',
+                  '${item.parkingArea} - ${item.parkingSlot}',
+                ),
               if (item.vehiclePlateNumber.isNotEmpty)
                 _buildDetailRow('Vehicle Plate', item.vehiclePlateNumber),
               const SizedBox(height: 16),
@@ -364,10 +378,18 @@ class _SendInvitationPageState extends State<SendInvitationPage> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF005596),
                     padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
                   onPressed: () => Navigator.pop(context),
-                  child: const Text('Close', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                  child: const Text(
+                    'Close',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 ),
               ),
             ],
@@ -377,7 +399,13 @@ class _SendInvitationPageState extends State<SendInvitationPage> {
     );
   }
 
-  Widget _buildDetailRow(String label, String value, {bool isBold = false, Color? color, Color? badgeColor}) {
+  Widget _buildDetailRow(
+    String label,
+    String value, {
+    bool isBold = false,
+    Color? color,
+    Color? badgeColor,
+  }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Column(
@@ -394,7 +422,11 @@ class _SendInvitationPageState extends State<SendInvitationPage> {
               ),
               child: Text(
                 value,
-                style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             )
           else
@@ -424,7 +456,11 @@ class _SendInvitationPageState extends State<SendInvitationPage> {
                         margin: const EdgeInsets.all(10),
                       );
                     },
-                    child: Icon(Icons.content_copy, size: 16, color: Colors.grey[400]),
+                    child: Icon(
+                      Icons.content_copy,
+                      size: 16,
+                      color: Colors.grey[400],
+                    ),
                   ),
               ],
             ),
@@ -450,7 +486,11 @@ class _SendInvitationPageState extends State<SendInvitationPage> {
             style: const TextStyle(fontSize: 12, color: Colors.black87),
           ),
           const SizedBox(width: 6),
-          const Icon(FontAwesomeIcons.chevronDown, size: 12, color: Colors.grey),
+          const Icon(
+            FontAwesomeIcons.chevronDown,
+            size: 12,
+            color: Colors.grey,
+          ),
         ],
       ),
     );

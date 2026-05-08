@@ -94,7 +94,10 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
       builder: (context) => AlertDialog(
         backgroundColor: Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('Discard Progress?', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text(
+          'Discard Progress?',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
         content: const Text(
           'Are you sure you want to close this form? Your progress will be lost.',
           textAlign: TextAlign.justify,
@@ -106,7 +109,10 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Yes, Discard', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+            child: const Text(
+              'Yes, Discard',
+              style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+            ),
           ),
         ],
       ),
@@ -146,7 +152,10 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
                         child: Text(
                           'Create Link Invitation',
                           textAlign: TextAlign.center,
-                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 18,
+                          ),
                         ),
                       ),
                       IconButton(
@@ -196,7 +205,8 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
                       value: selectedVisitorTypeId,
                       items: controller.visitorTypes,
                       enabled: isVisitorTypeEnabled,
-                      onChanged: (v) => setState(() => selectedVisitorTypeId = v),
+                      onChanged: (v) =>
+                          setState(() => selectedVisitorTypeId = v),
                     ),
                   ),
                   _buildFieldRow(
@@ -219,7 +229,8 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
                             }
                           }),
                         ),
-                        if (isAgendaEnabled && selectedAgendaOption == 'Other') ...[
+                        if (isAgendaEnabled &&
+                            selectedAgendaOption == 'Other') ...[
                           const SizedBox(height: 8),
                           _buildTextField(
                             hint: 'Ketik agenda lainnya...',
@@ -264,7 +275,9 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
                           child: Text(opt['label']),
                         );
                       }).toList(),
-                      onChanged: isExpiredEnabled ? (v) => setState(() => expiredMinutes = v) : null,
+                      onChanged: isExpiredEnabled
+                          ? (v) => setState(() => expiredMinutes = v)
+                          : null,
                     ),
                   ),
                   _buildFieldRow(
@@ -284,10 +297,15 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
                       Switch(
                         value: isSingleUse,
                         onChanged: (v) => setState(() => isSingleUse = v),
-                        activeTrackColor: const Color(0xFF005596).withValues(alpha: 0.5),
+                        activeTrackColor: const Color(
+                          0xFF005596,
+                        ).withValues(alpha: 0.5),
                         activeThumbColor: const Color(0xFF005596),
                       ),
-                      const Text('Single Use Link', style: TextStyle(fontWeight: FontWeight.bold)),
+                      const Text(
+                        'Single Use Link',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
                     ],
                   ),
                   const Padding(
@@ -307,10 +325,15 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFF005596),
                             padding: const EdgeInsets.symmetric(vertical: 14),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
                           ),
                           onPressed: () => _submit(false),
-                          child: const Text('Create Link', style: TextStyle(color: Colors.white)),
+                          child: const Text(
+                            'Create Link',
+                            style: TextStyle(color: Colors.white),
+                          ),
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -319,10 +342,15 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
                           style: OutlinedButton.styleFrom(
                             side: const BorderSide(color: Color(0xFF005596)),
                             padding: const EdgeInsets.symmetric(vertical: 14),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
                           ),
                           onPressed: () => _submit(true),
-                          child: const Text('Create & Send Email', style: TextStyle(color: Color(0xFF005596))),
+                          child: const Text(
+                            'Create & Send Email',
+                            style: TextStyle(color: Color(0xFF005596)),
+                          ),
                         ),
                       ),
                     ],
@@ -336,7 +364,12 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
     );
   }
 
-  Widget _buildFieldRow({required String label, required bool isEnabled, required Function(bool) onToggle, required Widget input}) {
+  Widget _buildFieldRow({
+    required String label,
+    required bool isEnabled,
+    required Function(bool) onToggle,
+    required Widget input,
+  }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 16.0),
       child: Column(
@@ -345,13 +378,21 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(label, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+              Text(
+                label,
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 13,
+                ),
+              ),
               Transform.scale(
                 scale: 0.7,
                 child: Switch(
                   value: isEnabled,
                   onChanged: onToggle,
-                  activeTrackColor: const Color(0xFF005596).withValues(alpha: 0.5),
+                  activeTrackColor: const Color(
+                    0xFF005596,
+                  ).withValues(alpha: 0.5),
                   activeThumbColor: const Color(0xFF005596),
                 ),
               ),
@@ -388,9 +429,14 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
       decoration: _inputDecoration(enabled: enabled).copyWith(
         hintText: hint,
         hintStyle: const TextStyle(color: Colors.grey, fontSize: 13),
-        suffixIcon: const Icon(Icons.keyboard_arrow_down_rounded, color: Colors.grey),
+        suffixIcon: const Icon(
+          Icons.keyboard_arrow_down_rounded,
+          color: Colors.grey,
+        ),
       ),
-      onTap: enabled ? () => _showSelectionBottomSheet(hint, items, value, onChanged) : null,
+      onTap: enabled
+          ? () => _showSelectionBottomSheet(hint, items, value, onChanged)
+          : null,
     );
   }
 
@@ -423,7 +469,10 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
               padding: const EdgeInsets.all(16.0),
               child: Text(
                 title.replaceAll('Select ', 'Pilih '),
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
               ),
             ),
             const Divider(height: 1),
@@ -438,11 +487,17 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
                     title: Text(
                       item['name'] ?? '',
                       style: TextStyle(
-                        color: isSelected ? const Color(0xFF005596) : Colors.black,
-                        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                        color: isSelected
+                            ? const Color(0xFF005596)
+                            : Colors.black,
+                        fontWeight: isSelected
+                            ? FontWeight.bold
+                            : FontWeight.normal,
                       ),
                     ),
-                    trailing: isSelected ? const Icon(Icons.check, color: Color(0xFF005596)) : null,
+                    trailing: isSelected
+                        ? const Icon(Icons.check, color: Color(0xFF005596))
+                        : null,
                     onTap: () {
                       onSelected(item['id'].toString());
                       Navigator.pop(context);
@@ -458,7 +513,12 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
     );
   }
 
-  Widget _buildTextField({required String hint, required TextEditingController controller, required bool enabled, TextInputType? keyboardType}) {
+  Widget _buildTextField({
+    required String hint,
+    required TextEditingController controller,
+    required bool enabled,
+    TextInputType? keyboardType,
+  }) {
     return TextFormField(
       controller: controller,
       enabled: enabled,
@@ -468,17 +528,23 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
     );
   }
 
-  Widget _buildDateTimePicker({required DateTime? value, required bool enabled, required VoidCallback onTap}) {
-    final displayValue = value != null ? DateFormat('EEEE, dd MMMM yyyy, HH:mm', 'id').format(value) : '';
+  Widget _buildDateTimePicker({
+    required DateTime? value,
+    required bool enabled,
+    required VoidCallback onTap,
+  }) {
+    final displayValue = value != null
+        ? DateFormat('EEEE, dd MMMM yyyy, HH:mm', 'id').format(value.toLocal())
+        : '';
     final controller = TextEditingController(text: displayValue);
-    
+
     return TextFormField(
       controller: controller,
       readOnly: true,
       enabled: enabled,
       style: const TextStyle(fontSize: 13),
       decoration: _inputDecoration(enabled: enabled).copyWith(
-        hintText: 'EEEE, dd MMMM yyyy, HH:mm',
+        hintText: 'Pilih Tanggal dan Waktu',
         hintStyle: const TextStyle(color: Colors.grey, fontSize: 13),
         suffixIcon: const Icon(
           Icons.calendar_today_outlined,
@@ -509,14 +575,10 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(10),
-        borderSide: const BorderSide(
-          color: Color(0xFF005596),
-          width: 1.5,
-        ),
+        borderSide: const BorderSide(color: Color(0xFF005596), width: 1.5),
       ),
     );
   }
-
 
   Future<void> _pickDateTime(bool isStart) async {
     final DateTime? date = await showDatePicker(
@@ -570,28 +632,53 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
       if (isHostEnabled) 'host': selectedHostId,
       if (isSiteEnabled) 'site_id': selectedSiteId,
       if (isVisitorTypeEnabled) 'visitor_type_id': selectedVisitorTypeId,
-      if (isAgendaEnabled) 'agenda': selectedAgendaOption == 'Other' ? agendaCtrl.text : selectedAgendaOption,
-      if (isVisitStartEnabled && visitStart != null) 
-        'visitor_period_start': visitStart!.toUtc().toIso8601String().substring(0, 19),
-      if (isVisitEndEnabled && visitEnd != null) 
-        'visitor_period_end': visitEnd!.toUtc().toIso8601String().substring(0, 19),
+      if (isAgendaEnabled)
+        'agenda': selectedAgendaOption == 'Other'
+            ? agendaCtrl.text
+            : selectedAgendaOption,
+      if (isVisitStartEnabled && visitStart != null)
+        'visitor_period_start': visitStart!.toUtc().toIso8601String().substring(
+          0,
+          19,
+        ),
+      if (isVisitEndEnabled && visitEnd != null)
+        'visitor_period_end': visitEnd!.toUtc().toIso8601String().substring(
+          0,
+          19,
+        ),
       if (isExpiredEnabled) 'expired_number': expiredMinutes,
       if (isQuotaEnabled) 'max_usage': int.tryParse(quotaCtrl.text) ?? 0,
       'is_single_use': isSingleUse,
       'tz': 'Asia/Jakarta',
     };
 
-    Get.dialog(const Center(child: CircularProgressIndicator()), barrierDismissible: false);
-    final success = await controller.createShareLinkAction(body, sendEmail: sendEmail);
-    
+    Get.dialog(
+      const Center(child: CircularProgressIndicator()),
+      barrierDismissible: false,
+    );
+    final success = await controller.createShareLinkAction(
+      body,
+      sendEmail: sendEmail,
+    );
+
     if (!mounted) return;
     Get.back(); // Close loading
 
     if (success) {
-      Get.snackbar('Success', 'Share link created successfully', backgroundColor: Colors.green, colorText: Colors.white);
+      Get.snackbar(
+        'Success',
+        'Share link created successfully',
+        backgroundColor: Colors.green,
+        colorText: Colors.white,
+      );
       if (mounted) Navigator.pop(context);
     } else {
-      Get.snackbar('Error', 'Failed to create share link', backgroundColor: Colors.red, colorText: Colors.white);
+      Get.snackbar(
+        'Error',
+        'Failed to create share link',
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
     }
   }
 }

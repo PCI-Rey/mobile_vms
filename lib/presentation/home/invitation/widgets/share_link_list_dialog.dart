@@ -43,7 +43,11 @@ class _ShareLinkListDialogState extends State<ShareLinkListDialog> {
           centerTitle: true,
           actions: [
             IconButton(
-              icon: const Icon(Icons.add_circle, color: Color(0xFF005596), size: 28),
+              icon: const Icon(
+                Icons.add_circle,
+                color: Color(0xFF005596),
+                size: 28,
+              ),
               onPressed: () => _showCreateDialog(),
             ),
             const SizedBox(width: 8),
@@ -74,7 +78,8 @@ class _ShareLinkListDialogState extends State<ShareLinkListDialog> {
             onRefresh: () => controller.fetchShareLinks(resetPage: true),
             child: ListView.separated(
               padding: const EdgeInsets.all(16),
-              physics: const AlwaysScrollableScrollPhysics(), // Memastikan bisa ditarik meski data sedikit
+              physics:
+                  const AlwaysScrollableScrollPhysics(), // Memastikan bisa ditarik meski data sedikit
               itemCount: controller.shareLinks.length,
               separatorBuilder: (context, index) => const SizedBox(height: 12),
               itemBuilder: (context, index) {
@@ -91,11 +96,15 @@ class _ShareLinkListDialogState extends State<ShareLinkListDialog> {
           );
         }),
         bottomNavigationBar: Obx(() {
-          if (controller.shareLinkTotalRecords.value <= controller.shareLinkPageSize.value) {
+          if (controller.shareLinkTotalRecords.value <=
+              controller.shareLinkPageSize.value) {
             return const SizedBox.shrink();
           }
 
-          final start = (controller.shareLinkCurrentPage.value * controller.shareLinkPageSize.value) + 1;
+          final start =
+              (controller.shareLinkCurrentPage.value *
+                  controller.shareLinkPageSize.value) +
+              1;
           final end = start + controller.shareLinks.length - 1;
           final total = controller.shareLinkTotalRecords.value;
 
@@ -129,7 +138,10 @@ class _ShareLinkListDialogState extends State<ShareLinkListDialog> {
                             : null,
                       ),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
                         decoration: BoxDecoration(
                           color: const Color(0xFF005596).withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(4),
@@ -145,7 +157,10 @@ class _ShareLinkListDialogState extends State<ShareLinkListDialog> {
                       ),
                       IconButton(
                         icon: const Icon(Icons.chevron_right, size: 20),
-                        onPressed: (controller.shareLinkCurrentPage.value + 1) * controller.shareLinkPageSize.value < total
+                        onPressed:
+                            (controller.shareLinkCurrentPage.value + 1) *
+                                    controller.shareLinkPageSize.value <
+                                total
                             ? () => controller.nextShareLinkPage()
                             : null,
                       ),
@@ -180,8 +195,10 @@ class _ShareLinkListDialogState extends State<ShareLinkListDialog> {
 
     String status = isExpired ? 'Expired' : (item['link_status'] ?? 'Active');
     Color statusColor = isExpired ? Colors.red : Colors.green;
-    IconData statusIcon = isExpired ? Icons.close_rounded : Icons.check_circle_rounded;
-    
+    IconData statusIcon = isExpired
+        ? Icons.close_rounded
+        : Icons.check_circle_rounded;
+
     // Formatting dates
     String formatDate(String? dateStr) {
       if (dateStr == null) return '-';
@@ -217,7 +234,9 @@ class _ShareLinkListDialogState extends State<ShareLinkListDialog> {
               children: [
                 CircleAvatar(
                   radius: 12,
-                  backgroundColor: const Color(0xFF005596).withValues(alpha: 0.1),
+                  backgroundColor: const Color(
+                    0xFF005596,
+                  ).withValues(alpha: 0.1),
                   child: Text(
                     no.toString(),
                     style: const TextStyle(
@@ -228,11 +247,16 @@ class _ShareLinkListDialogState extends State<ShareLinkListDialog> {
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: statusColor.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(6),
-                    border: Border.all(color: statusColor.withValues(alpha: 0.2)),
+                    border: Border.all(
+                      color: statusColor.withValues(alpha: 0.2),
+                    ),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
@@ -264,11 +288,21 @@ class _ShareLinkListDialogState extends State<ShareLinkListDialog> {
                 const SizedBox(height: 8),
                 _buildInfoRow('Usage', '$currentUsage / $maxUsage'),
                 const SizedBox(height: 8),
-                _buildInfoRow('Period Start', formatDate(item['visitor_period_start'])),
+                _buildInfoRow(
+                  'Period Start',
+                  formatDate(item['visitor_period_start']),
+                ),
                 const SizedBox(height: 4),
-                _buildInfoRow('Period End', formatDate(item['visitor_period_end'])),
+                _buildInfoRow(
+                  'Period End',
+                  formatDate(item['visitor_period_end']),
+                ),
                 const SizedBox(height: 8),
-                _buildInfoRow('Expired At', formatDate(item['expired_at']), color: Colors.orange.shade700),
+                _buildInfoRow(
+                  'Expired At',
+                  formatDate(item['expired_at']),
+                  color: Colors.orange.shade700,
+                ),
               ],
             ),
           ),
@@ -315,7 +349,12 @@ class _ShareLinkListDialogState extends State<ShareLinkListDialog> {
     );
   }
 
-  Widget _buildInfoRow(String label, String value, {bool isBold = false, Color? color}) {
+  Widget _buildInfoRow(
+    String label,
+    String value, {
+    bool isBold = false,
+    Color? color,
+  }) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -340,7 +379,11 @@ class _ShareLinkListDialogState extends State<ShareLinkListDialog> {
     );
   }
 
-  Widget _buildActionButton({required IconData icon, required Color color, required VoidCallback onTap}) {
+  Widget _buildActionButton({
+    required IconData icon,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(8),
@@ -361,20 +404,25 @@ class _ShareLinkListDialogState extends State<ShareLinkListDialog> {
         title: const Text('Delete Share Link'),
         content: const Text('Are you sure you want to delete this share link?'),
         actions: [
-          TextButton(
-            onPressed: () => Get.back(),
-            child: const Text('Cancel'),
-          ),
+          TextButton(onPressed: () => Get.back(), child: const Text('Cancel')),
           TextButton(
             onPressed: () async {
               Get.back();
               final success = await controller.deleteShareLinkAction(id);
               if (success) {
-                Get.snackbar('Success', 'Share link deleted successfully',
-                    backgroundColor: Colors.green, colorText: Colors.white);
+                Get.snackbar(
+                  'Success',
+                  'Share link deleted successfully',
+                  backgroundColor: Colors.green,
+                  colorText: Colors.white,
+                );
               } else {
-                Get.snackbar('Error', 'Failed to delete share link',
-                    backgroundColor: Colors.red, colorText: Colors.white);
+                Get.snackbar(
+                  'Error',
+                  'Failed to delete share link',
+                  backgroundColor: Colors.red,
+                  colorText: Colors.white,
+                );
               }
             },
             child: const Text('Delete', style: TextStyle(color: Colors.red)),
