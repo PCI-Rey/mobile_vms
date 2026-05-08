@@ -49,7 +49,8 @@ class AccessPassModel {
     required this.isPraregisterDone,
   });
 
-  factory AccessPassModel.fromRawJson(String str) => AccessPassModel.fromJson(json.decode(str));
+  factory AccessPassModel.fromRawJson(String str) =>
+      AccessPassModel.fromJson(json.decode(str));
 
   String toRawJson() => json.encode(toJson());
 
@@ -61,11 +62,31 @@ class AccessPassModel {
       host: json['host']?.toString() ?? '',
       isGroup: json['is_group'] == true,
       groupName: json['group_name']?.toString() ?? '',
-      visitorPeriodStart: (json['visitor_period_start'] ?? json['visit_start'] ?? json['start_date'] ?? json['visit_date']) != null
-          ? _parseUtcToLocal((json['visitor_period_start'] ?? json['visit_start'] ?? json['start_date'] ?? json['visit_date']).toString())
+      visitorPeriodStart:
+          (json['visitor_period_start'] ??
+                  json['visit_start'] ??
+                  json['start_date'] ??
+                  json['visit_date']) !=
+              null
+          ? _parseUtcToLocal(
+              (json['visitor_period_start'] ??
+                      json['visit_start'] ??
+                      json['start_date'] ??
+                      json['visit_date'])
+                  .toString(),
+            )
           : DateTime.now(),
-      visitorPeriodEnd: (json['visitor_period_end'] ?? json['visit_end'] ?? json['end_date']) != null
-          ? _parseUtcToLocal((json['visitor_period_end'] ?? json['visit_end'] ?? json['end_date']).toString())
+      visitorPeriodEnd:
+          (json['visitor_period_end'] ??
+                  json['visit_end'] ??
+                  json['end_date']) !=
+              null
+          ? _parseUtcToLocal(
+              (json['visitor_period_end'] ??
+                      json['visit_end'] ??
+                      json['end_date'])
+                  .toString(),
+            )
           : DateTime.now(),
       visitorNumber: json['visitor_number']?.toString() ?? '',
       visitorCode: json['visitor_code']?.toString() ?? '',
@@ -85,29 +106,29 @@ class AccessPassModel {
   }
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'agenda': agenda,
-        'initial_trx_code': initialTrxCode,
-        'host': host,
-        'is_group': isGroup,
-        'group_name': groupName,
-        'visitor_period_start': visitorPeriodStart.toIso8601String(),
-        'visitor_period_end': visitorPeriodEnd.toIso8601String(),
-        'visitor_number': visitorNumber,
-        'visitor_code': visitorCode,
-        'invitation_code': invitationCode,
-        'visitor_status': visitorStatus,
-        'site_place_name': sitePlaceName,
-        'host_name': hostName,
-        'parking_slot': parkingSlot,
-        'parking_area': parkingArea,
-        'vehicle_plate_number': vehiclePlateNumber,
-        'is_driving': isDriving,
-        'tz': tz,
-        'site_id': siteId,
-        'visitor_name': visitorName,
-        'is_praregister_done': isPraregisterDone,
-      };
+    'id': id,
+    'agenda': agenda,
+    'initial_trx_code': initialTrxCode,
+    'host': host,
+    'is_group': isGroup,
+    'group_name': groupName,
+    'visitor_period_start': visitorPeriodStart.toIso8601String(),
+    'visitor_period_end': visitorPeriodEnd.toIso8601String(),
+    'visitor_number': visitorNumber,
+    'visitor_code': visitorCode,
+    'invitation_code': invitationCode,
+    'visitor_status': visitorStatus,
+    'site_place_name': sitePlaceName,
+    'host_name': hostName,
+    'parking_slot': parkingSlot,
+    'parking_area': parkingArea,
+    'vehicle_plate_number': vehiclePlateNumber,
+    'is_driving': isDriving,
+    'tz': tz,
+    'site_id': siteId,
+    'visitor_name': visitorName,
+    'is_praregister_done': isPraregisterDone,
+  };
 
   /// Parse a datetime string from the API as UTC and convert to device local time.
   /// The API may return strings without timezone suffix (e.g. "2026-05-04T04:04:00"),

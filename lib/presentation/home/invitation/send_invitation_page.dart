@@ -274,9 +274,9 @@ class _SendInvitationPageState extends State<SendInvitationPage> {
                             : item.groupName,
                         additional: DateFormat(
                           'EEE, dd MMM yyyy',
-                        ).format(item.visitorPeriodStart),
+                        ).format(DateTime.parse('${item.visitorPeriodStart.toIso8601String().split('Z').first}Z').toLocal()),
                         additionalDesc:
-                            '${DateFormat('HH:mm').format(item.visitorPeriodStart)} - ${DateFormat('HH:mm').format(item.visitorPeriodEnd)}',
+                            '${DateFormat('HH.mm').format(DateTime.parse('${item.visitorPeriodStart.toIso8601String().split('Z').first}Z').toLocal())} - ${DateFormat('HH.mm').format(DateTime.parse('${item.visitorPeriodEnd.toIso8601String().split('Z').first}Z').toLocal())}',
                         backgroundIconColor: statusColor,
                         // Additional info like invitation code
                         trailing: Column(
@@ -351,7 +351,7 @@ class _SendInvitationPageState extends State<SendInvitationPage> {
               _buildDetailRow('Agenda', item.agenda),
               _buildDetailRow(
                 'Visit Period',
-                '${DateFormat('dd MMM yyyy').format(item.visitorPeriodStart)}\n${DateFormat('HH:mm').format(item.visitorPeriodStart)} - ${DateFormat('HH:mm').format(item.visitorPeriodEnd)}',
+                '${DateFormat('dd MMM yyyy').format(DateTime.parse('${item.visitorPeriodStart.toIso8601String().split('Z').first}Z').toLocal())}\n${DateFormat('HH.mm').format(DateTime.parse('${item.visitorPeriodStart.toIso8601String().split('Z').first}Z').toLocal())} - ${DateFormat('HH.mm').format(DateTime.parse('${item.visitorPeriodEnd.toIso8601String().split('Z').first}Z').toLocal())}',
               ),
               if (item.parkingArea.isNotEmpty || item.parkingSlot.isNotEmpty)
                 _buildDetailRow('Parking', '${item.parkingArea} - ${item.parkingSlot}'),

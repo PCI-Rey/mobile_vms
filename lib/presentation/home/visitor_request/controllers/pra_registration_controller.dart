@@ -581,7 +581,8 @@ class PraRegistrationController extends GetxController {
 
       if (isGroup.value == true) {
         // ── GROUP MODE ─────────────────────────────────────────────────────
-        final dataVisitors = groupVisitors.map((visitor) {
+        // Map each visitor to their own entry in list_group to ensure server processes all of them
+        final List<Map<String, dynamic>> listGroup = groupVisitors.map((visitor) {
           final visitorAnswers = {
             'name': visitor.fullName.text.trim(),
             'email': visitor.email.text.trim(),
@@ -589,12 +590,8 @@ class PraRegistrationController extends GetxController {
             'organization': visitor.organization.text.trim(),
             'indentity_id': visitor.identityId.text.trim(),
             'is_employee': visitor.isEmployee.value.toString(),
-            'employee_name': visitor.isEmployee.value
-                ? visitor.selectedEmployeeId.value
-                : '',
-            'employee': visitor.isEmployee.value
-                ? visitor.selectedEmployeeId.value
-                : '',
+            'employee_name': visitor.isEmployee.value ? visitor.selectedEmployeeId.value : '',
+            'employee': visitor.isEmployee.value ? visitor.selectedEmployeeId.value : '',
           };
 
           final qp = detail.sectionPageVisitorTypes.map((section) {
@@ -606,21 +603,14 @@ class PraRegistrationController extends GetxController {
                   f.remarks == 'visitor_period_start' ||
                   f.remarks == 'visitor_period_end';
 
-              if (f.remarks == 'visitor_period_start' &&
-                  visitStart.value != null) {
-                answerDatetime = visitStart.value!
-                    .toUtc()
-                    .toIso8601String()
-                    .substring(0, 19);
-              } else if (f.remarks == 'visitor_period_end' &&
-                  visitEnd.value != null) {
-                answerDatetime =
-                    visitEnd.value!.toUtc().toIso8601String().substring(0, 19);
+              if (f.remarks == 'visitor_period_start' && visitStart.value != null) {
+                answerDatetime = visitStart.value!.toUtc().toIso8601String().substring(0, 19);
+              } else if (f.remarks == 'visitor_period_end' && visitEnd.value != null) {
+                answerDatetime = visitEnd.value!.toUtc().toIso8601String().substring(0, 19);
               } else if (isDateTimeField) {
                 answerDatetime = f.answerDatetime;
               } else {
-                answerText =
-                    _answerTextForRemarksInGroup(f.remarks, f, visitorAnswers);
+                answerText = _answerTextForRemarksInGroup(f.remarks, f, visitorAnswers);
               }
 
               final Map<String, dynamic> json = {
@@ -633,8 +623,7 @@ class PraRegistrationController extends GetxController {
                 'mandatory': f.mandatory,
                 'remarks': f.remarks,
                 'custom_field_id': f.customFieldId,
-                'multiple_option_fields':
-                    f.multipleOptionFields.map((o) => o.toJson()).toList(),
+                'multiple_option_fields': f.multipleOptionFields.map((o) => o.toJson()).toList(),
                 'visitor_form_type': f.visitorFormType,
               };
 
@@ -666,24 +655,22 @@ class PraRegistrationController extends GetxController {
             };
           }).toList();
 
-          return {'question_page': qp};
+          return {
+            'visitor_type': selectedVisitorTypeId.value,
+            'is_group': true,
+            'type_registered': 1,
+            'tz': deviceTz,
+            'flow': 'Praregister',
+            if (selectedSiteId.value.isNotEmpty) 'registered_site': selectedSiteId.value,
+            'group_code': groupCode.value,
+            'group_name': groupName.value.trim(),
+            'data_visitor': [
+              {'question_page': qp}
+            ],
+          };
         }).toList();
 
-        body = {
-          'list_group': [
-            {
-              'visitor_type': selectedVisitorTypeId.value,
-              'is_group': true,
-              'type_registered': 1,
-              'tz': deviceTz,
-              if (selectedSiteId.value.isNotEmpty)
-                'registered_site': selectedSiteId.value,
-              'group_code': groupCode.value,
-              'group_name': groupName.value.trim(),
-              'data_visitor': dataVisitors,
-            }
-          ],
-        };
+        body = {'list_group': listGroup};
       } else {
         // ── SINGLE MODE ────────────────────────────────────────────────────
         body = {
