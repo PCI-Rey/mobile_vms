@@ -635,6 +635,12 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
   Future<void> _submit(bool sendEmail) async {
     if (!_formKey.currentState!.validate()) return;
 
+    String? email;
+    if (sendEmail) {
+      email = await _showEmailDialog();
+      if (email == null) return; // Cancelled
+    }
+
     final Map<String, dynamic> body = {
       if (isHostEnabled) 'host': selectedHostId,
       if (isSiteEnabled) 'site_id': selectedSiteId,
@@ -657,6 +663,7 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
         'expired_number': int.tryParse(selectedExpiredMinutes ?? '0') ?? 0,
       if (isQuotaEnabled) 'max_usage': int.tryParse(quotaCtrl.text) ?? 0,
       'is_single_use': isSingleUse,
+      if (email != null) 'email': email,
       'tz': 'Asia/Jakarta',
     };
 
@@ -688,5 +695,104 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
         colorText: Colors.white,
       );
     }
+  }
+
+  Future<String?> _showEmailDialog() async {
+    final TextEditingController tempEmailCtrl = TextEditingController();
+    return showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        titlePadding: const EdgeInsets.fromLTRB(20, 16, 12, 0),
+        title: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text(
+              'Send Invitation Link',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 18,
+                color: Color(0xFF2E3A59),
+              ),
+            ),
+            IconButton(
+              icon: const Icon(Icons.close, color: Colors.grey, size: 24),
+              onPressed: () => Navigator.pop(context),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Send Via Email',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF005596),
+                fontSize: 14,
+              ),
+            ),
+            const SizedBox(height: 4),
+            const Text(
+              'Please enter a valid email address of the recipient.',
+              style: TextStyle(fontSize: 12, color: Colors.grey),
+            ),
+            const SizedBox(height: 20),
+            TextFormField(
+              controller: tempEmailCtrl,
+              style: const TextStyle(fontSize: 14),
+              decoration: InputDecoration(
+                hintText: 'Email',
+                filled: true,
+                fillColor: Colors.white,
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 14,
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide(color: Colors.grey.shade200),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: const BorderSide(color: Color(0xFF005596)),
+                ),
+              ),
+            ),
+          ],
+        ),
+        actionsPadding: const EdgeInsets.fromLTRB(0, 0, 16, 16),
+        actions: [
+          ElevatedButton.icon(
+            onPressed: () {
+              if (tempEmailCtrl.text.trim().isNotEmpty) {
+                Navigator.pop(context, tempEmailCtrl.text.trim());
+              } else {
+                Get.snackbar(
+                  'Required',
+                  'Please enter an email address',
+                  backgroundColor: Colors.orange,
+                  colorText: Colors.white,
+                );
+              }
+            },
+            icon: const Icon(Icons.send, color: Colors.white, size: 18),
+            label: const Text(
+              'Send',
+              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+            ),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF005596),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
