@@ -826,9 +826,7 @@ class _StatusCard extends StatelessWidget {
                 shape: BoxShape.circle,
                 color: isSelected ? AppColors.primary500 : Colors.transparent,
                 border: Border.all(
-                  color: isSelected
-                      ? AppColors.primary500
-                      : const Color(0xFFBDBDBD),
+                  color: isSelected ? AppColors.primary500 : AppColors.grey400,
                   width: 2,
                 ),
               ),
@@ -898,429 +896,374 @@ class _Step1VisitorInfo extends StatelessWidget {
         children: [
           ...List.generate(visitors.length, (i) {
             final v = visitors[i];
-            return Container(
-              margin: const EdgeInsets.only(bottom: 14),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                border: Border.all(color: const Color(0xFFE0E0E0)),
-                borderRadius: BorderRadius.circular(14),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.04),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Column(
-                children: [
-                  // Card header
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 14,
-                      vertical: 11,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppColors.primary500.withValues(alpha: 0.05),
-                      borderRadius: const BorderRadius.only(
-                        topLeft: Radius.circular(14),
-                        topRight: Radius.circular(14),
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Use App's native Section Header style (Left Accent Border)
+                _SectionHeader(title: 'Visitor ${i + 1}'),
+                const SizedBox(height: 12),
+                
+                // Remove button moved to a more elegant position if needed, 
+                // but keeping it simple for consistency.
+                if (visitors.length > 1)
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: TextButton.icon(
+                      onPressed: () async {
+                        final shouldDelete =
+                            await _showDeleteVisitorConfirmation(context);
+                        if (shouldDelete) {
+                          controller.removeGroupVisitor(i);
+                        }
+                      },
+                      icon: Icon(
+                        Icons.delete_outline_rounded,
+                        size: 16,
+                        color: Colors.red.shade400,
+                      ),
+                      label: Text(
+                        'Remove',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.red.shade400,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                        minimumSize: Size.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                       ),
                     ),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 28,
-                          height: 28,
-                          decoration: BoxDecoration(
-                            color: AppColors.primary500,
-                            shape: BoxShape.circle,
-                          ),
-                          child: Center(
-                            child: Text(
-                              '${i + 1}',
-                              style: const TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w700,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          'Visitor ${i + 1}',
-                          style: const TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.black87,
-                          ),
-                        ),
-                        const Spacer(),
-                        if (visitors.length > 1)
-                          GestureDetector(
-                            onTap: () async {
-                              final shouldDelete =
-                                  await _showDeleteVisitorConfirmation(context);
-                              if (shouldDelete) {
-                                controller.removeGroupVisitor(i);
-                              }
-                            },
-                            child: Container(
-                              padding: const EdgeInsets.all(5),
-                              decoration: BoxDecoration(
-                                color: Colors.red.shade50,
-                                borderRadius: BorderRadius.circular(8),
-                                border: Border.all(color: Colors.red.shade100),
-                              ),
-                              child: Icon(
-                                Icons.delete_outline_rounded,
-                                size: 16,
-                                color: Colors.red.shade400,
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
                   ),
 
-                  Padding(
-                    padding: const EdgeInsets.all(14),
-                    child: Column(
-                      children: [
-                        // Are you Employee? section
-                        Obx(() {
-                          final isEmployeeType = controller
-                              .selectedVisitorTypeName
-                              .value
-                              .toLowerCase()
-                              .contains('employee');
-                          if (!isEmployeeType) {
-                            if (v.isEmployee.value) {
-                              WidgetsBinding.instance.addPostFrameCallback((_) {
-                                v.isEmployee.value = false;
-                                v.selectedEmployeeId.value = '';
-                                v.selectedEmployeeName.value = '';
-                                v.fullName.clear();
-                                v.email.clear();
-                                v.phone.clear();
-                                v.organization.clear();
-                                v.identityId.clear();
-                              });
-                            }
-                            return const SizedBox.shrink();
+                // Form Fields
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  child: Column(
+                    children: [
+                      // Are you Employee? section
+                      Obx(() {
+                        final isEmployeeType = controller
+                            .selectedVisitorTypeName
+                            .value
+                            .toLowerCase()
+                            .contains('employee');
+                        if (!isEmployeeType) {
+                          if (v.isEmployee.value) {
+                            WidgetsBinding.instance.addPostFrameCallback((_) {
+                              v.isEmployee.value = false;
+                              v.selectedEmployeeId.value = '';
+                              v.selectedEmployeeName.value = '';
+                              v.fullName.clear();
+                              v.email.clear();
+                              v.phone.clear();
+                              v.organization.clear();
+                              v.identityId.clear();
+                            });
                           }
-                          final empEnabled = v.isEmployee.value;
-                          return Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text(
-                                'Are you Employee?',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.black87,
+                          return const SizedBox.shrink();
+                        }
+                        final empEnabled = v.isEmployee.value;
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Are you Employee?',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.black87,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Row(
+                              children: [
+                                _InlineRadio(
+                                  label: 'Yes',
+                                  isSelected: empEnabled,
+                                  onTap: () {
+                                    v.isEmployee.value = true;
+                                    v.selectedEmployeeId.value = '';
+                                    v.selectedEmployeeName.value = '';
+                                    v.fullName.clear();
+                                    v.email.clear();
+                                    v.phone.clear();
+                                    v.organization.clear();
+                                    v.identityId.clear();
+                                    controller.updateForm();
+                                  },
                                 ),
-                              ),
-                              const SizedBox(height: 8),
-                              Row(
-                                children: [
-                                  _InlineRadio(
-                                    label: 'Yes',
-                                    isSelected: empEnabled,
-                                    onTap: () {
-                                      v.isEmployee.value = true;
-                                      // Clear existing row fields
-                                      v.selectedEmployeeId.value = '';
-                                      v.selectedEmployeeName.value = '';
-                                      v.fullName.clear();
-                                      v.email.clear();
-                                      v.phone.clear();
-                                      v.organization.clear();
-                                      v.identityId.clear();
-                                      controller.updateForm();
-                                    },
-                                  ),
-                                  const SizedBox(width: 16),
-                                  _InlineRadio(
-                                    label: 'No',
-                                    isSelected: !empEnabled,
-                                    onTap: () {
-                                      v.isEmployee.value = false;
-                                      // Clear existing row fields
-                                      v.selectedEmployeeId.value = '';
-                                      v.selectedEmployeeName.value = '';
-                                      v.fullName.clear();
-                                      v.email.clear();
-                                      v.phone.clear();
-                                      v.organization.clear();
-                                      v.identityId.clear();
-                                      controller.updateForm();
-                                    },
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 12),
-
-                              Opacity(
-                                opacity: empEnabled ? 1.0 : 0.4,
-                                child: IgnorePointer(
-                                  ignoring: !empEnabled,
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      RichText(
-                                        text: const TextSpan(
-                                          text: 'Employee Name',
-                                          style: TextStyle(
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.w600,
-                                            color: Colors.black87,
-                                          ),
-                                          children: [
-                                            TextSpan(
-                                              text: ' *',
-                                              style: TextStyle(
-                                                color: Colors.red,
-                                                fontWeight: FontWeight.bold,
-                                              ),
-                                            ),
-                                          ],
+                                const SizedBox(width: 16),
+                                _InlineRadio(
+                                  label: 'No',
+                                  isSelected: !empEnabled,
+                                  onTap: () {
+                                    v.isEmployee.value = false;
+                                    v.selectedEmployeeId.value = '';
+                                    v.selectedEmployeeName.value = '';
+                                    v.fullName.clear();
+                                    v.email.clear();
+                                    v.phone.clear();
+                                    v.organization.clear();
+                                    v.identityId.clear();
+                                    controller.updateForm();
+                                  },
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 16),
+                            Opacity(
+                              opacity: empEnabled ? 1.0 : 0.4,
+                              child: IgnorePointer(
+                                ignoring: !empEnabled,
+                                child: Column(
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.start,
+                                  children: [
+                                    RichText(
+                                      text: const TextSpan(
+                                        text: 'Employee Name',
+                                        style: TextStyle(
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w600,
+                                          color: Colors.black87,
                                         ),
-                                      ),
-                                      const SizedBox(height: 6),
-                                      Obx(() {
-                                        final list = controller.employees
-                                            .toList();
-                                        final currentId =
-                                            v.selectedEmployeeId.value;
-                                        final selectedItem =
-                                            list.any((e) => e.id == currentId)
-                                            ? list.firstWhere(
-                                                (e) => e.id == currentId,
-                                              )
-                                            : null;
-                                        return GestureDetector(
-                                          onTap: () async {
-                                            final result =
-                                                await _showEmployeePicker(
-                                                  context,
-                                                  controller.employees.toList(),
-                                                  currentId,
-                                                );
-                                            if (result != null) {
-                                              controller
-                                                  .onGroupEmployeeSelected(
-                                                    v,
-                                                    result.id,
-                                                  );
-                                            }
-                                          },
-                                          child: _DropdownTrigger(
-                                            text: selectedItem?.name ?? '',
-                                            hint: 'Pilih Employee',
+                                        children: [
+                                          TextSpan(
+                                            text: ' *',
+                                            style: TextStyle(
+                                              color: Colors.red,
+                                              fontWeight: FontWeight.bold,
+                                            ),
                                           ),
-                                        );
-                                      }),
-                                    ],
-                                  ),
+                                        ],
+                                      ),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Obx(() {
+                                      final list = controller.employees.toList();
+                                      final currentId = v.selectedEmployeeId.value;
+                                      final selectedItem = list.any((e) => e.id == currentId)
+                                          ? list.firstWhere((e) => e.id == currentId)
+                                          : null;
+                                      return GestureDetector(
+                                        onTap: () async {
+                                          final result = await _showEmployeePicker(
+                                            context,
+                                            controller.employees.toList(),
+                                            currentId,
+                                          );
+                                          if (result != null) {
+                                            controller.onGroupEmployeeSelected(v, result.id);
+                                          }
+                                        },
+                                        child: _DropdownTrigger(
+                                          text: selectedItem?.name ?? '',
+                                          hint: 'Pilih Employee',
+                                        ),
+                                      );
+                                    }),
+                                  ],
                                 ),
                               ),
-                              const SizedBox(height: 12),
-                              const Divider(
-                                height: 1,
-                                color: Color(0xFFEEEEEE),
-                              ),
-                              const SizedBox(height: 12),
-                            ],
-                          );
-                        }),
-
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Expanded(
-                              child: _GroupTextField(
-                                label: 'Full Name',
-                                controller: v.fullName,
-                                hint: 'Enter full name',
-                                onChanged: (_) => controller.updateForm(),
-                              ),
                             ),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: _GroupTextField(
-                                label: 'Email',
-                                controller: v.email,
-                                hint: 'Enter email',
-                                keyboardType: TextInputType.emailAddress,
-                                onChanged: (_) => controller.updateForm(),
-                              ),
-                            ),
+                            const SizedBox(height: 16),
                           ],
-                        ),
-                        const SizedBox(height: 10),
+                        );
+                      }),
 
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Expanded(
-                              child: _GroupTextField(
-                                label: 'Phone',
-                                controller: v.phone,
-                                hint: 'e.g. 08123...',
-                                keyboardType: TextInputType.phone,
-                                onChanged: (_) => controller.updateForm(),
-                              ),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: _GroupTextField(
+                              label: 'Full Name',
+                              controller: v.fullName,
+                              hint: 'Enter full name',
+                              onChanged: (_) => controller.updateForm(),
                             ),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: _GroupTextField(
-                                label: 'Organization',
-                                controller: v.organization,
-                                hint: 'Company / Instansi',
-                                onChanged: (_) => controller.updateForm(),
-                              ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: _GroupTextField(
+                              label: 'Email',
+                              controller: v.email,
+                              hint: 'Enter email',
+                              keyboardType: TextInputType.emailAddress,
+                              onChanged: (_) => controller.updateForm(),
                             ),
-                          ],
-                        ),
-                        const SizedBox(height: 10),
-
-                        _GroupTextField(
-                          label: 'Identity ID (KTP)',
-                          controller: v.identityId,
-                          hint: 'Enter KTP number',
-                          keyboardType: TextInputType.number,
-                          onChanged: (_) => controller.updateForm(),
-                        ),
-                      ],
-                    ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: _GroupTextField(
+                              label: 'Phone',
+                              controller: v.phone,
+                              hint: 'e.g. 08123...',
+                              keyboardType: TextInputType.phone,
+                              onChanged: (_) => controller.updateForm(),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: _GroupTextField(
+                              label: 'Organization',
+                              controller: v.organization,
+                              hint: 'Company / Instance',
+                              onChanged: (_) => controller.updateForm(),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      _GroupTextField(
+                        label: 'Identity ID (KTP)',
+                        controller: v.identityId,
+                        hint: 'Enter KTP number',
+                        keyboardType: TextInputType.number,
+                        onChanged: (_) => controller.updateForm(),
+                      ),
+                    ],
                   ),
-                ],
-              ),
+                ),
+                
+                if (i < visitors.length - 1) ...[
+                  const SizedBox(height: 32),
+                  const Divider(height: 1, color: Color(0xFFE0E0E0)),
+                  const SizedBox(height: 32),
+                ] else
+                  const SizedBox(height: 24),
+              ],
             );
           }),
-
-          // Add New button
-          SizedBox(
-            width: double.infinity,
+          
+          const SizedBox(height: 10),
+          Center(
             child: OutlinedButton.icon(
               onPressed: controller.addGroupVisitor,
-              icon: const Icon(
-                Icons.add_rounded,
-                size: 18,
-                color: AppColors.primary500,
-              ),
+              icon: const Icon(Icons.add_circle_outline_rounded, size: 20),
               label: const Text(
                 'Add New Visitor',
                 style: TextStyle(
-                  color: AppColors.primary500,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 13,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
                 ),
               ),
               style: OutlinedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 13),
-                side: const BorderSide(color: AppColors.primary200),
-                backgroundColor: AppColors.primary50,
+                foregroundColor: AppColors.primary500,
+                backgroundColor: AppColors.primary500.withValues(alpha: 0.05),
+                side: BorderSide(
+                  color: AppColors.primary500.withValues(alpha: 0.3),
+                ),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 28,
+                  vertical: 12,
+                ),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(30),
                 ),
               ),
             ),
           ),
+          const SizedBox(height: 20),
         ],
       );
     });
   }
+}
 
-  static Future<DropdownItem?> _showEmployeePicker(
-    BuildContext context,
-    List<DropdownItem> items,
-    String currentId,
-  ) {
-    return showModalBottomSheet<DropdownItem>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (sheetCtx) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              margin: const EdgeInsets.symmetric(vertical: 10),
-              width: 36,
-              height: 4,
-              decoration: BoxDecoration(
-                color: AppColors.grey300,
-                borderRadius: BorderRadius.circular(2),
-              ),
+// ── Shared employee picker ──────────────────────────────────────────────────────
+
+Future<DropdownItem?> _showEmployeePicker(
+  BuildContext context,
+  List<DropdownItem> items,
+  String currentId,
+) {
+  return showModalBottomSheet<DropdownItem>(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.white,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+    ),
+    builder: (sheetCtx) => SafeArea(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            margin: const EdgeInsets.symmetric(vertical: 10),
+            width: 36,
+            height: 4,
+            decoration: BoxDecoration(
+              color: AppColors.grey300,
+              borderRadius: BorderRadius.circular(2),
             ),
-            const Text(
-              'Pilih Employee',
-              style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+          ),
+          const Text(
+            'Pilih Employee',
+            style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+          ),
+          const SizedBox(height: 8),
+          const Divider(height: 1),
+          ConstrainedBox(
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(context).size.height * 0.45,
             ),
-            const SizedBox(height: 8),
-            const Divider(height: 1),
-            ConstrainedBox(
-              constraints: BoxConstraints(
-                maxHeight: MediaQuery.of(context).size.height * 0.45,
-              ),
-              child: ListView.builder(
-                shrinkWrap: true,
-                itemCount: items.length,
-                itemBuilder: (_, i) {
-                  final item = items[i];
-                  final selected = item.id == currentId;
-                  return InkWell(
-                    onTap: () => Navigator.of(sheetCtx).pop(item),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 20,
-                        vertical: 14,
-                      ),
-                      color: selected
-                          ? AppColors.primary500.withValues(alpha: 0.08)
-                          : Colors.transparent,
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              item.name,
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: selected
-                                    ? AppColors.primary500
-                                    : Colors.black87,
-                                fontWeight: selected
-                                    ? FontWeight.w600
-                                    : FontWeight.normal,
-                              ),
+            child: ListView.builder(
+              shrinkWrap: true,
+              itemCount: items.length,
+              itemBuilder: (_, i) {
+                final item = items[i];
+                final selected = item.id == currentId;
+                return InkWell(
+                  onTap: () => Navigator.of(sheetCtx).pop(item),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 14,
+                    ),
+                    color: selected
+                        ? AppColors.primary500.withValues(alpha: 0.08)
+                        : Colors.transparent,
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            item.name,
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: selected
+                                  ? AppColors.primary500
+                                  : Colors.black87,
+                              fontWeight: selected
+                                  ? FontWeight.w600
+                                  : FontWeight.normal,
                             ),
                           ),
-                          if (selected)
-                            const Icon(
-                              Icons.check_rounded,
-                              size: 18,
-                              color: AppColors.primary500,
-                            ),
-                        ],
-                      ),
+                        ),
+                        if (selected)
+                          const Icon(
+                            Icons.check_rounded,
+                            size: 18,
+                            color: AppColors.primary500,
+                          ),
+                      ],
                     ),
-                  );
-                },
-              ),
+                  ),
+                );
+              },
             ),
-            const SizedBox(height: 8),
-          ],
-        ),
+          ),
+          const SizedBox(height: 8),
+        ],
       ),
-    );
-  }
+    ),
+  );
 }
 
 // ── Shared inline radio widget ─────────────────────────────────────────────────
@@ -1437,7 +1380,7 @@ class _GroupTextField extends StatelessWidget {
           text: TextSpan(
             text: label,
             style: const TextStyle(
-              fontSize: 12,
+              fontSize: 13,
               fontWeight: FontWeight.w600,
               color: Colors.black87,
             ),
@@ -1452,18 +1395,20 @@ class _GroupTextField extends StatelessWidget {
             ],
           ),
         ),
-        const SizedBox(height: 5),
+        const SizedBox(height: 8),
         TextField(
           controller: controller,
           keyboardType: keyboardType,
           onChanged: onChanged,
-          style: const TextStyle(fontSize: 13),
+          style: const TextStyle(fontSize: 14),
           decoration: InputDecoration(
+            filled: true,
+            fillColor: Colors.white,
             hintText: hint,
-            hintStyle: const TextStyle(fontSize: 12, color: AppColors.grey400),
+            hintStyle: const TextStyle(fontSize: 13, color: AppColors.grey400),
             contentPadding: const EdgeInsets.symmetric(
               horizontal: 12,
-              vertical: 11,
+              vertical: 12,
             ),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),

@@ -44,7 +44,7 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
   DateTime? visitEnd;
 
   bool isExpiredEnabled = false;
-  int? expiredMinutes;
+  String? selectedExpiredMinutes = '0';
 
   bool isQuotaEnabled = false;
   final TextEditingController quotaCtrl = TextEditingController(text: '0');
@@ -52,12 +52,17 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
   bool isSingleUse = false;
 
   final List<Map<String, dynamic>> expiryOptions = [
-    {'label': '10 Minutes', 'value': 10},
-    {'label': '30 Minutes', 'value': 30},
-    {'label': '1 Hour', 'value': 60},
-    {'label': '1 Day', 'value': 1440},
-    {'label': '1 Week', 'value': 10080},
-    {'label': 'No Expired', 'value': 0},
+    {'id': '0', 'name': 'No Expired'},
+    {'id': '5', 'name': '5 Min'},
+    {'id': '30', 'name': '30 Min'},
+    {'id': '60', 'name': '1 Hour'},
+    {'id': '300', 'name': '5 Hour'},
+    {'id': '1440', 'name': '1 Day'},
+    {'id': '10080', 'name': '7 Days'},
+    {'id': '43200', 'name': '30 Days'},
+    {'id': '129600', 'name': '3 Month'},
+    {'id': '259200', 'name': '6 Month'},
+    {'id': '525600', 'name': '1 Year'},
   ];
 
   @override
@@ -81,7 +86,7 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
         agendaCtrl.text.isNotEmpty ||
         visitStart != null ||
         visitEnd != null ||
-        (expiredMinutes != null && expiredMinutes != 0) ||
+        (selectedExpiredMinutes != null && selectedExpiredMinutes != '0') ||
         (quotaCtrl.text.isNotEmpty && quotaCtrl.text != '0') ||
         isSingleUse == true;
   }
@@ -265,19 +270,13 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
                     label: 'Expired Link',
                     isEnabled: isExpiredEnabled,
                     onToggle: (v) => setState(() => isExpiredEnabled = v),
-                    input: DropdownButtonFormField<int>(
-                      initialValue: expiredMinutes,
-                      decoration: _inputDecoration(enabled: isExpiredEnabled),
-                      hint: const Text('No Expired'),
-                      items: expiryOptions.map((opt) {
-                        return DropdownMenuItem<int>(
-                          value: opt['value'],
-                          child: Text(opt['label']),
-                        );
-                      }).toList(),
-                      onChanged: isExpiredEnabled
-                          ? (v) => setState(() => expiredMinutes = v)
-                          : null,
+                    input: _buildDropdown(
+                      hint: 'Pilih Expired Link',
+                      value: selectedExpiredMinutes,
+                      items: expiryOptions,
+                      enabled: isExpiredEnabled,
+                      onChanged: (v) =>
+                          setState(() => selectedExpiredMinutes = v),
                     ),
                   ),
                   _buildFieldRow(
@@ -646,7 +645,8 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
           0,
           19,
         ),
-      if (isExpiredEnabled) 'expired_number': expiredMinutes,
+      if (isExpiredEnabled)
+        'expired_number': int.tryParse(selectedExpiredMinutes ?? '0') ?? 0,
       if (isQuotaEnabled) 'max_usage': int.tryParse(quotaCtrl.text) ?? 0,
       'is_single_use': isSingleUse,
       'tz': 'Asia/Jakarta',

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
@@ -14,11 +15,23 @@ class ShareLinkListDialog extends StatefulWidget {
 
 class _ShareLinkListDialogState extends State<ShareLinkListDialog> {
   final InvitationController controller = Get.find<InvitationController>();
+  Timer? _timer;
+  final RxInt _refreshTick = 0.obs;
 
   @override
   void initState() {
     super.initState();
     controller.fetchShareLinks(resetPage: true);
+    // Jalankan timer setiap 5 detik untuk update status expired secara real-time
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      _refreshTick.value++;
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
   }
 
   @override
@@ -54,6 +67,9 @@ class _ShareLinkListDialogState extends State<ShareLinkListDialog> {
           ],
         ),
         body: Obx(() {
+          // Listen to refreshTick to force rebuild every 30 seconds
+          _refreshTick.value;
+
           if (controller.isShareLinkLoading.value) {
             return const Center(child: CircularProgressIndicator());
           }
@@ -178,13 +194,17 @@ class _ShareLinkListDialogState extends State<ShareLinkListDialog> {
   Widget _buildShareLinkCard(dynamic item, int no) {
     final String agenda = item['agenda'] ?? '-';
     final int maxUsage = item['max_usage'] ?? 0;
-    final int currentUsage = item['current_usage'] ?? 0;
     final String url = item['url'] ?? '';
 
     final expiredAtStr = item['expired_at'];
     DateTime? expiredAt;
     if (expiredAtStr != null) {
-      expiredAt = DateTime.tryParse(expiredAtStr);
+      // API usually sends UTC. Ensure it's treated as UTC before converting to local.
+      String normalized = expiredAtStr.toString();
+      if (!normalized.endsWith('Z') && !normalized.contains('+')) {
+        normalized = '${normalized.replaceFirst(' ', 'T')}Z';
+      }
+      expiredAt = DateTime.tryParse(normalized)?.toLocal();
     }
 
     // Tentukan status real-time berdasarkan waktu sekarang
@@ -203,7 +223,11 @@ class _ShareLinkListDialogState extends State<ShareLinkListDialog> {
     String formatDate(String? dateStr) {
       if (dateStr == null) return '-';
       try {
-        final date = DateTime.parse(dateStr);
+        String normalized = dateStr;
+        if (!normalized.endsWith('Z') && !normalized.contains('+')) {
+          normalized = '${normalized.replaceFirst(' ', 'T')}Z';
+        }
+        final date = DateTime.parse(normalized).toLocal();
         return DateFormat('dd MMM yyyy, HH:mm').format(date);
       } catch (e) {
         return dateStr;
@@ -286,7 +310,7 @@ class _ShareLinkListDialogState extends State<ShareLinkListDialog> {
               children: [
                 _buildInfoRow('Agenda', agenda, isBold: true),
                 const SizedBox(height: 8),
-                _buildInfoRow('Usage', '$currentUsage / $maxUsage'),
+                _buildInfoRow('Usage', '$maxUsage'),
                 const SizedBox(height: 8),
                 _buildInfoRow(
                   'Period Start',
@@ -315,8 +339,22 @@ class _ShareLinkListDialogState extends State<ShareLinkListDialog> {
               children: [
                 _buildActionButton(
                   icon: Icons.copy,
-                  color: Colors.orange.shade400,
+                  color: isExpired ? Colors.grey : Colors.orange.shade400,
                   onTap: () {
+                    if (isExpired) {
+                      Get.snackbar(
+                        'Link Expired',
+                        'This link has expired. Please create a new one.',
+                        snackPosition: SnackPosition.TOP,
+                        backgroundColor: Colors.red,
+                        colorText: Colors.white,
+                        icon: const Icon(
+                          Icons.error_outline,
+                          color: Colors.white,
+                        ),
+                      );
+                      return;
+                    }
                     Clipboard.setData(ClipboardData(text: url));
                     Get.snackbar(
                       'Copied',
@@ -324,6 +362,10 @@ class _ShareLinkListDialogState extends State<ShareLinkListDialog> {
                       snackPosition: SnackPosition.TOP,
                       backgroundColor: Colors.green,
                       colorText: Colors.white,
+                      icon: const Icon(
+                        Icons.check_circle_outline,
+                        color: Colors.white,
+                      ),
                     );
                   },
                 ),
