@@ -35,9 +35,7 @@ class InvitationController extends GetxController {
     endDate.value = end;
     selectedSiteId.value = siteId ?? '';
     selectedSiteName.value = siteName ?? '';
-    
-    // Fetch data from server based on date range
-    fetchOngoingInvitations(start: start, end: end);
+    _applyFilters();
   }
 
   void toggleSort() {
@@ -100,11 +98,7 @@ class InvitationController extends GetxController {
     ongoingInvitations.assignAll(filtered);
   }
 
-  Future<void> fetchOngoingInvitations({
-    bool isSilent = false,
-    DateTime? start,
-    DateTime? end,
-  }) async {
+  Future<void> fetchOngoingInvitations({bool isSilent = false}) async {
     final user = _hive.getUser();
     final token = user?.token;
 
@@ -112,20 +106,7 @@ class InvitationController extends GetxController {
 
     if (!isSilent) isLoading.value = true;
     try {
-      String? startStr;
-      String? endStr;
-      if (start != null) {
-        startStr = DateFormat('yyyy-MM-dd').format(start);
-      }
-      if (end != null) {
-        endStr = DateFormat('yyyy-MM-dd').format(end);
-      }
-
-      final response = await _api.getOngoingInvitation(
-        token,
-        startDate: startStr,
-        endDate: endStr,
-      );
+      final response = await _api.getOngoingInvitation(token);
       if (response.data['status'] == 'success') {
         final collection = response.data['collection'] as List<dynamic>? ?? [];
         final newPasses = collection
