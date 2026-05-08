@@ -633,6 +633,48 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
   }
 
   Future<void> _submit(bool sendEmail) async {
+    // Validation
+    if (!isHostEnabled && !isSiteEnabled && !isVisitorTypeEnabled && 
+        !isAgendaEnabled && !isVisitStartEnabled && !isVisitEndEnabled) {
+      Get.snackbar(
+        'Required',
+        'Please enable and fill at least one information field to create link invitation',
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+        snackPosition: SnackPosition.TOP,
+        margin: const EdgeInsets.all(12),
+      );
+      return;
+    }
+
+    List<String> missingFields = [];
+    if (isHostEnabled && selectedHostId == null) missingFields.add('Host');
+    if (isSiteEnabled && selectedSiteId == null) missingFields.add('Site');
+    if (isVisitorTypeEnabled && selectedVisitorTypeId == null) {
+      missingFields.add('Visitor Type');
+    }
+    if (isAgendaEnabled && agendaCtrl.text.trim().isEmpty) {
+      missingFields.add('Agenda');
+    }
+    if (isVisitStartEnabled && visitStart == null) {
+      missingFields.add('Visit Start');
+    }
+    if (isVisitEndEnabled && visitEnd == null) missingFields.add('Visit End');
+
+    if (missingFields.isNotEmpty) {
+      String fieldNames = missingFields.join(', ');
+      Get.snackbar(
+        'Missing Information',
+        '$fieldNames must be filled to create link invitation',
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+        snackPosition: SnackPosition.TOP,
+        margin: const EdgeInsets.all(12),
+        duration: const Duration(seconds: 3),
+      );
+      return;
+    }
+
     if (!_formKey.currentState!.validate()) return;
 
     String? email;
