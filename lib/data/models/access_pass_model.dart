@@ -115,10 +115,9 @@ class AccessPassModel {
   /// if no timezone information is present.
   static DateTime _parseUtcToLocal(String s) {
     try {
-      final hasTimezone = s.endsWith('Z') || s.contains('+') ||
-          (s.length > 19 && s[19] == '-' && s.contains('T'));
-      final utcStr = hasTimezone ? s : '${s}Z';
-      return DateTime.parse(utcStr).toLocal();
+      // If the string already has timezone info, parse it as is.
+      // Otherwise, let DateTime.parse handle it as a local/naive datetime.
+      return DateTime.parse(s).toLocal();
     } catch (_) {
       return DateTime.now();
     }

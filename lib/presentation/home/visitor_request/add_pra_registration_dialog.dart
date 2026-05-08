@@ -202,12 +202,17 @@ class _AddPraRegistrationDialog extends StatelessWidget {
 
                 // ── Content ─────────────────────────────────────────
                 Expanded(
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 20,
-                      vertical: 20,
+                  child: Container(
+                    decoration: const BoxDecoration(
+                      color: Color(0xFFF3F4F6),
                     ),
-                    child: _StepContent(step: step, controller: ctrl),
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 20,
+                      ),
+                      child: _StepContent(step: step, controller: ctrl),
+                    ),
                   ),
                 ),
 
@@ -1722,6 +1727,8 @@ class _FormFieldWidget extends StatelessWidget {
         final showCustomField = selectedLabel == 'Other';
 
         final textDecoration = InputDecoration(
+          filled: true,
+          fillColor: Colors.white,
           contentPadding: const EdgeInsets.symmetric(
             horizontal: 12,
             vertical: 12,
@@ -2037,6 +2044,8 @@ class _FormFieldWidget extends StatelessWidget {
         controller: displayCtrl,
         readOnly: true,
         decoration: InputDecoration(
+          filled: true,
+          fillColor: Colors.white,
           contentPadding: const EdgeInsets.symmetric(
             horizontal: 12,
             vertical: 12,
