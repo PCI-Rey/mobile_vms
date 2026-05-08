@@ -72,10 +72,10 @@ class ApprovalController extends GetxController {
       Get.snackbar(
         'Berhasil',
         'Visitor berhasil disetujui',
-        snackPosition: SnackPosition.BOTTOM,
+        snackPosition: SnackPosition.TOP,
       );
     } catch (e) {
-      Get.snackbar('Gagal', e.toString(), snackPosition: SnackPosition.BOTTOM);
+      Get.snackbar('Gagal', e.toString(), snackPosition: SnackPosition.TOP);
     }
   }
 
@@ -86,10 +86,10 @@ class ApprovalController extends GetxController {
       Get.snackbar(
         'Berhasil',
         'Visitor ditolak',
-        snackPosition: SnackPosition.BOTTOM,
+        snackPosition: SnackPosition.TOP,
       );
     } catch (e) {
-      Get.snackbar('Gagal', e.toString(), snackPosition: SnackPosition.BOTTOM);
+      Get.snackbar('Gagal', e.toString(), snackPosition: SnackPosition.TOP);
     }
   }
 }

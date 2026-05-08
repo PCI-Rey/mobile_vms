@@ -364,6 +364,7 @@ class ApiService {
       rethrow;
     }
   }
+
   Future<Response> getOngoingInvitation(
     String token, {
     String? startDate,
@@ -386,6 +387,81 @@ class ApiService {
       return response;
     } on DioException catch (e) {
       debugPrint('Dio Error getOngoingInvitation: ${e.message}');
+      if (e.response != null) return e.response!;
+      rethrow;
+    }
+  }
+
+  // ─── Share Link ──────────────────────────────────────────────────────────
+
+  Future<Response> getShareLinkDt(
+    String token, {
+    int start = 0,
+    int length = 10,
+  }) async {
+    try {
+      final response = await _dio.get(
+        '/$pathApi/visitor-share-link/dt',
+        queryParameters: {
+          'start': start,
+          'length': length,
+          'draw': 1, // Diperlukan oleh DataTables
+        },
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+      return response;
+    } on DioException catch (e) {
+      debugPrint('Dio Error getShareLinkDt: ${e.message}');
+      if (e.response != null) return e.response!;
+      rethrow;
+    }
+  }
+
+  Future<Response> createShareLink(
+    String token,
+    Map<String, dynamic> body,
+  ) async {
+    try {
+      final response = await _dio.post(
+        '/$pathApi/visitor-share-link/new',
+        data: body,
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+      return response;
+    } on DioException catch (e) {
+      debugPrint('Dio Error createShareLink: ${e.message}');
+      if (e.response != null) return e.response!;
+      rethrow;
+    }
+  }
+
+  Future<Response> createShareLinkAndEmail(
+    String token,
+    Map<String, dynamic> body,
+  ) async {
+    try {
+      final response = await _dio.post(
+        '/$pathApi/visitor-share-link/new/send-email',
+        data: body,
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+      return response;
+    } on DioException catch (e) {
+      debugPrint('Dio Error createShareLinkAndEmail: ${e.message}');
+      if (e.response != null) return e.response!;
+      rethrow;
+    }
+  }
+
+  Future<Response> deleteShareLink(String token, String id) async {
+    try {
+      final response = await _dio.delete(
+        '/$pathApi/visitor-share-link/$id',
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+      return response;
+    } on DioException catch (e) {
+      debugPrint('Dio Error deleteShareLink: ${e.message}');
       if (e.response != null) return e.response!;
       rethrow;
     }

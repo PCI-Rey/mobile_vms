@@ -61,11 +61,11 @@ class AccessPassModel {
       host: json['host']?.toString() ?? '',
       isGroup: json['is_group'] == true,
       groupName: json['group_name']?.toString() ?? '',
-      visitorPeriodStart: json['visitor_period_start'] != null
-          ? _parseUtcToLocal(json['visitor_period_start'].toString())
+      visitorPeriodStart: (json['visitor_period_start'] ?? json['visit_start'] ?? json['start_date'] ?? json['visit_date']) != null
+          ? _parseUtcToLocal((json['visitor_period_start'] ?? json['visit_start'] ?? json['start_date'] ?? json['visit_date']).toString())
           : DateTime.now(),
-      visitorPeriodEnd: json['visitor_period_end'] != null
-          ? _parseUtcToLocal(json['visitor_period_end'].toString())
+      visitorPeriodEnd: (json['visitor_period_end'] ?? json['visit_end'] ?? json['end_date']) != null
+          ? _parseUtcToLocal((json['visitor_period_end'] ?? json['visit_end'] ?? json['end_date']).toString())
           : DateTime.now(),
       visitorNumber: json['visitor_number']?.toString() ?? '',
       visitorCode: json['visitor_code']?.toString() ?? '',

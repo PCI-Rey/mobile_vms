@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'controller/invitation_controller.dart';
 import '../../../../presentation/home/visitor_request/add_pra_registration_dialog.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
+import 'widgets/share_link_list_dialog.dart';
 import '../../../core/components/custom_card.dart';
 import '../../../core/core.dart';
 import '../../history/widgets/filter_bottom_sheet.dart';
+import '../../../../data/models/access_pass_model.dart';
 
 class SendInvitationPage extends StatefulWidget {
   const SendInvitationPage({super.key});
@@ -16,6 +19,7 @@ class SendInvitationPage extends StatefulWidget {
 }
 
 class _SendInvitationPageState extends State<SendInvitationPage> {
+  final controller = Get.put(InvitationController());
   DateTime? startDate;
   DateTime? endDate;
   String? selectedGedung;
@@ -39,7 +43,11 @@ class _SendInvitationPageState extends State<SendInvitationPage> {
           // Tombol Share Link
           IconButton(
             onPressed: () {
-              // TODO: Implement share link logic
+              showDialog(
+                context: context,
+                barrierDismissible: false,
+                builder: (context) => const ShareLinkListDialog(),
+              );
             },
             icon: Container(
               padding: const EdgeInsets.all(6),
@@ -255,51 +263,54 @@ class _SendInvitationPageState extends State<SendInvitationPage> {
                       statusColor = Colors.grey; // Abu-abu (Ikut tabel backend)
                     }
 
-                    return CustomCard(
-                      image: Icon(statusIcon, color: Colors.white),
-                      size: 26,
-                      title: item.visitorName,
-                      subtitle: item.sitePlaceName.isNotEmpty
-                          ? item.sitePlaceName
-                          : item.groupName,
-                      additional: DateFormat(
-                        'EEE, dd MMM yyyy',
-                      ).format(item.visitorPeriodStart),
-                      additionalDesc:
-                          '${DateFormat('HH:mm').format(item.visitorPeriodStart)} - ${DateFormat('HH:mm').format(item.visitorPeriodEnd)}',
-                      backgroundIconColor: statusColor,
-                      // Additional info like invitation code
-                      trailing: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          Text(
-                            item.invitationCode,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 12,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 2,
-                            ),
-                            decoration: BoxDecoration(
-                              color: statusColor,
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: Text(
-                              item.visitorStatus,
+                    return GestureDetector(
+                      onTap: () => _showInvitationDetailDialog(item, statusColor),
+                      child: CustomCard(
+                        image: Icon(statusIcon, color: Colors.white),
+                        size: 26,
+                        title: item.visitorName,
+                        subtitle: item.sitePlaceName.isNotEmpty
+                            ? item.sitePlaceName
+                            : item.groupName,
+                        additional: DateFormat(
+                          'EEE, dd MMM yyyy',
+                        ).format(item.visitorPeriodStart),
+                        additionalDesc:
+                            '${DateFormat('HH:mm').format(item.visitorPeriodStart)} - ${DateFormat('HH:mm').format(item.visitorPeriodEnd)}',
+                        backgroundIconColor: statusColor,
+                        // Additional info like invitation code
+                        trailing: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Text(
+                              item.invitationCode,
                               style: const TextStyle(
-                                fontSize: 10,
                                 fontWeight: FontWeight.bold,
-                                color: Colors.white,
+                                fontSize: 12,
                               ),
                             ),
-                          ),
-                        ],
+                            const SizedBox(height: 4),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 2,
+                              ),
+                              decoration: BoxDecoration(
+                                color: statusColor,
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Text(
+                                item.visitorStatus,
+                                style: const TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     );
                   },
@@ -308,6 +319,116 @@ class _SendInvitationPageState extends State<SendInvitationPage> {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  void _showInvitationDetailDialog(AccessPassModel item, Color statusColor) {
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        child: Container(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Center(
+                child: Text(
+                  'Invitation Details',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
+                ),
+              ),
+              const SizedBox(height: 12),
+              const Divider(),
+              const SizedBox(height: 16),
+              _buildDetailRow('Visitor Name', item.visitorName, isBold: true),
+              _buildDetailRow('Invitation Code', item.invitationCode, color: const Color(0xFF005596)),
+              _buildDetailRow('Status', item.visitorStatus, badgeColor: statusColor),
+              _buildDetailRow('Host', item.hostName),
+              _buildDetailRow('Location', item.sitePlaceName),
+              _buildDetailRow('Agenda', item.agenda),
+              _buildDetailRow(
+                'Visit Period',
+                '${DateFormat('dd MMM yyyy').format(item.visitorPeriodStart)}\n${DateFormat('HH:mm').format(item.visitorPeriodStart)} - ${DateFormat('HH:mm').format(item.visitorPeriodEnd)}',
+              ),
+              if (item.parkingArea.isNotEmpty || item.parkingSlot.isNotEmpty)
+                _buildDetailRow('Parking', '${item.parkingArea} - ${item.parkingSlot}'),
+              if (item.vehiclePlateNumber.isNotEmpty)
+                _buildDetailRow('Vehicle Plate', item.vehiclePlateNumber),
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF005596),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Close', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDetailRow(String label, String value, {bool isBold = false, Color? color, Color? badgeColor}) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: TextStyle(color: Colors.grey[600], fontSize: 12)),
+          const SizedBox(height: 4),
+          if (badgeColor != null)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              decoration: BoxDecoration(
+                color: badgeColor,
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: Text(
+                value,
+                style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+              ),
+            )
+          else
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    value.isEmpty ? '-' : value,
+                    style: TextStyle(
+                      fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
+                      color: color ?? Colors.black87,
+                      fontSize: 14,
+                    ),
+                  ),
+                ),
+                if (label == 'Invitation Code' && value.isNotEmpty)
+                  GestureDetector(
+                    onTap: () {
+                      Clipboard.setData(ClipboardData(text: value));
+                      Get.snackbar(
+                        'Copied',
+                        'Invitation Code copied to clipboard',
+                        snackPosition: SnackPosition.TOP,
+                        backgroundColor: Colors.green,
+                        colorText: Colors.white,
+                        duration: const Duration(seconds: 1),
+                        margin: const EdgeInsets.all(10),
+                      );
+                    },
+                    child: Icon(Icons.content_copy, size: 16, color: Colors.grey[400]),
+                  ),
+              ],
+            ),
+        ],
       ),
     );
   }

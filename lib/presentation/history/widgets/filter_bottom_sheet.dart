@@ -272,7 +272,7 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                       'Please select "Sampai Tanggal"',
                       backgroundColor: Colors.red,
                       colorText: Colors.white,
-                      snackPosition: SnackPosition.BOTTOM,
+                      snackPosition: SnackPosition.TOP,
                       margin: const EdgeInsets.all(10),
                     );
                     return;
@@ -283,7 +283,7 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                       'Please select "Dari Tanggal"',
                       backgroundColor: Colors.red,
                       colorText: Colors.white,
-                      snackPosition: SnackPosition.BOTTOM,
+                      snackPosition: SnackPosition.TOP,
                       margin: const EdgeInsets.all(10),
                     );
                     return;

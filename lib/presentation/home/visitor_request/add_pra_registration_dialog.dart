@@ -43,6 +43,7 @@ Future<bool> _showExitConfirmation(BuildContext context) async {
       ),
       content: const Text(
         'The data you have entered will be lost. Are you sure you want to close this form?',
+        textAlign: TextAlign.justify,
       ),
       actions: [
         TextButton(
@@ -86,6 +87,7 @@ Future<bool> _showBackConfirmation(BuildContext context) async {
           ),
           content: const Text(
             'Are you sure you want to go back? Going back to Visitor Type selection will reset the information you have already entered in this step.',
+            textAlign: TextAlign.justify,
             style: TextStyle(fontSize: 14, color: Color(0xFF616161)),
           ),
           actions: [
