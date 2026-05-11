@@ -155,11 +155,11 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
                       const SizedBox(width: 40),
                       const Expanded(
                         child: Text(
-                          'Create Link Invitation',
+                          'Create Share Link Registration',
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
-                            fontSize: 18,
+                            fontSize: 17,
                           ),
                         ),
                       ),
@@ -634,8 +634,12 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
 
   Future<void> _submit(bool sendEmail) async {
     // Validation
-    if (!isHostEnabled && !isSiteEnabled && !isVisitorTypeEnabled && 
-        !isAgendaEnabled && !isVisitStartEnabled && !isVisitEndEnabled) {
+    if (!isHostEnabled &&
+        !isSiteEnabled &&
+        !isVisitorTypeEnabled &&
+        !isAgendaEnabled &&
+        !isVisitStartEnabled &&
+        !isVisitEndEnabled) {
       Get.snackbar(
         'Required',
         'Please enable and fill at least one information field to create link invitation',
@@ -728,7 +732,10 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
         backgroundColor: Colors.green,
         colorText: Colors.white,
       );
-      if (mounted) Navigator.pop(context);
+      if (mounted) {
+        controller.fetchShareLinks(resetPage: true);
+        Navigator.pop(context);
+      }
     } else {
       Get.snackbar(
         'Error',
@@ -823,7 +830,10 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
             icon: const Icon(Icons.send, color: Colors.white, size: 18),
             label: const Text(
               'Send',
-              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
             ),
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF005596),

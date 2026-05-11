@@ -1,4 +1,3 @@
-
 import 'package:date_picker_timeline/date_picker_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -8,7 +7,10 @@ import '../../presentation/home/evacuate/evacuate_page.dart';
 import '../../presentation/notification/notification_page.dart';
 import '../../presentation/parking/as_operator/parking_page.dart';
 import '../../presentation/home/report/report_page.dart';
-import '../../presentation/home/agenda/widgets/visitor_list.dart';
+import '../../presentation/profile/profile_page.dart';
+import 'invitation/widgets/create_share_link_dialog.dart';
+
+import 'invitation/widgets/share_link_home_list.dart';
 import '../../presentation/home/invitation/send_invitation_page.dart';
 import '../../presentation/auth/controller/language_controller.dart';
 import '../../presentation/auth/controller/user_controller.dart';
@@ -30,6 +32,10 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   final langCtrl = LanguageController.to;
+  final InvitationController invitationController =
+      Get.isRegistered<InvitationController>()
+          ? Get.find<InvitationController>()
+          : Get.put(InvitationController());
 
   // Design constants
   static const _blue = Color(0xFF1976D2);
@@ -61,23 +67,30 @@ class _HomePageState extends State<HomePage> {
           // 2. Main Scrollable Content
           SafeArea(
             bottom: false,
-            child: SingleChildScrollView(
-              physics: const BouncingScrollPhysics(),
-              child: Column(
-                children: [
-                  // --- HEADER ---
-                  _buildHeader(context, sw),
-                  
-                  SizedBox(height: sw * 0.06),
+            child: RefreshIndicator(
+              onRefresh: () async {
+                await invitationController.fetchShareLinks(resetPage: true);
+              },
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(
+                  parent: BouncingScrollPhysics(),
+                ),
+                child: Column(
+                  children: [
+                    // --- HEADER ---
+                    _buildHeader(context, sw),
 
-                  // --- MENU GRID ---
-                  _buildMenuGrid(context, sw),
+                    SizedBox(height: sw * 0.06),
 
-                  SizedBox(height: sw * 0.08),
+                    // --- MENU GRID ---
+                    _buildMenuGrid(context, sw),
 
-                  // --- BOTTOM CONTENT (SCHEDULE & AGENDA) ---
-                  _buildBottomContent(context, sw),
-                ],
+                    SizedBox(height: sw * 0.08),
+
+                    // --- BOTTOM CONTENT (SCHEDULE & AGENDA) ---
+                    _buildBottomContent(context, sw),
+                  ],
+                ),
               ),
             ),
           ),
@@ -91,9 +104,12 @@ class _HomePageState extends State<HomePage> {
       padding: EdgeInsets.symmetric(horizontal: sw * 0.06, vertical: sw * 0.02),
       child: Row(
         children: [
-          CustomCircleImage(
-            image: Assets.images.avaPerson1.image(fit: BoxFit.cover),
-            size: sw * 0.12,
+          GestureDetector(
+            onTap: () => Get.to(() => const ProfilePage()),
+            child: CustomCircleImage(
+              image: Assets.images.avaPerson1.image(fit: BoxFit.cover),
+              size: sw * 0.12,
+            ),
           ),
           SizedBox(width: sw * 0.04),
           // Welcome Text
@@ -109,17 +125,19 @@ class _HomePageState extends State<HomePage> {
                     fontWeight: FontWeight.w500,
                   ),
                 ),
-                Obx(() => Text(
-                  UserController.to.fullName,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: rfs(context, 18),
-                    fontWeight: FontWeight.w800,
-                    color: Colors.white,
-                    letterSpacing: -0.5,
+                Obx(
+                  () => Text(
+                    UserController.to.fullName,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: rfs(context, 18),
+                      fontWeight: FontWeight.w800,
+                      color: Colors.white,
+                      letterSpacing: -0.5,
+                    ),
                   ),
-                )),
+                ),
               ],
             ),
           ),
@@ -147,14 +165,21 @@ class _HomePageState extends State<HomePage> {
             ),
             child: Stack(
               children: [
-                const Icon(Icons.notifications_none_rounded, color: Colors.white, size: 22),
+                const Icon(
+                  Icons.notifications_none_rounded,
+                  color: Colors.white,
+                  size: 22,
+                ),
                 Positioned(
                   right: 1,
                   top: 1,
                   child: Container(
                     width: 7,
                     height: 7,
-                    decoration: const BoxDecoration(color: Colors.redAccent, shape: BoxShape.circle),
+                    decoration: const BoxDecoration(
+                      color: Colors.redAccent,
+                      shape: BoxShape.circle,
+                    ),
                   ),
                 ),
               ],
@@ -245,7 +270,7 @@ class _HomePageState extends State<HomePage> {
   Widget _buildMenuGrid(BuildContext context, double sw) {
     return Obx(() {
       langCtrl.selectedLang.value; // Track changes
-      
+
       final List<Map<String, dynamic>> items = [
         {
           'label': 'access_pass'.tr,
@@ -253,20 +278,20 @@ class _HomePageState extends State<HomePage> {
           'bgColor': const Color(0xFFE8F1FD),
           'iconColor': const Color(0xFF1976D2),
           'onTap': () => showAccessPassDialog(
-                context: context,
-                name: UserController.to.fullName,
-                date: 'Mon, 19 Jul 2025',
-                time: '10:00 - 13:00',
-                invitationCode: '729038',
-                cardNumber: '6789209930',
-                vehiclePlateNo: 'B1245K',
-                parkingSlot: 'Slot A1',
-                buildingName: 'Gedung HQ',
-                visitorId: '7E20A56D62B',
-                profileImagePath: 'assets/images/ava_person1.png',
-                isTracked: true,
-                isLowBattery: true,
-              ),
+            context: context,
+            name: UserController.to.fullName,
+            date: 'Mon, 19 Jul 2025',
+            time: '10:00 - 13:00',
+            invitationCode: '729038',
+            cardNumber: '6789209930',
+            vehiclePlateNo: 'B1245K',
+            parkingSlot: 'Slot A1',
+            buildingName: 'Gedung HQ',
+            visitorId: '7E20A56D62B',
+            profileImagePath: 'assets/images/ava_person1.png',
+            isTracked: true,
+            isLowBattery: true,
+          ),
         },
         {
           'label': 'invitation'.tr,
@@ -283,11 +308,22 @@ class _HomePageState extends State<HomePage> {
           'onTap': () => debugPrint('Approval clicked'),
         },
         {
-          'label': 'report'.tr,
-          'icon': Icons.bar_chart_rounded,
+          'label': langCtrl.selectedLang.value == 'id'
+              ? 'Bagikan Tautan'
+              : 'Share Link',
+          'icon': Icons.add_link,
           'bgColor': const Color(0xFFF3EEFE),
           'iconColor': const Color(0xFF534AB7),
-          'onTap': () => context.push(const VisitorReportPage()),
+          'onTap': () {
+            if (!Get.isRegistered<InvitationController>()) {
+              Get.put(InvitationController());
+            }
+            showDialog(
+              context: context,
+              barrierDismissible: false,
+              builder: (context) => const CreateShareLinkDialog(),
+            );
+          },
         },
         {
           'label': 'parking'.tr,
@@ -295,10 +331,10 @@ class _HomePageState extends State<HomePage> {
           'bgColor': const Color(0xFFFBEAF0),
           'iconColor': const Color(0xFF993556),
           'onTap': () => context.push(
-                UserController.to.user.value?.roleAccess == 'guest'
-                    ? const GuestParkingPage()
-                    : const ParkingPage(),
-              ),
+            UserController.to.user.value?.roleAccess == 'guest'
+                ? const GuestParkingPage()
+                : const ParkingPage(),
+          ),
         },
         {
           'label': 'visitor'.tr,
@@ -325,7 +361,10 @@ class _HomePageState extends State<HomePage> {
 
       return Container(
         margin: EdgeInsets.symmetric(horizontal: sw * 0.05),
-        padding: EdgeInsets.symmetric(vertical: sw * 0.06, horizontal: sw * 0.02),
+        padding: EdgeInsets.symmetric(
+          vertical: sw * 0.06,
+          horizontal: sw * 0.02,
+        ),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(sw * 0.07),
@@ -341,16 +380,24 @@ class _HomePageState extends State<HomePage> {
           children: [
             // Row 1 (4 items)
             Row(
-              children: items.take(4).map((item) => Expanded(
-                child: _buildMenuItem(context, sw, item),
-              )).toList(),
+              children: items
+                  .take(4)
+                  .map(
+                    (item) =>
+                        Expanded(child: _buildMenuItem(context, sw, item)),
+                  )
+                  .toList(),
             ),
             SizedBox(height: sw * 0.06),
             // Row 2 (4 items)
             Row(
-              children: items.skip(4).map((item) => Expanded(
-                child: _buildMenuItem(context, sw, item),
-              )).toList(),
+              children: items
+                  .skip(4)
+                  .map(
+                    (item) =>
+                        Expanded(child: _buildMenuItem(context, sw, item)),
+                  )
+                  .toList(),
             ),
           ],
         ),
@@ -358,7 +405,11 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
-  Widget _buildMenuItem(BuildContext context, double sw, Map<String, dynamic> item) {
+  Widget _buildMenuItem(
+    BuildContext context,
+    double sw,
+    Map<String, dynamic> item,
+  ) {
     final boxSize = sw * 0.13;
     final iconSize = sw * 0.065;
 
@@ -414,21 +465,7 @@ class _HomePageState extends State<HomePage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Section: Share Link (formerly Schedule)
-          _buildSectionHeader(
-            context,
-            'Share Link',
-            showLinkIcon: true,
-            onLinkTap: () {
-              if (!Get.isRegistered<InvitationController>()) {
-                Get.put(InvitationController());
-              }
-              showDialog(
-                context: context,
-                barrierDismissible: false,
-                builder: (context) => const ShareLinkListDialog(),
-              );
-            },
-          ),
+          _buildSectionHeader(context, 'Share Link'),
           const SizedBox(height: 16),
           DatePicker(
             DateTime.now(),
@@ -437,21 +474,30 @@ class _HomePageState extends State<HomePage> {
             selectionColor: AppColors.primary500,
             selectedTextColor: Colors.white,
             deactivatedColor: Colors.grey.shade400,
-            dayTextStyle: TextStyle(fontSize: rfs(context, 11), fontWeight: FontWeight.w600),
-            dateTextStyle: TextStyle(fontSize: rfs(context, 16), fontWeight: FontWeight.w800),
-            monthTextStyle: TextStyle(fontSize: rfs(context, 10), fontWeight: FontWeight.w500),
+            dayTextStyle: TextStyle(
+              fontSize: rfs(context, 11),
+              fontWeight: FontWeight.w600,
+            ),
+            dateTextStyle: TextStyle(
+              fontSize: rfs(context, 16),
+              fontWeight: FontWeight.w800,
+            ),
+            monthTextStyle: TextStyle(
+              fontSize: rfs(context, 10),
+              fontWeight: FontWeight.w500,
+            ),
             onDateChange: (date) => debugPrint("Tanggal dipilih: $date"),
           ),
-          
+
           const SizedBox(height: 24),
           const Divider(height: 1, color: Color(0xFFF0F0F0)),
           const SizedBox(height: 24),
 
-          // List of Visitor List (Agenda)
-          const VisitorList(),
+          // List of Share Link Data (replaces Extended Request)
+          const ShareLinkHomeList(),
 
           const SizedBox(height: 32),
-          
+
           // Section: Active Visit
           _buildSectionHeader(context, 'active_visit'.tr),
           const SizedBox(height: 16),

@@ -203,9 +203,7 @@ class _AddPraRegistrationDialog extends StatelessWidget {
                 // ── Content ─────────────────────────────────────────
                 Expanded(
                   child: Container(
-                    decoration: const BoxDecoration(
-                      color: Color(0xFFF3F4F6),
-                    ),
+                    decoration: const BoxDecoration(color: Color(0xFFF3F4F6)),
                     child: SingleChildScrollView(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 20,
@@ -271,7 +269,7 @@ class _DialogHeader extends StatelessWidget {
               children: [
                 Expanded(
                   child: Text(
-                    'Add Pra Registration',
+                    'Create Add Pra Registration',
                     textAlign: TextAlign.center,
                     style: const TextStyle(
                       fontSize: 17,
@@ -902,8 +900,8 @@ class _Step1VisitorInfo extends StatelessWidget {
                 // Use App's native Section Header style (Left Accent Border)
                 _SectionHeader(title: 'Visitor ${i + 1}'),
                 const SizedBox(height: 12),
-                
-                // Remove button moved to a more elegant position if needed, 
+
+                // Remove button moved to a more elegant position if needed,
                 // but keeping it simple for consistency.
                 if (visitors.length > 1)
                   Align(
@@ -1018,8 +1016,7 @@ class _Step1VisitorInfo extends StatelessWidget {
                               child: IgnorePointer(
                                 ignoring: !empEnabled,
                                 child: Column(
-                                  crossAxisAlignment:
-                                      CrossAxisAlignment.start,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     RichText(
                                       text: const TextSpan(
@@ -1042,20 +1039,29 @@ class _Step1VisitorInfo extends StatelessWidget {
                                     ),
                                     const SizedBox(height: 8),
                                     Obx(() {
-                                      final list = controller.employees.toList();
-                                      final currentId = v.selectedEmployeeId.value;
-                                      final selectedItem = list.any((e) => e.id == currentId)
-                                          ? list.firstWhere((e) => e.id == currentId)
+                                      final list = controller.employees
+                                          .toList();
+                                      final currentId =
+                                          v.selectedEmployeeId.value;
+                                      final selectedItem =
+                                          list.any((e) => e.id == currentId)
+                                          ? list.firstWhere(
+                                              (e) => e.id == currentId,
+                                            )
                                           : null;
                                       return GestureDetector(
                                         onTap: () async {
-                                          final result = await _showEmployeePicker(
-                                            context,
-                                            controller.employees.toList(),
-                                            currentId,
-                                          );
+                                          final result =
+                                              await _showEmployeePicker(
+                                                context,
+                                                controller.employees.toList(),
+                                                currentId,
+                                              );
                                           if (result != null) {
-                                            controller.onGroupEmployeeSelected(v, result.id);
+                                            controller.onGroupEmployeeSelected(
+                                              v,
+                                              result.id,
+                                            );
                                           }
                                         },
                                         child: _DropdownTrigger(
@@ -1131,7 +1137,7 @@ class _Step1VisitorInfo extends StatelessWidget {
                     ],
                   ),
                 ),
-                
+
                 if (i < visitors.length - 1) ...[
                   const SizedBox(height: 32),
                   const Divider(height: 1, color: Color(0xFFE0E0E0)),
@@ -1141,7 +1147,7 @@ class _Step1VisitorInfo extends StatelessWidget {
               ],
             );
           }),
-          
+
           const SizedBox(height: 10),
           Center(
             child: OutlinedButton.icon(
@@ -1149,10 +1155,7 @@ class _Step1VisitorInfo extends StatelessWidget {
               icon: const Icon(Icons.add_circle_outline_rounded, size: 20),
               label: const Text(
                 'Add New Visitor',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14,
-                ),
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
               ),
               style: OutlinedButton.styleFrom(
                 foregroundColor: AppColors.primary500,

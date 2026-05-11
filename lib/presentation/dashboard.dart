@@ -59,10 +59,7 @@ class _DashboardState extends State<Dashboard> {
     ];
 
     if (role == 'guest' || role == 'visitor') {
-      widgets = [
-        const GuestHomePage(),
-        const ProfilePage(),
-      ];
+      widgets = [const GuestHomePage(), const ProfilePage()];
     } else if (role == 'operator') {
       widgets = [
         const HomePage(),
@@ -126,8 +123,9 @@ class _DashboardState extends State<Dashboard> {
               padding: const EdgeInsets.only(bottom: 10.0),
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius:
-                    const BorderRadius.vertical(top: Radius.circular(20.0)),
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(20.0),
+                ),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withValues(alpha: 0.05),
