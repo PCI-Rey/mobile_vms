@@ -5,6 +5,7 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import '../controller/invitation_controller.dart';
 import 'create_share_link_dialog.dart';
+import 'invite_share_link_dialog.dart';
 
 class ShareLinkListDialog extends StatefulWidget {
   const ShareLinkListDialog({super.key});
@@ -413,17 +414,9 @@ class _ShareLinkListDialogState extends State<ShareLinkListDialog> {
                       );
                       return;
                     }
-                    Clipboard.setData(ClipboardData(text: url));
-                    Get.snackbar(
-                      'Copied',
-                      'URL copied to clipboard',
-                      snackPosition: SnackPosition.TOP,
-                      backgroundColor: Colors.green,
-                      colorText: Colors.white,
-                      icon: const Icon(
-                        Icons.check_circle_outline,
-                        color: Colors.white,
-                      ),
+                    showDialog(
+                      context: context,
+                      builder: (context) => InviteShareLinkDialog(item: item),
                     );
                   },
                 ),

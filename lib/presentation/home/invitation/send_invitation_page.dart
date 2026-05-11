@@ -11,6 +11,7 @@ import '../../../core/core.dart';
 import '../../history/widgets/filter_bottom_sheet.dart';
 import '../../../../data/models/access_pass_model.dart';
 import 'widgets/create_share_link_dialog.dart';
+import 'widgets/invite_share_link_dialog.dart';
 
 class SendInvitationPage extends StatefulWidget {
   final int initialTab;
@@ -1083,17 +1084,9 @@ class _ShareLinkListInlineState extends State<ShareLinkListInline> {
                       );
                       return;
                     }
-                    Clipboard.setData(ClipboardData(text: url));
-                    Get.snackbar(
-                      'Copied',
-                      'URL copied to clipboard',
-                      snackPosition: SnackPosition.TOP,
-                      backgroundColor: Colors.green,
-                      colorText: Colors.white,
-                      icon: const Icon(
-                        Icons.check_circle_outline,
-                        color: Colors.white,
-                      ),
+                    showDialog(
+                      context: context,
+                      builder: (context) => InviteShareLinkDialog(item: item),
                     );
                   },
                 ),

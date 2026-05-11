@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import '../controller/invitation_controller.dart';
+import 'invite_share_link_dialog.dart';
 import '../../../../core/core.dart';
 import '../../../../core/helper/responsive_helper.dart';
 import '../send_invitation_page.dart';
@@ -384,17 +385,9 @@ class _ShareLinkHomeListState extends State<ShareLinkHomeList> {
                       );
                       return;
                     }
-                    Clipboard.setData(ClipboardData(text: url));
-                    Get.snackbar(
-                      'Copied',
-                      'URL copied to clipboard',
-                      snackPosition: SnackPosition.TOP,
-                      backgroundColor: Colors.green,
-                      colorText: Colors.white,
-                      icon: const Icon(
-                        Icons.check_circle_outline,
-                        color: Colors.white,
-                      ),
+                    showDialog(
+                      context: context,
+                      builder: (context) => InviteShareLinkDialog(item: item),
                     );
                   },
                 ),
