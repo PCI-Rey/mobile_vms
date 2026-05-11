@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import '../controller/invitation_controller.dart';
@@ -165,7 +164,6 @@ class _ShareLinkHomeListState extends State<ShareLinkHomeList> {
   Widget _buildShareLinkCard(BuildContext context, dynamic item, int no) {
     final String agenda = item['agenda'] ?? '-';
     final int maxUsage = item['max_usage'] ?? 0;
-    final String url = item['url'] ?? '';
 
     final expiredAtStr = item['expired_at'];
     DateTime? expiredAt;

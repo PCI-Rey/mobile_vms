@@ -868,7 +868,6 @@ class _ShareLinkListInlineState extends State<ShareLinkListInline> {
   Widget _buildShareLinkCard(dynamic item, int no) {
     final String agenda = item['agenda'] ?? '-';
     final int maxUsage = item['max_usage'] ?? 0;
-    final String url = item['url'] ?? '';
 
     final expiredAtStr = item['expired_at'];
     DateTime? expiredAt;
