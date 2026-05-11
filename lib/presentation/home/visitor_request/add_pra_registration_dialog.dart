@@ -9,11 +9,11 @@ import '../../../../data/models/visitor_type_detail_model.dart';
 import 'controllers/pra_registration_controller.dart';
 
 /// Shows the Add Pra Registration dialog.
-Future<void> showAddPraRegistrationDialog(BuildContext context) {
+Future<bool?> showAddPraRegistrationDialog(BuildContext context) {
   Get.delete<PraRegistrationController>(force: true);
   Get.put(PraRegistrationController());
 
-  return showDialog(
+  return showDialog<bool>(
     context: context,
     barrierDismissible: false,
     builder: (_) => const _AddPraRegistrationDialog(),
@@ -2484,7 +2484,7 @@ class _BottomNav extends StatelessWidget {
                       if (isLast) {
                         final ok = await controller.submitForm();
                         if (ok && context.mounted) {
-                          Navigator.of(context).pop();
+                          Navigator.of(context).pop(true);
                         }
                       } else {
                         controller.nextStep();

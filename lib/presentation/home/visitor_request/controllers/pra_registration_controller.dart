@@ -7,6 +7,7 @@ import '../../../../data/datasources/api_service.dart';
 import '../../../../data/datasources/hive_service.dart';
 import '../../../../data/models/visitor_type_model.dart';
 import '../../../../data/models/visitor_type_detail_model.dart';
+import '../../invitation/controller/invitation_controller.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
 
 // ─── Simple model for dropdown items (Employee, Host, Site) ──────────────────
@@ -721,6 +722,12 @@ class PraRegistrationController extends GetxController {
           colorText: Colors.white,
           snackPosition: SnackPosition.TOP,
         );
+
+        // Auto Refresh Invitation List if available
+        if (Get.isRegistered<InvitationController>()) {
+          Get.find<InvitationController>().fetchOngoingInvitations(isSilent: true);
+        }
+
         return true;
       } else {
         final msg = data['msg']?.toString() ?? 'Terjadi kesalahan.';

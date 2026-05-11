@@ -98,7 +98,16 @@ class InvitationController extends GetxController {
     ongoingInvitations.assignAll(filtered);
   }
 
-  Future<void> fetchOngoingInvitations({bool isSilent = false}) async {
+  Future<void> fetchOngoingInvitations({
+    bool isSilent = false,
+    bool clearFilters = false,
+  }) async {
+    if (clearFilters) {
+      startDate.value = null;
+      endDate.value = null;
+      selectedSiteId.value = '';
+      selectedSiteName.value = '';
+    }
     final user = _hive.getUser();
     final token = user?.token;
 

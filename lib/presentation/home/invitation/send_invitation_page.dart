@@ -61,8 +61,17 @@ class _SendInvitationPageState extends State<SendInvitationPage> {
           ),
           // Tombol Tambah +
           IconButton(
-            onPressed: () {
-              showAddPraRegistrationDialog(context);
+            onPressed: () async {
+              final result = await showAddPraRegistrationDialog(context);
+              if (result == true) {
+                // Clear filters and refresh to ensure new item is visible
+                setState(() {
+                  startDate = null;
+                  endDate = null;
+                  selectedGedung = null;
+                });
+                controller.fetchOngoingInvitations(clearFilters: true);
+              }
             },
             icon: Container(
               padding: const EdgeInsets.all(6),
@@ -182,6 +191,26 @@ class _SendInvitationPageState extends State<SendInvitationPage> {
               ),
 
               const SizedBox(height: 16),
+              // Loading indicator for background refresh
+              Obx(() {
+                final inviteCtrl = Get.isRegistered<InvitationController>()
+                    ? Get.find<InvitationController>()
+                    : null;
+                if (inviteCtrl != null &&
+                    inviteCtrl.isLoading.value &&
+                    inviteCtrl.ongoingInvitations.isNotEmpty) {
+                  return const Padding(
+                    padding: EdgeInsets.only(bottom: 12),
+                    child: LinearProgressIndicator(
+                      minHeight: 2,
+                      backgroundColor: Colors.transparent,
+                      valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary500),
+                    ),
+                  );
+                }
+                return const SizedBox.shrink();
+              }),
+
               Obx(() {
                 final inviteCtrl = Get.isRegistered<InvitationController>()
                     ? Get.find<InvitationController>()
