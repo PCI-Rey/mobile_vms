@@ -5,7 +5,6 @@ import 'controller/invitation_controller.dart';
 import '../../../../presentation/home/visitor_request/add_pra_registration_dialog.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
-import 'widgets/share_link_list_dialog.dart';
 import '../../../core/components/custom_card.dart';
 import '../../../core/core.dart';
 import '../../history/widgets/filter_bottom_sheet.dart';
@@ -40,25 +39,6 @@ class _SendInvitationPageState extends State<SendInvitationPage> {
         centerTitle: true,
         leading: const BackButton(),
         actions: [
-          // Tombol Share Link
-          IconButton(
-            onPressed: () {
-              showDialog(
-                context: context,
-                barrierDismissible: false,
-                builder: (context) => const ShareLinkListDialog(),
-              );
-            },
-            icon: Container(
-              padding: const EdgeInsets.all(6),
-              decoration: BoxDecoration(
-                color: AppColors.grey100,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: AppColors.grey300),
-              ),
-              child: const Icon(Icons.link, color: AppColors.grey600, size: 20),
-            ),
-          ),
           // Tombol Tambah +
           IconButton(
             onPressed: () async {
@@ -204,7 +184,9 @@ class _SendInvitationPageState extends State<SendInvitationPage> {
                     child: LinearProgressIndicator(
                       minHeight: 2,
                       backgroundColor: Colors.transparent,
-                      valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary500),
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        AppColors.primary500,
+                      ),
                     ),
                   );
                 }

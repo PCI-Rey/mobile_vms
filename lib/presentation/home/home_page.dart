@@ -18,6 +18,8 @@ import 'agenda/widgets/itenerary_list.dart';
 
 import '../../core/core.dart';
 import 'access_pass/access_pass_page.dart';
+import 'invitation/widgets/share_link_list_dialog.dart';
+import 'invitation/controller/invitation_controller.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -411,8 +413,22 @@ class _HomePageState extends State<HomePage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Section: Schedule
-          _buildSectionHeader(context, 'schedule'.tr),
+          // Section: Share Link (formerly Schedule)
+          _buildSectionHeader(
+            context,
+            'Share Link',
+            showLinkIcon: true,
+            onLinkTap: () {
+              if (!Get.isRegistered<InvitationController>()) {
+                Get.put(InvitationController());
+              }
+              showDialog(
+                context: context,
+                barrierDismissible: false,
+                builder: (context) => const ShareLinkListDialog(),
+              );
+            },
+          ),
           const SizedBox(height: 16),
           DatePicker(
             DateTime.now(),
@@ -449,7 +465,12 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildSectionHeader(BuildContext context, String title) {
+  Widget _buildSectionHeader(
+    BuildContext context,
+    String title, {
+    bool showLinkIcon = false,
+    VoidCallback? onLinkTap,
+  }) {
     return Row(
       children: [
         Container(
@@ -470,6 +491,21 @@ class _HomePageState extends State<HomePage> {
             letterSpacing: -0.5,
           ),
         ),
+        if (showLinkIcon) ...[
+          const Spacer(),
+          IconButton(
+            onPressed: onLinkTap,
+            icon: Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: AppColors.grey100,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: AppColors.grey300),
+              ),
+              child: const Icon(Icons.link, color: AppColors.grey600, size: 20),
+            ),
+          ),
+        ],
       ],
     );
   }
