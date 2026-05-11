@@ -198,7 +198,32 @@ class InvitationController extends GetxController {
   // ─── Share Link Logic ───────────────────────────────────────────────────
 
   final RxList<dynamic> shareLinks = <dynamic>[].obs;
+  final RxList<dynamic> dashboardShareLinks = <dynamic>[].obs;
   final RxBool isShareLinkLoading = false.obs;
+
+  Future<void> fetchDashboardShareLinks() async {
+    final user = _hive.getUser();
+    final token = user?.token;
+    if (token == null) return;
+
+    try {
+      final response = await _api.getShareLinkDt(
+        token,
+        start: 0,
+        length: 3,
+        sortColumn: 'id',
+        sortDir: 'desc',
+      );
+      if (response.data['status'] == 'success' ||
+          response.data['status_code'] == 200) {
+        dashboardShareLinks.assignAll(
+          response.data['collection'] as List<dynamic>? ?? [],
+        );
+      }
+    } catch (e) {
+      debugPrint('fetchDashboardShareLinks error: $e');
+    }
+  }
 
   // Pagination States
   final RxInt shareLinkCurrentPage = 0.obs;
@@ -219,6 +244,8 @@ class InvitationController extends GetxController {
         token,
         start: start,
         length: shareLinkPageSize.value,
+        sortColumn: 'id',
+        sortDir: 'desc',
       );
 
       if (response.data['status'] == 'success' ||
@@ -269,7 +296,8 @@ class InvitationController extends GetxController {
 
       if (response.data['status'] == 'success' ||
           response.data['status_code'] == 200) {
-        fetchShareLinks(); // Refresh list
+        fetchShareLinks(resetPage: true); // Refresh list
+        fetchDashboardShareLinks(); // Refresh dashboard list
         return true;
       }
       return false;
@@ -288,7 +316,8 @@ class InvitationController extends GetxController {
       final response = await _api.deleteShareLink(token, id);
       if (response.data['status'] == 'success' ||
           response.data['status_code'] == 200) {
-        fetchShareLinks(); // Refresh list
+        fetchShareLinks(resetPage: true); // Refresh list
+        fetchDashboardShareLinks(); // Refresh dashboard list
         return true;
       }
       return false;

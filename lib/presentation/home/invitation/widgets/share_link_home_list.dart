@@ -27,9 +27,7 @@ class _ShareLinkHomeListState extends State<ShareLinkHomeList> {
     super.initState();
     // Always fetch newest 3 after frame completes
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      controller.shareLinkPageSize.value = 3;
-      controller.shareLinkCurrentPage.value = 0;
-      controller.fetchShareLinks(resetPage: true);
+      controller.fetchDashboardShareLinks();
     });
 
     // Start timer for live countdown
@@ -87,7 +85,7 @@ class _ShareLinkHomeListState extends State<ShareLinkHomeList> {
   Widget build(BuildContext context) {
     return Obx(() {
       if (controller.isShareLinkLoading.value &&
-          controller.shareLinks.isEmpty) {
+          controller.dashboardShareLinks.isEmpty) {
         return const Center(
           child: Padding(
             padding: EdgeInsets.all(20.0),
@@ -96,7 +94,7 @@ class _ShareLinkHomeListState extends State<ShareLinkHomeList> {
         );
       }
 
-      if (controller.shareLinks.isEmpty) {
+      if (controller.dashboardShareLinks.isEmpty) {
         return Center(
           child: Padding(
             padding: const EdgeInsets.all(20.0),
@@ -130,7 +128,7 @@ class _ShareLinkHomeListState extends State<ShareLinkHomeList> {
           const SizedBox(height: 12),
 
           // List of cards (max 3, no scroll)
-          ...controller.shareLinks.take(3).map(
+          ...controller.dashboardShareLinks.take(3).map(
             (item) => Padding(
               padding: const EdgeInsets.only(bottom: 12),
               child: _buildShareLinkCard(context, item),

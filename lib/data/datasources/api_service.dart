@@ -398,6 +398,8 @@ class ApiService {
     String token, {
     int start = 0,
     int length = 10,
+    String? sortColumn,
+    String? sortDir,
   }) async {
     try {
       final response = await _dio.get(
@@ -405,7 +407,9 @@ class ApiService {
         queryParameters: {
           'start': start,
           'length': length,
-          'draw': 1, // Diperlukan oleh DataTables
+          'draw': 1,
+          if (sortColumn != null) 'sort_column': sortColumn,
+          if (sortDir != null) 'sort_dir': sortDir,
         },
         options: Options(headers: {'Authorization': 'Bearer $token'}),
       );

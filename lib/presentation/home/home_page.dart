@@ -34,8 +34,8 @@ class _HomePageState extends State<HomePage> {
   final langCtrl = LanguageController.to;
   final InvitationController invitationController =
       Get.isRegistered<InvitationController>()
-          ? Get.find<InvitationController>()
-          : Get.put(InvitationController());
+      ? Get.find<InvitationController>()
+      : Get.put(InvitationController());
 
   // Design constants
   static const _blue = Color(0xFF1976D2);
