@@ -896,10 +896,9 @@ class _ShareLinkListInlineState extends State<ShareLinkListInline> {
       return '${twoDigits(difference.inHours)}:${twoDigits(difference.inMinutes.remainder(60))}:${twoDigits(difference.inSeconds.remainder(60))}';
     }
 
-    String status = isExpired ? 'Expired' : (item['link_status'] ?? 'Active');
-    Color statusColor = isExpired
-        ? const Color(0xFFE53935)
-        : const Color(0xFF43A047);
+    final Color statusColor =
+        isExpired ? const Color(0xFFE53935) : const Color(0xFF43A047);
+    final String status = isExpired ? 'Expired' : 'Active';
 
     String formatDate(String? dateStr) {
       if (dateStr == null) return '-';
