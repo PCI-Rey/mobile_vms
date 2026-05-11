@@ -18,8 +18,8 @@ class ShareLinkHomeList extends StatefulWidget {
 class _ShareLinkHomeListState extends State<ShareLinkHomeList> {
   final InvitationController controller =
       Get.isRegistered<InvitationController>()
-          ? Get.find<InvitationController>()
-          : Get.put(InvitationController());
+      ? Get.find<InvitationController>()
+      : Get.put(InvitationController());
   Timer? _timer;
 
   @override
@@ -50,10 +50,7 @@ class _ShareLinkHomeListState extends State<ShareLinkHomeList> {
         title: const Text('Delete Share Link'),
         content: const Text('Are you sure you want to delete this share link?'),
         actions: [
-          TextButton(
-            onPressed: () => Get.back(),
-            child: const Text('Cancel'),
-          ),
+          TextButton(onPressed: () => Get.back(), child: const Text('Cancel')),
           TextButton(
             onPressed: () async {
               Get.back();
@@ -104,8 +101,7 @@ class _ShareLinkHomeListState extends State<ShareLinkHomeList> {
                 const SizedBox(height: 8),
                 Text(
                   'No share links found',
-                  style:
-                      TextStyle(color: Colors.grey.shade500, fontSize: 12),
+                  style: TextStyle(color: Colors.grey.shade500, fontSize: 12),
                 ),
               ],
             ),
@@ -128,24 +124,29 @@ class _ShareLinkHomeListState extends State<ShareLinkHomeList> {
           const SizedBox(height: 12),
 
           // List of cards (max 3, no scroll)
-          ...controller.dashboardShareLinks.take(3).map(
-            (item) => Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: _buildShareLinkCard(context, item),
-            ),
-          ),
+          ...controller.dashboardShareLinks
+              .take(3)
+              .toList()
+              .asMap()
+              .entries
+              .map((entry) {
+                final int idx = entry.key + 1;
+                final item = entry.value;
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: _buildShareLinkCard(context, item, idx),
+                );
+              }),
 
           // More Link button
           Align(
             alignment: Alignment.centerRight,
             child: TextButton.icon(
               onPressed: () {
-                Get.to(
-                  () => const SendInvitationPage(initialTab: 1),
-                );
+                Get.to(() => const SendInvitationPage(initialTab: 1));
               },
               icon: const Icon(Icons.arrow_forward_rounded, size: 16),
-              label: const Text('More Link'),
+              label: const Text('Show More Link'),
               style: TextButton.styleFrom(
                 foregroundColor: AppColors.primary500,
                 textStyle: const TextStyle(
@@ -160,7 +161,7 @@ class _ShareLinkHomeListState extends State<ShareLinkHomeList> {
     });
   }
 
-  Widget _buildShareLinkCard(BuildContext context, dynamic item) {
+  Widget _buildShareLinkCard(BuildContext context, dynamic item, int no) {
     final String agenda = item['agenda'] ?? '-';
     final int maxUsage = item['max_usage'] ?? 0;
     final String url = item['url'] ?? '';
@@ -190,8 +191,9 @@ class _ShareLinkHomeListState extends State<ShareLinkHomeList> {
       return '${two(difference.inHours)}:${two(difference.inMinutes.remainder(60))}:${two(difference.inSeconds.remainder(60))}';
     }
 
-    final Color statusColor =
-        isExpired ? const Color(0xFFE53935) : const Color(0xFF43A047);
+    final Color statusColor = isExpired
+        ? const Color(0xFFE53935)
+        : const Color(0xFF43A047);
     final String statusLabel = isExpired ? 'Expired' : 'Active';
 
     String formatDate(String? dateStr) {
@@ -201,8 +203,9 @@ class _ShareLinkHomeListState extends State<ShareLinkHomeList> {
         if (!normalized.endsWith('Z') && !normalized.contains('+')) {
           normalized = '${normalized.replaceFirst(' ', 'T')}Z';
         }
-        return DateFormat('dd MMM yyyy, HH:mm')
-            .format(DateTime.parse(normalized).toLocal());
+        return DateFormat(
+          'dd MMM yyyy, HH:mm',
+        ).format(DateTime.parse(normalized).toLocal());
       } catch (_) {
         return dateStr;
       }
@@ -255,14 +258,23 @@ class _ShareLinkHomeListState extends State<ShareLinkHomeList> {
                           shape: BoxShape.circle,
                         ),
                         child: Center(
-                          child: Icon(
-                            isExpired ? Icons.link_off : Icons.link,
-                            size: 13,
-                            color: statusColor,
+                          child: Text(
+                            no.toString(),
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                              color: statusColor,
+                            ),
                           ),
                         ),
                       ),
                       const SizedBox(width: 6),
+                      Icon(
+                        isExpired ? Icons.link_off : Icons.link,
+                        size: 14,
+                        color: Colors.white,
+                      ),
+                      const SizedBox(width: 4),
                       Text(
                         statusLabel.toUpperCase(),
                         style: const TextStyle(

@@ -953,8 +953,8 @@ class _ShareLinkListInlineState extends State<ShareLinkListInline> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Container(
-                        width: 20,
-                        height: 20,
+                        width: 22,
+                        height: 22,
                         decoration: const BoxDecoration(
                           color: Colors.white,
                           shape: BoxShape.circle,
@@ -971,6 +971,12 @@ class _ShareLinkListInlineState extends State<ShareLinkListInline> {
                         ),
                       ),
                       const SizedBox(width: 8),
+                      Icon(
+                        isExpired ? Icons.link_off : Icons.link,
+                        size: 14,
+                        color: Colors.white,
+                      ),
+                      const SizedBox(width: 4),
                       Text(
                         status.toUpperCase(),
                         style: const TextStyle(
