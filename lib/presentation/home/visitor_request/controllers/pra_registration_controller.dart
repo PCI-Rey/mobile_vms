@@ -97,6 +97,7 @@ class PraRegistrationController extends GetxController {
   final RxString selectedHostId = ''.obs;
   final RxBool isLoadingHosts = false.obs;
   final RxString agenda = ''.obs;
+  final FocusNode agendaFocusNode = FocusNode();
   final RxList<DropdownItem> sites = <DropdownItem>[].obs;
   final RxString selectedSiteId = ''.obs;
   final RxBool isLoadingSites = false.obs;
@@ -131,6 +132,7 @@ class PraRegistrationController extends GetxController {
     phoneCtrl.dispose();
     organizationCtrl.dispose();
     identityIdCtrl.dispose();
+    agendaFocusNode.dispose();
     super.onClose();
   }
 

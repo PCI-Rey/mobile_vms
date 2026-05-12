@@ -1745,6 +1745,9 @@ class _FormFieldWidget extends StatelessWidget {
                   if (result == 'Other') {
                     field.answerText = 'Other';
                     controller.agenda.value = '';
+                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                      controller.agendaFocusNode.requestFocus();
+                    });
                   } else {
                     field.answerText = result;
                     controller.agenda.value = result;
@@ -1760,6 +1763,7 @@ class _FormFieldWidget extends StatelessWidget {
                 initialValue: field.answerText == 'Other'
                     ? ''
                     : field.answerText,
+                focusNode: controller.agendaFocusNode,
                 decoration: textDecoration.copyWith(
                   hintText: 'Other',
                   hintStyle: const TextStyle(
@@ -1888,7 +1892,10 @@ class _FormFieldWidget extends StatelessWidget {
     );
   }
 
-  Widget _buildTextField({required TextInputType keyboardType}) {
+  Widget _buildTextField({
+    required TextInputType keyboardType,
+    FocusNode? focusNode,
+  }) {
     final dedicatedCtrl = controller.getFieldController(field.remarks);
 
     void onChanged(String v) {
@@ -1945,6 +1952,7 @@ class _FormFieldWidget extends StatelessWidget {
       return TextFormField(
         controller: dedicatedCtrl,
         keyboardType: keyboardType,
+        focusNode: focusNode,
         decoration: decoration,
         onChanged: onChanged,
       );
@@ -1953,6 +1961,7 @@ class _FormFieldWidget extends StatelessWidget {
     return TextFormField(
       initialValue: field.answerText,
       keyboardType: keyboardType,
+      focusNode: focusNode,
       decoration: decoration,
       onChanged: onChanged,
     );

@@ -28,6 +28,7 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
   bool isAgendaEnabled = false;
   String? selectedAgendaOption;
   final TextEditingController agendaCtrl = TextEditingController();
+  final FocusNode agendaFocusNode = FocusNode();
 
   final List<Map<String, dynamic>> agendaOptions = [
     {'id': 'Meeting', 'name': 'Meeting'},
@@ -76,6 +77,7 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
   void dispose() {
     agendaCtrl.dispose();
     quotaCtrl.dispose();
+    agendaFocusNode.dispose();
     super.dispose();
   }
 
@@ -199,6 +201,9 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
                                     agendaCtrl.text = v ?? '';
                                   } else {
                                     agendaCtrl.text = '';
+                                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                                      agendaFocusNode.requestFocus();
+                                    });
                                   }
                                 }),
                               ),
@@ -209,6 +214,7 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
                                   hint: 'Ketik agenda lainnya...',
                                   controller: agendaCtrl,
                                   enabled: isAgendaEnabled,
+                                  focusNode: agendaFocusNode,
                                 ),
                               ],
                             ],
@@ -566,16 +572,18 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
     );
   }
 
-  Widget _buildTextField({
+   Widget _buildTextField({
     required String hint,
     required TextEditingController controller,
     required bool enabled,
     TextInputType? keyboardType,
+    FocusNode? focusNode,
   }) {
     return TextFormField(
       controller: controller,
       enabled: enabled,
       keyboardType: keyboardType,
+      focusNode: focusNode,
       style: const TextStyle(fontSize: 13),
       decoration: _inputDecoration(enabled: enabled).copyWith(hintText: hint),
     );
