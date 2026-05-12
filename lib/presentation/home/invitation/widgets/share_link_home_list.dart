@@ -44,7 +44,7 @@ class _ShareLinkHomeListState extends State<ShareLinkHomeList> {
     });
 
     // Auto slide timer
-    _carouselTimer = Timer.periodic(const Duration(seconds: 5), (timer) {
+    _carouselTimer = Timer.periodic(const Duration(seconds: 7), (timer) {
       if (mounted &&
           controller.dashboardShareLinks.isNotEmpty &&
           _pageController.hasClients) {

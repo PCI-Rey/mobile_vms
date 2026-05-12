@@ -27,6 +27,7 @@ class InvitationController extends GetxController {
   void onInit() {
     super.onInit();
     fetchOngoingInvitations();
+    fetchMasterData(); // Fetch master data (sites, visitor types, etc) for lookups
     // Re-filter every 60 seconds to remove expired invitations in real-time
     _cleanupTimer = Timer.periodic(const Duration(seconds: 60), (_) {
       _applyFilters();

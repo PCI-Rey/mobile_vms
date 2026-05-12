@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
+import 'package:intl/intl.dart';
 import '../../../../core/helper/responsive_helper.dart';
 import '../controller/invitation_controller.dart';
 
@@ -148,23 +149,7 @@ class _InviteShareLinkDialogState extends State<InviteShareLinkDialog>
           normalized = '${normalized.replaceFirst(' ', 'T')}Z';
         }
         expiredAt = DateTime.parse(normalized).toLocal();
-        final months = [
-          '',
-          'Januari',
-          'Februari',
-          'Maret',
-          'April',
-          'Mei',
-          'Juni',
-          'Juli',
-          'Agustus',
-          'September',
-          'Oktober',
-          'November',
-          'Desember',
-        ];
-        formattedExpire =
-            '${expiredAt.day} ${months[expiredAt.month]} ${expiredAt.year}, ${expiredAt.hour.toString().padLeft(2, '0')}.${expiredAt.minute.toString().padLeft(2, '0')}';
+        formattedExpire = DateFormat('dd MMM yyyy, HH:mm').format(expiredAt);
       } catch (e) {
         debugPrint('Error parsing expired_at: $e');
         formattedExpire = expiredAtStr;
@@ -304,7 +289,8 @@ class _InviteShareLinkDialogState extends State<InviteShareLinkDialog>
               url,
               style: TextStyle(
                 fontSize: rfs(context, 13),
-                color: Colors.blueGrey.shade700,
+                color: Colors.blue.shade700,
+                decoration: TextDecoration.underline,
                 fontFamily: 'monospace',
                 letterSpacing: 0.5,
               ),
@@ -410,10 +396,49 @@ class _InviteShareLinkDialogState extends State<InviteShareLinkDialog>
           height: rh(context, 50),
           child: ElevatedButton(
             onPressed: () {
-              Clipboard.setData(ClipboardData(text: url));
+              final String agenda = widget.item['agenda'] ?? '-';
+              final String visitorTypeId = widget.item['visitor_type_id']?.toString() ?? '';
+              
+              String visitorTypeName = '-';
+              if (visitorTypeId.isNotEmpty) {
+                try {
+                  final type = controller.visitorTypes.firstWhere(
+                    (v) => v['id'].toString() == visitorTypeId,
+                    orElse: () => <String, dynamic>{},
+                  );
+                  visitorTypeName = type['name'] ?? type['visitor_type_name'] ?? '-';
+                } catch (_) {
+                  visitorTypeName = '-';
+                }
+              }
+
+              String formatDateTime(String? dateStr) {
+                if (dateStr == null) return '-';
+                try {
+                  String normalized = dateStr;
+                  if (!normalized.endsWith('Z') && !normalized.contains('+')) {
+                    normalized = '${normalized.replaceFirst(' ', 'T')}Z';
+                  }
+                  final date = DateTime.parse(normalized).toLocal();
+                  return DateFormat('dd MMM yyyy, HH:mm').format(date);
+                } catch (e) {
+                  return dateStr;
+                }
+              }
+
+              final String start = formatDateTime(widget.item['visitor_period_start']);
+              final String end = formatDateTime(widget.item['visitor_period_end']);
+
+              final String shareText = "*Agenda* : $agenda\n"
+                  "*Visitor Type* : $visitorTypeName\n"
+                  "*Start* : $start - $end\n"
+                  "*Link Expired* : $expire\n\n"
+                  "Untuk bergabung ke undangan klik link di bawah ini:\n$url";
+
+              Clipboard.setData(ClipboardData(text: shareText));
               Get.snackbar(
                 'Success',
-                'Link copied to clipboard',
+                'Invitation details copied to clipboard',
                 backgroundColor: Colors.green,
                 colorText: Colors.white,
                 snackPosition: SnackPosition.TOP,
