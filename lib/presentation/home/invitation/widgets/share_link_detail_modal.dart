@@ -11,7 +11,7 @@ class ShareLinkDetailModal {
   static void show(BuildContext context, dynamic item) {
     final int maxUsage = item['max_usage'] ?? 0;
     final String agenda = item['agenda'] ?? '-';
-    
+
     final expiredAtStr = item['expired_at'];
     DateTime? expiredAt;
     if (expiredAtStr != null) {
@@ -51,7 +51,9 @@ class ShareLinkDetailModal {
         child: Container(
           decoration: BoxDecoration(
             color: const Color(0xFFF4F7FB),
-            borderRadius: BorderRadius.vertical(top: Radius.circular(rw(context, 28))),
+            borderRadius: BorderRadius.vertical(
+              top: Radius.circular(rw(context, 28)),
+            ),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -104,32 +106,18 @@ class ShareLinkDetailModal {
 
               if (url.isNotEmpty) ...[
                 Center(
-                  child: Container(
-                    padding: EdgeInsets.all(rw(ctx, 16)),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(rw(ctx, 16)),
-                      border: Border.all(color: Colors.grey.shade200),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.02),
-                          blurRadius: rw(ctx, 10),
-                          offset: Offset(0, rh(ctx, 4)),
-                        ),
-                      ],
+                  child: QrImageView(
+                    data: url,
+                    version: QrVersions.auto,
+                    size: rw(ctx, 200),
+                    padding: EdgeInsets.zero,
+                    eyeStyle: const QrEyeStyle(
+                      eyeShape: QrEyeShape.square,
+                      color: Colors.black87,
                     ),
-                    child: QrImageView(
-                      data: url,
-                      version: QrVersions.auto,
-                      size: rw(ctx, 140),
-                      eyeStyle: const QrEyeStyle(
-                        eyeShape: QrEyeShape.square,
-                        color: Colors.black87,
-                      ),
-                      dataModuleStyle: const QrDataModuleStyle(
-                        dataModuleShape: QrDataModuleShape.square,
-                        color: Colors.black87,
-                      ),
+                    dataModuleStyle: const QrDataModuleStyle(
+                      dataModuleShape: QrDataModuleShape.square,
+                      color: Colors.black87,
                     ),
                   ),
                 ),
@@ -137,7 +125,12 @@ class ShareLinkDetailModal {
               ],
 
               Padding(
-                padding: EdgeInsets.fromLTRB(rw(ctx, 16), 0, rw(ctx, 16), rh(ctx, 30)),
+                padding: EdgeInsets.fromLTRB(
+                  rw(ctx, 16),
+                  0,
+                  rw(ctx, 16),
+                  rh(ctx, 30),
+                ),
                 child: Container(
                   decoration: BoxDecoration(
                     color: Colors.white,
@@ -194,19 +187,21 @@ class ShareLinkDetailModal {
                             vSpace(ctx, 12),
                             _buildInfoTile(
                               ctx,
-                              Icons.timer_off_outlined,
+                              isExpired ? Icons.timer_off_outlined : Icons.timer_outlined,
                               'Expired At',
                               item['expired_number'] == 0
                                   ? 'Never'
                                   : formatDate(item['expired_at']),
-                              valueColor: isExpired ? Colors.red.shade700 : Colors.green.shade700,
+                              valueColor: isExpired
+                                  ? Colors.red.shade700
+                                  : Colors.green.shade700,
                             ),
                           ],
                         ),
                       ),
-                      
+
                       const Divider(height: 1),
-                      
+
                       Padding(
                         padding: EdgeInsets.symmetric(
                           horizontal: rw(ctx, 20),
@@ -219,7 +214,9 @@ class ShareLinkDetailModal {
                               ctx,
                               label: 'Copy Link',
                               icon: Icons.copy,
-                              color: isExpired ? Colors.grey : Colors.orange.shade600,
+                              color: isExpired
+                                  ? Colors.grey
+                                  : Colors.orange.shade600,
                               onTap: () {
                                 if (isExpired) {
                                   Get.snackbar(
@@ -228,14 +225,18 @@ class ShareLinkDetailModal {
                                     snackPosition: SnackPosition.TOP,
                                     backgroundColor: Colors.red,
                                     colorText: Colors.white,
-                                    icon: const Icon(Icons.error_outline, color: Colors.white),
+                                    icon: const Icon(
+                                      Icons.error_outline,
+                                      color: Colors.white,
+                                    ),
                                   );
                                   return;
                                 }
-                                Navigator.pop(ctx);
+                                // Do not close the detail modal, just open the invite dialog on top
                                 showDialog(
                                   context: context,
-                                  builder: (context) => InviteShareLinkDialog(item: item),
+                                  builder: (context) =>
+                                      InviteShareLinkDialog(item: item),
                                 );
                               },
                             ),
@@ -367,7 +368,10 @@ class ShareLinkDetailModal {
       onTap: onTap,
       borderRadius: BorderRadius.circular(rw(context, 12)),
       child: Container(
-        padding: EdgeInsets.symmetric(horizontal: rw(context, 16), vertical: rh(context, 10)),
+        padding: EdgeInsets.symmetric(
+          horizontal: rw(context, 16),
+          vertical: rh(context, 10),
+        ),
         decoration: BoxDecoration(
           color: color.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(rw(context, 12)),

@@ -50,6 +50,7 @@ class ShareLinkCard extends StatelessWidget {
               ),
               vSpace(context, 24),
               Container(
+                alignment: Alignment.center,
                 padding: EdgeInsets.all(rw(context, 16)),
                 decoration: BoxDecoration(
                   color: Colors.white,
@@ -59,7 +60,8 @@ class ShareLinkCard extends StatelessWidget {
                 child: QrImageView(
                   data: url.isNotEmpty ? url : 'no-url',
                   version: QrVersions.auto,
-                  size: rw(context, 200),
+                  size: rw(context, 260),
+                  padding: EdgeInsets.zero,
                 ),
               ),
               vSpace(context, 24),

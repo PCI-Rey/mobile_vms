@@ -22,7 +22,10 @@ class _ShareLinkHomeListState extends State<ShareLinkHomeList> {
       : Get.put(InvitationController());
   Timer? _timer;
   Timer? _carouselTimer;
-  final PageController _pageController = PageController(viewportFraction: 1.0, initialPage: 1000);
+  final PageController _pageController = PageController(
+    viewportFraction: 1.0,
+    initialPage: 1000,
+  );
   final RxInt _currentPage = 1000.obs;
 
   @override
@@ -42,9 +45,13 @@ class _ShareLinkHomeListState extends State<ShareLinkHomeList> {
 
     // Auto slide timer
     _carouselTimer = Timer.periodic(const Duration(seconds: 5), (timer) {
-      if (mounted && controller.dashboardShareLinks.isNotEmpty && _pageController.hasClients) {
+      if (mounted &&
+          controller.dashboardShareLinks.isNotEmpty &&
+          _pageController.hasClients) {
         // Only slide if there is more than 1 item
-        final listLength = controller.dashboardShareLinks.length > 3 ? 3 : controller.dashboardShareLinks.length;
+        final listLength = controller.dashboardShareLinks.length > 3
+            ? 3
+            : controller.dashboardShareLinks.length;
         if (listLength > 1) {
           _currentPage.value++;
           _pageController.animateToPage(
@@ -86,11 +93,18 @@ class _ShareLinkHomeListState extends State<ShareLinkHomeList> {
             padding: EdgeInsets.all(rw(context, 20.0)),
             child: Column(
               children: [
-                Icon(Icons.link_off, size: rw(context, 48), color: Colors.grey.shade300),
+                Icon(
+                  Icons.link_off,
+                  size: rw(context, 48),
+                  color: Colors.grey.shade300,
+                ),
                 vSpace(context, 8),
                 Text(
                   'No share links found',
-                  style: TextStyle(color: Colors.grey.shade500, fontSize: rfs(context, 12)),
+                  style: TextStyle(
+                    color: Colors.grey.shade500,
+                    fontSize: rfs(context, 12),
+                  ),
                 ),
               ],
             ),
@@ -126,9 +140,12 @@ class _ShareLinkHomeListState extends State<ShareLinkHomeList> {
                 final list = links.length > 3 ? links.take(3).toList() : links;
                 final int realIndex = index % list.length;
                 final item = list[realIndex];
-                
+
                 return Padding(
-                  padding: EdgeInsets.symmetric(horizontal: rw(context, 2), vertical: rh(context, 4)),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: rw(context, 2),
+                    vertical: rh(context, 4),
+                  ),
                   child: ShareLinkCard(
                     item: item,
                     no: realIndex + 1,
@@ -145,9 +162,13 @@ class _ShareLinkHomeListState extends State<ShareLinkHomeList> {
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: List.generate(
-                controller.dashboardShareLinks.length > 3 ? 3 : controller.dashboardShareLinks.length,
+                controller.dashboardShareLinks.length > 3
+                    ? 3
+                    : controller.dashboardShareLinks.length,
                 (index) {
-                  final listLength = controller.dashboardShareLinks.length > 3 ? 3 : controller.dashboardShareLinks.length;
+                  final listLength = controller.dashboardShareLinks.length > 3
+                      ? 3
+                      : controller.dashboardShareLinks.length;
                   final isActive = (_currentPage.value % listLength) == index;
                   return AnimatedContainer(
                     duration: const Duration(milliseconds: 300),
@@ -155,7 +176,9 @@ class _ShareLinkHomeListState extends State<ShareLinkHomeList> {
                     height: rw(context, 6),
                     width: isActive ? rw(context, 16) : rw(context, 6),
                     decoration: BoxDecoration(
-                      color: isActive ? AppColors.primary500 : Colors.grey.shade300,
+                      color: isActive
+                          ? AppColors.primary500
+                          : Colors.grey.shade300,
                       borderRadius: BorderRadius.circular(rw(context, 3)),
                     ),
                   );
