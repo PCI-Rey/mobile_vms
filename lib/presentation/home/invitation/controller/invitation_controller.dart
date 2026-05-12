@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -14,6 +15,8 @@ class InvitationController extends GetxController {
   final RxBool isLoading = false.obs;
   final RxBool isNewestFirst = true.obs; // Default: Terbaru di atas
 
+  Timer? _cleanupTimer;
+
   // Filter states
   final Rx<DateTime?> startDate = Rx<DateTime?>(null);
   final Rx<DateTime?> endDate = Rx<DateTime?>(null);
@@ -24,6 +27,16 @@ class InvitationController extends GetxController {
   void onInit() {
     super.onInit();
     fetchOngoingInvitations();
+    // Re-filter every 60 seconds to remove expired invitations in real-time
+    _cleanupTimer = Timer.periodic(const Duration(seconds: 60), (_) {
+      _applyFilters();
+    });
+  }
+
+  @override
+  void onClose() {
+    _cleanupTimer?.cancel();
+    super.onClose();
   }
 
   void setFilters({
@@ -45,7 +58,20 @@ class InvitationController extends GetxController {
   }
 
   void _applyFilters() {
+    final today = DateTime.now();
+    final startOfToday = DateTime(today.year, today.month, today.day);
+
     List<AccessPassModel> filtered = List.from(allInvitations);
+
+    // 0. Auto-remove invitations whose visit period end is before today
+    filtered = filtered.where((item) {
+      final endDate = DateTime(
+        item.visitorPeriodEnd.year,
+        item.visitorPeriodEnd.month,
+        item.visitorPeriodEnd.day,
+      );
+      return !endDate.isBefore(startOfToday);
+    }).toList();
 
     // 1. Filter Berdasarkan Tanggal (Lokal)
     if (startDate.value != null) {

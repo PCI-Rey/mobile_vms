@@ -217,14 +217,41 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
                           label: 'Host',
                           isEnabled: isHostEnabled,
                           onToggle: (v) => setState(() => isHostEnabled = v),
-                          input: _buildDropdown(
-                            hint: 'Select Host',
-                            value: selectedHostId,
-                            items: controller.hosts,
-                            enabled: isHostEnabled,
-                            onChanged: (v) =>
-                                setState(() => selectedHostId = v),
-                          ),
+                          input: Obx(() {
+                            final hosts = controller.hosts.toList();
+                            if (hosts.length == 1) {
+                              final single = hosts.first;
+                              // Always auto-set the value so it's ready when submitted
+                              if (selectedHostId != single['id']?.toString()) {
+                                WidgetsBinding.instance.addPostFrameCallback((_) {
+                                  if (mounted) setState(() => selectedHostId = single['id']?.toString());
+                                });
+                              }
+                              // Show name only when toggle is ON, otherwise show empty
+                              return TextFormField(
+                                readOnly: true,
+                                enabled: false,
+                                controller: TextEditingController(
+                                  text: isHostEnabled ? (single['name']?.toString() ?? '') : '',
+                                ),
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: isHostEnabled ? Colors.black87 : Colors.transparent,
+                                ),
+                                decoration: _inputDecoration(enabled: isHostEnabled).copyWith(
+                                  hintText: 'Select Host',
+                                  hintStyle: const TextStyle(color: Colors.grey, fontSize: 13),
+                                ),
+                              );
+                            }
+                            return _buildDropdown(
+                              hint: 'Select Host',
+                              value: selectedHostId,
+                              items: controller.hosts,
+                              enabled: isHostEnabled,
+                              onChanged: (v) => setState(() => selectedHostId = v),
+                            );
+                          }),
                         ),
                         _buildFieldRow(
                           label: 'Site',

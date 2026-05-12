@@ -161,7 +161,7 @@ class _InviteShareLinkDialogState extends State<InviteShareLinkDialog>
           'September',
           'Oktober',
           'November',
-          'Desember'
+          'Desember',
         ];
         formattedExpire =
             '${expiredAt.day} ${months[expiredAt.month]} ${expiredAt.year}, ${expiredAt.hour.toString().padLeft(2, '0')}.${expiredAt.minute.toString().padLeft(2, '0')}';
@@ -199,8 +199,11 @@ class _InviteShareLinkDialogState extends State<InviteShareLinkDialog>
                     ),
                   ),
                   IconButton(
-                    icon: Icon(Icons.close,
-                        color: Colors.grey, size: rw(context, 20)),
+                    icon: Icon(
+                      Icons.close,
+                      color: Colors.grey,
+                      size: rw(context, 20),
+                    ),
                     onPressed: () => Navigator.pop(context),
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(),
@@ -223,7 +226,9 @@ class _InviteShareLinkDialogState extends State<InviteShareLinkDialog>
                 indicatorSize: TabBarIndicatorSize.tab,
                 dividerColor: Colors.transparent,
                 labelStyle: TextStyle(
-                    fontWeight: FontWeight.w700, fontSize: rfs(context, 14)),
+                  fontWeight: FontWeight.w700,
+                  fontSize: rfs(context, 14),
+                ),
                 tabs: const [
                   Tab(text: 'Invite Via Link'),
                   Tab(text: 'Invite Via Email'),
@@ -241,9 +246,18 @@ class _InviteShareLinkDialogState extends State<InviteShareLinkDialog>
                   controller: _tabController,
                   children: [
                     _buildInviteViaLink(
-                        context, url, formattedExpire, expiredAt, isNoExpired),
+                      context,
+                      url,
+                      formattedExpire,
+                      expiredAt,
+                      isNoExpired,
+                    ),
                     _buildInviteViaEmail(
-                        context, formattedExpire, expiredAt, isNoExpired),
+                      context,
+                      formattedExpire,
+                      expiredAt,
+                      isNoExpired,
+                    ),
                   ],
                 ),
               ),
@@ -254,17 +268,23 @@ class _InviteShareLinkDialogState extends State<InviteShareLinkDialog>
     );
   }
 
-  Widget _buildInviteViaLink(BuildContext context, String url, String expire,
-      DateTime? expiredAt, bool isNoExpired) {
+  Widget _buildInviteViaLink(
+    BuildContext context,
+    String url,
+    String expire,
+    DateTime? expiredAt,
+    bool isNoExpired,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           'Share this link to invite users:',
           style: TextStyle(
-              fontSize: rfs(context, 14),
-              color: const Color(0xFF607D8B),
-              fontWeight: FontWeight.w500),
+            fontSize: rfs(context, 14),
+            color: const Color(0xFF607D8B),
+            fontWeight: FontWeight.w500,
+          ),
         ),
         vSpace(context, 12),
         Container(
@@ -277,7 +297,9 @@ class _InviteShareLinkDialogState extends State<InviteShareLinkDialog>
           child: SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             padding: EdgeInsets.symmetric(
-                horizontal: rw(context, 14), vertical: rh(context, 16)),
+              horizontal: rw(context, 14),
+              vertical: rh(context, 16),
+            ),
             child: Text(
               url,
               style: TextStyle(
@@ -301,16 +323,18 @@ class _InviteShareLinkDialogState extends State<InviteShareLinkDialog>
                   Text(
                     'The invitation expires in:',
                     style: TextStyle(
-                        fontSize: rfs(context, 12),
-                        color: const Color(0xFF78909C)),
+                      fontSize: rfs(context, 12),
+                      color: const Color(0xFF78909C),
+                    ),
                   ),
                   vSpace(context, 2),
                   Text(
                     expire,
                     style: TextStyle(
-                        fontSize: rfs(context, 13),
-                        fontWeight: FontWeight.bold,
-                        color: const Color(0xFF263238)),
+                      fontSize: rfs(context, 13),
+                      fontWeight: FontWeight.bold,
+                      color: const Color(0xFF263238),
+                    ),
                   ),
                 ],
               ),
@@ -318,7 +342,9 @@ class _InviteShareLinkDialogState extends State<InviteShareLinkDialog>
             if (isNoExpired)
               Container(
                 padding: EdgeInsets.symmetric(
-                    horizontal: rw(context, 10), vertical: rh(context, 6)),
+                  horizontal: rw(context, 10),
+                  vertical: rh(context, 6),
+                ),
                 decoration: BoxDecoration(
                   color: Colors.blue.shade50,
                   borderRadius: BorderRadius.circular(rw(context, 6)),
@@ -327,8 +353,11 @@ class _InviteShareLinkDialogState extends State<InviteShareLinkDialog>
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.all_inclusive,
-                        size: rw(context, 14), color: Colors.blue.shade800),
+                    Icon(
+                      Icons.all_inclusive,
+                      size: rw(context, 14),
+                      color: Colors.blue.shade800,
+                    ),
                     hSpace(context, 6),
                     Text(
                       'No Expired',
@@ -344,7 +373,9 @@ class _InviteShareLinkDialogState extends State<InviteShareLinkDialog>
             else if (expiredAt != null)
               Container(
                 padding: EdgeInsets.symmetric(
-                    horizontal: rw(context, 10), vertical: rh(context, 6)),
+                  horizontal: rw(context, 10),
+                  vertical: rh(context, 6),
+                ),
                 decoration: BoxDecoration(
                   color: Colors.orange.shade50,
                   borderRadius: BorderRadius.circular(rw(context, 6)),
@@ -353,8 +384,11 @@ class _InviteShareLinkDialogState extends State<InviteShareLinkDialog>
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.timer_outlined,
-                        size: rw(context, 14), color: Colors.orange.shade800),
+                    Icon(
+                      Icons.timer_outlined,
+                      size: rw(context, 14),
+                      color: Colors.orange.shade800,
+                    ),
                     hSpace(context, 6),
                     Text(
                       _getRemainingTime(expiredAt),
@@ -394,12 +428,13 @@ class _InviteShareLinkDialogState extends State<InviteShareLinkDialog>
               ),
             ),
             child: Text(
-              'Copy Link',
+              'Copy',
               style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w700,
-                  fontSize: rfs(context, 15),
-                  letterSpacing: 0.5),
+                color: Colors.white,
+                fontWeight: FontWeight.w700,
+                fontSize: rfs(context, 15),
+                letterSpacing: 0.5,
+              ),
             ),
           ),
         ),
@@ -407,17 +442,22 @@ class _InviteShareLinkDialogState extends State<InviteShareLinkDialog>
     );
   }
 
-  Widget _buildInviteViaEmail(BuildContext context, String expire,
-      DateTime? expiredAt, bool isNoExpired) {
+  Widget _buildInviteViaEmail(
+    BuildContext context,
+    String expire,
+    DateTime? expiredAt,
+    bool isNoExpired,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           'Enter email address to send invitation:',
           style: TextStyle(
-              fontSize: rfs(context, 14),
-              color: const Color(0xFF607D8B),
-              fontWeight: FontWeight.w500),
+            fontSize: rfs(context, 14),
+            color: const Color(0xFF607D8B),
+            fontWeight: FontWeight.w500,
+          ),
         ),
         vSpace(context, 12),
         TextField(
@@ -426,10 +466,14 @@ class _InviteShareLinkDialogState extends State<InviteShareLinkDialog>
           style: TextStyle(fontSize: rfs(context, 14)),
           decoration: InputDecoration(
             hintText: 'Input your email',
-            hintStyle:
-                TextStyle(fontSize: rfs(context, 14), color: Colors.grey.shade400),
+            hintStyle: TextStyle(
+              fontSize: rfs(context, 14),
+              color: Colors.grey.shade400,
+            ),
             contentPadding: EdgeInsets.symmetric(
-                horizontal: rw(context, 16), vertical: rh(context, 14)),
+              horizontal: rw(context, 16),
+              vertical: rh(context, 14),
+            ),
             filled: true,
             fillColor: Colors.white,
             border: OutlineInputBorder(
@@ -442,8 +486,10 @@ class _InviteShareLinkDialogState extends State<InviteShareLinkDialog>
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(rw(context, 10)),
-              borderSide:
-                  const BorderSide(color: Color(0xFF005596), width: 1.5),
+              borderSide: const BorderSide(
+                color: Color(0xFF005596),
+                width: 1.5,
+              ),
             ),
           ),
         ),
@@ -458,16 +504,18 @@ class _InviteShareLinkDialogState extends State<InviteShareLinkDialog>
                   Text(
                     'The invitation expires in:',
                     style: TextStyle(
-                        fontSize: rfs(context, 12),
-                        color: const Color(0xFF78909C)),
+                      fontSize: rfs(context, 12),
+                      color: const Color(0xFF78909C),
+                    ),
                   ),
                   vSpace(context, 2),
                   Text(
                     expire,
                     style: TextStyle(
-                        fontSize: rfs(context, 13),
-                        fontWeight: FontWeight.bold,
-                        color: const Color(0xFF263238)),
+                      fontSize: rfs(context, 13),
+                      fontWeight: FontWeight.bold,
+                      color: const Color(0xFF263238),
+                    ),
                   ),
                 ],
               ),
@@ -475,7 +523,9 @@ class _InviteShareLinkDialogState extends State<InviteShareLinkDialog>
             if (isNoExpired)
               Container(
                 padding: EdgeInsets.symmetric(
-                    horizontal: rw(context, 10), vertical: rh(context, 6)),
+                  horizontal: rw(context, 10),
+                  vertical: rh(context, 6),
+                ),
                 decoration: BoxDecoration(
                   color: Colors.blue.shade50,
                   borderRadius: BorderRadius.circular(rw(context, 6)),
@@ -484,8 +534,11 @@ class _InviteShareLinkDialogState extends State<InviteShareLinkDialog>
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.all_inclusive,
-                        size: rw(context, 14), color: Colors.blue.shade800),
+                    Icon(
+                      Icons.all_inclusive,
+                      size: rw(context, 14),
+                      color: Colors.blue.shade800,
+                    ),
                     hSpace(context, 6),
                     Text(
                       'No Expired',
@@ -501,7 +554,9 @@ class _InviteShareLinkDialogState extends State<InviteShareLinkDialog>
             else if (expiredAt != null)
               Container(
                 padding: EdgeInsets.symmetric(
-                    horizontal: rw(context, 10), vertical: rh(context, 6)),
+                  horizontal: rw(context, 10),
+                  vertical: rh(context, 6),
+                ),
                 decoration: BoxDecoration(
                   color: Colors.orange.shade50,
                   borderRadius: BorderRadius.circular(rw(context, 6)),
@@ -510,8 +565,11 @@ class _InviteShareLinkDialogState extends State<InviteShareLinkDialog>
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.timer_outlined,
-                        size: rw(context, 14), color: Colors.orange.shade800),
+                    Icon(
+                      Icons.timer_outlined,
+                      size: rw(context, 14),
+                      color: Colors.orange.shade800,
+                    ),
                     hSpace(context, 6),
                     Text(
                       _getRemainingTime(expiredAt),
@@ -545,15 +603,18 @@ class _InviteShareLinkDialogState extends State<InviteShareLinkDialog>
                     width: rw(context, 24),
                     height: rw(context, 24),
                     child: const CircularProgressIndicator(
-                        color: Colors.white, strokeWidth: 2.5),
+                      color: Colors.white,
+                      strokeWidth: 2.5,
+                    ),
                   )
                 : Text(
-                    'Send Invitation',
+                    'Send Email',
                     style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w700,
-                        fontSize: rfs(context, 15),
-                        letterSpacing: 0.5),
+                      color: Colors.white,
+                      fontWeight: FontWeight.w700,
+                      fontSize: rfs(context, 15),
+                      letterSpacing: 0.5,
+                    ),
                   ),
           ),
         ),

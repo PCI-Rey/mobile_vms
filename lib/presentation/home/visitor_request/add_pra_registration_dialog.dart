@@ -1533,16 +1533,45 @@ class _FormFieldWidget extends StatelessWidget {
 
   Widget _buildInputWidget(BuildContext ctx) {
     if (field.remarks == 'host') {
-      return _buildApiDropdown(
-        items: controller.hosts,
-        selectedId: controller.selectedHostId,
-        onSelected: (id, name) {
-          controller.selectedHostId.value = id;
-          field.answerText = id;
-          controller.updateForm();
-        },
-        hint: 'Pilih PIC Host',
-      );
+      return Obx(() {
+        final list = controller.hosts.toList();
+        // If only 1 host available, auto-select and show as read-only
+        if (list.length == 1) {
+          final single = list.first;
+          // Auto-set if not already set
+          if (controller.selectedHostId.value != single.id) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              controller.selectedHostId.value = single.id;
+              field.answerText = single.id;
+              controller.updateForm();
+            });
+          }
+          return Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 13),
+            decoration: BoxDecoration(
+              border: Border.all(color: const Color(0xFFDDDDDD)),
+              borderRadius: BorderRadius.circular(10),
+              color: Colors.white,
+            ),
+            child: Text(
+              single.name,
+              style: const TextStyle(fontSize: 14, color: Colors.black87),
+            ),
+          );
+        }
+        // Multiple hosts → show dropdown as usual
+        return _buildApiDropdown(
+          items: controller.hosts,
+          selectedId: controller.selectedHostId,
+          onSelected: (id, name) {
+            controller.selectedHostId.value = id;
+            field.answerText = id;
+            controller.updateForm();
+          },
+          hint: 'Pilih PIC Host',
+        );
+      });
     }
 
     if (field.remarks == 'site_place') {
