@@ -69,21 +69,34 @@ class GuestHomeController extends GetxController {
       debugPrint("====================================");
       if (response.data['status'] == 'success') {
         final collection = response.data['collection'] as List<dynamic>? ?? [];
+        final now = DateTime.now();
         final newPasses = collection
             .map((e) => AccessPassModel.fromJson(e as Map<String, dynamic>))
             .toList();
 
-        // Update Hive and UI
-        accessPasses.assignAll(newPasses);
-        _hive.saveAccessPasses(newPasses);
+        final filteredPasses = newPasses.where((item) {
+          final isExpired = item.visitorPeriodEnd.isBefore(now);
+          final isInactiveStatus =
+              item.visitorStatus.toLowerCase() == 'expired' ||
+              item.visitorStatus.toLowerCase() == 'completed' ||
+              item.visitorStatus.toLowerCase() == 'cancelled' ||
+              item.visitorStatus.toLowerCase() == 'rejected';
+          return !isExpired && !isInactiveStatus;
+        }).toList();
 
-        if (newPasses.isNotEmpty) {
+        // Update Hive and UI
+        accessPasses.assignAll(filteredPasses);
+        _hive.saveAccessPasses(filteredPasses);
+
+        if (filteredPasses.isNotEmpty) {
           // Cari pass pertama yang sudah selesai pra-register
-          final int firstValidIndex = newPasses.indexWhere((p) => p.isPraregisterDone);
-          
+          final int firstValidIndex =
+              filteredPasses.indexWhere((p) => p.isPraregisterDone);
+
           if (firstValidIndex != -1) {
             // Jika ada yang valid, pastikan selectedPassIndex menunjuk ke sana jika sebelumnya tidak valid
-            if (selectedPassIndex.value >= newPasses.length || !newPasses[selectedPassIndex.value].isPraregisterDone) {
+            if (selectedPassIndex.value >= filteredPasses.length ||
+                !filteredPasses[selectedPassIndex.value].isPraregisterDone) {
               selectedPassIndex.value = firstValidIndex;
             }
           } else {

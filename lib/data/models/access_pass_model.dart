@@ -136,8 +136,12 @@ class AccessPassModel {
   /// if no timezone information is present.
   static DateTime _parseUtcToLocal(String s) {
     try {
-      // If the string already has timezone info, parse it as is.
-      // Otherwise, let DateTime.parse handle it as a local/naive datetime.
+      // If the string doesn't have timezone info (Z or +), assume UTC and append Z
+      if (!s.contains('Z') && !s.contains('+')) {
+        // Remove trailing milliseconds if present for cleaner parsing
+        final clean = s.split('.').first;
+        s = '${clean}Z';
+      }
       return DateTime.parse(s).toLocal();
     } catch (_) {
       return DateTime.now();

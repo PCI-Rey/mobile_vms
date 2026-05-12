@@ -59,19 +59,18 @@ class InvitationController extends GetxController {
   }
 
   void _applyFilters() {
-    final today = DateTime.now();
-    final startOfToday = DateTime(today.year, today.month, today.day);
-
+    final now = DateTime.now();
     List<AccessPassModel> filtered = List.from(allInvitations);
 
-    // 0. Auto-remove invitations whose visit period end is before today
+    // 0. Auto-remove invitations that are expired (end time is in the past)
+    // or have statuses that indicate they are no longer active
     filtered = filtered.where((item) {
-      final endDate = DateTime(
-        item.visitorPeriodEnd.year,
-        item.visitorPeriodEnd.month,
-        item.visitorPeriodEnd.day,
-      );
-      return !endDate.isBefore(startOfToday);
+      final isExpired = item.visitorPeriodEnd.isBefore(now);
+      final isInactiveStatus = item.visitorStatus.toLowerCase() == 'expired' || 
+                               item.visitorStatus.toLowerCase() == 'completed' ||
+                               item.visitorStatus.toLowerCase() == 'cancelled' ||
+                               item.visitorStatus.toLowerCase() == 'rejected';
+      return !isExpired && !isInactiveStatus;
     }).toList();
 
     // 1. Filter Berdasarkan Tanggal (Lokal)

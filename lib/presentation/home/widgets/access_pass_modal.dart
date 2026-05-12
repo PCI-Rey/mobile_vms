@@ -12,12 +12,16 @@ class AccessPassModal {
   static const _bgPage = Color(0xFFF4F7FB);
 
   static void show(BuildContext context, dynamic item) {
-    final startStr = DateFormat(
-      'EEEE, dd MMMM yyyy, HH:mm', 'id'
-    ).format(DateTime.parse('${item.visitorPeriodStart.toIso8601String().split('Z').first}Z').toLocal());
-    final endStr = DateFormat(
-      'EEEE, dd MMMM yyyy, HH:mm', 'id'
-    ).format(DateTime.parse('${item.visitorPeriodEnd.toIso8601String().split('Z').first}Z').toLocal());
+    final startStr = DateFormat('EEEE, dd MMMM yyyy, HH:mm', 'id').format(
+      DateTime.parse(
+        '${item.visitorPeriodStart.toIso8601String().split('Z').first}Z',
+      ).toLocal(),
+    );
+    final endStr = DateFormat('EEEE, dd MMMM yyyy, HH:mm', 'id').format(
+      DateTime.parse(
+        '${item.visitorPeriodEnd.toIso8601String().split('Z').first}Z',
+      ).toLocal(),
+    );
 
     showModalBottomSheet(
       context: context,
@@ -27,7 +31,9 @@ class AccessPassModal {
         child: Container(
           decoration: BoxDecoration(
             color: _bgPage,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(rw(context, 28))),
+            borderRadius: BorderRadius.vertical(
+              top: Radius.circular(rw(context, 28)),
+            ),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -50,7 +56,7 @@ class AccessPassModal {
                 child: Row(
                   children: [
                     Text(
-                      'Access Pass',
+                      'Guest Pass',
                       style: TextStyle(
                         fontSize: rfs(ctx, 16),
                         fontWeight: FontWeight.w600,
@@ -80,7 +86,12 @@ class AccessPassModal {
 
               // ── Pass Content ───────────────────────────────
               Padding(
-                padding: EdgeInsets.fromLTRB(rw(ctx, 16), 0, rw(ctx, 16), rh(ctx, 40)),
+                padding: EdgeInsets.fromLTRB(
+                  rw(ctx, 16),
+                  0,
+                  rw(ctx, 16),
+                  rh(ctx, 40),
+                ),
                 child: Container(
                   decoration: BoxDecoration(
                     gradient: const LinearGradient(
@@ -107,7 +118,7 @@ class AccessPassModal {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    'VMS · Guest Pass',
+                                    'VMS',
                                     style: TextStyle(
                                       color: Colors.white60,
                                       fontSize: rfs(ctx, 11),
@@ -159,7 +170,9 @@ class AccessPassModal {
                               ),
                               decoration: BoxDecoration(
                                 color: Colors.white.withValues(alpha: 0.15),
-                                borderRadius: BorderRadius.circular(rw(ctx, 20)),
+                                borderRadius: BorderRadius.circular(
+                                  rw(ctx, 20),
+                                ),
                               ),
                               child: Text(
                                 item.visitorStatus,
