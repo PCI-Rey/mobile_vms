@@ -63,22 +63,6 @@ class AccessPassModal {
                       ),
                     ),
                     const Spacer(),
-                    GestureDetector(
-                      onTap: () => Navigator.of(ctx).pop(),
-                      child: Container(
-                        width: rw(ctx, 32),
-                        height: rw(ctx, 32),
-                        decoration: BoxDecoration(
-                          color: Colors.grey[200],
-                          shape: BoxShape.circle,
-                        ),
-                        child: Icon(
-                          Icons.close,
-                          size: rw(ctx, 16),
-                          color: Colors.black54,
-                        ),
-                      ),
-                    ),
                   ],
                 ),
               ),
@@ -131,8 +115,8 @@ class AccessPassModal {
                                         : UserController.to.fullName,
                                     style: TextStyle(
                                       color: Colors.white,
-                                      fontSize: rfs(ctx, 20),
-                                      fontWeight: FontWeight.w600,
+                                      fontSize: rfs(ctx, 22),
+                                      fontWeight: FontWeight.w700,
                                     ),
                                   ),
                                   Text(
@@ -200,14 +184,14 @@ class AccessPassModal {
                             QrImageView(
                               data: item.visitorNumber,
                               version: QrVersions.auto,
-                              size: rw(ctx, 200),
+                              size: rw(ctx, 240),
                             ),
-                            vSpace(ctx, 8),
+                            vSpace(ctx, 12),
                             Text(
                               item.visitorNumber,
                               style: TextStyle(
-                                fontSize: rfs(ctx, 15),
-                                fontWeight: FontWeight.w700,
+                                fontSize: rfs(ctx, 18),
+                                fontWeight: FontWeight.w800,
                                 color: const Color(0xFF1E293B),
                                 letterSpacing: 2,
                               ),
@@ -307,11 +291,46 @@ class AccessPassModal {
                           ],
                         ),
                       ),
-                      vSpace(ctx, 20),
+                      vSpace(ctx, rh(ctx, 24)),
                     ],
                   ),
                 ),
               ),
+
+              // ── Bottom Close Button ────────────────────────
+              Padding(
+                padding: EdgeInsets.fromLTRB(
+                  rw(ctx, 16),
+                  0,
+                  rw(ctx, 16),
+                  rh(ctx, 20),
+                ),
+                child: SizedBox(
+                  width: double.infinity,
+                  height: rh(ctx, 52),
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.pop(ctx),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.white,
+                      foregroundColor: Colors.black87,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(rw(ctx, 14)),
+                        side: BorderSide(color: Colors.grey.shade300),
+                      ),
+                    ),
+                    child: Text(
+                      'CLOSE',
+                      style: TextStyle(
+                        fontSize: rfs(ctx, 14),
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 1.5,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              vSpace(ctx, rh(ctx, 12)),
             ],
           ),
         ),
@@ -359,7 +378,7 @@ class AccessPassModal {
             value,
             textAlign: TextAlign.center,
             style: TextStyle(
-              fontSize: rfs(context, 13),
+              fontSize: rfs(context, 14),
               fontWeight: FontWeight.w700,
               color: Colors.white,
             ),
