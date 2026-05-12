@@ -12,7 +12,8 @@ import '../../../core/helper/responsive_helper.dart';
 import '../../history/widgets/filter_bottom_sheet.dart';
 import '../../../../data/models/access_pass_model.dart';
 import 'widgets/create_share_link_dialog.dart';
-import 'widgets/invite_share_link_dialog.dart';
+import 'widgets/share_link_card.dart';
+import 'widgets/share_link_detail_modal.dart';
 
 class SendInvitationPage extends StatefulWidget {
   final int initialTab;
@@ -73,7 +74,11 @@ class _SendInvitationPageState extends State<SendInvitationPage> {
                   color: AppColors.primary500,
                   borderRadius: BorderRadius.circular(rw(context, 8)),
                 ),
-                child: Icon(Icons.add, color: Colors.white, size: rw(context, 20)),
+                child: Icon(
+                  Icons.add,
+                  color: Colors.white,
+                  size: rw(context, 20),
+                ),
               ),
             ),
           // Tombol Add Share Link hanya muncul di tab Share Link
@@ -92,7 +97,11 @@ class _SendInvitationPageState extends State<SendInvitationPage> {
                   color: AppColors.primary500,
                   borderRadius: BorderRadius.circular(rw(context, 8)),
                 ),
-                child: Icon(Icons.add, color: Colors.white, size: rw(context, 20)),
+                child: Icon(
+                  Icons.add,
+                  color: Colors.white,
+                  size: rw(context, 20),
+                ),
               ),
             ),
           hSpace(context, 8),
@@ -108,7 +117,9 @@ class _SendInvitationPageState extends State<SendInvitationPage> {
           Container(
             color: Colors.white,
             padding: EdgeInsets.symmetric(
-                horizontal: rw(context, 20), vertical: rh(context, 10)),
+              horizontal: rw(context, 20),
+              vertical: rh(context, 10),
+            ),
             child: Row(
               children: [
                 Expanded(
@@ -207,21 +218,21 @@ class _SendInvitationPageState extends State<SendInvitationPage> {
                       final inviteCtrl = Get.find<InvitationController>();
                       final result =
                           await showModalBottomSheet<Map<String, dynamic>>(
-                        context: context,
-                        enableDrag: true,
-                        isDismissible: true,
-                        isScrollControlled: true,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.vertical(
-                            top: Radius.circular(rw(context, 16)),
-                          ),
-                        ),
-                        builder: (context) => FilterBottomSheet(
-                          initialStartDate: startDate,
-                          initialEndDate: endDate,
-                          initialSiteId: inviteCtrl.selectedSiteId.value,
-                        ),
-                      );
+                            context: context,
+                            enableDrag: true,
+                            isDismissible: true,
+                            isScrollControlled: true,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.vertical(
+                                top: Radius.circular(rw(context, 16)),
+                              ),
+                            ),
+                            builder: (context) => FilterBottomSheet(
+                              initialStartDate: startDate,
+                              initialEndDate: endDate,
+                              initialSiteId: inviteCtrl.selectedSiteId.value,
+                            ),
+                          );
 
                       if (result != null) {
                         setState(() {
@@ -357,8 +368,7 @@ class _SendInvitationPageState extends State<SendInvitationPage> {
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
                 itemCount: inviteCtrl.ongoingInvitations.length,
-                separatorBuilder: (context, index) =>
-                    vSpace(context, 12),
+                separatorBuilder: (context, index) => vSpace(context, 12),
                 itemBuilder: (context, index) {
                   final item = inviteCtrl.ongoingInvitations[index];
                   final isCheckout = item.visitorStatus.toLowerCase().contains(
@@ -393,7 +403,11 @@ class _SendInvitationPageState extends State<SendInvitationPage> {
                   return GestureDetector(
                     onTap: () => _showInvitationDetailDialog(item, statusColor),
                     child: CustomCard(
-                      image: Icon(statusIcon, color: Colors.white, size: rw(context, 20)),
+                      image: Icon(
+                        statusIcon,
+                        color: Colors.white,
+                        size: rw(context, 20),
+                      ),
                       size: rw(context, 26),
                       title: item.visitorName,
                       subtitle: item.sitePlaceName.isNotEmpty
@@ -426,7 +440,9 @@ class _SendInvitationPageState extends State<SendInvitationPage> {
                             ),
                             decoration: BoxDecoration(
                               color: statusColor,
-                              borderRadius: BorderRadius.circular(rw(context, 4)),
+                              borderRadius: BorderRadius.circular(
+                                rw(context, 4),
+                              ),
                             ),
                             child: Text(
                               item.visitorStatus,
@@ -458,7 +474,9 @@ class _SendInvitationPageState extends State<SendInvitationPage> {
     showDialog(
       context: context,
       builder: (context) => Dialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(rw(context, 20))),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(rw(context, 20)),
+        ),
         child: Container(
           padding: EdgeInsets.all(rw(context, 24)),
           child: Column(
@@ -468,13 +486,21 @@ class _SendInvitationPageState extends State<SendInvitationPage> {
               Center(
                 child: Text(
                   'Invitation Details',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: rfs(context, 20)),
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: rfs(context, 20),
+                  ),
                 ),
               ),
               vSpace(context, 12),
               const Divider(),
               vSpace(context, 16),
-              _buildDetailRow(context, 'Visitor Name', item.visitorName, isBold: true),
+              _buildDetailRow(
+                context,
+                'Visitor Name',
+                item.visitorName,
+                isBold: true,
+              ),
               _buildDetailRow(
                 context,
                 'Invitation Code',
@@ -502,7 +528,11 @@ class _SendInvitationPageState extends State<SendInvitationPage> {
                   '${item.parkingArea} - ${item.parkingSlot}',
                 ),
               if (item.vehiclePlateNumber.isNotEmpty)
-                _buildDetailRow(context, 'Vehicle Plate', item.vehiclePlateNumber),
+                _buildDetailRow(
+                  context,
+                  'Vehicle Plate',
+                  item.vehiclePlateNumber,
+                ),
               vSpace(context, 16),
               SizedBox(
                 width: double.infinity,
@@ -545,11 +575,20 @@ class _SendInvitationPageState extends State<SendInvitationPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: TextStyle(color: Colors.grey[600], fontSize: rfs(context, 12))),
+          Text(
+            label,
+            style: TextStyle(
+              color: Colors.grey[600],
+              fontSize: rfs(context, 12),
+            ),
+          ),
           vSpace(context, 4),
           if (badgeColor != null)
             Container(
-              padding: EdgeInsets.symmetric(horizontal: rw(context, 8), vertical: rh(context, 2)),
+              padding: EdgeInsets.symmetric(
+                horizontal: rw(context, 8),
+                vertical: rh(context, 2),
+              ),
               decoration: BoxDecoration(
                 color: badgeColor,
                 borderRadius: BorderRadius.circular(rw(context, 4)),
@@ -642,7 +681,11 @@ class _SendInvitationPageState extends State<SendInvitationPage> {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(FontAwesomeIcons.sort, size: rw(context, 12), color: Colors.grey),
+          Icon(
+            FontAwesomeIcons.sort,
+            size: rw(context, 12),
+            color: Colors.grey,
+          ),
           hSpace(context, 6),
           Text(
             label,
@@ -653,7 +696,11 @@ class _SendInvitationPageState extends State<SendInvitationPage> {
     );
   }
 
-  Widget _buildFilterValueChip(BuildContext context, String label, {required VoidCallback onClear}) {
+  Widget _buildFilterValueChip(
+    BuildContext context,
+    String label, {
+    required VoidCallback onClear,
+  }) {
     return Container(
       height: rh(context, 32),
       padding: EdgeInsets.symmetric(horizontal: rw(context, 10)),
@@ -675,7 +722,11 @@ class _SendInvitationPageState extends State<SendInvitationPage> {
             borderRadius: BorderRadius.circular(rw(context, 10)),
             child: Padding(
               padding: EdgeInsets.all(rw(context, 2)),
-              child: Icon(Icons.close, size: rw(context, 14), color: Colors.grey),
+              child: Icon(
+                Icons.close,
+                size: rw(context, 14),
+                color: Colors.grey,
+              ),
             ),
           ),
         ],
@@ -707,8 +758,8 @@ class ShareLinkListInline extends StatefulWidget {
 class _ShareLinkListInlineState extends State<ShareLinkListInline> {
   final InvitationController controller =
       Get.isRegistered<InvitationController>()
-          ? Get.find<InvitationController>()
-          : Get.put(InvitationController());
+      ? Get.find<InvitationController>()
+      : Get.put(InvitationController());
 
   Timer? _timer;
 
@@ -734,39 +785,7 @@ class _ShareLinkListInlineState extends State<ShareLinkListInline> {
     super.dispose();
   }
 
-  void _confirmDelete(String id) {
-    Get.dialog(
-      AlertDialog(
-        title: const Text('Delete Share Link'),
-        content: const Text('Are you sure you want to delete this share link?'),
-        actions: [
-          TextButton(onPressed: () => Get.back(), child: const Text('Cancel')),
-          TextButton(
-            onPressed: () async {
-              Get.back();
-              final success = await controller.deleteShareLinkAction(id);
-              if (success) {
-                Get.snackbar(
-                  'Success',
-                  'Share link deleted successfully',
-                  backgroundColor: Colors.green,
-                  colorText: Colors.white,
-                );
-              } else {
-                Get.snackbar(
-                  'Error',
-                  'Failed to delete share link',
-                  backgroundColor: Colors.red,
-                  colorText: Colors.white,
-                );
-              }
-            },
-            child: const Text('Delete', style: TextStyle(color: Colors.red)),
-          ),
-        ],
-      ),
-    );
-  }
+  // Delete confirmation is now handled by ShareLinkDetailModal
 
   @override
   Widget build(BuildContext context) {
@@ -781,13 +800,18 @@ class _ShareLinkListInlineState extends State<ShareLinkListInline> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.link_off,
-                  size: rw(context, 64), color: Colors.grey.shade300),
+              Icon(
+                Icons.link_off,
+                size: rw(context, 64),
+                color: Colors.grey.shade300,
+              ),
               vSpace(context, 16),
               Text(
                 'No share links found',
                 style: TextStyle(
-                    color: Colors.grey.shade500, fontSize: rfs(context, 14)),
+                  color: Colors.grey.shade500,
+                  fontSize: rfs(context, 14),
+                ),
               ),
             ],
           ),
@@ -806,12 +830,14 @@ class _ShareLinkListInlineState extends State<ShareLinkListInline> {
                 separatorBuilder: (_, index) => vSpace(context, 12),
                 itemBuilder: (context, index) {
                   final item = controller.shareLinks[index];
-                  return _buildShareLinkCard(
-                    item,
-                    index +
+                  return ShareLinkCard(
+                    item: item,
+                    no:
+                        index +
                         1 +
                         (controller.shareLinkCurrentPage.value *
                             controller.shareLinkPageSize.value),
+                    onTap: () => ShareLinkDetailModal.show(context, item),
                   );
                 },
               ),
@@ -885,297 +911,5 @@ class _ShareLinkListInlineState extends State<ShareLinkListInline> {
     );
   }
 
-  Widget _buildShareLinkCard(dynamic item, int no) {
-    final String agenda = item['agenda'] ?? '-';
-    final int maxUsage = item['max_usage'] ?? 0;
-
-    final expiredAtStr = item['expired_at'];
-    DateTime? expiredAt;
-    if (expiredAtStr != null) {
-      String normalized = expiredAtStr.toString();
-      if (!normalized.endsWith('Z') && !normalized.contains('+')) {
-        normalized = '${normalized.replaceFirst(' ', 'T')}Z';
-      }
-      expiredAt = DateTime.tryParse(normalized)?.toLocal();
-    }
-
-    bool isExpired = false;
-    if (expiredAt != null && expiredAt.isBefore(DateTime.now())) {
-      isExpired = true;
-    }
-
-    String getRemainingTime() {
-      final int expiredNumber = item['expired_number'] ?? -1;
-      if (expiredNumber == 0) return 'No Expired';
-      if (expiredAt == null) return '00:00:00';
-      final now = DateTime.now();
-      final difference = expiredAt.difference(now);
-      if (difference.isNegative) return '00:00:00';
-      String twoDigits(int n) => n.toString().padLeft(2, '0');
-      return '${twoDigits(difference.inHours)}:${twoDigits(difference.inMinutes.remainder(60))}:${twoDigits(difference.inSeconds.remainder(60))}';
-    }
-
-    final Color statusColor =
-        isExpired ? const Color(0xFFE53935) : const Color(0xFF43A047);
-    final String status = isExpired ? 'Expired' : 'Active';
-
-    String formatDate(String? dateStr) {
-      if (dateStr == null) return '-';
-      try {
-        String normalized = dateStr;
-        if (!normalized.endsWith('Z') && !normalized.contains('+')) {
-          normalized = '${normalized.replaceFirst(' ', 'T')}Z';
-        }
-        final date = DateTime.parse(normalized).toLocal();
-        return DateFormat('dd MMM yyyy, HH:mm').format(date);
-      } catch (e) {
-        return dateStr;
-      }
-    }
-
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade200),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.02),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header: No & Status
-          Padding(
-            padding: const EdgeInsets.all(12),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Container(
-                  padding: const EdgeInsets.fromLTRB(4, 4, 12, 4),
-                  decoration: BoxDecoration(
-                    color: statusColor,
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: [
-                      BoxShadow(
-                        color: statusColor.withValues(alpha: 0.2),
-                        blurRadius: 4,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Container(
-                        width: 22,
-                        height: 22,
-                        decoration: const BoxDecoration(
-                          color: Colors.white,
-                          shape: BoxShape.circle,
-                        ),
-                        child: Center(
-                          child: Text(
-                            no.toString(),
-                            style: TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold,
-                              color: statusColor,
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Icon(
-                        isExpired ? Icons.link_off : Icons.link,
-                        size: 14,
-                        color: Colors.white,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        status.toUpperCase(),
-                        style: const TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w900,
-                          color: Colors.white,
-                          letterSpacing: 0.8,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade50,
-                    borderRadius: BorderRadius.circular(6),
-                    border: Border.all(color: Colors.grey.shade200),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.timer_outlined,
-                        size: 14,
-                        color: isExpired ? Colors.grey : Colors.orange,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        getRemainingTime(),
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                          fontFamily: 'monospace',
-                          color: isExpired ? Colors.grey : Colors.black87,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const Divider(height: 1),
-          // Content
-          Padding(
-            padding: const EdgeInsets.all(12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildInfoRow('Agenda', agenda, isBold: true),
-                const SizedBox(height: 8),
-                _buildInfoRow(
-                  'Usage',
-                  item['is_single_use'] == true
-                      ? '$maxUsage (Single Use)'
-                      : '$maxUsage',
-                ),
-                const SizedBox(height: 8),
-                _buildInfoRow(
-                  'Period Start',
-                  formatDate(item['visitor_period_start']),
-                ),
-                const SizedBox(height: 4),
-                _buildInfoRow(
-                  'Period End',
-                  formatDate(item['visitor_period_end']),
-                ),
-                const SizedBox(height: 8),
-                _buildInfoRow(
-                  'Expired At',
-                  item['expired_number'] == 0
-                      ? 'Never'
-                      : formatDate(item['expired_at']),
-                  color: Colors.orange.shade700,
-                ),
-              ],
-            ),
-          ),
-          const Divider(height: 1),
-          // Actions
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                _buildActionButton(
-                  icon: Icons.copy,
-                  color: isExpired ? Colors.grey : Colors.orange.shade400,
-                  onTap: () {
-                    if (isExpired) {
-                      Get.snackbar(
-                        'Link Expired',
-                        'This link has expired. Please create a new one.',
-                        snackPosition: SnackPosition.TOP,
-                        backgroundColor: Colors.red,
-                        colorText: Colors.white,
-                        icon: const Icon(
-                          Icons.error_outline,
-                          color: Colors.white,
-                        ),
-                      );
-                      return;
-                    }
-                    showDialog(
-                      context: context,
-                      builder: (context) => InviteShareLinkDialog(item: item),
-                    );
-                  },
-                ),
-                const SizedBox(width: 12),
-                _buildActionButton(
-                  icon: Icons.visibility,
-                  color: Colors.grey,
-                  onTap: () {
-                    // Show details logic
-                  },
-                ),
-                const SizedBox(width: 12),
-                _buildActionButton(
-                  icon: Icons.delete,
-                  color: Colors.red,
-                  onTap: () => _confirmDelete(item['id'].toString()),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildInfoRow(
-    String label,
-    String value, {
-    bool isBold = false,
-    Color? color,
-  }) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        SizedBox(
-          width: 90,
-          child: Text(
-            label,
-            style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
-          ),
-        ),
-        Expanded(
-          child: Text(
-            value,
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
-              color: color ?? Colors.black87,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildActionButton({
-    required IconData icon,
-    required Color color,
-    required VoidCallback onTap,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(8),
-      child: Container(
-        padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Icon(icon, size: 18, color: color),
-      ),
-    );
-  }
+  // UI components extracted to ShareLinkCard and ShareLinkDetailModal
 }
