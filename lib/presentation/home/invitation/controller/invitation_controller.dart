@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../../data/datasources/api_service.dart';
@@ -302,8 +303,12 @@ class InvitationController extends GetxController {
       }
       return false;
     } catch (e) {
+      if (e is DioException && e.response != null) {
+        debugPrint('createShareLinkAction error response: ${e.response?.data}');
+        throw e.response?.data['message'] ?? e.response?.data.toString() ?? 'Failed to create share link';
+      }
       debugPrint('createShareLinkAction error: $e');
-      return false;
+      throw 'Failed to create share link';
     }
   }
 

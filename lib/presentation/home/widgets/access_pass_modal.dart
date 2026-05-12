@@ -11,7 +11,7 @@ class AccessPassModal {
   static const _blueDark = Color(0xFF0E5DB5);
   static const _bgPage = Color(0xFFF4F7FB);
 
-  static void show(BuildContext context, dynamic item, double sw) {
+  static void show(BuildContext context, dynamic item) {
     final startStr = DateFormat(
       'EEEE, dd MMMM yyyy, HH:mm', 'id'
     ).format(DateTime.parse('${item.visitorPeriodStart.toIso8601String().split('Z').first}Z').toLocal());
@@ -25,34 +25,34 @@ class AccessPassModal {
       backgroundColor: Colors.transparent,
       builder: (ctx) => SafeArea(
         child: Container(
-          decoration: const BoxDecoration(
+          decoration: BoxDecoration(
             color: _bgPage,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+            borderRadius: BorderRadius.vertical(top: Radius.circular(rw(context, 28))),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               // ── Fixed handle + title ──────────────────────────
-              const SizedBox(height: 12),
+              vSpace(ctx, 12),
               Center(
                 child: Container(
-                  width: 40,
-                  height: 4,
+                  width: rw(ctx, 40),
+                  height: rh(ctx, 4),
                   decoration: BoxDecoration(
                     color: Colors.grey[300],
-                    borderRadius: BorderRadius.circular(2),
+                    borderRadius: BorderRadius.circular(rw(ctx, 2)),
                   ),
                 ),
               ),
-              const SizedBox(height: 12),
+              vSpace(ctx, 12),
               Padding(
-                padding: EdgeInsets.symmetric(horizontal: sw * 0.05),
+                padding: EdgeInsets.symmetric(horizontal: rw(ctx, 20)),
                 child: Row(
                   children: [
                     Text(
                       'Access Pass',
                       style: TextStyle(
-                        fontSize: rfs(context, 16),
+                        fontSize: rfs(ctx, 16),
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -60,15 +60,15 @@ class AccessPassModal {
                     GestureDetector(
                       onTap: () => Navigator.of(ctx).pop(),
                       child: Container(
-                        width: 32,
-                        height: 32,
+                        width: rw(ctx, 32),
+                        height: rw(ctx, 32),
                         decoration: BoxDecoration(
                           color: Colors.grey[200],
                           shape: BoxShape.circle,
                         ),
-                        child: const Icon(
+                        child: Icon(
                           Icons.close,
-                          size: 16,
+                          size: rw(ctx, 16),
                           color: Colors.black54,
                         ),
                       ),
@@ -76,11 +76,11 @@ class AccessPassModal {
                   ],
                 ),
               ),
-              const SizedBox(height: 16),
+              vSpace(ctx, 16),
 
               // ── Pass Content ───────────────────────────────
               Padding(
-                padding: EdgeInsets.fromLTRB(sw * 0.04, 0, sw * 0.04, sw * 0.1),
+                padding: EdgeInsets.fromLTRB(rw(ctx, 16), 0, rw(ctx, 16), rh(ctx, 40)),
                 child: Container(
                   decoration: BoxDecoration(
                     gradient: const LinearGradient(
@@ -88,17 +88,17 @@ class AccessPassModal {
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
-                    borderRadius: BorderRadius.circular(sw * 0.06),
+                    borderRadius: BorderRadius.circular(rw(ctx, 24)),
                   ),
                   child: Column(
                     children: [
                       // Top name + status
                       Padding(
                         padding: EdgeInsets.fromLTRB(
-                          sw * 0.05,
-                          sw * 0.05,
-                          sw * 0.05,
-                          sw * 0.04,
+                          rw(ctx, 20),
+                          rh(ctx, 20),
+                          rw(ctx, 20),
+                          rh(ctx, 16),
                         ),
                         child: Row(
                           children: [
@@ -110,17 +110,17 @@ class AccessPassModal {
                                     'VMS · Guest Pass',
                                     style: TextStyle(
                                       color: Colors.white60,
-                                      fontSize: rfs(context, 11),
+                                      fontSize: rfs(ctx, 11),
                                     ),
                                   ),
-                                  SizedBox(height: sw * 0.01),
+                                  vSpace(ctx, 4),
                                   Text(
                                     (item.visitorName as String).isNotEmpty
                                         ? item.visitorName
                                         : UserController.to.fullName,
                                     style: TextStyle(
                                       color: Colors.white,
-                                      fontSize: rfs(context, 20),
+                                      fontSize: rfs(ctx, 20),
                                       fontWeight: FontWeight.w600,
                                     ),
                                   ),
@@ -128,13 +128,13 @@ class AccessPassModal {
                                     item.sitePlaceName,
                                     style: TextStyle(
                                       color: Colors.white70,
-                                      fontSize: rfs(context, 12),
+                                      fontSize: rfs(ctx, 12),
                                     ),
                                   ),
                                 ],
                               ),
                             ),
-                            SizedBox(width: sw * 0.04),
+                            hSpace(ctx, 16),
                             CustomCircleImage(
                               image: UserController.to.faceUrl != null
                                   ? Image.network(
@@ -148,24 +148,24 @@ class AccessPassModal {
                                   : Assets.images.avaPerson1.image(
                                       fit: BoxFit.cover,
                                     ),
-                              size: sw * 0.16,
+                              size: rw(ctx, 64),
                               borderWidth: 2,
                             ),
-                            const SizedBox(width: 8),
+                            hSpace(ctx, 8),
                             Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 10,
-                                vertical: 5,
+                              padding: EdgeInsets.symmetric(
+                                horizontal: rw(ctx, 10),
+                                vertical: rh(ctx, 5),
                               ),
                               decoration: BoxDecoration(
                                 color: Colors.white.withValues(alpha: 0.15),
-                                borderRadius: BorderRadius.circular(20),
+                                borderRadius: BorderRadius.circular(rw(ctx, 20)),
                               ),
                               child: Text(
                                 item.visitorStatus,
                                 style: TextStyle(
                                   color: Colors.white,
-                                  fontSize: rfs(context, 11),
+                                  fontSize: rfs(ctx, 11),
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),
@@ -176,34 +176,34 @@ class AccessPassModal {
 
                       // Barcode card
                       Container(
-                        margin: EdgeInsets.symmetric(horizontal: sw * 0.05),
-                        padding: EdgeInsets.all(sw * 0.04),
+                        margin: EdgeInsets.symmetric(horizontal: rw(ctx, 20)),
+                        padding: EdgeInsets.all(rw(ctx, 16)),
                         decoration: BoxDecoration(
                           color: Colors.white,
-                          borderRadius: BorderRadius.circular(sw * 0.04),
+                          borderRadius: BorderRadius.circular(rw(ctx, 16)),
                         ),
                         child: Column(
                           children: [
                             QrImageView(
                               data: item.visitorNumber,
                               version: QrVersions.auto,
-                              size: sw * 0.48,
+                              size: rw(ctx, 200),
                             ),
-                            SizedBox(height: sw * 0.02),
+                            vSpace(ctx, 8),
                             Text(
                               item.visitorNumber,
                               style: TextStyle(
-                                fontSize: rfs(context, 15),
+                                fontSize: rfs(ctx, 15),
                                 fontWeight: FontWeight.w700,
                                 color: const Color(0xFF1E293B),
                                 letterSpacing: 2,
                               ),
                             ),
-                            SizedBox(height: sw * 0.01),
+                            vSpace(ctx, 4),
                             Text(
                               'Tunjukkan kode ini ke petugas',
                               style: TextStyle(
-                                fontSize: rfs(context, 11),
+                                fontSize: rfs(ctx, 11),
                                 color: Colors.grey,
                               ),
                             ),
@@ -211,88 +211,81 @@ class AccessPassModal {
                         ),
                       ),
 
-                      SizedBox(height: sw * 0.04),
+                      vSpace(ctx, 16),
 
                       // Info tiles
                       Padding(
                         padding: EdgeInsets.fromLTRB(
-                          sw * 0.05,
+                          rw(ctx, 20),
                           0,
-                          sw * 0.05,
+                          rw(ctx, 20),
                           0,
                         ),
                         child: Column(
                           children: [
                             AccessPassModal.buildInfoTile(
-                              context,
+                              ctx,
                               Icons.vpn_key_outlined,
                               'Invitation Code',
                               item.invitationCode,
-                              sw,
                             ),
-                            SizedBox(height: sw * 0.02),
+                            vSpace(ctx, 8),
                             Row(
                               children: [
                                 Expanded(
                                   child: AccessPassModal.buildInfoTile(
-                                    context,
+                                    ctx,
                                     Icons.person_outline,
                                     'Host',
                                     item.hostName,
-                                    sw,
                                   ),
                                 ),
-                                SizedBox(width: sw * 0.02),
+                                hSpace(ctx, 8),
                                 Expanded(
                                   child: AccessPassModal.buildInfoTile(
-                                    context,
+                                    ctx,
                                     Icons.event_note_outlined,
                                     'Agenda',
                                     item.agenda,
-                                    sw,
                                   ),
                                 ),
                               ],
                             ),
-                            SizedBox(height: sw * 0.02),
+                            vSpace(ctx, 8),
                             AccessPassModal.buildInfoTile(
-                              context,
+                              ctx,
                               Icons.calendar_today_outlined,
                               'Visit Period',
                               '$startStr\n$endStr',
-                              sw,
                             ),
                             if (item.isDriving) ...[
-                              SizedBox(height: sw * 0.02),
+                              vSpace(ctx, 8),
                               Row(
                                 children: [
                                   Expanded(
                                     child: AccessPassModal.buildInfoTile(
-                                      context,
+                                      ctx,
                                       Icons.location_on_outlined,
                                       'Area',
                                       item.parkingArea,
-                                      sw,
                                     ),
                                   ),
-                                  SizedBox(width: sw * 0.02),
+                                  hSpace(ctx, 8),
                                   Expanded(
                                     child: AccessPassModal.buildInfoTile(
-                                      context,
+                                      ctx,
                                       Icons.local_parking_outlined,
                                       'Slot',
                                       item.parkingSlot,
-                                      sw,
                                     ),
                                   ),
-                                  SizedBox(width: sw * 0.02),
+                                  hSpace(ctx, 8),
                                   Expanded(
                                     child: AccessPassModal.buildInfoTile(
-                                      context,
+                                      ctx,
                                       Icons.directions_car_outlined,
                                       'Plate',
                                       item.vehiclePlateNumber,
-                                      sw,
                                     ),
                                   ),
                                 ],
@@ -301,7 +294,7 @@ class AccessPassModal {
                           ],
                         ),
                       ),
-                      SizedBox(height: sw * 0.05),
+                      vSpace(ctx, 20),
                     ],
                   ),
                 ),
@@ -318,17 +311,16 @@ class AccessPassModal {
     IconData icon,
     String label,
     String value,
-    double sw,
   ) {
     return Container(
       width: double.infinity,
       padding: EdgeInsets.symmetric(
-        horizontal: sw * 0.03,
-        vertical: sw * 0.025,
+        horizontal: rw(context, 12),
+        vertical: rh(context, 10),
       ),
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(sw * 0.03),
+        borderRadius: BorderRadius.circular(rw(context, 12)),
         border: Border.all(color: Colors.white24),
       ),
       child: Column(
@@ -337,7 +329,7 @@ class AccessPassModal {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(icon, size: rfs(context, 11), color: Colors.white60),
-              SizedBox(width: sw * 0.01),
+              hSpace(context, 4),
               Text(
                 label.toUpperCase(),
                 style: TextStyle(
@@ -349,7 +341,7 @@ class AccessPassModal {
               ),
             ],
           ),
-          SizedBox(height: sw * 0.01),
+          vSpace(context, 4),
           Text(
             value,
             textAlign: TextAlign.center,

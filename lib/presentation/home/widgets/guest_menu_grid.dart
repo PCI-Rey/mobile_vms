@@ -10,29 +10,26 @@ import '../../parking/as_guest/guest_parking_page.dart';
 import '../../profile/profile_page.dart';
 
 class GuestMenuGrid extends StatelessWidget {
-  final double sw;
-
-  const GuestMenuGrid({super.key, required this.sw});
+  const GuestMenuGrid({super.key});
 
   @override
   Widget build(BuildContext context) {
     final langCtrl = LanguageController.to;
-    final iconBoxSize = sw * 0.135;
-    final iconSize = sw * 0.068;
-    final boxRadius = sw * 0.038;
-
+    final iconBoxSize = rw(context, 54);
+    final iconSize = rw(context, 26);
+    final boxRadius = rw(context, 14);
 
     return Container(
-      margin: EdgeInsets.symmetric(horizontal: sw * 0.04),
-      padding: EdgeInsets.symmetric(vertical: sw * 0.05, horizontal: sw * 0.03),
+      margin: EdgeInsets.symmetric(horizontal: rw(context, 16)),
+      padding: EdgeInsets.symmetric(vertical: rh(context, 20), horizontal: rw(context, 12)),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(sw * 0.06),
+        borderRadius: BorderRadius.circular(rw(context, 24)),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.06),
-            blurRadius: 16,
-            offset: const Offset(0, 6),
+            blurRadius: rw(context, 16),
+            offset: Offset(0, rh(context, 6)),
           ),
         ],
       ),
@@ -105,7 +102,7 @@ class GuestMenuGrid extends StatelessWidget {
                   )
                   .toList(),
             ),
-            SizedBox(height: sw * 0.05),
+            vSpace(context, 20),
             Row(
               children: items
                   .skip(3)
@@ -157,8 +154,8 @@ class GuestMenuGrid extends StatelessWidget {
                   top: -4,
                   right: -4,
                   child: Container(
-                    width: 16,
-                    height: 16,
+                    width: rw(context, 16),
+                    height: rw(context, 16),
                     decoration: const BoxDecoration(
                       color: Color(0xFFE24B4A),
                       shape: BoxShape.circle,
@@ -166,9 +163,9 @@ class GuestMenuGrid extends StatelessWidget {
                     child: Center(
                       child: Text(
                         '${item.badgeCount}',
-                        style: const TextStyle(
+                        style: TextStyle(
                           color: Colors.white,
-                          fontSize: 9,
+                          fontSize: rfs(context, 9),
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -177,7 +174,7 @@ class GuestMenuGrid extends StatelessWidget {
                 ),
             ],
           ),
-          SizedBox(height: boxSize * 0.15),
+          vSpace(context, 8),
           Text(
             item.label,
             style: TextStyle(

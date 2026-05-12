@@ -145,225 +145,243 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
           padding: const EdgeInsets.all(20),
           child: Form(
             key: _formKey,
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      const SizedBox(width: 40),
-                      const Expanded(
-                        child: Text(
-                          'Create Share Link Registration',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 17,
-                          ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const SizedBox(width: 40),
+                    const Expanded(
+                      child: Text(
+                        'Create Share Link Registration',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 17,
                         ),
                       ),
-                      IconButton(
-                        icon: const Icon(Icons.close),
-                        onPressed: () async {
-                          final navigator = Navigator.of(context);
-                          if (await _showExitConfirmation()) {
-                            if (mounted) navigator.pop();
-                          }
-                        },
-                      ),
-                    ],
-                  ),
-                  const Divider(),
-                  const SizedBox(height: 16),
-
-                  _buildFieldRow(
-                    label: 'Host',
-                    isEnabled: isHostEnabled,
-                    onToggle: (v) => setState(() => isHostEnabled = v),
-                    input: _buildDropdown(
-                      hint: 'Select Host',
-                      value: selectedHostId,
-                      items: controller.hosts,
-                      enabled: isHostEnabled,
-                      onChanged: (v) => setState(() => selectedHostId = v),
                     ),
-                  ),
-                  _buildFieldRow(
-                    label: 'Site',
-                    isEnabled: isSiteEnabled,
-                    onToggle: (v) => setState(() => isSiteEnabled = v),
-                    input: _buildDropdown(
-                      hint: 'Select Site',
-                      value: selectedSiteId,
-                      items: controller.sites,
-                      enabled: isSiteEnabled,
-                      onChanged: (v) => setState(() => selectedSiteId = v),
+                    IconButton(
+                      icon: const Icon(Icons.close),
+                      onPressed: () async {
+                        final navigator = Navigator.of(context);
+                        if (await _showExitConfirmation()) {
+                          if (mounted) navigator.pop();
+                        }
+                      },
                     ),
-                  ),
-                  _buildFieldRow(
-                    label: 'Visitor Type',
-                    isEnabled: isVisitorTypeEnabled,
-                    onToggle: (v) => setState(() => isVisitorTypeEnabled = v),
-                    input: _buildDropdown(
-                      hint: 'Select Visitor Type',
-                      value: selectedVisitorTypeId,
-                      items: controller.visitorTypes,
-                      enabled: isVisitorTypeEnabled,
-                      onChanged: (v) =>
-                          setState(() => selectedVisitorTypeId = v),
-                    ),
-                  ),
-                  _buildFieldRow(
-                    label: 'Agenda',
-                    isEnabled: isAgendaEnabled,
-                    onToggle: (v) => setState(() => isAgendaEnabled = v),
-                    input: Column(
+                  ],
+                ),
+                const Divider(),
+                const SizedBox(height: 16),
+                Flexible(
+                  child: SingleChildScrollView(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        _buildDropdown(
-                          hint: 'Pilih Agenda',
-                          value: selectedAgendaOption,
-                          items: agendaOptions,
-                          enabled: isAgendaEnabled,
-                          onChanged: (v) => setState(() {
-                            selectedAgendaOption = v;
-                            if (v != 'Other') {
-                              agendaCtrl.text = v ?? '';
-                            } else {
-                              agendaCtrl.text = '';
-                            }
-                          }),
-                        ),
-                        if (isAgendaEnabled &&
-                            selectedAgendaOption == 'Other') ...[
-                          const SizedBox(height: 8),
-                          _buildTextField(
-                            hint: 'Ketik agenda lainnya...',
-                            controller: agendaCtrl,
-                            enabled: isAgendaEnabled,
+                        _buildFieldRow(
+                          label: 'Agenda',
+                          isEnabled: isAgendaEnabled,
+                          onToggle: (v) => setState(() => isAgendaEnabled = v),
+                          input: Column(
+                            children: [
+                              _buildDropdown(
+                                hint: 'Pilih Agenda',
+                                value: selectedAgendaOption,
+                                items: agendaOptions,
+                                enabled: isAgendaEnabled,
+                                onChanged: (v) => setState(() {
+                                  selectedAgendaOption = v;
+                                  if (v != 'Other') {
+                                    agendaCtrl.text = v ?? '';
+                                  } else {
+                                    agendaCtrl.text = '';
+                                  }
+                                }),
+                              ),
+                              if (isAgendaEnabled &&
+                                  selectedAgendaOption == 'Other') ...[
+                                const SizedBox(height: 8),
+                                _buildTextField(
+                                  hint: 'Ketik agenda lainnya...',
+                                  controller: agendaCtrl,
+                                  enabled: isAgendaEnabled,
+                                ),
+                              ],
+                            ],
                           ),
-                        ],
+                        ),
+                        _buildFieldRow(
+                          label: 'Host',
+                          isEnabled: isHostEnabled,
+                          onToggle: (v) => setState(() => isHostEnabled = v),
+                          input: _buildDropdown(
+                            hint: 'Select Host',
+                            value: selectedHostId,
+                            items: controller.hosts,
+                            enabled: isHostEnabled,
+                            onChanged: (v) =>
+                                setState(() => selectedHostId = v),
+                          ),
+                        ),
+                        _buildFieldRow(
+                          label: 'Site',
+                          isEnabled: isSiteEnabled,
+                          onToggle: (v) => setState(() => isSiteEnabled = v),
+                          input: _buildDropdown(
+                            hint: 'Select Site',
+                            value: selectedSiteId,
+                            items: controller.sites,
+                            enabled: isSiteEnabled,
+                            onChanged: (v) =>
+                                setState(() => selectedSiteId = v),
+                          ),
+                        ),
+                        _buildFieldRow(
+                          label: 'Visitor Type',
+                          isEnabled: isVisitorTypeEnabled,
+                          onToggle: (v) =>
+                              setState(() => isVisitorTypeEnabled = v),
+                          input: _buildDropdown(
+                            hint: 'Select Visitor Type',
+                            value: selectedVisitorTypeId,
+                            items: controller.visitorTypes,
+                            enabled: isVisitorTypeEnabled,
+                            onChanged: (v) =>
+                                setState(() => selectedVisitorTypeId = v),
+                          ),
+                        ),
+                        _buildFieldRow(
+                          label: 'Visit Start',
+                          isEnabled: isVisitStartEnabled,
+                          onToggle: (v) =>
+                              setState(() => isVisitStartEnabled = v),
+                          input: _buildDateTimePicker(
+                            value: visitStart,
+                            enabled: isVisitStartEnabled,
+                            onTap: () => _pickDateTime(true),
+                          ),
+                        ),
+                        _buildFieldRow(
+                          label: 'Visit End',
+                          isEnabled: isVisitEndEnabled,
+                          onToggle: (v) =>
+                              setState(() => isVisitEndEnabled = v),
+                          input: _buildDateTimePicker(
+                            value: visitEnd,
+                            enabled: isVisitEndEnabled,
+                            onTap: () => _pickDateTime(false),
+                          ),
+                        ),
+                        _buildFieldRow(
+                          label: 'Expired Link',
+                          isEnabled: isExpiredEnabled,
+                          onToggle: (v) => setState(() => isExpiredEnabled = v),
+                          input: _buildDropdown(
+                            hint: 'Pilih Expired Link',
+                            value: selectedExpiredMinutes,
+                            items: expiryOptions,
+                            enabled: isExpiredEnabled,
+                            onChanged: (v) =>
+                                setState(() => selectedExpiredMinutes = v),
+                          ),
+                        ),
+                        _buildFieldRow(
+                          label: 'Visitor Quota Limit',
+                          isEnabled: isSingleUse ? true : isQuotaEnabled,
+                          onToggle: isSingleUse
+                              ? (v) {} // Disable toggle if single use is active
+                              : (v) => setState(() => isQuotaEnabled = v),
+                          input: _buildTextField(
+                            hint: '0',
+                            controller: quotaCtrl,
+                            enabled: isSingleUse ? false : isQuotaEnabled,
+                            keyboardType: TextInputType.number,
+                          ),
+                        ),
+
+                        Row(
+                          children: [
+                            Switch(
+                              value: isSingleUse,
+                              onChanged: (v) => setState(() {
+                                isSingleUse = v;
+                                if (v) {
+                                  isQuotaEnabled = true;
+                                  quotaCtrl.text = '1';
+                                }
+                              }),
+                              activeTrackColor: const Color(
+                                0xFF005596,
+                              ).withValues(alpha: 0.5),
+                              activeThumbColor: const Color(0xFF005596),
+                            ),
+                            const Text(
+                              'Single Use Link',
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                          ],
+                        ),
+                        const Padding(
+                          padding: EdgeInsets.only(left: 12),
+                          child: Text(
+                            'Enable this option to allow the link to be used only once.',
+                            style: TextStyle(fontSize: 10, color: Colors.grey),
+                          ),
+                        ),
+
+                        const SizedBox(height: 24),
+
+                        Row(
+                          children: [
+                            Expanded(
+                              child: ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFF005596),
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 14,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                ),
+                                onPressed: () => _submit(false),
+                                child: const Text(
+                                  'Create Link',
+                                  style: TextStyle(color: Colors.white),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: OutlinedButton(
+                                style: OutlinedButton.styleFrom(
+                                  side: const BorderSide(
+                                    color: Color(0xFF005596),
+                                  ),
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 14,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                ),
+                                onPressed: () => _submit(true),
+                                child: const Text(
+                                  'Create & Send Email',
+                                  style: TextStyle(color: Color(0xFF005596)),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
                       ],
                     ),
                   ),
-                  _buildFieldRow(
-                    label: 'Visit Start',
-                    isEnabled: isVisitStartEnabled,
-                    onToggle: (v) => setState(() => isVisitStartEnabled = v),
-                    input: _buildDateTimePicker(
-                      value: visitStart,
-                      enabled: isVisitStartEnabled,
-                      onTap: () => _pickDateTime(true),
-                    ),
-                  ),
-                  _buildFieldRow(
-                    label: 'Visit End',
-                    isEnabled: isVisitEndEnabled,
-                    onToggle: (v) => setState(() => isVisitEndEnabled = v),
-                    input: _buildDateTimePicker(
-                      value: visitEnd,
-                      enabled: isVisitEndEnabled,
-                      onTap: () => _pickDateTime(false),
-                    ),
-                  ),
-                  _buildFieldRow(
-                    label: 'Expired Link',
-                    isEnabled: isExpiredEnabled,
-                    onToggle: (v) => setState(() => isExpiredEnabled = v),
-                    input: _buildDropdown(
-                      hint: 'Pilih Expired Link',
-                      value: selectedExpiredMinutes,
-                      items: expiryOptions,
-                      enabled: isExpiredEnabled,
-                      onChanged: (v) =>
-                          setState(() => selectedExpiredMinutes = v),
-                    ),
-                  ),
-                  _buildFieldRow(
-                    label: 'Visitor Quota Limit',
-                    isEnabled: isSingleUse ? true : isQuotaEnabled,
-                    onToggle: isSingleUse
-                        ? (v) {} // Disable toggle if single use is active
-                        : (v) => setState(() => isQuotaEnabled = v),
-                    input: _buildTextField(
-                      hint: '0',
-                      controller: quotaCtrl,
-                      enabled: isSingleUse ? false : isQuotaEnabled,
-                      keyboardType: TextInputType.number,
-                    ),
-                  ),
-
-                  Row(
-                    children: [
-                      Switch(
-                        value: isSingleUse,
-                        onChanged: (v) => setState(() {
-                          isSingleUse = v;
-                          if (v) {
-                            isQuotaEnabled = true;
-                            quotaCtrl.text = '1';
-                          }
-                        }),
-                        activeTrackColor: const Color(
-                          0xFF005596,
-                        ).withValues(alpha: 0.5),
-                        activeThumbColor: const Color(0xFF005596),
-                      ),
-                      const Text(
-                        'Single Use Link',
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                    ],
-                  ),
-                  const Padding(
-                    padding: EdgeInsets.only(left: 12),
-                    child: Text(
-                      'Enable this option to allow the link to be used only once.',
-                      style: TextStyle(fontSize: 10, color: Colors.grey),
-                    ),
-                  ),
-
-                  const SizedBox(height: 24),
-
-                  Row(
-                    children: [
-                      Expanded(
-                        child: ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF005596),
-                            padding: const EdgeInsets.symmetric(vertical: 14),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                          ),
-                          onPressed: () => _submit(false),
-                          child: const Text(
-                            'Create Link',
-                            style: TextStyle(color: Colors.white),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: OutlinedButton(
-                          style: OutlinedButton.styleFrom(
-                            side: const BorderSide(color: Color(0xFF005596)),
-                            padding: const EdgeInsets.symmetric(vertical: 14),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                          ),
-                          onPressed: () => _submit(true),
-                          child: const Text(
-                            'Create & Send Email',
-                            style: TextStyle(color: Color(0xFF005596)),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         ),
@@ -717,31 +735,38 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
       const Center(child: CircularProgressIndicator()),
       barrierDismissible: false,
     );
-    final success = await controller.createShareLinkAction(
-      body,
-      sendEmail: sendEmail,
-    );
-
-    if (!mounted) return;
-    Get.back(); // Close loading
-
-    if (success) {
-      Get.snackbar(
-        'Success',
-        'Share link created successfully',
-        backgroundColor: Colors.green,
-        colorText: Colors.white,
+    try {
+      final success = await controller.createShareLinkAction(
+        body,
+        sendEmail: sendEmail,
       );
-      if (mounted) {
-        controller.fetchShareLinks(resetPage: true);
-        Navigator.pop(context);
+
+      if (!mounted) return;
+      Get.back(); // Close loading
+
+      if (success) {
+        Get.snackbar(
+          'Success',
+          'Share link created successfully',
+          backgroundColor: Colors.green,
+          colorText: Colors.white,
+        );
+        if (mounted) {
+          controller.fetchShareLinks(resetPage: true);
+          Navigator.pop(context);
+        }
       }
-    } else {
+    } catch (e) {
+      if (!mounted) return;
+      Get.back(); // Close loading
       Get.snackbar(
         'Error',
-        'Failed to create share link',
+        e.toString(),
         backgroundColor: Colors.red,
         colorText: Colors.white,
+        snackPosition: SnackPosition.TOP,
+        margin: const EdgeInsets.all(12),
+        duration: const Duration(seconds: 4),
       );
     }
   }

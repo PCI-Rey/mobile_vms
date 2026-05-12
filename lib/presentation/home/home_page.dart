@@ -42,17 +42,14 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    final mq = MediaQuery.of(context);
-    final sw = mq.size.width;
-
     return Scaffold(
       backgroundColor: _bgPage,
       body: Stack(
         children: [
-          // 1. Full background gradient (Menutupi seluruh layar)
+          // 1. Full background gradient
           Container(
             width: double.infinity,
-            height: mq.size.height,
+            height: MediaQuery.of(context).size.height,
             decoration: const BoxDecoration(
               gradient: LinearGradient(
                 colors: [_blue, _blueDark],
@@ -62,34 +59,40 @@ class _HomePageState extends State<HomePage> {
             ),
           ),
 
-          // 2. Main Scrollable Content
+          // 2. Main Content
           SafeArea(
             bottom: false,
-            child: RefreshIndicator(
-              onRefresh: () async {
-                await invitationController.fetchShareLinks(resetPage: true);
-              },
-              child: SingleChildScrollView(
-                physics: const AlwaysScrollableScrollPhysics(
-                  parent: BouncingScrollPhysics(),
+            child: Column(
+              children: [
+                // --- FIXED HEADER ---
+                _buildHeader(context),
+
+                // --- SCROLLABLE BODY ---
+                Expanded(
+                  child: RefreshIndicator(
+                    onRefresh: () async {
+                      await invitationController.fetchShareLinks(resetPage: true);
+                    },
+                    child: SingleChildScrollView(
+                      physics: const AlwaysScrollableScrollPhysics(
+                        parent: BouncingScrollPhysics(),
+                      ),
+                      child: Column(
+                        children: [
+                          vSpace(context, 24),
+                          // --- MENU GRID ---
+                          _buildMenuGrid(context),
+
+                          vSpace(context, 32),
+
+                          // --- BOTTOM CONTENT (SCHEDULE & AGENDA) ---
+                          _buildBottomContent(context),
+                        ],
+                      ),
+                    ),
+                  ),
                 ),
-                child: Column(
-                  children: [
-                    // --- HEADER ---
-                    _buildHeader(context, sw),
-
-                    SizedBox(height: sw * 0.06),
-
-                    // --- MENU GRID ---
-                    _buildMenuGrid(context, sw),
-
-                    SizedBox(height: sw * 0.08),
-
-                    // --- BOTTOM CONTENT (SCHEDULE & AGENDA) ---
-                    _buildBottomContent(context, sw),
-                  ],
-                ),
-              ),
+              ],
             ),
           ),
         ],
@@ -97,19 +100,19 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildHeader(BuildContext context, double sw) {
+  Widget _buildHeader(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.symmetric(horizontal: sw * 0.06, vertical: sw * 0.02),
+      padding: EdgeInsets.symmetric(horizontal: rw(context, 24), vertical: rh(context, 8)),
       child: Row(
         children: [
           GestureDetector(
             onTap: () => Get.to(() => const ProfilePage()),
             child: CustomCircleImage(
               image: Assets.images.avaPerson1.image(fit: BoxFit.cover),
-              size: sw * 0.12,
+              size: rw(context, 48),
             ),
           ),
-          SizedBox(width: sw * 0.04),
+          hSpace(context, 16),
           // Welcome Text
           Expanded(
             child: Column(
@@ -140,22 +143,22 @@ class _HomePageState extends State<HomePage> {
             ),
           ),
           // Actions
-          _buildActionButtons(context, sw),
+          _buildActionButtons(context),
         ],
       ),
     );
   }
 
-  Widget _buildActionButtons(BuildContext context, double sw) {
+  Widget _buildActionButtons(BuildContext context) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        _buildLanguageDropdown(context, sw),
-        SizedBox(width: sw * 0.03),
+        _buildLanguageDropdown(context),
+        hSpace(context, 12),
         GestureDetector(
           onTap: () => showNotificationDialog(context),
           child: Container(
-            padding: const EdgeInsets.all(9),
+            padding: EdgeInsets.all(rw(context, 9)),
             decoration: BoxDecoration(
               color: Colors.white.withValues(alpha: 0.12),
               shape: BoxShape.circle,
@@ -163,17 +166,17 @@ class _HomePageState extends State<HomePage> {
             ),
             child: Stack(
               children: [
-                const Icon(
+                Icon(
                   Icons.notifications_none_rounded,
                   color: Colors.white,
-                  size: 22,
+                  size: rw(context, 22),
                 ),
                 Positioned(
                   right: 1,
                   top: 1,
                   child: Container(
-                    width: 7,
-                    height: 7,
+                    width: rw(context, 7),
+                    height: rw(context, 7),
                     decoration: const BoxDecoration(
                       color: Colors.redAccent,
                       shape: BoxShape.circle,
@@ -188,26 +191,26 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildLanguageDropdown(BuildContext context, double sw) {
+  Widget _buildLanguageDropdown(BuildContext context) {
     return Obx(() {
       final isId = langCtrl.selectedLang.value == 'id';
       return Container(
         decoration: BoxDecoration(
           border: Border.all(color: Colors.white54),
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(rw(context, 20)),
           color: Colors.white.withValues(alpha: 0.18),
         ),
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+        padding: EdgeInsets.symmetric(horizontal: rw(context, 10), vertical: rh(context, 2)),
         child: DropdownButtonHideUnderline(
           child: DropdownButton<String>(
             value: isId ? 'id' : 'en',
-            icon: const Icon(
+            icon: Icon(
               Icons.arrow_drop_down,
-              size: 16,
+              size: rw(context, 16),
               color: Colors.white,
             ),
             dropdownColor: Colors.white,
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(rw(context, 10)),
             style: TextStyle(
               color: Colors.white,
               fontSize: rfs(context, 13),
@@ -265,7 +268,7 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
-  Widget _buildMenuGrid(BuildContext context, double sw) {
+  Widget _buildMenuGrid(BuildContext context) {
     return Obx(() {
       langCtrl.selectedLang.value; // Track changes
 
@@ -358,19 +361,19 @@ class _HomePageState extends State<HomePage> {
       ];
 
       return Container(
-        margin: EdgeInsets.symmetric(horizontal: sw * 0.05),
+        margin: EdgeInsets.symmetric(horizontal: rw(context, 20)),
         padding: EdgeInsets.symmetric(
-          vertical: sw * 0.06,
-          horizontal: sw * 0.02,
+          vertical: rh(context, 24),
+          horizontal: rw(context, 8),
         ),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(sw * 0.07),
+          borderRadius: BorderRadius.circular(rw(context, 28)),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(alpha: 0.07),
-              blurRadius: 20,
-              offset: const Offset(0, 10),
+              blurRadius: rw(context, 20),
+              offset: Offset(0, rh(context, 10)),
             ),
           ],
         ),
@@ -382,18 +385,18 @@ class _HomePageState extends State<HomePage> {
                   .take(4)
                   .map(
                     (item) =>
-                        Expanded(child: _buildMenuItem(context, sw, item)),
+                        Expanded(child: _buildMenuItem(context, item)),
                   )
                   .toList(),
             ),
-            SizedBox(height: sw * 0.06),
+            vSpace(context, 24),
             // Row 2 (4 items)
             Row(
               children: items
                   .skip(4)
                   .map(
                     (item) =>
-                        Expanded(child: _buildMenuItem(context, sw, item)),
+                        Expanded(child: _buildMenuItem(context, item)),
                   )
                   .toList(),
             ),
@@ -405,15 +408,14 @@ class _HomePageState extends State<HomePage> {
 
   Widget _buildMenuItem(
     BuildContext context,
-    double sw,
     Map<String, dynamic> item,
   ) {
-    final boxSize = sw * 0.13;
-    final iconSize = sw * 0.065;
+    final boxSize = rw(context, 54);
+    final iconSize = rw(context, 26);
 
     return InkWell(
       onTap: item['onTap'],
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(rw(context, 16)),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -422,11 +424,11 @@ class _HomePageState extends State<HomePage> {
             height: boxSize,
             decoration: BoxDecoration(
               color: item['bgColor'],
-              borderRadius: BorderRadius.circular(sw * 0.035),
+              borderRadius: BorderRadius.circular(rw(context, 14)),
             ),
             child: Icon(item['icon'], color: item['iconColor'], size: iconSize),
           ),
-          const SizedBox(height: 8),
+          vSpace(context, 8),
           Text(
             item['label'],
             textAlign: TextAlign.center,
@@ -444,27 +446,27 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildBottomContent(BuildContext context, double sw) {
+  Widget _buildBottomContent(BuildContext context) {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(36)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(rw(context, 36))),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 15,
-            offset: const Offset(0, -5),
+            blurRadius: rw(context, 15),
+            offset: Offset(0, rh(context, -5)),
           ),
         ],
       ),
-      padding: EdgeInsets.fromLTRB(sw * 0.06, sw * 0.08, sw * 0.06, sw * 0.1),
+      padding: EdgeInsets.fromLTRB(rw(context, 24), rh(context, 32), rw(context, 24), rh(context, 40)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Section: Share Link (formerly Schedule)
           _buildSectionHeader(context, 'Share Link'),
-          const SizedBox(height: 16),
+          vSpace(context, 16),
           DatePicker(
             DateTime.now(),
             initialSelectedDate: DateTime.now(),
@@ -487,23 +489,23 @@ class _HomePageState extends State<HomePage> {
             onDateChange: (date) => debugPrint("Tanggal dipilih: $date"),
           ),
 
-          const SizedBox(height: 24),
+          vSpace(context, 24),
           const Divider(height: 1, color: Color(0xFFF0F0F0)),
-          const SizedBox(height: 24),
+          vSpace(context, 24),
 
           // List of Share Link Data (replaces Extended Request)
           const ShareLinkHomeList(),
 
-          const SizedBox(height: 32),
+          vSpace(context, 32),
 
           // Section: Active Visit
           _buildSectionHeader(context, 'active_visit'.tr),
-          const SizedBox(height: 16),
+          vSpace(context, 16),
 
           // Itinerary List
           const IteneraryList(),
 
-          const SizedBox(height: 20),
+          vSpace(context, 20),
         ],
       ),
     );
@@ -518,14 +520,14 @@ class _HomePageState extends State<HomePage> {
     return Row(
       children: [
         Container(
-          width: 5,
-          height: 20,
+          width: rw(context, 5),
+          height: rh(context, 20),
           decoration: BoxDecoration(
             color: AppColors.primary500,
-            borderRadius: BorderRadius.circular(3),
+            borderRadius: BorderRadius.circular(rw(context, 3)),
           ),
         ),
-        const SizedBox(width: 10),
+        hSpace(context, 10),
         Text(
           title,
           style: TextStyle(
@@ -540,13 +542,13 @@ class _HomePageState extends State<HomePage> {
           IconButton(
             onPressed: onLinkTap,
             icon: Container(
-              padding: const EdgeInsets.all(6),
+              padding: EdgeInsets.all(rw(context, 6)),
               decoration: BoxDecoration(
                 color: AppColors.grey100,
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(rw(context, 8)),
                 border: Border.all(color: AppColors.grey300),
               ),
-              child: const Icon(Icons.link, color: AppColors.grey600, size: 20),
+              child: Icon(Icons.link, color: AppColors.grey600, size: rw(context, 20)),
             ),
           ),
         ],

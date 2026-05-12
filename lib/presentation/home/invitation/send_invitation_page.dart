@@ -8,6 +8,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
 import '../../../core/components/custom_card.dart';
 import '../../../core/core.dart';
+import '../../../core/helper/responsive_helper.dart';
 import '../../history/widgets/filter_bottom_sheet.dart';
 import '../../../../data/models/access_pass_model.dart';
 import 'widgets/create_share_link_dialog.dart';
@@ -41,10 +42,10 @@ class _SendInvitationPageState extends State<SendInvitationPage> {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.white,
-        title: const Text(
+        title: Text(
           "Create Invitation",
           style: TextStyle(
-            fontSize: 25,
+            fontSize: rfs(context, 25),
             fontWeight: FontWeight.w700,
             color: Colors.black87,
           ),
@@ -67,12 +68,12 @@ class _SendInvitationPageState extends State<SendInvitationPage> {
                 }
               },
               icon: Container(
-                padding: const EdgeInsets.all(6),
+                padding: EdgeInsets.all(rw(context, 6)),
                 decoration: BoxDecoration(
                   color: AppColors.primary500,
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(rw(context, 8)),
                 ),
-                child: const Icon(Icons.add, color: Colors.white, size: 20),
+                child: Icon(Icons.add, color: Colors.white, size: rw(context, 20)),
               ),
             ),
           // Tombol Add Share Link hanya muncul di tab Share Link
@@ -86,19 +87,19 @@ class _SendInvitationPageState extends State<SendInvitationPage> {
                 ).then((_) => controller.fetchShareLinks());
               },
               icon: Container(
-                padding: const EdgeInsets.all(6),
+                padding: EdgeInsets.all(rw(context, 6)),
                 decoration: BoxDecoration(
                   color: AppColors.primary500,
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(rw(context, 8)),
                 ),
-                child: const Icon(Icons.add, color: Colors.white, size: 20),
+                child: Icon(Icons.add, color: Colors.white, size: rw(context, 20)),
               ),
             ),
-          const SizedBox(width: 8),
+          hSpace(context, 8),
         ],
         bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(1.0),
-          child: Container(color: AppColors.grey300, height: 1.0),
+          preferredSize: Size.fromHeight(rh(context, 1.0)),
+          child: Container(color: AppColors.grey300, height: rh(context, 1.0)),
         ),
       ),
       body: Column(
@@ -106,7 +107,8 @@ class _SendInvitationPageState extends State<SendInvitationPage> {
           // ── Tab Switcher ──────────────────────────────────────────
           Container(
             color: Colors.white,
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+            padding: EdgeInsets.symmetric(
+                horizontal: rw(context, 20), vertical: rh(context, 10)),
             child: Row(
               children: [
                 Expanded(
@@ -114,19 +116,19 @@ class _SendInvitationPageState extends State<SendInvitationPage> {
                     onTap: () => setState(() => _selectedTab = 0),
                     child: AnimatedContainer(
                       duration: const Duration(milliseconds: 200),
-                      padding: const EdgeInsets.symmetric(vertical: 10),
+                      padding: EdgeInsets.symmetric(vertical: rh(context, 10)),
                       decoration: BoxDecoration(
                         color: _selectedTab == 0
                             ? AppColors.primary500
                             : Colors.grey.shade100,
-                        borderRadius: BorderRadius.circular(10),
+                        borderRadius: BorderRadius.circular(rw(context, 10)),
                       ),
                       child: Center(
                         child: Text(
                           'Invitation',
                           style: TextStyle(
                             fontWeight: FontWeight.w700,
-                            fontSize: 13,
+                            fontSize: rfs(context, 13),
                             color: _selectedTab == 0
                                 ? Colors.white
                                 : Colors.grey.shade600,
@@ -136,7 +138,7 @@ class _SendInvitationPageState extends State<SendInvitationPage> {
                     ),
                   ),
                 ),
-                const SizedBox(width: 10),
+                hSpace(context, 10),
                 Expanded(
                   child: GestureDetector(
                     onTap: () {
@@ -146,19 +148,19 @@ class _SendInvitationPageState extends State<SendInvitationPage> {
                     },
                     child: AnimatedContainer(
                       duration: const Duration(milliseconds: 200),
-                      padding: const EdgeInsets.symmetric(vertical: 10),
+                      padding: EdgeInsets.symmetric(vertical: rh(context, 10)),
                       decoration: BoxDecoration(
                         color: _selectedTab == 1
                             ? AppColors.primary500
                             : Colors.grey.shade100,
-                        borderRadius: BorderRadius.circular(10),
+                        borderRadius: BorderRadius.circular(rw(context, 10)),
                       ),
                       child: Center(
                         child: Text(
                           'Share Link',
                           style: TextStyle(
                             fontWeight: FontWeight.w700,
-                            fontSize: 13,
+                            fontSize: rfs(context, 13),
                             color: _selectedTab == 1
                                 ? Colors.white
                                 : Colors.grey.shade600,
@@ -192,7 +194,7 @@ class _SendInvitationPageState extends State<SendInvitationPage> {
       },
       child: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.all(20.0),
+        padding: EdgeInsets.all(rw(context, 20.0)),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -205,21 +207,21 @@ class _SendInvitationPageState extends State<SendInvitationPage> {
                       final inviteCtrl = Get.find<InvitationController>();
                       final result =
                           await showModalBottomSheet<Map<String, dynamic>>(
-                            context: context,
-                            enableDrag: true,
-                            isDismissible: true,
-                            isScrollControlled: true,
-                            shape: const RoundedRectangleBorder(
-                              borderRadius: BorderRadius.vertical(
-                                top: Radius.circular(16),
-                              ),
-                            ),
-                            builder: (context) => FilterBottomSheet(
-                              initialStartDate: startDate,
-                              initialEndDate: endDate,
-                              initialSiteId: inviteCtrl.selectedSiteId.value,
-                            ),
-                          );
+                        context: context,
+                        enableDrag: true,
+                        isDismissible: true,
+                        isScrollControlled: true,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.vertical(
+                            top: Radius.circular(rw(context, 16)),
+                          ),
+                        ),
+                        builder: (context) => FilterBottomSheet(
+                          initialStartDate: startDate,
+                          initialEndDate: endDate,
+                          initialSiteId: inviteCtrl.selectedSiteId.value,
+                        ),
+                      );
 
                       if (result != null) {
                         setState(() {
@@ -235,21 +237,23 @@ class _SendInvitationPageState extends State<SendInvitationPage> {
                         );
                       }
                     },
-                    child: _buildFilterChip('Filter'),
+                    child: _buildFilterChip(context, 'Filter'),
                   ),
-                  const SizedBox(width: 10),
+                  hSpace(context, 10),
                   Obx(() {
                     final inviteCtrl = Get.find<InvitationController>();
                     return GestureDetector(
                       onTap: () => inviteCtrl.toggleSort(),
                       child: _buildSortChip(
+                        context,
                         inviteCtrl.isNewestFirst.value ? 'Newest' : 'Oldest',
                       ),
                     );
                   }),
                   if (selectedGedung != null) ...[
-                    const SizedBox(width: 10),
+                    hSpace(context, 10),
                     _buildFilterValueChip(
+                      context,
                       selectedGedung!,
                       onClear: () {
                         final inviteCtrl = Get.find<InvitationController>();
@@ -264,8 +268,9 @@ class _SendInvitationPageState extends State<SendInvitationPage> {
                     ),
                   ],
                   if (startDate != null || endDate != null) ...[
-                    const SizedBox(width: 10),
+                    hSpace(context, 10),
                     _buildFilterValueChip(
+                      context,
                       _formatDateRange(startDate, endDate),
                       onClear: () {
                         final inviteCtrl = Get.find<InvitationController>();
@@ -285,7 +290,7 @@ class _SendInvitationPageState extends State<SendInvitationPage> {
                 ],
               ),
             ),
-            const SizedBox(height: 16),
+            vSpace(context, 16),
             // Loading indicator for background refresh
             Obx(() {
               final inviteCtrl = Get.isRegistered<InvitationController>()
@@ -294,12 +299,12 @@ class _SendInvitationPageState extends State<SendInvitationPage> {
               if (inviteCtrl != null &&
                   inviteCtrl.isLoading.value &&
                   inviteCtrl.ongoingInvitations.isNotEmpty) {
-                return const Padding(
-                  padding: EdgeInsets.only(bottom: 12),
+                return Padding(
+                  padding: EdgeInsets.only(bottom: rh(context, 12)),
                   child: LinearProgressIndicator(
-                    minHeight: 2,
+                    minHeight: rh(context, 2),
                     backgroundColor: Colors.transparent,
-                    valueColor: AlwaysStoppedAnimation<Color>(
+                    valueColor: const AlwaysStoppedAnimation<Color>(
                       AppColors.primary500,
                     ),
                   ),
@@ -314,10 +319,10 @@ class _SendInvitationPageState extends State<SendInvitationPage> {
 
               if (inviteCtrl.isLoading.value &&
                   inviteCtrl.ongoingInvitations.isEmpty) {
-                return const Center(
+                return Center(
                   child: Padding(
-                    padding: EdgeInsets.all(40.0),
-                    child: CircularProgressIndicator(),
+                    padding: EdgeInsets.all(rw(context, 40.0)),
+                    child: const CircularProgressIndicator(),
                   ),
                 );
               }
@@ -325,20 +330,21 @@ class _SendInvitationPageState extends State<SendInvitationPage> {
               if (inviteCtrl.ongoingInvitations.isEmpty) {
                 return Center(
                   child: Padding(
-                    padding: const EdgeInsets.all(40.0),
+                    padding: EdgeInsets.all(rw(context, 40.0)),
                     child: Column(
                       children: [
                         Icon(
                           Icons.inventory_2_outlined,
-                          size: 48,
+                          size: rw(context, 48),
                           color: Colors.grey[400],
                         ),
-                        const SizedBox(height: 16),
+                        vSpace(context, 16),
                         Text(
                           'No Invitation Found',
                           style: TextStyle(
                             color: Colors.grey[600],
                             fontWeight: FontWeight.w500,
+                            fontSize: rfs(context, 14),
                           ),
                         ),
                       ],
@@ -352,7 +358,7 @@ class _SendInvitationPageState extends State<SendInvitationPage> {
                 physics: const NeverScrollableScrollPhysics(),
                 itemCount: inviteCtrl.ongoingInvitations.length,
                 separatorBuilder: (context, index) =>
-                    const SizedBox(height: 12),
+                    vSpace(context, 12),
                 itemBuilder: (context, index) {
                   final item = inviteCtrl.ongoingInvitations[index];
                   final isCheckout = item.visitorStatus.toLowerCase().contains(
@@ -387,8 +393,8 @@ class _SendInvitationPageState extends State<SendInvitationPage> {
                   return GestureDetector(
                     onTap: () => _showInvitationDetailDialog(item, statusColor),
                     child: CustomCard(
-                      image: Icon(statusIcon, color: Colors.white),
-                      size: 26,
+                      image: Icon(statusIcon, color: Colors.white, size: rw(context, 20)),
+                      size: rw(context, 26),
                       title: item.visitorName,
                       subtitle: item.sitePlaceName.isNotEmpty
                           ? item.sitePlaceName
@@ -407,25 +413,25 @@ class _SendInvitationPageState extends State<SendInvitationPage> {
                         children: [
                           Text(
                             item.invitationCode,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontWeight: FontWeight.bold,
-                              fontSize: 12,
+                              fontSize: rfs(context, 12),
                             ),
                           ),
-                          const SizedBox(height: 4),
+                          vSpace(context, 4),
                           Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 2,
+                            padding: EdgeInsets.symmetric(
+                              horizontal: rw(context, 8),
+                              vertical: rh(context, 2),
                             ),
                             decoration: BoxDecoration(
                               color: statusColor,
-                              borderRadius: BorderRadius.circular(4),
+                              borderRadius: BorderRadius.circular(rw(context, 4)),
                             ),
                             child: Text(
                               item.visitorStatus,
-                              style: const TextStyle(
-                                fontSize: 10,
+                              style: TextStyle(
+                                fontSize: rfs(context, 10),
                                 fontWeight: FontWeight.bold,
                                 color: Colors.white,
                               ),
@@ -452,64 +458,69 @@ class _SendInvitationPageState extends State<SendInvitationPage> {
     showDialog(
       context: context,
       builder: (context) => Dialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(rw(context, 20))),
         child: Container(
-          padding: const EdgeInsets.all(24),
+          padding: EdgeInsets.all(rw(context, 24)),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Center(
+              Center(
                 child: Text(
                   'Invitation Details',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: rfs(context, 20)),
                 ),
               ),
-              const SizedBox(height: 12),
+              vSpace(context, 12),
               const Divider(),
-              const SizedBox(height: 16),
-              _buildDetailRow('Visitor Name', item.visitorName, isBold: true),
+              vSpace(context, 16),
+              _buildDetailRow(context, 'Visitor Name', item.visitorName, isBold: true),
               _buildDetailRow(
+                context,
                 'Invitation Code',
                 item.invitationCode,
                 color: const Color(0xFF005596),
               ),
               _buildDetailRow(
+                context,
                 'Status',
                 item.visitorStatus,
                 badgeColor: statusColor,
               ),
-              _buildDetailRow('Host', item.hostName),
-              _buildDetailRow('Location', item.sitePlaceName),
-              _buildDetailRow('Agenda', item.agenda),
+              _buildDetailRow(context, 'Host', item.hostName),
+              _buildDetailRow(context, 'Location', item.sitePlaceName),
+              _buildDetailRow(context, 'Agenda', item.agenda),
               _buildDetailRow(
+                context,
                 'Visit Period',
                 '${DateFormat('dd MMM yyyy').format(DateTime.parse('${item.visitorPeriodStart.toIso8601String().split('Z').first}Z').toLocal())}\n${DateFormat('HH.mm').format(DateTime.parse('${item.visitorPeriodStart.toIso8601String().split('Z').first}Z').toLocal())} - ${DateFormat('HH.mm').format(DateTime.parse('${item.visitorPeriodEnd.toIso8601String().split('Z').first}Z').toLocal())}',
               ),
               if (item.parkingArea.isNotEmpty || item.parkingSlot.isNotEmpty)
                 _buildDetailRow(
+                  context,
                   'Parking',
                   '${item.parkingArea} - ${item.parkingSlot}',
                 ),
               if (item.vehiclePlateNumber.isNotEmpty)
-                _buildDetailRow('Vehicle Plate', item.vehiclePlateNumber),
-              const SizedBox(height: 16),
+                _buildDetailRow(context, 'Vehicle Plate', item.vehiclePlateNumber),
+              vSpace(context, 16),
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF005596),
-                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    padding: EdgeInsets.symmetric(vertical: rh(context, 14)),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(rw(context, 12)),
                     ),
                   ),
                   onPressed: () => Navigator.pop(context),
-                  child: const Text(
+                  child: Text(
                     'Close',
                     style: TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
+                      fontSize: rfs(context, 14),
                     ),
                   ),
                 ),
@@ -522,6 +533,7 @@ class _SendInvitationPageState extends State<SendInvitationPage> {
   }
 
   Widget _buildDetailRow(
+    BuildContext context,
     String label,
     String value, {
     bool isBold = false,
@@ -529,24 +541,24 @@ class _SendInvitationPageState extends State<SendInvitationPage> {
     Color? badgeColor,
   }) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
+      padding: EdgeInsets.only(bottom: rh(context, 12)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: TextStyle(color: Colors.grey[600], fontSize: 12)),
-          const SizedBox(height: 4),
+          Text(label, style: TextStyle(color: Colors.grey[600], fontSize: rfs(context, 12))),
+          vSpace(context, 4),
           if (badgeColor != null)
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              padding: EdgeInsets.symmetric(horizontal: rw(context, 8), vertical: rh(context, 2)),
               decoration: BoxDecoration(
                 color: badgeColor,
-                borderRadius: BorderRadius.circular(4),
+                borderRadius: BorderRadius.circular(rw(context, 4)),
               ),
               child: Text(
                 value,
-                style: const TextStyle(
+                style: TextStyle(
                   color: Colors.white,
-                  fontSize: 12,
+                  fontSize: rfs(context, 12),
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -560,7 +572,7 @@ class _SendInvitationPageState extends State<SendInvitationPage> {
                     style: TextStyle(
                       fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
                       color: color ?? Colors.black87,
-                      fontSize: 14,
+                      fontSize: rfs(context, 14),
                     ),
                   ),
                 ),
@@ -575,12 +587,12 @@ class _SendInvitationPageState extends State<SendInvitationPage> {
                         backgroundColor: Colors.green,
                         colorText: Colors.white,
                         duration: const Duration(seconds: 1),
-                        margin: const EdgeInsets.all(10),
+                        margin: EdgeInsets.all(rw(context, 10)),
                       );
                     },
                     child: Icon(
                       Icons.content_copy,
-                      size: 16,
+                      size: rw(context, 16),
                       color: Colors.grey[400],
                     ),
                   ),
@@ -591,26 +603,26 @@ class _SendInvitationPageState extends State<SendInvitationPage> {
     );
   }
 
-  Widget _buildFilterChip(String label) {
+  Widget _buildFilterChip(BuildContext context, String label) {
     return Container(
-      height: 32,
-      padding: const EdgeInsets.symmetric(horizontal: 12),
+      height: rh(context, 32),
+      padding: EdgeInsets.symmetric(horizontal: rw(context, 12)),
       decoration: BoxDecoration(
         color: Colors.white,
         border: Border.all(color: Colors.grey.shade300),
-        borderRadius: BorderRadius.circular(50),
+        borderRadius: BorderRadius.circular(rw(context, 50)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           Text(
             label,
-            style: const TextStyle(fontSize: 12, color: Colors.black87),
+            style: TextStyle(fontSize: rfs(context, 12), color: Colors.black87),
           ),
-          const SizedBox(width: 6),
-          const Icon(
+          hSpace(context, 6),
+          Icon(
             FontAwesomeIcons.chevronDown,
-            size: 12,
+            size: rw(context, 12),
             color: Colors.grey,
           ),
         ],
@@ -618,52 +630,52 @@ class _SendInvitationPageState extends State<SendInvitationPage> {
     );
   }
 
-  Widget _buildSortChip(String label) {
+  Widget _buildSortChip(BuildContext context, String label) {
     return Container(
-      height: 32,
-      padding: const EdgeInsets.symmetric(horizontal: 12),
+      height: rh(context, 32),
+      padding: EdgeInsets.symmetric(horizontal: rw(context, 12)),
       decoration: BoxDecoration(
         color: Colors.white,
         border: Border.all(color: Colors.grey.shade300),
-        borderRadius: BorderRadius.circular(50),
+        borderRadius: BorderRadius.circular(rw(context, 50)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(FontAwesomeIcons.sort, size: 12, color: Colors.grey),
-          const SizedBox(width: 6),
+          Icon(FontAwesomeIcons.sort, size: rw(context, 12), color: Colors.grey),
+          hSpace(context, 6),
           Text(
             label,
-            style: const TextStyle(fontSize: 12, color: Colors.black87),
+            style: TextStyle(fontSize: rfs(context, 12), color: Colors.black87),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildFilterValueChip(String label, {required VoidCallback onClear}) {
+  Widget _buildFilterValueChip(BuildContext context, String label, {required VoidCallback onClear}) {
     return Container(
-      height: 32,
-      padding: const EdgeInsets.symmetric(horizontal: 10),
+      height: rh(context, 32),
+      padding: EdgeInsets.symmetric(horizontal: rw(context, 10)),
       decoration: BoxDecoration(
         color: Colors.white,
         border: Border.all(color: Colors.grey.shade300),
-        borderRadius: BorderRadius.circular(50),
+        borderRadius: BorderRadius.circular(rw(context, 50)),
       ),
       child: Row(
-        mainAxisSize: MainAxisSize.min, // Ini kunci agar lebar mengikuti isi
+        mainAxisSize: MainAxisSize.min,
         children: [
           Text(
-            label.trim(), // Pastikan tidak ada spasi tambahan
-            style: const TextStyle(fontSize: 12, color: Colors.black87),
+            label.trim(),
+            style: TextStyle(fontSize: rfs(context, 12), color: Colors.black87),
           ),
-          const SizedBox(width: 6),
+          hSpace(context, 6),
           InkWell(
             onTap: onClear,
-            borderRadius: BorderRadius.circular(10),
-            child: const Padding(
-              padding: EdgeInsets.all(2),
-              child: Icon(Icons.close, size: 14, color: Colors.grey),
+            borderRadius: BorderRadius.circular(rw(context, 10)),
+            child: Padding(
+              padding: EdgeInsets.all(rw(context, 2)),
+              child: Icon(Icons.close, size: rw(context, 14), color: Colors.grey),
             ),
           ),
         ],
@@ -769,11 +781,13 @@ class _ShareLinkListInlineState extends State<ShareLinkListInline> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.link_off, size: 64, color: Colors.grey.shade300),
-              const SizedBox(height: 16),
+              Icon(Icons.link_off,
+                  size: rw(context, 64), color: Colors.grey.shade300),
+              vSpace(context, 16),
               Text(
                 'No share links found',
-                style: TextStyle(color: Colors.grey.shade500),
+                style: TextStyle(
+                    color: Colors.grey.shade500, fontSize: rfs(context, 14)),
               ),
             ],
           ),
@@ -786,10 +800,10 @@ class _ShareLinkListInlineState extends State<ShareLinkListInline> {
             child: RefreshIndicator(
               onRefresh: () => controller.fetchShareLinks(resetPage: true),
               child: ListView.separated(
-                padding: const EdgeInsets.all(16),
+                padding: EdgeInsets.all(rw(context, 16)),
                 physics: const AlwaysScrollableScrollPhysics(),
                 itemCount: controller.shareLinks.length,
-                separatorBuilder: (_, index) => const SizedBox(height: 12),
+                separatorBuilder: (_, index) => vSpace(context, 12),
                 itemBuilder: (context, index) {
                   final item = controller.shareLinks[index];
                   return _buildShareLinkCard(
@@ -803,6 +817,12 @@ class _ShareLinkListInlineState extends State<ShareLinkListInline> {
               ),
             ),
           ),
+          if (controller.isShareLinkLoading.value &&
+              controller.shareLinks.isNotEmpty)
+            Padding(
+              padding: EdgeInsets.symmetric(vertical: rh(context, 10)),
+              child: const CircularProgressIndicator(),
+            ),
           // Pagination footer
           if (controller.shareLinkTotalRecords.value > 10)
             _buildPaginationBar(),

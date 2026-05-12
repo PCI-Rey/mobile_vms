@@ -86,9 +86,12 @@ class _VerificationCodePageState extends State<VerificationCodePage> {
                     // Hero zone
                     SizedBox(
                       height: constraints.maxHeight * 0.42 - mq.padding.top,
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
                           // Logo Circle
                           Container(
                             width: sw * 0.28,
@@ -144,6 +147,7 @@ class _VerificationCodePageState extends State<VerificationCodePage> {
                         ],
                       ),
                     ),
+                  ),
 
                     // ── White bottom card ─────────────────────────
                     Expanded(

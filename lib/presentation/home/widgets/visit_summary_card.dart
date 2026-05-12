@@ -6,14 +6,12 @@ import '../../../../core/helper/responsive_helper.dart';
 
 class VisitSummaryCard extends StatelessWidget {
   final dynamic item;
-  final double sw;
   final VoidCallback? onTap;
   final bool isSelected;
 
   const VisitSummaryCard({
     super.key,
     required this.item,
-    required this.sw,
     this.onTap,
     this.isSelected = false,
   });
@@ -46,10 +44,10 @@ class VisitSummaryCard extends StatelessWidget {
       child: Opacity(
         opacity: isDone ? 1.0 : 0.5,
         child: Container(
-          padding: EdgeInsets.all(sw * 0.035),
+          padding: EdgeInsets.all(rw(context, 14)),
           decoration: BoxDecoration(
             color: isSelected ? const Color(0xFFF0F7FF) : Colors.white,
-            borderRadius: BorderRadius.circular(sw * 0.04),
+            borderRadius: BorderRadius.circular(rw(context, 16)),
             border: Border.all(
               color: isSelected ? _blue : Colors.grey.withValues(alpha: 0.08),
               width: isSelected ? 1.5 : 1.0,
@@ -57,27 +55,27 @@ class VisitSummaryCard extends StatelessWidget {
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withValues(alpha: 0.05),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
+                blurRadius: rw(context, 10),
+                offset: Offset(0, rh(context, 4)),
               ),
             ],
           ),
           child: Row(
             children: [
               Container(
-                width: sw * 0.112,
-                height: sw * 0.112,
+                width: rw(context, 44),
+                height: rw(context, 44),
                 decoration: BoxDecoration(
                   color: const Color(0xFFE8F1FD),
-                  borderRadius: BorderRadius.circular(sw * 0.03),
+                  borderRadius: BorderRadius.circular(rw(context, 12)),
                 ),
                 child: Icon(
                   Icons.calendar_month_outlined,
                   color: _blue,
-                  size: sw * 0.056,
+                  size: rw(context, 22),
                 ),
               ),
-              SizedBox(width: sw * 0.03),
+              hSpace(context, 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -91,7 +89,7 @@ class VisitSummaryCard extends StatelessWidget {
                         fontSize: rfs(context, 14),
                       ),
                     ),
-                    SizedBox(height: sw * 0.005),
+                    vSpace(context, 2),
                     Text(
                       item.sitePlaceName,
                       style: TextStyle(
@@ -102,7 +100,7 @@ class VisitSummaryCard extends StatelessWidget {
                   ],
                 ),
               ),
-              SizedBox(width: sw * 0.025),
+              hSpace(context, 10),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
@@ -113,7 +111,7 @@ class VisitSummaryCard extends StatelessWidget {
                       fontSize: rfs(context, 12),
                     ),
                   ),
-                  SizedBox(height: sw * 0.005),
+                  vSpace(context, 2),
                   Row(
                     children: [
                       Text(
@@ -139,17 +137,17 @@ class VisitSummaryCard extends StatelessWidget {
                       ),
                     ],
                   ),
-                  SizedBox(height: sw * 0.01),
+                  vSpace(context, 4),
                   Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 3,
+                    padding: EdgeInsets.symmetric(
+                      horizontal: rw(context, 8),
+                      vertical: rh(context, 3),
                     ),
                     decoration: BoxDecoration(
                       color: isCheckin
                           ? const Color(0xFFDCFCE7)
                           : AppColors.primary50,
-                      borderRadius: BorderRadius.circular(20),
+                      borderRadius: BorderRadius.circular(rw(context, 20)),
                     ),
                     child: Text(
                       _translateStatus(item.visitorStatus),

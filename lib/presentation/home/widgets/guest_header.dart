@@ -7,9 +7,7 @@ import '../../auth/controller/user_controller.dart';
 import '../../profile/profile_page.dart';
 
 class GuestHeader extends StatelessWidget {
-  final double sw;
-
-  const GuestHeader({super.key, required this.sw});
+  const GuestHeader({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -17,7 +15,7 @@ class GuestHeader extends StatelessWidget {
     final userCtrl = UserController.to;
 
     return Padding(
-      padding: EdgeInsets.fromLTRB(sw * 0.05, sw * 0.04, sw * 0.05, 0),
+      padding: EdgeInsets.fromLTRB(rw(context, 20), rh(context, 16), rw(context, 20), 0),
       child: Row(
         children: [
           GestureDetector(
@@ -31,10 +29,10 @@ class GuestHeader extends StatelessWidget {
                           Assets.images.avaPerson1.image(fit: BoxFit.cover),
                     )
                   : Assets.images.avaPerson1.image(fit: BoxFit.cover),
-              size: sw * 0.11,
+              size: rw(context, 44),
             ),
           ),
-          SizedBox(width: sw * 0.03),
+          hSpace(context, 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -59,7 +57,7 @@ class GuestHeader extends StatelessWidget {
               ],
             ),
           ),
-          _buildLangSelector(context, langCtrl, sw),
+          _buildLangSelector(context, langCtrl),
         ],
       ),
     );
@@ -68,26 +66,25 @@ class GuestHeader extends StatelessWidget {
   Widget _buildLangSelector(
     BuildContext context,
     LanguageController langCtrl,
-    double sw,
   ) {
     return Container(
       decoration: BoxDecoration(
         border: Border.all(color: Colors.white54),
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(rw(context, 20)),
         color: Colors.white.withValues(alpha: 0.18),
       ),
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+      padding: EdgeInsets.symmetric(horizontal: rw(context, 10), vertical: rh(context, 2)),
       child: Obx(
         () => DropdownButtonHideUnderline(
           child: DropdownButton<String>(
             value: langCtrl.selectedLang.value == 'id' ? 'id' : 'en',
-            icon: const Icon(
+            icon: Icon(
               Icons.arrow_drop_down,
-              size: 16,
+              size: rw(context, 16),
               color: Colors.white,
             ),
             dropdownColor: Colors.white,
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(rw(context, 10)),
             style: TextStyle(
               color: Colors.white,
               fontSize: rfs(context, 13),

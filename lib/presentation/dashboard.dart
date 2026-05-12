@@ -5,6 +5,7 @@ import 'home/home_page.dart';
 import 'parking/as_operator/parking_page.dart';
 import 'profile/profile_page.dart';
 import '../core/core.dart';
+import '../core/helper/responsive_helper.dart';
 // import 'widgets/is_block_page.dart';
 import '../data/datasources/auth_datasource.dart';
 import '../presentation/auth/login_page.dart';
@@ -78,23 +79,23 @@ class _DashboardState extends State<Dashboard> {
   List<BottomNavigationBarItem> _getNavItems(String role) {
     final items = [
       BottomNavigationBarItem(
-        icon: Assets.icons.home.image(height: 24, width: 24),
-        activeIcon: Assets.icons.homeSelected.image(height: 24, width: 24),
+        icon: Assets.icons.home.image(height: rw(context, 24), width: rw(context, 24)),
+        activeIcon: Assets.icons.homeSelected.image(height: rw(context, 24), width: rw(context, 24)),
         label: 'home'.tr,
       ),
       BottomNavigationBarItem(
-        icon: Assets.icons.parking.image(height: 24, width: 24),
-        activeIcon: Assets.icons.parkingSelected.image(height: 24, width: 24),
+        icon: Assets.icons.parking.image(height: rw(context, 24), width: rw(context, 24)),
+        activeIcon: Assets.icons.parkingSelected.image(height: rw(context, 24), width: rw(context, 24)),
         label: 'parking'.tr,
       ),
       BottomNavigationBarItem(
-        icon: Assets.icons.history.image(height: 24, width: 24),
-        activeIcon: Assets.icons.historySelected.image(height: 24, width: 24),
+        icon: Assets.icons.history.image(height: rw(context, 24), width: rw(context, 24)),
+        activeIcon: Assets.icons.historySelected.image(height: rw(context, 24), width: rw(context, 24)),
         label: 'history'.tr,
       ),
       BottomNavigationBarItem(
-        icon: Assets.icons.profile.image(height: 24, width: 24),
-        activeIcon: Assets.icons.profileSelected.image(height: 24, width: 24),
+        icon: Assets.icons.profile.image(height: rw(context, 24), width: rw(context, 24)),
+        activeIcon: Assets.icons.profileSelected.image(height: rw(context, 24), width: rw(context, 24)),
         label: 'profile'.tr,
       ),
     ];
@@ -120,17 +121,17 @@ class _DashboardState extends State<Dashboard> {
       bottomNavigationBar: isGuest
           ? null
           : Container(
-              padding: const EdgeInsets.only(bottom: 10.0),
+              padding: EdgeInsets.only(bottom: rh(context, 10.0)),
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(20.0),
+                borderRadius: BorderRadius.vertical(
+                  top: Radius.circular(rw(context, 20.0)),
                 ),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withValues(alpha: 0.05),
-                    blurRadius: 10,
-                    offset: const Offset(0, -5),
+                    blurRadius: rw(context, 10),
+                    offset: Offset(0, rh(context, -5)),
                   ),
                 ],
               ),
@@ -145,6 +146,13 @@ class _DashboardState extends State<Dashboard> {
                   type: BottomNavigationBarType.fixed,
                   backgroundColor: Colors.transparent,
                   elevation: 0,
+                  selectedLabelStyle: TextStyle(
+                    fontSize: rfs(context, 12),
+                    fontWeight: FontWeight.bold,
+                  ),
+                  unselectedLabelStyle: TextStyle(
+                    fontSize: rfs(context, 12),
+                  ),
                   items: _getNavItems(_role!),
                 ),
               ),

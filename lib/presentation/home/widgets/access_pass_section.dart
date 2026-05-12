@@ -9,12 +9,10 @@ import '../../../core/components/custom_circle_image.dart';
 import '../../../core/gen/assets.gen.dart';
 
 class AccessPassSection extends StatelessWidget {
-  final double sw;
   final Function(dynamic item) onTap;
 
   const AccessPassSection({
     super.key,
-    required this.sw,
     required this.onTap,
   });
 
@@ -26,7 +24,7 @@ class AccessPassSection extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: EdgeInsets.symmetric(horizontal: sw * 0.04),
+          padding: EdgeInsets.symmetric(horizontal: rw(context, 16)),
           child: Obx(() {
             // Trigger rebuild when language changes
             LanguageController.to.selectedLang.value;
@@ -48,15 +46,15 @@ class AccessPassSection extends StatelessWidget {
             );
           }),
         ),
-        SizedBox(height: sw * 0.03),
+        vSpace(context, 12),
         Obx(() {
           // Trigger rebuild when language changes
           LanguageController.to.selectedLang.value;
           if (guestCtrl.isLoading.value) {
-            return _buildPassPlaceholder(sw);
+            return _buildPassPlaceholder(context);
           }
           if (guestCtrl.accessPasses.isEmpty) {
-            return _buildPassEmpty(sw, context);
+            return _buildPassEmpty(context);
           }
           
           final int index = guestCtrl.selectedPassIndex.value;
@@ -64,7 +62,6 @@ class AccessPassSection extends StatelessWidget {
           
           return AccessPassCard(
             item: item,
-            sw: sw,
             onTap: () => onTap(item),
           );
         }),
@@ -72,13 +69,13 @@ class AccessPassSection extends StatelessWidget {
     );
   }
 
-  Widget _buildPassPlaceholder(double sw) {
+  Widget _buildPassPlaceholder(BuildContext context) {
     return Container(
-      margin: EdgeInsets.symmetric(horizontal: sw * 0.04),
-      height: sw * 0.28,
+      margin: EdgeInsets.symmetric(horizontal: rw(context, 16)),
+      height: rh(context, 110),
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(sw * 0.05),
+        borderRadius: BorderRadius.circular(rw(context, 20)),
       ),
       child: const Center(
         child: CircularProgressIndicator(color: Colors.white),
@@ -86,13 +83,13 @@ class AccessPassSection extends StatelessWidget {
     );
   }
 
-  Widget _buildPassEmpty(double sw, BuildContext context) {
+  Widget _buildPassEmpty(BuildContext context) {
     return Container(
-      margin: EdgeInsets.symmetric(horizontal: sw * 0.04),
-      padding: EdgeInsets.symmetric(vertical: sw * 0.06),
+      margin: EdgeInsets.symmetric(horizontal: rw(context, 16)),
+      padding: EdgeInsets.symmetric(vertical: rh(context, 24)),
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(sw * 0.05),
+        borderRadius: BorderRadius.circular(rw(context, 20)),
         border: Border.all(color: Colors.white24),
       ),
       child: Center(
@@ -101,9 +98,9 @@ class AccessPassSection extends StatelessWidget {
             Icon(
               Icons.qr_code_2_outlined,
               color: Colors.white54,
-              size: sw * 0.09,
+              size: rw(context, 40),
             ),
-            SizedBox(height: sw * 0.02),
+            vSpace(context, 8),
             Text(
               'no_access_pass'.tr,
               style: TextStyle(
@@ -120,13 +117,11 @@ class AccessPassSection extends StatelessWidget {
 
 class AccessPassCard extends StatelessWidget {
   final dynamic item;
-  final double sw;
   final VoidCallback onTap;
 
   const AccessPassCard({
     super.key,
     required this.item,
-    required this.sw,
     required this.onTap,
   });
 
@@ -154,10 +149,10 @@ class AccessPassCard extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        margin: EdgeInsets.symmetric(horizontal: sw * 0.04),
+        margin: EdgeInsets.symmetric(horizontal: rw(context, 16)),
         padding: EdgeInsets.symmetric(
-          horizontal: sw * 0.05,
-          vertical: sw * 0.04,
+          horizontal: rw(context, 20),
+          vertical: rh(context, 16),
         ),
         decoration: BoxDecoration(
           gradient: const LinearGradient(
@@ -165,13 +160,13 @@ class AccessPassCard extends StatelessWidget {
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
-          borderRadius: BorderRadius.circular(sw * 0.05),
+          borderRadius: BorderRadius.circular(rw(context, 20)),
           border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
           boxShadow: [
             BoxShadow(
               color: _blue.withValues(alpha: 0.4),
-              blurRadius: 16,
-              offset: const Offset(0, 6),
+              blurRadius: rw(context, 16),
+              offset: Offset(0, rh(context, 6)),
             ),
           ],
         ),
@@ -183,13 +178,13 @@ class AccessPassCard extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 3,
+                    padding: EdgeInsets.symmetric(
+                      horizontal: rw(context, 8),
+                      vertical: rh(context, 3),
                     ),
                     decoration: BoxDecoration(
                       color: Colors.white.withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(20),
+                      borderRadius: BorderRadius.circular(rw(context, 20)),
                     ),
                     child: Text(
                       'guest_pass'.tr,
@@ -199,13 +194,10 @@ class AccessPassCard extends StatelessWidget {
                       ),
                     ),
                   ),
-                  SizedBox(height: sw * 0.02),
+                  vSpace(context, 8),
                   Obx(
                     () {
-                      // Akses observable terlebih dahulu agar diregistrasi oleh Obx
                       final String defaultName = userCtrl.fullName;
-                      
-                      // Gunakan nama dari data kunjungan jika ada, kalau tidak fallback ke nama profil utama
                       final String displayName = (item.visitorName as String).isNotEmpty
                           ? item.visitorName
                           : defaultName;
@@ -220,18 +212,18 @@ class AccessPassCard extends StatelessWidget {
                       );
                     },
                   ),
-                  SizedBox(height: sw * 0.015),
+                  vSpace(context, 6),
                   Row(
                     children: [
                       Container(
-                        width: 7,
-                        height: 7,
+                        width: rw(context, 7),
+                        height: rw(context, 7),
                         decoration: const BoxDecoration(
                           color: Color(0xFF4ADE80),
                           shape: BoxShape.circle,
                         ),
                       ),
-                      SizedBox(width: sw * 0.012),
+                      hSpace(context, 6),
                       Expanded(
                         child: Text(
                           '${_translateStatus(item.visitorStatus)} · ${item.sitePlaceName}',
@@ -248,7 +240,7 @@ class AccessPassCard extends StatelessWidget {
                 ],
               ),
             ),
-            SizedBox(width: sw * 0.04),
+            hSpace(context, 16),
             CustomCircleImage(
               image: userCtrl.faceUrl != null
                   ? Image.network(
@@ -258,16 +250,16 @@ class AccessPassCard extends StatelessWidget {
                           Assets.images.avaPerson1.image(fit: BoxFit.cover),
                     )
                   : Assets.images.avaPerson1.image(fit: BoxFit.cover),
-              size: sw * 0.12,
+              size: rw(context, 48),
               borderWidth: 1.5,
             ),
-            SizedBox(width: sw * 0.04),
+            hSpace(context, 16),
             Container(
-              width: sw * 0.135,
-              height: sw * 0.135,
+              width: rw(context, 54),
+              height: rw(context, 54),
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(sw * 0.03),
+                borderRadius: BorderRadius.circular(rw(context, 12)),
               ),
               padding: const EdgeInsets.all(4),
               child: QrImageView(

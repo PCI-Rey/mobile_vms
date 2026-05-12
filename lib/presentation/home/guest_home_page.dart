@@ -29,10 +29,6 @@ class _GuestHomePageState extends State<GuestHomePage> {
 
   @override
   Widget build(BuildContext context) {
-    final mq = MediaQuery.of(context);
-    final sw = mq.size.width;
-    final bottom = mq.padding.bottom; // safe area below navbar
-
     return Scaffold(
       body: LayoutBuilder(
         builder: (context, constraints) {
@@ -56,19 +52,29 @@ class _GuestHomePageState extends State<GuestHomePage> {
                 child: Column(
                   children: [
                     // --- TOP FIXED SECTION ---
-                    GuestHeader(sw: sw),
-                    SizedBox(height: sw * 0.04),
-                    GuestMenuGrid(sw: sw),
-                    SizedBox(height: sw * 0.06),
-                    AccessPassSection(
-                      sw: sw,
-                      onTap: (item) => AccessPassModal.show(context, item, sw),
-                    ),
-                    SizedBox(height: sw * 0.06),
-
-                    // --- BOTTOM SCROLLABLE SECTION ---
+                    const GuestHeader(),
+                    
+                    // --- SCROLLABLE BODY ---
                     Expanded(
-                      child: _buildBottomContent(context, sw, bottom),
+                      child: SingleChildScrollView(
+                        physics: const AlwaysScrollableScrollPhysics(
+                          parent: BouncingScrollPhysics(),
+                        ),
+                        child: Column(
+                          children: [
+                            vSpace(context, 16),
+                            const GuestMenuGrid(),
+                            vSpace(context, 24),
+                            AccessPassSection(
+                              onTap: (item) => AccessPassModal.show(context, item),
+                            ),
+                            vSpace(context, 24),
+
+                            // --- BOTTOM CONTENT ---
+                            _buildBottomContent(context),
+                          ],
+                        ),
+                      ),
                     ),
                   ],
                 ),
@@ -80,138 +86,129 @@ class _GuestHomePageState extends State<GuestHomePage> {
     );
   }
 
-  Widget _buildBottomContent(
-    BuildContext context,
-    double sw,
-    double bottomInset,
-  ) {
+  Widget _buildBottomContent(BuildContext context) {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
         color: _bgPage,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(rw(context, 32))),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 12,
-            offset: const Offset(0, -4),
+            blurRadius: rw(context, 12),
+            offset: Offset(0, rh(context, -4)),
           ),
         ],
       ),
-      // Bottom padding = safe-area inset + extra room for premium feel
       padding: EdgeInsets.fromLTRB(
-        sw * 0.05,
-        sw * 0.08,
-        sw * 0.05,
-        sw * 0.05,
+        rw(context, 20),
+        rh(context, 32),
+        rw(context, 20),
+        rh(context, 20),
       ),
-      child: SingleChildScrollView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'active_visit'.tr,
-                        style: TextStyle(
-                          fontSize: rfs(context, 16),
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      Text(
-                        'active_visits_desc'.tr,
-                        style: TextStyle(
-                          fontSize: rfs(context, 12),
-                          color: Colors.grey,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Obx(
-                  () => Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
-                    ),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          AppColors.primary500.withValues(alpha: 0.1),
-                          AppColors.primary500.withValues(alpha: 0.05),
-                        ],
-                      ),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: AppColors.primary500.withValues(alpha: 0.1),
-                      ),
-                    ),
-                    child: Text(
-                      '${guestCtrl.accessPasses.length} ${'records'.tr}',
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'active_visit'.tr,
                       style: TextStyle(
-                        color: AppColors.primary500,
-                        fontSize: rfs(context, 12),
+                        fontSize: rfs(context, 16),
                         fontWeight: FontWeight.w700,
-                        letterSpacing: 0.5,
                       ),
+                    ),
+                    Text(
+                      'active_visits_desc'.tr,
+                      style: TextStyle(
+                        fontSize: rfs(context, 12),
+                        color: Colors.grey,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Obx(
+                () => Container(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: rw(context, 12),
+                    vertical: rh(context, 6),
+                  ),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        AppColors.primary500.withValues(alpha: 0.1),
+                        AppColors.primary500.withValues(alpha: 0.05),
+                      ],
+                    ),
+                    borderRadius: BorderRadius.circular(rw(context, 12)),
+                    border: Border.all(
+                      color: AppColors.primary500.withValues(alpha: 0.1),
+                    ),
+                  ),
+                  child: Text(
+                    '${guestCtrl.accessPasses.length} ${'records'.tr}',
+                    style: TextStyle(
+                      color: AppColors.primary500,
+                      fontSize: rfs(context, 12),
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.5,
                     ),
                   ),
                 ),
-              ],
-            ),
-            SizedBox(height: sw * 0.04),
-            Obx(() {
-              if (guestCtrl.isLoading.value) {
-                return const Center(child: CircularProgressIndicator());
-              }
-              if (guestCtrl.accessPasses.isEmpty) {
-                return _buildEmptyVisits(context, sw);
-              }
-              return Column(
-                children: [
-                  for (int i = 0; i < guestCtrl.accessPasses.length; i++) ...[
-                    Obx(() => VisitSummaryCard(
-                      item: guestCtrl.accessPasses[i],
-                      sw: sw,
-                      isSelected: guestCtrl.selectedPassIndex.value == i,
-                      onTap: () => guestCtrl.selectPass(i),
-                    )),
-                    if (i < guestCtrl.accessPasses.length - 1)
-                      SizedBox(height: sw * 0.025),
-                  ],
+              ),
+            ],
+          ),
+          vSpace(context, 16),
+          Obx(() {
+            if (guestCtrl.isLoading.value) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            if (guestCtrl.accessPasses.isEmpty) {
+              return _buildEmptyVisits(context);
+            }
+            return Column(
+              children: [
+                for (int i = 0; i < guestCtrl.accessPasses.length; i++) ...[
+                  Obx(() => VisitSummaryCard(
+                    item: guestCtrl.accessPasses[i],
+                    isSelected: guestCtrl.selectedPassIndex.value == i,
+                    onTap: () => guestCtrl.selectPass(i),
+                  )),
+                  if (i < guestCtrl.accessPasses.length - 1)
+                    vSpace(context, 10),
                 ],
-              );
-            }),
-          ],
-        ),
+              ],
+            );
+          }),
+        ],
       ),
     );
   }
 
-  Widget _buildEmptyVisits(BuildContext context, double sw) {
+  Widget _buildEmptyVisits(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.symmetric(vertical: sw * 0.1),
+      padding: EdgeInsets.symmetric(vertical: rh(context, 40)),
       child: Center(
         child: Column(
           children: [
             Container(
-              padding: EdgeInsets.all(sw * 0.05),
+              padding: EdgeInsets.all(rw(context, 20)),
               decoration: BoxDecoration(
                 color: Colors.grey[100],
                 shape: BoxShape.circle,
               ),
               child: Icon(
                 Icons.event_busy_outlined,
-                size: sw * 0.1,
+                size: rw(context, 40),
                 color: Colors.grey[400],
               ),
             ),
-            SizedBox(height: sw * 0.03),
+            vSpace(context, 12),
             Text(
               'no_active_visits'.tr,
               style: TextStyle(
@@ -219,7 +216,7 @@ class _GuestHomePageState extends State<GuestHomePage> {
                 fontSize: rfs(context, 15),
               ),
             ),
-            SizedBox(height: sw * 0.01),
+            vSpace(context, 4),
             Text(
               'no_active_visits_desc'.tr,
               style: TextStyle(color: Colors.grey, fontSize: rfs(context, 12)),

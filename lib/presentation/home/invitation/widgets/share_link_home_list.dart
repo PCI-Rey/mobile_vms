@@ -83,10 +83,10 @@ class _ShareLinkHomeListState extends State<ShareLinkHomeList> {
     return Obx(() {
       if (controller.isShareLinkLoading.value &&
           controller.dashboardShareLinks.isEmpty) {
-        return const Center(
+        return Center(
           child: Padding(
-            padding: EdgeInsets.all(20.0),
-            child: CircularProgressIndicator(),
+            padding: EdgeInsets.all(rw(context, 20.0)),
+            child: const CircularProgressIndicator(),
           ),
         );
       }
@@ -94,14 +94,14 @@ class _ShareLinkHomeListState extends State<ShareLinkHomeList> {
       if (controller.dashboardShareLinks.isEmpty) {
         return Center(
           child: Padding(
-            padding: const EdgeInsets.all(20.0),
+            padding: EdgeInsets.all(rw(context, 20.0)),
             child: Column(
               children: [
-                Icon(Icons.link_off, size: 48, color: Colors.grey.shade300),
-                const SizedBox(height: 8),
+                Icon(Icons.link_off, size: rw(context, 48), color: Colors.grey.shade300),
+                vSpace(context, 8),
                 Text(
                   'No share links found',
-                  style: TextStyle(color: Colors.grey.shade500, fontSize: 12),
+                  style: TextStyle(color: Colors.grey.shade500, fontSize: rfs(context, 12)),
                 ),
               ],
             ),
@@ -121,7 +121,7 @@ class _ShareLinkHomeListState extends State<ShareLinkHomeList> {
               color: Colors.black87,
             ),
           ),
-          const SizedBox(height: 12),
+          vSpace(context, 12),
 
           // List of cards (max 3, no scroll)
           ...controller.dashboardShareLinks
@@ -133,7 +133,7 @@ class _ShareLinkHomeListState extends State<ShareLinkHomeList> {
                 final int idx = entry.key + 1;
                 final item = entry.value;
                 return Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
+                  padding: EdgeInsets.only(bottom: rh(context, 12)),
                   child: _buildShareLinkCard(context, item, idx),
                 );
               }),
@@ -145,13 +145,13 @@ class _ShareLinkHomeListState extends State<ShareLinkHomeList> {
               onPressed: () {
                 Get.to(() => const SendInvitationPage(initialTab: 1));
               },
-              icon: const Icon(Icons.arrow_forward_rounded, size: 16),
+              icon: Icon(Icons.arrow_forward_rounded, size: rw(context, 16)),
               label: const Text('Show More Link'),
               style: TextButton.styleFrom(
                 foregroundColor: AppColors.primary500,
-                textStyle: const TextStyle(
+                textStyle: TextStyle(
                   fontWeight: FontWeight.w600,
-                  fontSize: 13,
+                  fontSize: rfs(context, 13),
                 ),
               ),
             ),
@@ -213,13 +213,13 @@ class _ShareLinkHomeListState extends State<ShareLinkHomeList> {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(rw(context, 12)),
         border: Border.all(color: Colors.grey.shade200),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.02),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+            blurRadius: rw(context, 10),
+            offset: Offset(0, rh(context, 4)),
           ),
         ],
       ),
@@ -228,21 +228,21 @@ class _ShareLinkHomeListState extends State<ShareLinkHomeList> {
         children: [
           // ── Header: status badge + timer ──────────────────────────
           Padding(
-            padding: const EdgeInsets.all(12),
+            padding: EdgeInsets.all(rw(context, 12)),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 // Status pill with icon
                 Container(
-                  padding: const EdgeInsets.fromLTRB(4, 4, 12, 4),
+                  padding: EdgeInsets.fromLTRB(rw(context, 4), rh(context, 4), rw(context, 12), rh(context, 4)),
                   decoration: BoxDecoration(
                     color: statusColor,
-                    borderRadius: BorderRadius.circular(20),
+                    borderRadius: BorderRadius.circular(rw(context, 20)),
                     boxShadow: [
                       BoxShadow(
                         color: statusColor.withValues(alpha: 0.2),
-                        blurRadius: 4,
-                        offset: const Offset(0, 2),
+                        blurRadius: rw(context, 4),
+                        offset: Offset(0, rh(context, 2)),
                       ),
                     ],
                   ),
@@ -250,8 +250,8 @@ class _ShareLinkHomeListState extends State<ShareLinkHomeList> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Container(
-                        width: 22,
-                        height: 22,
+                        width: rw(context, 22),
+                        height: rw(context, 22),
                         decoration: const BoxDecoration(
                           color: Colors.white,
                           shape: BoxShape.circle,
@@ -260,24 +260,24 @@ class _ShareLinkHomeListState extends State<ShareLinkHomeList> {
                           child: Text(
                             no.toString(),
                             style: TextStyle(
-                              fontSize: 10,
+                              fontSize: rfs(context, 10),
                               fontWeight: FontWeight.bold,
                               color: statusColor,
                             ),
                           ),
                         ),
                       ),
-                      const SizedBox(width: 6),
+                      hSpace(context, 6),
                       Icon(
                         isExpired ? Icons.link_off : Icons.link,
-                        size: 14,
+                        size: rw(context, 14),
                         color: Colors.white,
                       ),
-                      const SizedBox(width: 4),
+                      hSpace(context, 4),
                       Text(
                         statusLabel.toUpperCase(),
-                        style: const TextStyle(
-                          fontSize: 10,
+                        style: TextStyle(
+                          fontSize: rfs(context, 10),
                           fontWeight: FontWeight.w900,
                           color: Colors.white,
                           letterSpacing: 0.8,
@@ -288,27 +288,27 @@ class _ShareLinkHomeListState extends State<ShareLinkHomeList> {
                 ),
                 // Timer box
                 Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
+                  padding: EdgeInsets.symmetric(
+                    horizontal: rw(context, 8),
+                    vertical: rh(context, 4),
                   ),
                   decoration: BoxDecoration(
                     color: Colors.grey.shade50,
-                    borderRadius: BorderRadius.circular(6),
+                    borderRadius: BorderRadius.circular(rw(context, 6)),
                     border: Border.all(color: Colors.grey.shade200),
                   ),
                   child: Row(
                     children: [
                       Icon(
                         Icons.timer_outlined,
-                        size: 14,
+                        size: rw(context, 14),
                         color: isExpired ? Colors.grey : Colors.orange,
                       ),
-                      const SizedBox(width: 4),
+                      hSpace(context, 4),
                       Text(
                         getRemainingTime(),
                         style: TextStyle(
-                          fontSize: 11,
+                          fontSize: rfs(context, 11),
                           fontWeight: FontWeight.bold,
                           fontFamily: 'monospace',
                           color: isExpired ? Colors.grey : Colors.black87,
@@ -323,30 +323,34 @@ class _ShareLinkHomeListState extends State<ShareLinkHomeList> {
           const Divider(height: 1),
           // ── Content rows ──────────────────────────────────────────
           Padding(
-            padding: const EdgeInsets.all(12),
+            padding: EdgeInsets.all(rw(context, 12)),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildInfoRow('Agenda', agenda, isBold: true),
-                const SizedBox(height: 6),
+                _buildInfoRow(context, 'Agenda', agenda, isBold: true),
+                vSpace(context, 6),
                 _buildInfoRow(
+                  context,
                   'Usage',
                   item['is_single_use'] == true
                       ? '$maxUsage (Single Use)'
                       : '$maxUsage',
                 ),
-                const SizedBox(height: 6),
+                vSpace(context, 6),
                 _buildInfoRow(
+                  context,
                   'Visit Start',
                   formatDate(item['visitor_period_start']),
                 ),
-                const SizedBox(height: 6),
+                vSpace(context, 6),
                 _buildInfoRow(
+                  context,
                   'Visit End',
                   formatDate(item['visitor_period_end']),
                 ),
-                const SizedBox(height: 6),
+                vSpace(context, 6),
                 _buildInfoRow(
+                  context,
                   'Expired At',
                   item['expired_number'] == 0
                       ? 'Never'
@@ -361,11 +365,12 @@ class _ShareLinkHomeListState extends State<ShareLinkHomeList> {
           const Divider(height: 1),
           // Actions
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            padding: EdgeInsets.symmetric(horizontal: rw(context, 12), vertical: rh(context, 8)),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
                 _buildActionButton(
+                  context,
                   icon: Icons.copy,
                   color: isExpired ? Colors.grey : Colors.orange.shade400,
                   onTap: () {
@@ -389,16 +394,18 @@ class _ShareLinkHomeListState extends State<ShareLinkHomeList> {
                     );
                   },
                 ),
-                const SizedBox(width: 12),
+                hSpace(context, 12),
                 _buildActionButton(
+                  context,
                   icon: Icons.visibility,
                   color: Colors.grey,
                   onTap: () {
                     // Logic to show details if needed
                   },
                 ),
-                const SizedBox(width: 12),
+                hSpace(context, 12),
                 _buildActionButton(
+                  context,
                   icon: Icons.delete,
                   color: Colors.red,
                   onTap: () => _confirmDelete(item['id'].toString()),
@@ -412,6 +419,7 @@ class _ShareLinkHomeListState extends State<ShareLinkHomeList> {
   }
 
   Widget _buildInfoRow(
+    BuildContext context,
     String label,
     String value, {
     bool isBold = false,
@@ -421,17 +429,17 @@ class _ShareLinkHomeListState extends State<ShareLinkHomeList> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         SizedBox(
-          width: 80,
+          width: rw(context, 80),
           child: Text(
             label,
-            style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+            style: TextStyle(fontSize: rfs(context, 11), color: Colors.grey.shade600),
           ),
         ),
         Expanded(
           child: Text(
             value,
             style: TextStyle(
-              fontSize: 11,
+              fontSize: rfs(context, 11),
               fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
               color: color ?? Colors.black87,
             ),
@@ -441,21 +449,22 @@ class _ShareLinkHomeListState extends State<ShareLinkHomeList> {
     );
   }
 
-  Widget _buildActionButton({
+  Widget _buildActionButton(
+    BuildContext context, {
     required IconData icon,
     required Color color,
     required VoidCallback onTap,
   }) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(8),
+      borderRadius: BorderRadius.circular(rw(context, 8)),
       child: Container(
-        padding: const EdgeInsets.all(6),
+        padding: EdgeInsets.all(rw(context, 6)),
         decoration: BoxDecoration(
           color: color.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(rw(context, 8)),
         ),
-        child: Icon(icon, size: 18, color: color),
+        child: Icon(icon, size: rw(context, 18), color: color),
       ),
     );
   }

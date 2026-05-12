@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
+import '../../../../core/helper/responsive_helper.dart';
 import '../controller/invitation_controller.dart';
 
 class InviteShareLinkDialog extends StatefulWidget {
@@ -134,7 +135,7 @@ class _InviteShareLinkDialogState extends State<InviteShareLinkDialog>
   Widget build(BuildContext context) {
     final int expiredNumber = widget.item['expired_number'] ?? -1;
     final bool isNoExpired = expiredNumber == 0;
-    
+
     final String url = widget.item['url'] ?? '';
     final String expiredAtStr = widget.item['expired_at']?.toString() ?? '';
     DateTime? expiredAt;
@@ -148,40 +149,58 @@ class _InviteShareLinkDialogState extends State<InviteShareLinkDialog>
         }
         expiredAt = DateTime.parse(normalized).toLocal();
         final months = [
-          '', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
-          'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+          '',
+          'Januari',
+          'Februari',
+          'Maret',
+          'April',
+          'Mei',
+          'Juni',
+          'Juli',
+          'Agustus',
+          'September',
+          'Oktober',
+          'November',
+          'Desember'
         ];
-        formattedExpire = '${expiredAt.day} ${months[expiredAt.month]} ${expiredAt.year}, ${expiredAt.hour.toString().padLeft(2, '0')}.${expiredAt.minute.toString().padLeft(2, '0')}';
-      } catch (_) {}
+        formattedExpire =
+            '${expiredAt.day} ${months[expiredAt.month]} ${expiredAt.year}, ${expiredAt.hour.toString().padLeft(2, '0')}.${expiredAt.minute.toString().padLeft(2, '0')}';
+      } catch (e) {
+        debugPrint('Error parsing expired_at: $e');
+        formattedExpire = expiredAtStr;
+      }
     } else if (isNoExpired) {
-      formattedExpire = '-'; // Or 'Never'
+      formattedExpire = '-';
     }
 
     return Dialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(rw(context, 16)),
+      ),
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 16),
-        constraints: const BoxConstraints(maxWidth: 450),
+        padding: EdgeInsets.symmetric(vertical: rh(context, 16)),
+        constraints: BoxConstraints(maxWidth: rw(context, 450)),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Header
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
+              padding: EdgeInsets.symmetric(horizontal: rw(context, 20)),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
+                  Text(
                     'Invite Share Link',
                     style: TextStyle(
-                      fontSize: 18,
+                      fontSize: rfs(context, 18),
                       fontWeight: FontWeight.bold,
-                      color: Color(0xFF263238),
+                      color: const Color(0xFF263238),
                     ),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.close, color: Colors.grey),
+                    icon: Icon(Icons.close,
+                        color: Colors.grey, size: rw(context, 20)),
                     onPressed: () => Navigator.pop(context),
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(),
@@ -189,39 +208,42 @@ class _InviteShareLinkDialogState extends State<InviteShareLinkDialog>
                 ],
               ),
             ),
-            const SizedBox(height: 12),
+            vSpace(context, 12),
             const Divider(height: 1),
-            const SizedBox(height: 16),
-            
+            vSpace(context, 16),
+
             // Tab Header
-            Center(
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: rw(context, 20)),
               child: TabBar(
                 controller: _tabController,
-                isScrollable: true,
                 labelColor: const Color(0xFF005596),
                 unselectedLabelColor: Colors.grey.shade600,
                 indicatorColor: const Color(0xFF005596),
                 indicatorSize: TabBarIndicatorSize.tab,
                 dividerColor: Colors.transparent,
-                labelStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+                labelStyle: TextStyle(
+                    fontWeight: FontWeight.w700, fontSize: rfs(context, 14)),
                 tabs: const [
                   Tab(text: 'Invite Via Link'),
                   Tab(text: 'Invite Via Email'),
                 ],
               ),
             ),
-            const SizedBox(height: 24),
+            vSpace(context, 24),
 
             // Tab Content
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
+              padding: EdgeInsets.symmetric(horizontal: rw(context, 20)),
               child: SizedBox(
-                height: 220,
+                height: rh(context, 240),
                 child: TabBarView(
                   controller: _tabController,
                   children: [
-                    _buildInviteViaLink(url, formattedExpire, expiredAt, isNoExpired),
-                    _buildInviteViaEmail(formattedExpire, expiredAt, isNoExpired),
+                    _buildInviteViaLink(
+                        context, url, formattedExpire, expiredAt, isNoExpired),
+                    _buildInviteViaEmail(
+                        context, formattedExpire, expiredAt, isNoExpired),
                   ],
                 ),
               ),
@@ -232,29 +254,34 @@ class _InviteShareLinkDialogState extends State<InviteShareLinkDialog>
     );
   }
 
-  Widget _buildInviteViaLink(String url, String expire, DateTime? expiredAt, bool isNoExpired) {
+  Widget _buildInviteViaLink(BuildContext context, String url, String expire,
+      DateTime? expiredAt, bool isNoExpired) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'Share this link to invite users:',
-          style: TextStyle(fontSize: 14, color: Color(0xFF607D8B), fontWeight: FontWeight.w500),
+          style: TextStyle(
+              fontSize: rfs(context, 14),
+              color: const Color(0xFF607D8B),
+              fontWeight: FontWeight.w500),
         ),
-        const SizedBox(height: 12),
+        vSpace(context, 12),
         Container(
           width: double.infinity,
           decoration: BoxDecoration(
             color: Colors.grey.shade50,
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(rw(context, 10)),
             border: Border.all(color: Colors.grey.shade200),
           ),
           child: SingleChildScrollView(
             scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
+            padding: EdgeInsets.symmetric(
+                horizontal: rw(context, 14), vertical: rh(context, 16)),
             child: Text(
               url,
               style: TextStyle(
-                fontSize: 13,
+                fontSize: rfs(context, 13),
                 color: Colors.blueGrey.shade700,
                 fontFamily: 'monospace',
                 letterSpacing: 0.5,
@@ -262,7 +289,7 @@ class _InviteShareLinkDialogState extends State<InviteShareLinkDialog>
             ),
           ),
         ),
-        const SizedBox(height: 16),
+        vSpace(context, 16),
         // Expiration + Countdown Row
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -271,35 +298,42 @@ class _InviteShareLinkDialogState extends State<InviteShareLinkDialog>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
+                  Text(
                     'The invitation expires in:',
-                    style: TextStyle(fontSize: 12, color: Color(0xFF78909C)),
+                    style: TextStyle(
+                        fontSize: rfs(context, 12),
+                        color: const Color(0xFF78909C)),
                   ),
-                  const SizedBox(height: 2),
+                  vSpace(context, 2),
                   Text(
                     expire,
-                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF263238)),
+                    style: TextStyle(
+                        fontSize: rfs(context, 13),
+                        fontWeight: FontWeight.bold,
+                        color: const Color(0xFF263238)),
                   ),
                 ],
               ),
             ),
             if (isNoExpired)
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                padding: EdgeInsets.symmetric(
+                    horizontal: rw(context, 10), vertical: rh(context, 6)),
                 decoration: BoxDecoration(
                   color: Colors.blue.shade50,
-                  borderRadius: BorderRadius.circular(6),
+                  borderRadius: BorderRadius.circular(rw(context, 6)),
                   border: Border.all(color: Colors.blue.shade100),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.all_inclusive, size: 14, color: Colors.blue.shade800),
-                    const SizedBox(width: 6),
+                    Icon(Icons.all_inclusive,
+                        size: rw(context, 14), color: Colors.blue.shade800),
+                    hSpace(context, 6),
                     Text(
                       'No Expired',
                       style: TextStyle(
-                        fontSize: 12,
+                        fontSize: rfs(context, 12),
                         fontWeight: FontWeight.bold,
                         color: Colors.blue.shade900,
                       ),
@@ -309,21 +343,23 @@ class _InviteShareLinkDialogState extends State<InviteShareLinkDialog>
               )
             else if (expiredAt != null)
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                padding: EdgeInsets.symmetric(
+                    horizontal: rw(context, 10), vertical: rh(context, 6)),
                 decoration: BoxDecoration(
                   color: Colors.orange.shade50,
-                  borderRadius: BorderRadius.circular(6),
+                  borderRadius: BorderRadius.circular(rw(context, 6)),
                   border: Border.all(color: Colors.orange.shade100),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.timer_outlined, size: 14, color: Colors.orange.shade800),
-                    const SizedBox(width: 6),
+                    Icon(Icons.timer_outlined,
+                        size: rw(context, 14), color: Colors.orange.shade800),
+                    hSpace(context, 6),
                     Text(
                       _getRemainingTime(expiredAt),
                       style: TextStyle(
-                        fontSize: 12,
+                        fontSize: rfs(context, 12),
                         fontWeight: FontWeight.bold,
                         color: Colors.orange.shade900,
                         fontFamily: 'monospace',
@@ -337,7 +373,7 @@ class _InviteShareLinkDialogState extends State<InviteShareLinkDialog>
         const Spacer(),
         SizedBox(
           width: double.infinity,
-          height: 50,
+          height: rh(context, 50),
           child: ElevatedButton(
             onPressed: () {
               Clipboard.setData(ClipboardData(text: url));
@@ -347,19 +383,23 @@ class _InviteShareLinkDialogState extends State<InviteShareLinkDialog>
                 backgroundColor: Colors.green,
                 colorText: Colors.white,
                 snackPosition: SnackPosition.TOP,
-                margin: const EdgeInsets.all(16),
+                margin: EdgeInsets.all(rw(context, 16)),
               );
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF005596),
               elevation: 0,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(rw(context, 10)),
               ),
             ),
-            child: const Text(
+            child: Text(
               'Copy Link',
-              style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 15, letterSpacing: 0.5),
+              style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w700,
+                  fontSize: rfs(context, 15),
+                  letterSpacing: 0.5),
             ),
           ),
         ),
@@ -367,40 +407,47 @@ class _InviteShareLinkDialogState extends State<InviteShareLinkDialog>
     );
   }
 
-  Widget _buildInviteViaEmail(String expire, DateTime? expiredAt, bool isNoExpired) {
+  Widget _buildInviteViaEmail(BuildContext context, String expire,
+      DateTime? expiredAt, bool isNoExpired) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'Enter email address to send invitation:',
-          style: TextStyle(fontSize: 14, color: Color(0xFF607D8B), fontWeight: FontWeight.w500),
+          style: TextStyle(
+              fontSize: rfs(context, 14),
+              color: const Color(0xFF607D8B),
+              fontWeight: FontWeight.w500),
         ),
-        const SizedBox(height: 12),
+        vSpace(context, 12),
         TextField(
           controller: _emailController,
           enabled: !_isLoading,
-          style: const TextStyle(fontSize: 14),
+          style: TextStyle(fontSize: rfs(context, 14)),
           decoration: InputDecoration(
             hintText: 'Input your email',
-            hintStyle: TextStyle(fontSize: 14, color: Colors.grey.shade400),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            hintStyle:
+                TextStyle(fontSize: rfs(context, 14), color: Colors.grey.shade400),
+            contentPadding: EdgeInsets.symmetric(
+                horizontal: rw(context, 16), vertical: rh(context, 14)),
             filled: true,
             fillColor: Colors.white,
             border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(rw(context, 10)),
               borderSide: BorderSide(color: Colors.grey.shade200),
             ),
             enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(rw(context, 10)),
               borderSide: BorderSide(color: Colors.grey.shade200),
             ),
             focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(10),
-              borderSide: const BorderSide(color: Color(0xFF005596), width: 1.5),
+              borderRadius: BorderRadius.circular(rw(context, 10)),
+              borderSide:
+                  const BorderSide(color: Color(0xFF005596), width: 1.5),
             ),
           ),
         ),
-        const SizedBox(height: 16),
+        vSpace(context, 16),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
@@ -408,35 +455,42 @@ class _InviteShareLinkDialogState extends State<InviteShareLinkDialog>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
+                  Text(
                     'The invitation expires in:',
-                    style: TextStyle(fontSize: 12, color: Color(0xFF78909C)),
+                    style: TextStyle(
+                        fontSize: rfs(context, 12),
+                        color: const Color(0xFF78909C)),
                   ),
-                  const SizedBox(height: 2),
+                  vSpace(context, 2),
                   Text(
                     expire,
-                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF263238)),
+                    style: TextStyle(
+                        fontSize: rfs(context, 13),
+                        fontWeight: FontWeight.bold,
+                        color: const Color(0xFF263238)),
                   ),
                 ],
               ),
             ),
             if (isNoExpired)
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                padding: EdgeInsets.symmetric(
+                    horizontal: rw(context, 10), vertical: rh(context, 6)),
                 decoration: BoxDecoration(
                   color: Colors.blue.shade50,
-                  borderRadius: BorderRadius.circular(6),
+                  borderRadius: BorderRadius.circular(rw(context, 6)),
                   border: Border.all(color: Colors.blue.shade100),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.all_inclusive, size: 14, color: Colors.blue.shade800),
-                    const SizedBox(width: 6),
+                    Icon(Icons.all_inclusive,
+                        size: rw(context, 14), color: Colors.blue.shade800),
+                    hSpace(context, 6),
                     Text(
                       'No Expired',
                       style: TextStyle(
-                        fontSize: 12,
+                        fontSize: rfs(context, 12),
                         fontWeight: FontWeight.bold,
                         color: Colors.blue.shade900,
                       ),
@@ -446,21 +500,23 @@ class _InviteShareLinkDialogState extends State<InviteShareLinkDialog>
               )
             else if (expiredAt != null)
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                padding: EdgeInsets.symmetric(
+                    horizontal: rw(context, 10), vertical: rh(context, 6)),
                 decoration: BoxDecoration(
                   color: Colors.orange.shade50,
-                  borderRadius: BorderRadius.circular(6),
+                  borderRadius: BorderRadius.circular(rw(context, 6)),
                   border: Border.all(color: Colors.orange.shade100),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.timer_outlined, size: 14, color: Colors.orange.shade800),
-                    const SizedBox(width: 6),
+                    Icon(Icons.timer_outlined,
+                        size: rw(context, 14), color: Colors.orange.shade800),
+                    hSpace(context, 6),
                     Text(
                       _getRemainingTime(expiredAt),
                       style: TextStyle(
-                        fontSize: 12,
+                        fontSize: rfs(context, 12),
                         fontWeight: FontWeight.bold,
                         color: Colors.orange.shade900,
                         fontFamily: 'monospace',
@@ -474,25 +530,30 @@ class _InviteShareLinkDialogState extends State<InviteShareLinkDialog>
         const Spacer(),
         SizedBox(
           width: double.infinity,
-          height: 50,
+          height: rh(context, 50),
           child: ElevatedButton(
             onPressed: _isLoading ? null : _sendEmailAction,
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF005596),
               elevation: 0,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(rw(context, 10)),
               ),
             ),
             child: _isLoading
-                ? const SizedBox(
-                    width: 24,
-                    height: 24,
-                    child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5),
+                ? SizedBox(
+                    width: rw(context, 24),
+                    height: rw(context, 24),
+                    child: const CircularProgressIndicator(
+                        color: Colors.white, strokeWidth: 2.5),
                   )
-                : const Text(
+                : Text(
                     'Send Invitation',
-                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 15, letterSpacing: 0.5),
+                    style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w700,
+                        fontSize: rfs(context, 15),
+                        letterSpacing: 0.5),
                   ),
           ),
         ),
