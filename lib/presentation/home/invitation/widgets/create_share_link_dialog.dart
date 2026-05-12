@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import '../controller/invitation_controller.dart';
+import 'invite_share_link_dialog.dart';
 
 class CreateShareLinkDialog extends StatefulWidget {
   const CreateShareLinkDialog({super.key});
@@ -763,7 +764,7 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
       barrierDismissible: false,
     );
     try {
-      final success = await controller.createShareLinkAction(
+      final newItem = await controller.createShareLinkAction(
         body,
         sendEmail: sendEmail,
       );
@@ -771,16 +772,16 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
       if (!mounted) return;
       Get.back(); // Close loading
 
-      if (success) {
+      if (newItem != null) {
         Get.snackbar(
           'Success',
           'Share link created successfully',
           backgroundColor: Colors.green,
           colorText: Colors.white,
+          snackPosition: SnackPosition.TOP,
         );
         if (mounted) {
-          controller.fetchShareLinks(resetPage: true);
-          Navigator.pop(context);
+          Navigator.pop(context); // Close Create dialog
         }
       }
     } catch (e) {

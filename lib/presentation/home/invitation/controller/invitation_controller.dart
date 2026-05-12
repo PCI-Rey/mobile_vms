@@ -309,13 +309,13 @@ class InvitationController extends GetxController {
     }
   }
 
-  Future<bool> createShareLinkAction(
+  Future<Map<String, dynamic>?> createShareLinkAction(
     Map<String, dynamic> body, {
     bool sendEmail = false,
   }) async {
     final user = _hive.getUser();
     final token = user?.token;
-    if (token == null) return false;
+    if (token == null) return null;
 
     try {
       final response = sendEmail
@@ -324,11 +324,22 @@ class InvitationController extends GetxController {
 
       if (response.data['status'] == 'success' ||
           response.data['status_code'] == 200) {
-        fetchShareLinks(resetPage: true); // Refresh list
+        await fetchShareLinks(resetPage: true); // Refresh list
         fetchDashboardShareLinks(); // Refresh dashboard list
-        return true;
+        
+        // Return the created item if available in response
+        if (response.data['item'] != null) {
+          return Map<String, dynamic>.from(response.data['item']);
+        }
+        
+        // Fallback: get the first item from the refreshed list
+        if (shareLinks.isNotEmpty) {
+          return shareLinks.first;
+        }
+        
+        return {}; // Success but no item data
       }
-      return false;
+      return null;
     } catch (e) {
       if (e is DioException && e.response != null) {
         debugPrint('createShareLinkAction error response: ${e.response?.data}');

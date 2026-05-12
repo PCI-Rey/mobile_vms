@@ -761,7 +761,9 @@ class _ShareLinkListInlineState extends State<ShareLinkListInline> {
       ? Get.find<InvitationController>()
       : Get.put(InvitationController());
 
+  final ScrollController _scrollController = ScrollController();
   Timer? _timer;
+  Worker? _listWorker;
 
   @override
   void initState() {
@@ -769,6 +771,17 @@ class _ShareLinkListInlineState extends State<ShareLinkListInline> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       controller.shareLinkPageSize.value = 10;
       controller.fetchShareLinks(resetPage: true);
+    });
+
+    // Reset scroll to top when list changes (focused on new item)
+    _listWorker = ever(controller.shareLinks, (_) {
+      if (_scrollController.hasClients) {
+        _scrollController.animateTo(
+          0,
+          duration: const Duration(milliseconds: 500),
+          curve: Curves.easeOut,
+        );
+      }
     });
 
     // Start timer for live countdown
@@ -782,6 +795,8 @@ class _ShareLinkListInlineState extends State<ShareLinkListInline> {
   @override
   void dispose() {
     _timer?.cancel();
+    _listWorker?.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -824,6 +839,7 @@ class _ShareLinkListInlineState extends State<ShareLinkListInline> {
             child: RefreshIndicator(
               onRefresh: () => controller.fetchShareLinks(resetPage: true),
               child: ListView.separated(
+                controller: _scrollController,
                 padding: EdgeInsets.all(rw(context, 16)),
                 physics: const AlwaysScrollableScrollPhysics(),
                 itemCount: controller.shareLinks.length,

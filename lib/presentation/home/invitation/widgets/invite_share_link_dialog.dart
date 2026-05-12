@@ -104,7 +104,7 @@ class _InviteShareLinkDialogState extends State<InviteShareLinkDialog>
         sendEmail: true,
       );
 
-      if (success) {
+      if (success != null) {
         Get.snackbar(
           'Success',
           'Invitation sent to ${_emailController.text}',

@@ -24,9 +24,11 @@ class _ShareLinkHomeListState extends State<ShareLinkHomeList> {
   Timer? _carouselTimer;
   final PageController _pageController = PageController(
     viewportFraction: 1.0,
-    initialPage: 1000,
+    initialPage: 1200,
   );
-  final RxInt _currentPage = 1000.obs;
+  final RxInt _currentPage = 1200.obs;
+
+  Worker? _listWorker;
 
   @override
   void initState() {
@@ -36,6 +38,18 @@ class _ShareLinkHomeListState extends State<ShareLinkHomeList> {
       controller.fetchDashboardShareLinks();
     });
 
+    // Reset to start when list changes (focused on new item)
+    _listWorker = ever(controller.dashboardShareLinks, (list) {
+      if (_pageController.hasClients && list.isNotEmpty) {
+        final listLength = list.length > 3 ? 3 : list.length;
+        // Jump to the nearest multiple of listLength near 1200 so that (page % listLength) == 0
+        final targetPage = 1200 - (1200 % listLength);
+        _pageController.jumpToPage(targetPage);
+        _currentPage.value = targetPage;
+        _resetCarouselTimer(); // Reset the timer so it stays on item 1 longer
+      }
+    });
+
     // Start timer for live countdown
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (mounted) {
@@ -43,7 +57,10 @@ class _ShareLinkHomeListState extends State<ShareLinkHomeList> {
       }
     });
 
-    // Auto slide timer
+    _startCarouselTimer();
+  }
+
+  void _startCarouselTimer() {
     _carouselTimer = Timer.periodic(const Duration(seconds: 7), (timer) {
       if (mounted &&
           controller.dashboardShareLinks.isNotEmpty &&
@@ -64,11 +81,17 @@ class _ShareLinkHomeListState extends State<ShareLinkHomeList> {
     });
   }
 
+  void _resetCarouselTimer() {
+    _carouselTimer?.cancel();
+    _startCarouselTimer();
+  }
+
   @override
   void dispose() {
     _pageController.dispose();
     _carouselTimer?.cancel();
     _timer?.cancel();
+    _listWorker?.dispose();
     super.dispose();
   }
 
