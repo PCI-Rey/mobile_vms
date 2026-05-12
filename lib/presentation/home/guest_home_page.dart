@@ -56,24 +56,37 @@ class _GuestHomePageState extends State<GuestHomePage> {
                     
                     // --- SCROLLABLE BODY ---
                     Expanded(
-                      child: SingleChildScrollView(
-                        physics: const AlwaysScrollableScrollPhysics(
-                          parent: BouncingScrollPhysics(),
-                        ),
-                        child: Column(
-                          children: [
-                            vSpace(context, 16),
-                            const GuestMenuGrid(),
-                            vSpace(context, 24),
-                            AccessPassSection(
-                              onTap: (item) => AccessPassModal.show(context, item),
+                      child: LayoutBuilder(
+                        builder: (context, scrollConstraints) {
+                          return SingleChildScrollView(
+                            physics: const AlwaysScrollableScrollPhysics(
+                              parent: BouncingScrollPhysics(),
                             ),
-                            vSpace(context, 24),
+                            child: ConstrainedBox(
+                              constraints: BoxConstraints(
+                                minHeight: scrollConstraints.maxHeight,
+                              ),
+                              child: IntrinsicHeight(
+                                child: Column(
+                                  children: [
+                                    vSpace(context, 16),
+                                    const GuestMenuGrid(),
+                                    vSpace(context, 24),
+                                    AccessPassSection(
+                                      onTap: (item) => AccessPassModal.show(context, item),
+                                    ),
+                                    vSpace(context, 24),
 
-                            // --- BOTTOM CONTENT ---
-                            _buildBottomContent(context),
-                          ],
-                        ),
+                                    // --- BOTTOM CONTENT ---
+                                    Expanded(
+                                      child: _buildBottomContent(context),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          );
+                        },
                       ),
                     ),
                   ],
@@ -104,11 +117,23 @@ class _GuestHomePageState extends State<GuestHomePage> {
         rw(context, 20),
         rh(context, 32),
         rw(context, 20),
-        rh(context, 20),
+        rh(context, 20) + MediaQuery.of(context).padding.bottom,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Premium drag handle pill indicator
+          Center(
+            child: Container(
+              width: rw(context, 48),
+              height: rh(context, 5),
+              decoration: BoxDecoration(
+                color: Colors.grey.withValues(alpha: 0.3),
+                borderRadius: BorderRadius.circular(rw(context, 3)),
+              ),
+            ),
+          ),
+          vSpace(context, 20),
           Row(
             children: [
               Expanded(
