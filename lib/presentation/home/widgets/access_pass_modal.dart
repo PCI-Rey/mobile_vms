@@ -13,14 +13,10 @@ class AccessPassModal {
 
   static void show(BuildContext context, dynamic item) {
     final startStr = DateFormat('EEEE, dd MMMM yyyy, HH:mm', 'id').format(
-      DateTime.parse(
-        '${item.visitorPeriodStart.toIso8601String().split('Z').first}Z',
-      ).toLocal(),
+      item.visitorPeriodStart,
     );
     final endStr = DateFormat('EEEE, dd MMMM yyyy, HH:mm', 'id').format(
-      DateTime.parse(
-        '${item.visitorPeriodEnd.toIso8601String().split('Z').first}Z',
-      ).toLocal(),
+      item.visitorPeriodEnd,
     );
 
     showModalBottomSheet(

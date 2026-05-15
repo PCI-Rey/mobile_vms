@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import '../controller/invitation_controller.dart';
-import 'invite_share_link_dialog.dart';
 
 class CreateShareLinkDialog extends StatefulWidget {
   const CreateShareLinkDialog({super.key});
@@ -201,9 +200,10 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
                                     agendaCtrl.text = v ?? '';
                                   } else {
                                     agendaCtrl.text = '';
-                                    WidgetsBinding.instance.addPostFrameCallback((_) {
-                                      agendaFocusNode.requestFocus();
-                                    });
+                                    WidgetsBinding.instance
+                                        .addPostFrameCallback((_) {
+                                          agendaFocusNode.requestFocus();
+                                        });
                                   }
                                 }),
                               ),
@@ -230,8 +230,15 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
                               final single = hosts.first;
                               // Always auto-set the value so it's ready when submitted
                               if (selectedHostId != single['id']?.toString()) {
-                                WidgetsBinding.instance.addPostFrameCallback((_) {
-                                  if (mounted) setState(() => selectedHostId = single['id']?.toString());
+                                WidgetsBinding.instance.addPostFrameCallback((
+                                  _,
+                                ) {
+                                  if (mounted) {
+                                    setState(
+                                      () => selectedHostId = single['id']
+                                          ?.toString(),
+                                    );
+                                  }
                                 });
                               }
                               // Show name only when toggle is ON, otherwise show empty
@@ -239,16 +246,26 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
                                 readOnly: true,
                                 enabled: false,
                                 controller: TextEditingController(
-                                  text: isHostEnabled ? (single['name']?.toString() ?? '') : '',
+                                  text: isHostEnabled
+                                      ? (single['name']?.toString() ?? '')
+                                      : '',
                                 ),
                                 style: TextStyle(
                                   fontSize: 13,
-                                  color: isHostEnabled ? Colors.black87 : Colors.transparent,
+                                  color: isHostEnabled
+                                      ? Colors.black87
+                                      : Colors.transparent,
                                 ),
-                                decoration: _inputDecoration(enabled: isHostEnabled).copyWith(
-                                  hintText: 'Select Host',
-                                  hintStyle: const TextStyle(color: Colors.grey, fontSize: 13),
-                                ),
+                                decoration:
+                                    _inputDecoration(
+                                      enabled: isHostEnabled,
+                                    ).copyWith(
+                                      hintText: 'Select Host',
+                                      hintStyle: const TextStyle(
+                                        color: Colors.grey,
+                                        fontSize: 13,
+                                      ),
+                                    ),
                               );
                             }
                             return _buildDropdown(
@@ -256,7 +273,8 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
                               value: selectedHostId,
                               items: controller.hosts,
                               enabled: isHostEnabled,
-                              onChanged: (v) => setState(() => selectedHostId = v),
+                              onChanged: (v) =>
+                                  setState(() => selectedHostId = v),
                             );
                           }),
                         ),
@@ -572,7 +590,7 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
     );
   }
 
-   Widget _buildTextField({
+  Widget _buildTextField({
     required String hint,
     required TextEditingController controller,
     required bool enabled,
