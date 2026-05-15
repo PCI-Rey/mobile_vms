@@ -52,13 +52,16 @@ class CustomTextField extends StatelessWidget {
           RichText(
             text: TextSpan(
               text: label,
-              style: TextStyles.subtitle2,
+              style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.black),
               children: [
                 if (isRequired)
                   const TextSpan(
                     text: ' *',
                     style: TextStyle(
-                        color: AppColors.error500, fontWeight: FontWeight.bold),
+                        color: Colors.red, fontWeight: FontWeight.bold),
                   ),
               ],
             ),
@@ -82,40 +85,39 @@ class CustomTextField extends StatelessWidget {
                         onTap: onTapSuffixIcon,
                         child: Icon(
                           suffixIconData,
-                          color: AppColors.grey400,
+                          color: AppColors.grey550,
                           size: 18,
                         ),
                       )
                     : null),
 
             hintText: hintText,
-            hintStyle: TextStyles.bodyMedium.copyWith(color: AppColors.grey400),
             filled: true,
-            fillColor: Colors.white,
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            fillColor: AppColors.primary50,
+            contentPadding: const EdgeInsets.all(12.0),
 
             errorText: null,
             enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(8),
               borderSide: BorderSide(
-                color: errorText != null ? AppColors.error500 : AppColors.grey200,
-                width: 1,
-              ),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(
-                color: errorText != null ? AppColors.error500 : AppColors.primary500,
+                color: errorText != null ? Colors.red : AppColors.grey300,
                 width: 1.5,
               ),
             ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(
+                color: errorText != null ? Colors.red : AppColors.primary500,
+                width: 2,
+              ),
+            ),
             errorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: AppColors.error500, width: 1),
+              borderRadius: BorderRadius.circular(8),
+              borderSide: const BorderSide(color: Colors.red, width: 1.5),
             ),
             focusedErrorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: AppColors.error500, width: 1.5),
+              borderRadius: BorderRadius.circular(8),
+              borderSide: const BorderSide(color: Colors.red, width: 2),
             ),
           ),
         ),

@@ -85,13 +85,13 @@ class AgendaCard extends StatelessWidget {
         margin: EdgeInsets.only(bottom: 20),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppColors.grey200.withValues(alpha: 0.5), width: 1),
+          borderRadius: BorderRadius.circular(isSmallScreen ? 8 : 12),
           boxShadow: [
             BoxShadow(
               offset: const Offset(0, 4),
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 15,
+              color: AppColors.primary900.withValues(alpha: 0.15),
+              blurRadius: isSmallScreen ? 8 : 12,
+              spreadRadius: isSmallScreen ? 1 : 2,
             ),
           ],
         ),
@@ -243,8 +243,8 @@ class AgendaCard extends StatelessWidget {
                     context.push(AgendaDetailPage());
                   },
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: AppColors.primary500,
-                    side: BorderSide(color: AppColors.primary500),
+                    foregroundColor: Theme.of(context).primaryColor,
+                    side: BorderSide(color: Theme.of(context).primaryColor),
                     minimumSize: Size(0, buttonHeight),
                     padding: const EdgeInsets.symmetric(horizontal: 8),
                     shape: RoundedRectangleBorder(

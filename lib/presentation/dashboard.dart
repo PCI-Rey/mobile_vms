@@ -116,7 +116,7 @@ class _DashboardState extends State<Dashboard> {
     final bool isGuest = _role == 'guest' || _role == 'visitor';
 
     return Scaffold(
-      backgroundColor: isGuest ? AppColors.primary500 : Colors.white,
+      backgroundColor: isGuest ? const Color(0xFF1976D2) : Colors.white,
       body: IndexedStack(index: _selectedIndex, children: _widgets),
       bottomNavigationBar: isGuest
           ? null
@@ -125,20 +125,20 @@ class _DashboardState extends State<Dashboard> {
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.vertical(
-                  top: Radius.circular(rw(context, 24.0)),
+                  top: Radius.circular(rw(context, 20.0)),
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.08),
-                    blurRadius: rw(context, 20),
-                    offset: Offset(0, rh(context, -4)),
+                    color: Colors.black.withValues(alpha: 0.05),
+                    blurRadius: rw(context, 10),
+                    offset: Offset(0, rh(context, -5)),
                   ),
                 ],
               ),
               child: Theme(
                 data: ThemeData(
-                  splashColor: Colors.transparent,
-                  highlightColor: Colors.transparent,
+                  splashColor: Colors.white,
+                  highlightColor: Colors.white,
                 ),
                 child: BottomNavigationBar(
                   currentIndex: _selectedIndex,
@@ -146,17 +146,12 @@ class _DashboardState extends State<Dashboard> {
                   type: BottomNavigationBarType.fixed,
                   backgroundColor: Colors.transparent,
                   elevation: 0,
-                  selectedItemColor: AppColors.primary500,
-                  unselectedItemColor: AppColors.grey400,
                   selectedLabelStyle: TextStyle(
-                    fontSize: rfs(context, 11),
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.primary500,
+                    fontSize: rfs(context, 12),
+                    fontWeight: FontWeight.bold,
                   ),
                   unselectedLabelStyle: TextStyle(
-                    fontSize: rfs(context, 11),
-                    fontWeight: FontWeight.w500,
-                    color: AppColors.grey400,
+                    fontSize: rfs(context, 12),
                   ),
                   items: _getNavItems(_role!),
                 ),

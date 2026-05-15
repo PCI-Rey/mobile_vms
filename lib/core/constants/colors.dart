@@ -1,36 +1,31 @@
 import 'package:flutter/material.dart';
 
 class AppColors {
-  /// primary (BI Deep Blue Palette)
+  /// primary
   static const Color white = Color(0xFFFFFFFF);
-  static const Color primary50 = Color(0xFFF0F5FA);
-  static const Color primary100 = Color(0xFFD9E6F2);
-  static const Color primary200 = Color(0xFFB3CCE6);
-  static const Color primary300 = Color(0xFF8CABCC);
-  static const Color primary400 = Color(0xFF4D85B3);
-  static const Color primary500 = Color(0xFF003F87); // BI Deep Blue
-  static const Color primary600 = Color(0xFF003775);
-  static const Color primary700 = Color(0xFF002F63);
-  static const Color primary800 = Color(0xFF002752);
-  static const Color primary900 = Color(0xFF001F40);
-
-  /// Accents (Premium Gold)
-  static const Color gold = Color(0xFFD4AF37);
-  static const Color goldLight = Color(0xFFF4E5B2);
-  static const Color champagne = Color(0xFFF7E7CE);
+  static const Color primary50 = Color(0xFFF2F8FD);
+  static const Color primary100 = Color(0xFFD1E4F6);
+  static const Color primary200 = Color(0xFFA3CBED);
+  static const Color primary300 = Color(0xFF75ADE4);
+  static const Color primary400 = Color(0xFF4791DB);
+  static const Color primary500 = Color(0xFF1976D2);
+  static const Color primary600 = Color(0xFF145EA8);
+  static const Color primary700 = Color(0xFF0F477E);
+  static const Color primary800 = Color(0xFF0A2F54);
+  static const Color primary900 = Color(0xFF05182A);
 
   // grey
-  static const Color grey50 = Color(0xFFF9FAFB);
-  static const Color grey100 = Color(0xFFF2F4F7);
-  static const Color grey200 = Color(0xFFEAECF0);
-  static const Color grey300 = Color(0xFFD0D5DD);
+  static const Color grey50 = Color(0xFFFFFFFF);
+  static const Color grey100 = Color(0xFFF9FAFB);
+  static const Color grey200 = Color(0xFFEAECEF);
+  static const Color grey300 = Color(0xFFD4DBEA);
   static const Color grey400 = Color(0xFF98A2B3);
   static const Color grey500 = Color(0xFF667085);
-  static const Color grey550 = Color(0xFF475467);
-  static const Color grey600 = Color(0xFF344054);
-  static const Color grey700 = Color(0xFF1D2939);
-  static const Color grey800 = Color(0xFF101828);
-  static const Color grey900 = Color(0xFF0C111D);
+  static const Color grey550 = Color(0xFF717171);
+  static const Color grey600 = Color(0xFF475467);
+  static const Color grey700 = Color(0xFF344054);
+  static const Color grey800 = Color(0xFF1D2939);
+  static const Color grey900 = Color(0xFF101828);
 
   // Error
   static const Color error100 = Color(0xFFFFF5F3);

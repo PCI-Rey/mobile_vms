@@ -102,18 +102,16 @@ class VisitorCard extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: _getCardBackgroundColor(),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: status != VisitorStatus.pending 
-                ? _getCardBorderColor() 
-                : AppColors.grey200.withValues(alpha: 0.5), 
-            width: 1
-          ),
+          borderRadius: BorderRadius.circular(10),
+          border: status != VisitorStatus.pending 
+              ? Border.all(color: _getCardBorderColor(), width: 1)
+              : null,
           boxShadow: [
             BoxShadow(
-              offset: const Offset(0, 4),
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 15,
+              offset: const Offset(0, 6),
+              color: AppColors.primary900.withValues(alpha: 0.1),
+              blurRadius: 10,
+              spreadRadius: 1,
             ),
           ],
         ),

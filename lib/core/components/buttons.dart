@@ -14,7 +14,7 @@ class Button extends StatelessWidget {
     this.borderColor = AppColors.primary500,
     this.width = double.infinity,
     this.height = 40.0,
-    this.borderRadius = 12.0,
+    this.borderRadius = 10.0,
     this.icon,
     this.suffixIcon,
     this.disabled = false,
@@ -32,7 +32,7 @@ class Button extends StatelessWidget {
     this.borderColor = AppColors.error500,
     this.width = double.infinity,
     this.height = 40.0,
-    this.borderRadius = 12.0,
+    this.borderRadius = 10.0,
     this.icon,
     this.suffixIcon,
     this.disabled = false,
@@ -50,7 +50,7 @@ class Button extends StatelessWidget {
     this.borderColor = AppColors.primary500,
     this.width = double.infinity,
     this.height = 40.0,
-    this.borderRadius = 12.0,
+    this.borderRadius = 10.0,
     this.icon,
     this.suffixIcon,
     this.disabled = false,
@@ -68,7 +68,7 @@ class Button extends StatelessWidget {
     this.borderColor = AppColors.error500,
     this.width = double.infinity,
     this.height = 40.0,
-    this.borderRadius = 12.0,
+    this.borderRadius = 10.0,
     this.icon,
     this.suffixIcon,
     this.disabled = false,
@@ -117,43 +117,22 @@ class Button extends StatelessWidget {
         height: height,
         width: width,
         child: style == ButtonStyleType.filled
-            ? Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      color.withValues(alpha: 0.9),
-                      color,
-                    ],
+            ? ElevatedButton(
+                onPressed: disabled ? null : onPressed,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: color,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(borderRadius),
                   ),
-                  borderRadius: BorderRadius.circular(borderRadius),
-                  boxShadow: [
-                    BoxShadow(
-                      color: color.withValues(alpha: 0.2),
-                      blurRadius: 8,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
+                  padding: EdgeInsets.zero,
                 ),
-                child: ElevatedButton(
-                  onPressed: disabled ? null : onPressed,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.transparent,
-                    shadowColor: Colors.transparent,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(borderRadius),
-                    ),
-                    padding: EdgeInsets.zero,
-                  ),
-                  child: Center(child: icon),
-                ),
+                child: Center(child: icon),
               )
             : OutlinedButton(
                 onPressed: disabled ? null : onPressed,
                 style: OutlinedButton.styleFrom(
                   backgroundColor: color,
-                  side: BorderSide(color: borderColor, width: 1.5),
+                  side: BorderSide(color: borderColor),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(borderRadius),
                   ),
@@ -167,72 +146,51 @@ class Button extends StatelessWidget {
       height: height,
       width: width,
       child: style == ButtonStyleType.filled
-          ? Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    color.withValues(alpha: 0.9),
-                    color,
-                  ],
+          ? ElevatedButton(
+              onPressed: (disabled || isLoading) ? null : onPressed,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: color,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(borderRadius),
                 ),
-                borderRadius: BorderRadius.circular(borderRadius),
-                boxShadow: [
-                  BoxShadow(
-                    color: color.withValues(alpha: 0.2),
-                    blurRadius: 8,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
               ),
-              child: ElevatedButton(
-                onPressed: (disabled || isLoading) ? null : onPressed,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.transparent,
-                  shadowColor: Colors.transparent,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(borderRadius),
-                  ),
-                ),
-                child: isLoading
-                    ? SizedBox(
-                        height: 20,
-                        width: 20,
-                        child: CircularProgressIndicator(
-                          color: textColor,
-                          strokeWidth: 2,
-                        ),
-                      )
-                    : Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          icon ?? const SizedBox.shrink(),
-                          if (icon != null && label.isNotEmpty)
-                            const SizedBox(width: 10.0),
-                          Flexible(
-                            child: Text(
-                              label,
-                              style: TextStyle(
-                                color: textColor,
-                                fontSize: fontSize,
-                                fontWeight: FontWeight.w500,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          if (suffixIcon != null && label.isNotEmpty)
-                            const SizedBox(width: 10.0),
-                          suffixIcon ?? const SizedBox.shrink(),
-                        ],
+              child: isLoading
+                  ? SizedBox(
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(
+                        color: textColor,
+                        strokeWidth: 2,
                       ),
-              ),
+                    )
+                  : Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        icon ?? const SizedBox.shrink(),
+                        if (icon != null && label.isNotEmpty)
+                          const SizedBox(width: 10.0),
+                        Flexible(
+                          child: Text(
+                            label,
+                            style: TextStyle(
+                              color: textColor,
+                              fontSize: fontSize,
+                              fontWeight: FontWeight.w500,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        if (suffixIcon != null && label.isNotEmpty)
+                          const SizedBox(width: 10.0),
+                        suffixIcon ?? const SizedBox.shrink(),
+                      ],
+                    ),
             )
           : OutlinedButton(
               onPressed: disabled ? null : onPressed,
               style: OutlinedButton.styleFrom(
                 backgroundColor: color,
-                side: BorderSide(color: borderColor, width: 1.5),
+                side: BorderSide(color: borderColor),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(borderRadius),
                 ),
