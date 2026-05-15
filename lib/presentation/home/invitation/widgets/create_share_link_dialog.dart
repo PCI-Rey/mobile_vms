@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
+import '../../../../core/core.dart';
 import '../controller/invitation_controller.dart';
 
 class CreateShareLinkDialog extends StatefulWidget {
@@ -141,7 +142,7 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
       },
       child: Dialog(
         insetPadding: const EdgeInsets.all(16),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
         child: Container(
           width: double.infinity,
           padding: const EdgeInsets.all(20),
@@ -154,14 +155,11 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
                 Row(
                   children: [
                     const SizedBox(width: 40),
-                    const Expanded(
+                    Expanded(
                       child: Text(
                         'Create Share Link Registration',
                         textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 17,
-                        ),
+                        style: TextStyles.headline5.copyWith(fontSize: 18),
                       ),
                     ),
                     IconButton(
@@ -365,14 +363,12 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
                                   quotaCtrl.text = '1';
                                 }
                               }),
-                              activeTrackColor: const Color(
-                                0xFF005596,
-                              ).withValues(alpha: 0.5),
-                              activeThumbColor: const Color(0xFF005596),
+                              activeTrackColor: AppColors.primary500.withValues(alpha: 0.5),
+                              activeThumbColor: AppColors.primary500,
                             ),
-                            const Text(
+                            Text(
                               'Single Use Link',
-                              style: TextStyle(fontWeight: FontWeight.bold),
+                              style: TextStyles.subtitle2,
                             ),
                           ],
                         ),
@@ -389,42 +385,25 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
                         Row(
                           children: [
                             Expanded(
-                              child: ElevatedButton(
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(0xFF005596),
-                                  padding: const EdgeInsets.symmetric(
-                                    vertical: 14,
-                                  ),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                ),
+                              child: Button.filled(
                                 onPressed: () => _submit(false),
-                                child: const Text(
-                                  'Create Link',
-                                  style: TextStyle(color: Colors.white),
-                                ),
+                                label: 'Create Link',
+                                color: AppColors.primary500,
+                                height: 48,
+                                borderRadius: 12,
+                                fontSize: 14,
                               ),
                             ),
                             const SizedBox(width: 12),
                             Expanded(
-                              child: OutlinedButton(
-                                style: OutlinedButton.styleFrom(
-                                  side: const BorderSide(
-                                    color: Color(0xFF005596),
-                                  ),
-                                  padding: const EdgeInsets.symmetric(
-                                    vertical: 14,
-                                  ),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                ),
+                              child: Button.outlined(
                                 onPressed: () => _submit(true),
-                                child: const Text(
-                                  'Create & Send Email',
-                                  style: TextStyle(color: Color(0xFF005596)),
-                                ),
+                                label: 'Create & Send Email',
+                                borderColor: AppColors.primary500,
+                                textColor: AppColors.primary500,
+                                height: 48,
+                                borderRadius: 12,
+                                fontSize: 14,
                               ),
                             ),
                           ],
@@ -457,20 +436,15 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
             children: [
               Text(
                 label,
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 13,
-                ),
+                style: TextStyles.subtitle2,
               ),
               Transform.scale(
                 scale: 0.7,
                 child: Switch(
                   value: isEnabled,
                   onChanged: onToggle,
-                  activeTrackColor: const Color(
-                    0xFF005596,
-                  ).withValues(alpha: 0.5),
-                  activeThumbColor: const Color(0xFF005596),
+                  activeTrackColor: AppColors.primary500.withValues(alpha: 0.5),
+                  activeThumbColor: AppColors.primary500,
                 ),
               ),
             ],
@@ -502,10 +476,10 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
       readOnly: true,
       enabled: enabled,
       controller: TextEditingController(text: selectedName),
-      style: const TextStyle(fontSize: 13),
+      style: TextStyles.bodyMedium,
       decoration: _inputDecoration(enabled: enabled).copyWith(
         hintText: hint,
-        hintStyle: const TextStyle(color: Colors.grey, fontSize: 13),
+        hintStyle: TextStyles.bodyMedium.copyWith(color: AppColors.grey400),
         suffixIcon: const Icon(
           Icons.keyboard_arrow_down_rounded,
           color: Colors.grey,
@@ -565,15 +539,15 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
                       item['name'] ?? '',
                       style: TextStyle(
                         color: isSelected
-                            ? const Color(0xFF005596)
-                            : Colors.black,
+                            ? AppColors.primary500
+                            : AppColors.grey800,
                         fontWeight: isSelected
                             ? FontWeight.bold
                             : FontWeight.normal,
                       ),
                     ),
                     trailing: isSelected
-                        ? const Icon(Icons.check, color: Color(0xFF005596))
+                        ? const Icon(Icons.check, color: AppColors.primary500)
                         : null,
                     onTap: () {
                       onSelected(item['id'].toString());
@@ -602,8 +576,11 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
       enabled: enabled,
       keyboardType: keyboardType,
       focusNode: focusNode,
-      style: const TextStyle(fontSize: 13),
-      decoration: _inputDecoration(enabled: enabled).copyWith(hintText: hint),
+      style: TextStyles.bodyMedium,
+      decoration: _inputDecoration(enabled: enabled).copyWith(
+        hintText: hint,
+        hintStyle: TextStyles.bodyMedium.copyWith(color: AppColors.grey400),
+      ),
     );
   }
 
@@ -621,10 +598,10 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
       controller: controller,
       readOnly: true,
       enabled: enabled,
-      style: const TextStyle(fontSize: 13),
+      style: TextStyles.bodyMedium,
       decoration: _inputDecoration(enabled: enabled).copyWith(
         hintText: 'Pilih Tanggal dan Waktu',
-        hintStyle: const TextStyle(color: Colors.grey, fontSize: 13),
+        hintStyle: TextStyles.bodyMedium.copyWith(color: AppColors.grey400),
         suffixIcon: const Icon(
           Icons.calendar_today_outlined,
           color: Colors.grey,
@@ -638,23 +615,23 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
   InputDecoration _inputDecoration({required bool enabled}) {
     return InputDecoration(
       filled: true,
-      fillColor: enabled ? Colors.white : Colors.grey.shade100,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+      fillColor: enabled ? Colors.white : AppColors.grey100,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(10),
-        borderSide: const BorderSide(color: Color(0xFFDDDDDD)),
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: AppColors.grey200),
       ),
       enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(10),
-        borderSide: const BorderSide(color: Color(0xFFDDDDDD)),
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: AppColors.grey200),
       ),
       disabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(10),
-        borderSide: BorderSide(color: Colors.grey.shade200),
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: AppColors.grey100),
       ),
       focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(10),
-        borderSide: const BorderSide(color: Color(0xFF005596), width: 1.5),
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: AppColors.primary500, width: 1.5),
       ),
     );
   }
@@ -667,7 +644,7 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
       lastDate: DateTime.now().add(const Duration(days: 365)),
       builder: (context, child) => Theme(
         data: Theme.of(context).copyWith(
-          colorScheme: const ColorScheme.light(primary: Color(0xFF005596)),
+          colorScheme: const ColorScheme.light(primary: AppColors.primary500),
         ),
         child: child!,
       ),

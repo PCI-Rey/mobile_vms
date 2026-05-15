@@ -52,16 +52,13 @@ class CustomTextField extends StatelessWidget {
           RichText(
             text: TextSpan(
               text: label,
-              style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.black),
+              style: TextStyles.subtitle2,
               children: [
                 if (isRequired)
                   const TextSpan(
                     text: ' *',
                     style: TextStyle(
-                        color: Colors.red, fontWeight: FontWeight.bold),
+                        color: AppColors.error500, fontWeight: FontWeight.bold),
                   ),
               ],
             ),
@@ -85,39 +82,40 @@ class CustomTextField extends StatelessWidget {
                         onTap: onTapSuffixIcon,
                         child: Icon(
                           suffixIconData,
-                          color: AppColors.grey550,
+                          color: AppColors.grey400,
                           size: 18,
                         ),
                       )
                     : null),
 
             hintText: hintText,
+            hintStyle: TextStyles.bodyMedium.copyWith(color: AppColors.grey400),
             filled: true,
-            fillColor: AppColors.primary50,
-            contentPadding: const EdgeInsets.all(12.0),
+            fillColor: Colors.white,
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
 
             errorText: null,
             enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(12),
               borderSide: BorderSide(
-                color: errorText != null ? Colors.red : AppColors.grey300,
-                width: 1.5,
+                color: errorText != null ? AppColors.error500 : AppColors.grey200,
+                width: 1,
               ),
             ),
             focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(12),
               borderSide: BorderSide(
-                color: errorText != null ? Colors.red : AppColors.primary500,
-                width: 2,
+                color: errorText != null ? AppColors.error500 : AppColors.primary500,
+                width: 1.5,
               ),
             ),
             errorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(color: Colors.red, width: 1.5),
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: AppColors.error500, width: 1),
             ),
             focusedErrorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(color: Colors.red, width: 2),
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: AppColors.error500, width: 1.5),
             ),
           ),
         ),

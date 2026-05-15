@@ -46,16 +46,16 @@ class CustomCard extends StatelessWidget {
     } else if (screenWidth <= 600) {
       // Medium screen (regular phones, small tablets)
       return {
-        'cardPadding': const EdgeInsets.all(10.0),
+        'cardPadding': const EdgeInsets.all(12.0),
         'cardMargin': const EdgeInsets.only(top: 8.0),
-        'borderRadius': 8.0,
-        'iconSize': 36.0,
-        'iconBorderRadius': 18.0,
+        'borderRadius': 12.0,
+        'iconSize': 40.0,
+        'iconBorderRadius': 12.0,
         'titleStyle': TextStyles.subtitle1.copyWith(fontSize: 14),
         'subtitleStyle': TextStyles.subtitle3.copyWith(fontSize: 12),
         'additionalStyle': TextStyles.subtitle1.copyWith(fontSize: 13),
         'additionalDescStyle': TextStyles.subtitle3.copyWith(fontSize: 11),
-        'contentPadding': const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        'contentPadding': const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         'minHeight': 70.0,
       };
     } else if (screenWidth <= 1024) {
@@ -63,9 +63,9 @@ class CustomCard extends StatelessWidget {
       return {
         'cardPadding': const EdgeInsets.all(16.0),
         'cardMargin': const EdgeInsets.only(top: 12.0),
-        'borderRadius': 12.0,
+        'borderRadius': 16.0,
         'iconSize': 48.0,
-        'iconBorderRadius': 24.0,
+        'iconBorderRadius': 16.0,
         'titleStyle': TextStyles.subtitle1.copyWith(fontSize: 18),
         'subtitleStyle': TextStyles.subtitle3.copyWith(fontSize: 14),
         'additionalStyle': TextStyles.subtitle1.copyWith(fontSize: 16),
@@ -78,9 +78,9 @@ class CustomCard extends StatelessWidget {
       return {
         'cardPadding': const EdgeInsets.all(20.0),
         'cardMargin': const EdgeInsets.only(top: 16.0),
-        'borderRadius': 16.0,
+        'borderRadius': 20.0,
         'iconSize': 56.0,
-        'iconBorderRadius': 28.0,
+        'iconBorderRadius': 20.0,
         'titleStyle': TextStyles.subtitle1.copyWith(fontSize: 20),
         'subtitleStyle': TextStyles.subtitle3.copyWith(fontSize: 16),
         'additionalStyle': TextStyles.subtitle1.copyWith(fontSize: 18),
@@ -103,13 +103,13 @@ class CustomCard extends StatelessWidget {
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(responsive['borderRadius']),
         color: Colors.white,
-        border: Border.all(width: 1, color: AppColors.grey200),
-        // Add subtle shadow for better depth
+        border: Border.all(width: 1, color: AppColors.grey200.withValues(alpha: 0.5)),
+        // Premium Soft Shadow
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 15,
+            offset: const Offset(0, 4),
           ),
         ],
       ),

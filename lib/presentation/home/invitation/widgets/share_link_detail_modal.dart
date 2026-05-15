@@ -187,7 +187,9 @@ class ShareLinkDetailModal {
                             vSpace(ctx, 12),
                             _buildInfoTile(
                               ctx,
-                              isExpired ? Icons.timer_off_outlined : Icons.timer_outlined,
+                              isExpired
+                                  ? Icons.timer_off_outlined
+                                  : Icons.timer_outlined,
                               'Expired At',
                               item['expired_number'] == 0
                                   ? 'Never'
@@ -212,7 +214,7 @@ class ShareLinkDetailModal {
                           children: [
                             _buildActionButton(
                               ctx,
-                              label: 'Copy Link',
+                              label: 'Copy',
                               icon: Icons.copy,
                               color: isExpired
                                   ? Colors.grey
