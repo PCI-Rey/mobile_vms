@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:qr_flutter/qr_flutter.dart';
+import 'package:get/get.dart';
 import '../../../core/helper/responsive_helper.dart';
 import '../../auth/controller/user_controller.dart';
 import '../../../core/components/custom_circle_image.dart';
@@ -80,16 +81,20 @@ class AccessPassModal {
                   rw(ctx, 16),
                   0,
                   rw(ctx, 16),
-                  rh(ctx, 40),
+                  rh(ctx, 24),
                 ),
                 child: Container(
                   decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [_blue, _blueDark],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
+                    color: Colors.white,
                     borderRadius: BorderRadius.circular(rw(ctx, 24)),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.04),
+                        blurRadius: rw(ctx, 16),
+                        offset: Offset(0, rh(ctx, 8)),
+                      ),
+                    ],
+                    border: Border.all(color: Colors.grey.shade200),
                   ),
                   child: Column(
                     children: [
@@ -110,8 +115,9 @@ class AccessPassModal {
                                   Text(
                                     'VMS',
                                     style: TextStyle(
-                                      color: Colors.white60,
+                                      color: Colors.grey.shade500,
                                       fontSize: rfs(ctx, 11),
+                                      fontWeight: FontWeight.w600,
                                     ),
                                   ),
                                   vSpace(ctx, 4),
@@ -120,7 +126,7 @@ class AccessPassModal {
                                         ? item.visitorName
                                         : UserController.to.fullName,
                                     style: TextStyle(
-                                      color: Colors.white,
+                                      color: Colors.black87,
                                       fontSize: rfs(ctx, 22),
                                       fontWeight: FontWeight.w700,
                                     ),
@@ -128,7 +134,7 @@ class AccessPassModal {
                                   Text(
                                     item.sitePlaceName,
                                     style: TextStyle(
-                                      color: Colors.white70,
+                                      color: Colors.grey.shade600,
                                       fontSize: rfs(ctx, 12),
                                     ),
                                   ),
@@ -159,17 +165,18 @@ class AccessPassModal {
                                 vertical: rh(ctx, 5),
                               ),
                               decoration: BoxDecoration(
-                                color: Colors.white.withValues(alpha: 0.15),
+                                color: Colors.grey.shade100,
                                 borderRadius: BorderRadius.circular(
                                   rw(ctx, 20),
                                 ),
+                                border: Border.all(color: Colors.grey.shade300),
                               ),
                               child: Text(
                                 item.visitorStatus,
                                 style: TextStyle(
-                                  color: Colors.white,
+                                  color: Colors.grey.shade800,
                                   fontSize: rfs(ctx, 11),
-                                  fontWeight: FontWeight.w500,
+                                  fontWeight: FontWeight.w600,
                                 ),
                               ),
                             ),
@@ -182,8 +189,9 @@ class AccessPassModal {
                         margin: EdgeInsets.symmetric(horizontal: rw(ctx, 20)),
                         padding: EdgeInsets.all(rw(ctx, 16)),
                         decoration: BoxDecoration(
-                          color: Colors.white,
+                          color: const Color(0xFFF8FAFC),
                           borderRadius: BorderRadius.circular(rw(ctx, 16)),
+                          border: Border.all(color: Colors.grey.shade200),
                         ),
                         child: Column(
                           children: [
@@ -261,6 +269,28 @@ class AccessPassModal {
                               'Visit Period',
                               '$startStr\n$endStr',
                             ),
+                            vSpace(ctx, 8),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: AccessPassModal.buildInfoTile(
+                                    ctx,
+                                    Icons.local_parking_outlined,
+                                    'Parking Area',
+                                    '-',
+                                  ),
+                                ),
+                                hSpace(ctx, 8),
+                                Expanded(
+                                  child: AccessPassModal.buildInfoTile(
+                                    ctx,
+                                    Icons.crop_free_outlined,
+                                    'Parking Slot',
+                                    '-',
+                                  ),
+                                ),
+                              ],
+                            ),
                             if (item.isDriving) ...[
                               vSpace(ctx, 8),
                               Row(
@@ -299,6 +329,47 @@ class AccessPassModal {
                       ),
                       vSpace(ctx, rh(ctx, 24)),
                     ],
+                  ),
+                ),
+              ),
+
+              // ── Open Parking Blocker Button ────────────────
+              Padding(
+                padding: EdgeInsets.fromLTRB(
+                  rw(ctx, 16),
+                  0,
+                  rw(ctx, 16),
+                  rh(ctx, 12),
+                ),
+                child: SizedBox(
+                  width: double.infinity,
+                  height: rh(ctx, 52),
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      Get.snackbar(
+                        'Success',
+                        'Parking blocker opened successfully',
+                        backgroundColor: Colors.green,
+                        colorText: Colors.white,
+                      );
+                    },
+                    icon: const Icon(Icons.local_parking, color: Colors.white),
+                    label: Text(
+                      'Open Parking Blocker',
+                      style: TextStyle(
+                        fontSize: rfs(ctx, 14),
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 1.2,
+                        color: Colors.white,
+                      ),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF1976D2), // Accent Blue
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(rw(ctx, 14)),
+                      ),
+                    ),
                   ),
                 ),
               ),
@@ -361,24 +432,24 @@ class AccessPassModal {
         vertical: rh(context, 10),
       ),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.12),
+        color: const Color(0xFFF1F5F9), // Slate 100
         borderRadius: BorderRadius.circular(rw(context, 12)),
-        border: Border.all(color: Colors.white24),
+        border: Border.all(color: Colors.grey.shade200),
       ),
       child: Column(
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(icon, size: rfs(context, 11), color: Colors.white60),
+              Icon(icon, size: rfs(context, 11), color: Colors.grey.shade600),
               hSpace(context, 4),
               Text(
                 label.toUpperCase(),
                 style: TextStyle(
                   fontSize: rfs(context, 9),
-                  color: Colors.white60,
+                  color: Colors.grey.shade600,
                   letterSpacing: 1.2,
-                  fontWeight: FontWeight.w600,
+                  fontWeight: FontWeight.w700,
                 ),
               ),
             ],
@@ -389,8 +460,8 @@ class AccessPassModal {
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: rfs(context, 14),
-              fontWeight: FontWeight.w700,
-              color: Colors.white,
+              fontWeight: FontWeight.w800,
+              color: Colors.black87,
             ),
           ),
         ],
