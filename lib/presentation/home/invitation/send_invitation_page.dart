@@ -413,9 +413,9 @@ class _SendInvitationPageState extends State<SendInvitationPage> {
                       subtitle: item.sitePlaceName.isNotEmpty
                           ? item.sitePlaceName
                           : item.groupName,
-                      additional: DateFormat('EEE, dd MMM yyyy').format(
-                        item.visitorPeriodStart,
-                      ),
+                      additional: DateFormat(
+                        'EEE, dd MMM yyyy',
+                      ).format(item.visitorPeriodStart),
                       additionalDesc:
                           '${DateFormat('HH:mm').format(item.visitorPeriodStart)} - ${DateFormat('HH:mm').format(item.visitorPeriodEnd)}',
                       backgroundIconColor: statusColor,
@@ -844,14 +844,71 @@ class _ShareLinkListInlineState extends State<ShareLinkListInline> {
                 separatorBuilder: (_, index) => vSpace(context, 12),
                 itemBuilder: (context, index) {
                   final item = controller.shareLinks[index];
-                  return ShareLinkCard(
-                    item: item,
-                    no:
-                        index +
-                        1 +
-                        (controller.shareLinkCurrentPage.value *
-                            controller.shareLinkPageSize.value),
-                    onTap: () => ShareLinkDetailModal.show(context, item),
+                  return _SlidableDeleteCard(
+                    onDelete: () async {
+                      bool deleteConfirmed = false;
+                      await showDialog(
+                        context: context,
+                        builder: (dialogCtx) => AlertDialog(
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          title: const Text('Delete Share Link'),
+                          content: const Text(
+                            'Are you sure you want to delete this share link?',
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () {
+                                Navigator.pop(dialogCtx);
+                                deleteConfirmed = false;
+                              },
+                              child: const Text('Cancel'),
+                            ),
+                            TextButton(
+                              onPressed: () {
+                                Navigator.pop(dialogCtx);
+                                deleteConfirmed = true;
+                              },
+                              child: const Text(
+                                'Delete',
+                                style: TextStyle(color: Colors.red),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+
+                      if (deleteConfirmed) {
+                        final success = await controller.deleteShareLinkAction(
+                          item['id']?.toString() ?? '',
+                        );
+                        if (success) {
+                          Get.snackbar(
+                            'Success',
+                            'Share link deleted successfully',
+                            backgroundColor: Colors.green,
+                            colorText: Colors.white,
+                          );
+                        } else {
+                          Get.snackbar(
+                            'Error',
+                            'Failed to delete share link',
+                            backgroundColor: Colors.red,
+                            colorText: Colors.white,
+                          );
+                        }
+                      }
+                    },
+                    child: ShareLinkCard(
+                      item: item,
+                      no:
+                          index +
+                          1 +
+                          (controller.shareLinkCurrentPage.value *
+                              controller.shareLinkPageSize.value),
+                      onTap: () => ShareLinkDetailModal.show(context, item),
+                    ),
                   );
                 },
               ),
@@ -926,4 +983,72 @@ class _ShareLinkListInlineState extends State<ShareLinkListInline> {
   }
 
   // UI components extracted to ShareLinkCard and ShareLinkDetailModal
+}
+
+class _SlidableDeleteCard extends StatefulWidget {
+  final Widget child;
+  final VoidCallback onDelete;
+  const _SlidableDeleteCard({required this.child, required this.onDelete});
+
+  @override
+  State<_SlidableDeleteCard> createState() => _SlidableDeleteCardState();
+}
+
+class _SlidableDeleteCardState extends State<_SlidableDeleteCard> {
+  double _dragExtent = 0.0;
+  static const double _maxDrag = -84.0;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onHorizontalDragUpdate: (details) {
+        setState(() {
+          _dragExtent += details.primaryDelta!;
+          if (_dragExtent > 0.0) _dragExtent = 0.0;
+          if (_dragExtent < _maxDrag) _dragExtent = _maxDrag;
+        });
+      },
+      onHorizontalDragEnd: (details) {
+        setState(() {
+          if (_dragExtent < _maxDrag / 2) {
+            _dragExtent = _maxDrag;
+          } else {
+            _dragExtent = 0.0;
+          }
+        });
+      },
+      child: Stack(
+        children: [
+          Positioned(
+            right: 0,
+            top: 0,
+            bottom: 0,
+            width: 72,
+            child: GestureDetector(
+              onTap: () {
+                setState(() {
+                  _dragExtent = 0.0;
+                });
+                widget.onDelete();
+              },
+              child: Container(
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: Colors.red.shade600,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: const Icon(Icons.delete, color: Colors.white, size: 28),
+              ),
+            ),
+          ),
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 150),
+            transform: Matrix4.translationValues(_dragExtent, 0, 0),
+            child: widget.child,
+          ),
+        ],
+      ),
+    );
+  }
 }
