@@ -221,6 +221,20 @@ class ApiService {
     }
   }
 
+  Future<Response> getVisitors(String token) async {
+    try {
+      final response = await _dio.get(
+        '/$pathApi/invitation-visitor',
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+      return response;
+    } on DioException catch (e) {
+      debugPrint('Dio Error getVisitors: ${e.message}');
+      if (e.response != null) return e.response!;
+      rethrow;
+    }
+  }
+
   Future<Response> getEmployees(String token) async {
     try {
       final response = await _dio.get(

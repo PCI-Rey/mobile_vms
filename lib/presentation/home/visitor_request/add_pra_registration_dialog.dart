@@ -870,18 +870,57 @@ class _Step1VisitorInfo extends StatelessWidget {
         return const Text('Tidak ada data form.');
       }
 
+      // Tampilkan search hanya jika Visitor Type yang dipilih BUKAN tipe Employee/Staff.
+      // Cara deteksi: form Employee/Staff selalu punya field remarks='is_employee'.
+      final isEmployeeType =
+          controller.formStructure.value?.sectionPageVisitorTypes.any(
+            (s) =>
+                s.praForm.any((f) => f.remarks.toLowerCase() == 'is_employee'),
+          ) ??
+          false;
+
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: section.praForm
-            .where((f) => f.isEnable)
-            .map(
-              (f) => _FormFieldWidget(
-                field: f,
-                context: context,
-                controller: controller,
+        children: [
+          // ── Search Existing Visitor — hanya untuk Visitor type (bukan Employee/Staff) ──
+          if (!isEmployeeType) ...[
+            _SectionHeader(title: 'Search Existing Visitor'),
+            const SizedBox(height: 8),
+            _VisitorSearchField(
+              controller: controller,
+              onSelected: (v) => controller.autofillSingleFromVisitor(v),
+              onClear: () => controller.clearVisitorFormInputs(),
+            ),
+            const SizedBox(height: 20),
+          ],
+
+          // ── Search Existing Employee — hanya untuk Employee/Staff type ──
+          if (isEmployeeType) ...[
+            _SectionHeader(title: 'Search Existing Employee'),
+            const SizedBox(height: 8),
+            _EmployeeSearchField(
+              controller: controller,
+              initialValue: controller.selectedEmployeeName.value,
+              onSelected: (e) {
+                final id = e['id']?.toString() ?? '';
+                controller.onEmployeeSelected(id);
+              },
+              onClear: () => controller.clearVisitorFormInputs(),
+            ),
+            const SizedBox(height: 20),
+          ],
+
+          // ── Form fields from API structure ───────────────────────────
+          ...section.praForm
+              .where((f) => f.isEnable)
+              .map(
+                (f) => _FormFieldWidget(
+                  field: f,
+                  context: context,
+                  controller: controller,
+                ),
               ),
-            )
-            .toList(),
+        ],
       );
     });
   }
@@ -899,7 +938,66 @@ class _Step1VisitorInfo extends StatelessWidget {
               children: [
                 // Use App's native Section Header style (Left Accent Border)
                 _SectionHeader(title: 'Visitor ${i + 1}'),
-                const SizedBox(height: 12),
+                const SizedBox(height: 10),
+
+                // Per-row search — Visitor or Employee
+                Builder(
+                  builder: (context) {
+                    final isEmpType =
+                        controller.formStructure.value?.sectionPageVisitorTypes
+                            .any(
+                              (s) => s.praForm.any(
+                                (f) => f.remarks.toLowerCase() == 'is_employee',
+                              ),
+                            ) ??
+                        false;
+                    if (isEmpType) {
+                      return Obx(() => Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _EmployeeSearchField(
+                            controller: controller,
+                            initialValue: v.selectedEmployeeName.value,
+                            onSelected: (emp) {
+                              final id = emp['id']?.toString() ?? '';
+                              controller.onGroupEmployeeSelected(v, id);
+                            },
+                            onClear: () {
+                              v.selectedEmployeeId.value = '';
+                              v.selectedEmployeeName.value = '';
+                              v.fullName.clear();
+                              v.email.clear();
+                              v.phone.clear();
+                              v.organization.clear();
+                              v.identityId.clear();
+                              controller.updateForm();
+                            },
+                          ),
+                          const SizedBox(height: 12),
+                        ],
+                      ));
+                    }
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _VisitorSearchField(
+                          controller: controller,
+                          onSelected: (visitor) => controller
+                              .autofillGroupVisitorFromVisitor(v, visitor),
+                          onClear: () {
+                            v.fullName.clear();
+                            v.email.clear();
+                            v.phone.clear();
+                            v.organization.clear();
+                            v.identityId.clear();
+                            controller.updateForm();
+                          },
+                        ),
+                        const SizedBox(height: 12),
+                      ],
+                    );
+                  },
+                ),
 
                 // Remove button moved to a more elegant position if needed,
                 // but keeping it simple for consistency.
@@ -2603,6 +2701,569 @@ class _SectionHeader extends StatelessWidget {
                 ),
               ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Visitor Search Field — autocomplete dropdown that fetches /api/invitation-visitor
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _VisitorSearchField extends StatefulWidget {
+  final PraRegistrationController controller;
+  final void Function(Map<String, dynamic> visitor) onSelected;
+  final void Function()? onClear;
+
+  const _VisitorSearchField({
+    required this.controller,
+    required this.onSelected,
+    this.onClear,
+  });
+
+  @override
+  State<_VisitorSearchField> createState() => _VisitorSearchFieldState();
+}
+
+class _VisitorSearchFieldState extends State<_VisitorSearchField> {
+  final TextEditingController _searchCtrl = TextEditingController();
+  final FocusNode _focusNode = FocusNode();
+  bool _showDropdown = false;
+  final LayerLink _layerLink = LayerLink();
+  OverlayEntry? _overlayEntry;
+
+  late final VoidCallback _focusListener;
+
+  @override
+  void initState() {
+    super.initState();
+    _focusListener = () {
+      if (!mounted) return;
+      if (_focusNode.hasFocus) {
+        _openDropdown();
+      } else {
+        _closeDropdown();
+      }
+    };
+    _focusNode.addListener(_focusListener);
+  }
+
+  @override
+  void dispose() {
+    // Remove the listener first so it can't fire after disposal
+    _focusNode.removeListener(_focusListener);
+    // Clean up overlay directly — DO NOT call setState here (element is defunct)
+    _overlayEntry?.remove();
+    _overlayEntry = null;
+    _searchCtrl.dispose();
+    _focusNode.dispose();
+    super.dispose();
+  }
+
+  void _openDropdown() {
+    if (!mounted) return;
+    if (_overlayEntry != null) return;
+    setState(() => _showDropdown = true);
+    _overlayEntry = _buildOverlay();
+    Overlay.of(context).insert(_overlayEntry!);
+  }
+
+  void _closeDropdown() {
+    _overlayEntry?.remove();
+    _overlayEntry = null;
+    if (mounted) setState(() => _showDropdown = false);
+  }
+
+  void _onVisitorSelected(Map<String, dynamic> v) {
+    _searchCtrl.text = v['name']?.toString() ?? '';
+    widget.controller.visitorSearchQuery.value = '';
+    widget.onSelected(v);
+    _closeDropdown();
+    _focusNode.unfocus();
+  }
+
+  OverlayEntry _buildOverlay() {
+    final renderBox = context.findRenderObject() as RenderBox;
+    final size = renderBox.size;
+
+    return OverlayEntry(
+      builder: (context) => Positioned(
+        width: size.width,
+        child: CompositedTransformFollower(
+          link: _layerLink,
+          showWhenUnlinked: false,
+          offset: Offset(0, size.height + 4),
+          child: Material(
+            elevation: 8,
+            borderRadius: BorderRadius.circular(12),
+            shadowColor: Colors.black26,
+            child: Container(
+              constraints: const BoxConstraints(maxHeight: 260),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: const Color(0xFFE0E0E0)),
+              ),
+              child: Obx(() {
+                final ctrl = widget.controller;
+                if (ctrl.isLoadingVisitors.value) {
+                  return const Padding(
+                    padding: EdgeInsets.all(16),
+                    child: Center(
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                  );
+                }
+                final results = ctrl.filteredVisitors;
+                if (results.isEmpty) {
+                  return Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Text(
+                      ctrl.visitorSearchQuery.value.isEmpty
+                          ? 'Type to search visitors...'
+                          : 'No visitor found',
+                      style: const TextStyle(color: Colors.grey, fontSize: 13),
+                    ),
+                  );
+                }
+                return ListView.separated(
+                  padding: EdgeInsets.zero,
+                  shrinkWrap: true,
+                  itemCount: results.length > 50 ? 50 : results.length,
+                  separatorBuilder: (context, index) =>
+                      const Divider(height: 1, color: Color(0xFFF0F0F0)),
+                  itemBuilder: (context, i) {
+                    final v = results[i];
+                    final name = v['name']?.toString() ?? '';
+                    final org = v['organization']?.toString() ?? '';
+                    final email = v['email']?.toString() ?? '';
+                    return InkWell(
+                      borderRadius: i == 0
+                          ? const BorderRadius.only(
+                              topLeft: Radius.circular(12),
+                              topRight: Radius.circular(12),
+                            )
+                          : BorderRadius.zero,
+                      onTap: () => _onVisitorSelected(v),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 10,
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 36,
+                              height: 36,
+                              decoration: BoxDecoration(
+                                color: AppColors.primary500.withValues(
+                                  alpha: 0.1,
+                                ),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Center(
+                                child: Text(
+                                  name.isNotEmpty ? name[0].toUpperCase() : '?',
+                                  style: const TextStyle(
+                                    color: AppColors.primary500,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 15,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    name,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 13,
+                                      color: Colors.black87,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  if (org.isNotEmpty || email.isNotEmpty)
+                                    Text(
+                                      [
+                                        if (org.isNotEmpty) org,
+                                        if (email.isNotEmpty) email,
+                                      ].join(' · '),
+                                      style: const TextStyle(
+                                        fontSize: 11,
+                                        color: Colors.grey,
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                ],
+                              ),
+                            ),
+                            const Icon(
+                              Icons.chevron_right,
+                              size: 16,
+                              color: Colors.grey,
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                );
+              }),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return CompositedTransformTarget(
+      link: _layerLink,
+      child: TextField(
+        controller: _searchCtrl,
+        focusNode: _focusNode,
+        onChanged: (q) {
+          widget.controller.visitorSearchQuery.value = q;
+          // Rebuild overlay to reflect filtered results
+          _overlayEntry?.markNeedsBuild();
+          if (!_showDropdown) _openDropdown();
+        },
+        style: const TextStyle(fontSize: 14),
+        decoration: InputDecoration(
+          hintText: 'Search visitor by name...',
+          hintStyle: const TextStyle(color: Colors.grey, fontSize: 13),
+          prefixIcon: const Icon(Icons.search, size: 20, color: Colors.grey),
+          suffixIcon: Obx(
+            () => widget.controller.isLoadingVisitors.value
+                ? const Padding(
+                    padding: EdgeInsets.all(12),
+                    child: SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                  )
+                : _searchCtrl.text.isNotEmpty
+                ? IconButton(
+                    icon: const Icon(Icons.close, size: 18, color: Colors.grey),
+                    onPressed: () {
+                      _searchCtrl.clear();
+                      widget.controller.visitorSearchQuery.value = '';
+                      _overlayEntry?.markNeedsBuild();
+                      if (widget.onClear != null) widget.onClear!();
+                    },
+                  )
+                : const SizedBox.shrink(),
+          ),
+          filled: true,
+          fillColor: Colors.white,
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 14,
+            vertical: 12,
+          ),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+            borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+            borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+            borderSide: const BorderSide(
+              color: AppColors.primary500,
+              width: 1.5,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Employee Search Field — autocomplete dropdown for Employees
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _EmployeeSearchField extends StatefulWidget {
+  final PraRegistrationController controller;
+  final String initialValue;
+  final void Function(Map<String, dynamic> employee) onSelected;
+  final void Function()? onClear;
+
+  const _EmployeeSearchField({
+    required this.controller,
+    required this.onSelected,
+    this.initialValue = '',
+    this.onClear,
+  });
+
+  @override
+  State<_EmployeeSearchField> createState() => _EmployeeSearchFieldState();
+}
+
+class _EmployeeSearchFieldState extends State<_EmployeeSearchField> {
+  final TextEditingController _searchCtrl = TextEditingController();
+  final FocusNode _focusNode = FocusNode();
+  bool _showDropdown = false;
+  final LayerLink _layerLink = LayerLink();
+  OverlayEntry? _overlayEntry;
+  late final VoidCallback _focusListener;
+
+  @override
+  void initState() {
+    super.initState();
+    _searchCtrl.text = widget.initialValue;
+    _focusListener = () {
+      if (!mounted) return;
+      if (_focusNode.hasFocus) {
+        _openDropdown();
+      } else {
+        _closeDropdown();
+      }
+    };
+    _focusNode.addListener(_focusListener);
+  }
+  
+  @override
+  void didUpdateWidget(_EmployeeSearchField oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.initialValue != widget.initialValue) {
+      _searchCtrl.text = widget.initialValue;
+    }
+  }
+
+  @override
+  void dispose() {
+    _focusNode.removeListener(_focusListener);
+    _overlayEntry?.remove();
+    _overlayEntry = null;
+    _searchCtrl.dispose();
+    _focusNode.dispose();
+    super.dispose();
+  }
+
+  void _openDropdown() {
+    if (!mounted) return;
+    if (_overlayEntry != null) return;
+    setState(() => _showDropdown = true);
+    _overlayEntry = _buildOverlay();
+    Overlay.of(context).insert(_overlayEntry!);
+  }
+
+  void _closeDropdown() {
+    _overlayEntry?.remove();
+    _overlayEntry = null;
+    if (mounted) setState(() => _showDropdown = false);
+  }
+
+  void _onEmployeeSelected(Map<String, dynamic> e) {
+    _searchCtrl.text = e['name']?.toString() ?? '';
+    widget.controller.employeeSearchQuery.value = '';
+    widget.onSelected(e);
+    _closeDropdown();
+    _focusNode.unfocus();
+  }
+
+  OverlayEntry _buildOverlay() {
+    final renderBox = context.findRenderObject() as RenderBox;
+    final size = renderBox.size;
+
+    return OverlayEntry(
+      builder: (context) => Positioned(
+        width: size.width,
+        child: CompositedTransformFollower(
+          link: _layerLink,
+          showWhenUnlinked: false,
+          offset: Offset(0, size.height + 4),
+          child: Material(
+            elevation: 8,
+            borderRadius: BorderRadius.circular(12),
+            shadowColor: Colors.black26,
+            child: Container(
+              constraints: const BoxConstraints(maxHeight: 260),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: const Color(0xFFE0E0E0)),
+              ),
+              child: Obx(() {
+                final ctrl = widget.controller;
+                if (ctrl.isLoadingEmployees.value) {
+                  return const Padding(
+                    padding: EdgeInsets.all(16),
+                    child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                  );
+                }
+                final results = ctrl.filteredEmployees;
+                if (results.isEmpty) {
+                  return Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Text(
+                      ctrl.employeeSearchQuery.value.isEmpty
+                          ? 'Type to search employees...'
+                          : 'No employee found',
+                      style: const TextStyle(color: Colors.grey, fontSize: 13),
+                    ),
+                  );
+                }
+                return ListView.separated(
+                  padding: EdgeInsets.zero,
+                  shrinkWrap: true,
+                  itemCount: results.length > 50 ? 50 : results.length,
+                  separatorBuilder: (context, index) =>
+                      const Divider(height: 1, color: Color(0xFFF0F0F0)),
+                  itemBuilder: (context, i) {
+                    final e = results[i];
+                    final name = e['name']?.toString() ?? '';
+                    final org = e['organization']?.toString() ?? e['Organization']?['name']?.toString() ?? e['company']?.toString() ?? '';
+                    final email = e['email']?.toString() ?? '';
+                    return InkWell(
+                      borderRadius: i == 0
+                          ? const BorderRadius.only(
+                              topLeft: Radius.circular(12),
+                              topRight: Radius.circular(12),
+                            )
+                          : BorderRadius.zero,
+                      onTap: () => _onEmployeeSelected(e),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 10,
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 36,
+                              height: 36,
+                              decoration: BoxDecoration(
+                                color: AppColors.primary500.withValues(
+                                  alpha: 0.1,
+                                ),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Center(
+                                child: Text(
+                                  name.isNotEmpty ? name[0].toUpperCase() : '?',
+                                  style: const TextStyle(
+                                    color: AppColors.primary500,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 15,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    name,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 13,
+                                      color: Colors.black87,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  if (org.isNotEmpty || email.isNotEmpty)
+                                    Text(
+                                      [
+                                        if (org.isNotEmpty) org,
+                                        if (email.isNotEmpty) email,
+                                      ].join(' · '),
+                                      style: const TextStyle(
+                                        fontSize: 11,
+                                        color: Colors.grey,
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                ],
+                              ),
+                            ),
+                            const Icon(
+                              Icons.chevron_right,
+                              size: 16,
+                              color: Colors.grey,
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                );
+              }),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return CompositedTransformTarget(
+      link: _layerLink,
+      child: TextField(
+        controller: _searchCtrl,
+        focusNode: _focusNode,
+        onChanged: (q) {
+          widget.controller.employeeSearchQuery.value = q;
+          _overlayEntry?.markNeedsBuild();
+          if (!_showDropdown) _openDropdown();
+        },
+        style: const TextStyle(fontSize: 14),
+        decoration: InputDecoration(
+          hintText: 'Search employee by name...',
+          hintStyle: const TextStyle(color: Colors.grey, fontSize: 13),
+          prefixIcon: const Icon(Icons.search, size: 20, color: Colors.grey),
+          suffixIcon: Obx(
+            () => widget.controller.isLoadingEmployees.value
+                ? const Padding(
+                    padding: EdgeInsets.all(12),
+                    child: SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                  )
+                : _searchCtrl.text.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.close, size: 18, color: Colors.grey),
+                        onPressed: () {
+                          _searchCtrl.clear();
+                          widget.controller.employeeSearchQuery.value = '';
+                          _overlayEntry?.markNeedsBuild();
+                          if (widget.onClear != null) widget.onClear!();
+                        },
+                      )
+                    : const SizedBox.shrink(),
+          ),
+          filled: true,
+          fillColor: Colors.white,
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+            borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+            borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+            borderSide: const BorderSide(
+                color: AppColors.primary500, width: 1.5),
+          ),
         ),
       ),
     );

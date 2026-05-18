@@ -92,6 +92,32 @@ class PraRegistrationController extends GetxController {
   final RxString selectedEmployeeId = ''.obs;
   final RxString selectedEmployeeName = ''.obs;
   final RxBool isLoadingEmployees = false.obs;
+  final RxString employeeSearchQuery = ''.obs;
+
+  List<Map<String, dynamic>> get filteredEmployees {
+    final q = employeeSearchQuery.value.toLowerCase().trim();
+    if (q.isEmpty) return _rawEmployees.toList();
+    return _rawEmployees
+        .where((e) =>
+            (e['name']?.toString() ?? '').toLowerCase().contains(q) &&
+            (e['name']?.toString() ?? '').isNotEmpty)
+        .toList();
+  }
+
+  // ── Visitor Search ────────────────────────────────────────────────────────
+  final RxList<Map<String, dynamic>> allVisitors = <Map<String, dynamic>>[].obs;
+  final RxBool isLoadingVisitors = false.obs;
+  final RxString visitorSearchQuery = ''.obs;
+
+  List<Map<String, dynamic>> get filteredVisitors {
+    final q = visitorSearchQuery.value.toLowerCase().trim();
+    if (q.isEmpty) return allVisitors.toList();
+    return allVisitors
+        .where((v) =>
+            (v['name']?.toString() ?? '').toLowerCase().contains(q) &&
+            (v['name']?.toString() ?? '').isNotEmpty)
+        .toList();
+  }
 
   final RxList<DropdownItem> hosts = <DropdownItem>[].obs;
   final RxString selectedHostId = ''.obs;
@@ -119,6 +145,7 @@ class PraRegistrationController extends GetxController {
     super.onInit();
     resetFields();
     fetchVisitorTypes();
+    fetchVisitors();
     fetchEmployees();
     fetchHosts();
     fetchSites();
@@ -227,6 +254,69 @@ class PraRegistrationController extends GetxController {
     }
   }
 
+  Future<void> fetchVisitors() async {
+    final token = _token;
+    if (token == null) return;
+    isLoadingVisitors.value = true;
+    try {
+      final response = await _api.getVisitors(token);
+      if (response.data['status'] == 'success') {
+        final collection = response.data['collection'] as List<dynamic>? ?? [];
+        allVisitors.value = collection
+            .where((e) => e is Map && (e['name']?.toString() ?? '').isNotEmpty)
+            .map((e) => Map<String, dynamic>.from(e as Map))
+            .toList();
+      }
+    } catch (e) {
+      debugPrint('fetchVisitors error: $e');
+    } finally {
+      isLoadingVisitors.value = false;
+    }
+  }
+
+  /// Auto-fill single visitor fields from a selected visitor map.
+  void autofillSingleFromVisitor(Map<String, dynamic> v) {
+    final n = v['name']?.toString() ?? '';
+    final e = v['email']?.toString() ?? '';
+    final p = v['phone']?.toString() ?? '';
+    final o = v['organization']?.toString() ?? '';
+    final id = v['identity_id']?.toString() ?? '';
+
+    nameCtrl.text = n;
+    emailCtrl.text = e;
+    phoneCtrl.text = p;
+    organizationCtrl.text = o;
+    identityIdCtrl.text = id;
+
+    name.value = n;
+    email.value = e;
+    phone.value = p;
+    organization.value = o;
+    identityId.value = id;
+
+    for (var section in formStructure.value?.sectionPageVisitorTypes ?? <SectionPageVisitorType>[]) {
+      for (var field in section.praForm) {
+        final rem = field.remarks.toLowerCase();
+        if (rem == 'name') field.answerText = n;
+        if (rem == 'email') field.answerText = e;
+        if (rem == 'phone') field.answerText = p;
+        if (rem == 'organization' || rem == 'company') field.answerText = o;
+        if (rem == 'identity_id' || rem == 'indentity_id') field.answerText = id;
+      }
+    }
+    updateForm();
+  }
+
+  /// Auto-fill a group visitor row from a selected visitor map.
+  void autofillGroupVisitorFromVisitor(GroupVisitorRow row, Map<String, dynamic> v) {
+    row.fullName.text = v['name']?.toString() ?? '';
+    row.email.text = v['email']?.toString() ?? '';
+    row.phone.text = v['phone']?.toString() ?? '';
+    row.organization.text = v['organization']?.toString() ?? '';
+    row.identityId.text = v['identity_id']?.toString() ?? '';
+    updateForm();
+  }
+
   Future<void> fetchEmployees() async {
     final token = _token;
     if (token == null) return;
@@ -281,6 +371,33 @@ class PraRegistrationController extends GetxController {
       }
     }
     clearStep2Fields();
+    updateForm();
+  }
+
+  void clearVisitorFormInputs() {
+    name.value = '';
+    email.value = '';
+    phone.value = '';
+    organization.value = '';
+    identityId.value = '';
+    isEmployee.value = false;
+    selectedEmployeeId.value = '';
+    selectedEmployeeName.value = '';
+    nameCtrl.clear();
+    emailCtrl.clear();
+    phoneCtrl.clear();
+    organizationCtrl.clear();
+    identityIdCtrl.clear();
+
+    // Clear answerText of form fields in single mode
+    for (var section in formStructure.value?.sectionPageVisitorTypes ?? <SectionPageVisitorType>[]) {
+      for (var field in section.praForm) {
+        final rem = field.remarks.toLowerCase();
+        if (rem == 'name' || rem == 'email' || rem == 'phone' || rem == 'organization' || rem == 'indentity_id' || rem == 'identity_id') {
+          field.answerText = '';
+        }
+      }
+    }
     updateForm();
   }
 
