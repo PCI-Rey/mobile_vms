@@ -107,8 +107,15 @@ class ShareLinkCard extends StatelessWidget {
       expiredAt = DateTime.tryParse(normalized)?.toLocal();
     }
 
+    final int maxUsage = item['max_usage'] ?? 0;
+    final int currentUsage = item['current_usage'] ?? 0;
+    final bool isSingleUse = item['is_single_use'] == true;
+
     bool isExpired = false;
     if (expiredAt != null && expiredAt.isBefore(DateTime.now())) {
+      isExpired = true;
+    }
+    if ((maxUsage > 0 && currentUsage >= maxUsage) || (isSingleUse && currentUsage >= 1)) {
       isExpired = true;
     }
 

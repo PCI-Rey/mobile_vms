@@ -23,17 +23,27 @@ class AccessPassModal {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (ctx) => SafeArea(
-        child: Container(
-          decoration: BoxDecoration(
-            color: _bgPage,
-            borderRadius: BorderRadius.vertical(
-              top: Radius.circular(rw(context, 28)),
+      builder: (ctx) {
+        final double topPadding = MediaQuery.of(ctx).padding.top;
+        return Padding(
+          padding: EdgeInsets.only(top: topPadding + 24),
+          child: Container(
+            decoration: BoxDecoration(
+              color: _bgPage,
+              borderRadius: BorderRadius.vertical(
+                top: Radius.circular(rw(context, 28)),
+              ),
             ),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
+            child: ClipRRect(
+              borderRadius: BorderRadius.vertical(
+                top: Radius.circular(rw(context, 28)),
+              ),
+              child: SingleChildScrollView(
+                child: SafeArea(
+                  top: false,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
               // ── Fixed handle + title ──────────────────────────
               vSpace(ctx, 12),
               Center(
@@ -327,10 +337,14 @@ class AccessPassModal {
                 ),
               ),
               vSpace(ctx, rh(ctx, 12)),
-            ],
+                    ],
+                  ),
+                ),
+              ),
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 

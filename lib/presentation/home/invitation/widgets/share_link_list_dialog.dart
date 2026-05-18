@@ -194,6 +194,8 @@ class _ShareLinkListDialogState extends State<ShareLinkListDialog> {
   Widget _buildShareLinkCard(dynamic item, int no) {
     final String agenda = item['agenda'] ?? '-';
     final int maxUsage = item['max_usage'] ?? 0;
+    final int currentUsage = item['current_usage'] ?? 0;
+    final bool isSingleUse = item['is_single_use'] == true;
 
     final expiredAtStr = item['expired_at'];
     DateTime? expiredAt;
@@ -206,9 +208,12 @@ class _ShareLinkListDialogState extends State<ShareLinkListDialog> {
       expiredAt = DateTime.tryParse(normalized)?.toLocal();
     }
 
-    // Tentukan status real-time berdasarkan waktu sekarang
+    // Tentukan status real-time berdasarkan waktu sekarang atau batas limit usage
     bool isExpired = false;
     if (expiredAt != null && expiredAt.isBefore(DateTime.now())) {
+      isExpired = true;
+    }
+    if ((maxUsage > 0 && currentUsage >= maxUsage) || (isSingleUse && currentUsage >= 1)) {
       isExpired = true;
     }
 
@@ -363,8 +368,8 @@ class _ShareLinkListDialogState extends State<ShareLinkListDialog> {
                 _buildInfoRow(
                   'Usage',
                   item['is_single_use'] == true
-                      ? '$maxUsage (Single Use)'
-                      : '$maxUsage',
+                      ? '$currentUsage/$maxUsage (Single Use)'
+                      : '$currentUsage/$maxUsage',
                 ),
                 const SizedBox(height: 8),
                 _buildInfoRow(

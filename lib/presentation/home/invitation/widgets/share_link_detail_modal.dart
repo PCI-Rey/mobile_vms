@@ -10,6 +10,8 @@ import 'invite_share_link_dialog.dart';
 class ShareLinkDetailModal {
   static void show(BuildContext context, dynamic item) {
     final int maxUsage = item['max_usage'] ?? 0;
+    final int currentUsage = item['current_usage'] ?? 0;
+    final bool isSingleUse = item['is_single_use'] == true;
     final String agenda = item['agenda'] ?? '-';
 
     final expiredAtStr = item['expired_at'];
@@ -24,6 +26,9 @@ class ShareLinkDetailModal {
 
     bool isExpired = false;
     if (expiredAt != null && expiredAt.isBefore(DateTime.now())) {
+      isExpired = true;
+    }
+    if ((maxUsage > 0 && currentUsage >= maxUsage) || (isSingleUse && currentUsage >= 1)) {
       isExpired = true;
     }
 
@@ -167,8 +172,8 @@ class ShareLinkDetailModal {
                                     Icons.group_outlined,
                                     'Usage',
                                     item['is_single_use'] == true
-                                        ? '$maxUsage (Single Use)'
-                                        : '$maxUsage',
+                                        ? '$currentUsage/$maxUsage (Single Use)'
+                                        : '$currentUsage/$maxUsage',
                                   ),
                                 ),
                               ],
