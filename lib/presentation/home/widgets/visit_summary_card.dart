@@ -115,7 +115,7 @@ class VisitSummaryCard extends StatelessWidget {
                   Row(
                     children: [
                       Text(
-                        DateFormat('HH:mm').format(DateTime.parse('${item.visitorPeriodStart.toIso8601String().split('Z').first}Z').toLocal()),
+                        DateFormat('HH:mm').format(item.visitorPeriodStart),
                         style: TextStyle(
                           color: Colors.grey,
                           fontSize: rfs(context, 11),
@@ -129,7 +129,7 @@ class VisitSummaryCard extends StatelessWidget {
                         ),
                       ),
                       Text(
-                        DateFormat('HH:mm').format(DateTime.parse('${item.visitorPeriodEnd.toIso8601String().split('Z').first}Z').toLocal()),
+                        DateFormat('HH:mm').format(item.visitorPeriodEnd),
                         style: TextStyle(
                           color: Colors.grey,
                           fontSize: rfs(context, 11),
