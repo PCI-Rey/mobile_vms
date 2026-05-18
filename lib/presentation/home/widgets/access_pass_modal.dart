@@ -278,7 +278,9 @@ class AccessPassModal {
                                     ctx,
                                     Icons.local_parking_outlined,
                                     'Parking Area',
-                                    '-',
+                                    item.parkingArea.isEmpty || item.parkingArea.toLowerCase() == 'not available'
+                                        ? 'Not available'
+                                        : item.parkingArea,
                                   ),
                                 ),
                                 hSpace(ctx, 6),
@@ -287,7 +289,9 @@ class AccessPassModal {
                                     ctx,
                                     Icons.crop_free_outlined,
                                     'Parking Slot',
-                                    '-',
+                                    item.parkingSlot.isEmpty || item.parkingSlot.toLowerCase() == 'not available'
+                                        ? 'Not available'
+                                        : item.parkingSlot,
                                   ),
                                 ),
                               ],
@@ -301,7 +305,9 @@ class AccessPassModal {
                                       ctx,
                                       Icons.location_on_outlined,
                                       'Area',
-                                      item.parkingArea,
+                                      item.parkingArea.isEmpty || item.parkingArea.toLowerCase() == 'not available'
+                                          ? 'Not available'
+                                          : item.parkingArea,
                                     ),
                                   ),
                                   hSpace(ctx, 6),
@@ -310,7 +316,9 @@ class AccessPassModal {
                                       ctx,
                                       Icons.local_parking_outlined,
                                       'Slot',
-                                      item.parkingSlot,
+                                      item.parkingSlot.isEmpty || item.parkingSlot.toLowerCase() == 'not available'
+                                          ? 'Not available'
+                                          : item.parkingSlot,
                                     ),
                                   ),
                                   hSpace(ctx, 6),
@@ -319,7 +327,7 @@ class AccessPassModal {
                                       ctx,
                                       Icons.directions_car_outlined,
                                       'Plate',
-                                      item.vehiclePlateNumber,
+                                      item.vehiclePlateNumber.isEmpty ? '-' : item.vehiclePlateNumber,
                                     ),
                                   ),
                                 ],
