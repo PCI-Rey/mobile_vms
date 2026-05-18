@@ -449,6 +449,86 @@ class InformasiUmumController extends GetxController {
         questionPage = jsonDecode(jsonEncode(pageList));
       }
 
+      // Check if vehicle page or fields exist in questionPage
+      bool hasVehiclePage = false;
+      for (var page in questionPage) {
+        if (page is Map) {
+          final form = page['form'];
+          if (form is List) {
+            for (var field in form) {
+              if (field is Map &&
+                  (field['remarks'] == 'is_driving' ||
+                      field['remarks'] == 'vehicle_type' ||
+                      field['remarks'] == 'vehicle_plate')) {
+                hasVehiclePage = true;
+                break;
+              }
+            }
+          }
+        }
+        if (hasVehiclePage) break;
+      }
+
+      if (!hasVehiclePage) {
+        debugPrint(
+          'Vehicle fields not found in questionPage template, programmatically injecting Vehicle/Parking Information page...',
+        );
+        questionPage.add({
+          "id": "38bd9858-31eb-4353-8de1-f98c3069ec1a",
+          "sort": questionPage.length,
+          "name": "Vehicle/Parking Information",
+          "status": 0,
+          "is_document": false,
+          "can_multiple_used": false,
+          "self_only": false,
+          "foreign_id": "",
+          "form": [
+            {
+              "sort": 0,
+              "short_name": "Is Driving/Riding",
+              "long_display_text": "Are you driving?",
+              "field_type": 5,
+              "is_primary": true,
+              "is_enable": true,
+              "mandatory": true,
+              "remarks": "is_driving",
+              "custom_field_id": "cbf8c4d7-7b42-4384-b95c-1fac5d642e55",
+              "multiple_option_fields": [],
+              "visitor_form_type": 1,
+              "answer_text": "true",
+            },
+            {
+              "sort": 1,
+              "short_name": "Vehicle Type",
+              "long_display_text": "Vehicle Type",
+              "field_type": 5,
+              "is_primary": true,
+              "is_enable": true,
+              "mandatory": true,
+              "remarks": "vehicle_type",
+              "custom_field_id": "bbbc5e97-80a7-4f4c-904d-ee0be441ff83",
+              "multiple_option_fields": [],
+              "visitor_form_type": 1,
+              "answer_text": "",
+            },
+            {
+              "sort": 2,
+              "short_name": "Vehicle Plate",
+              "long_display_text": "Vehicle Plate Number",
+              "field_type": 0,
+              "is_primary": true,
+              "is_enable": true,
+              "mandatory": true,
+              "remarks": "vehicle_plate",
+              "custom_field_id": "dc13be39-5491-4ccb-b92f-b24dac840479",
+              "multiple_option_fields": [],
+              "visitor_form_type": 1,
+              "answer_text": "",
+            },
+          ],
+        });
+      }
+
       // Log the full questionPage structure for debugging
       debugPrint('=== DEBUG: questionPage PAGES AND FIELDS ===');
       for (int i = 0; i < questionPage.length; i++) {
@@ -459,7 +539,9 @@ class InformasiUmumController extends GetxController {
           if (form is List) {
             for (var formField in form) {
               if (formField is Map) {
-                debugPrint('  Field: "${formField['short_name']}" | remarks: "${formField['remarks']}" | type: ${formField['field_type']}');
+                debugPrint(
+                  '  Field: "${formField['short_name']}" | remarks: "${formField['remarks']}" | type: ${formField['field_type']}',
+                );
               }
             }
           }
@@ -474,7 +556,7 @@ class InformasiUmumController extends GetxController {
         bool isFile = false,
       }) {
         bool found = false;
-        
+
         // Map common field short names to their machine-readable remarks fallback
         final Map<String, String> keyToRemarks = {
           'full name': 'name',
@@ -503,16 +585,25 @@ class InformasiUmumController extends GetxController {
           if (form is! List) continue;
           for (var formField in form) {
             if (formField is! Map) continue;
-            
-            final String shortName = formField['short_name'].toString().toLowerCase().trim();
-            final String remarks = formField['remarks'].toString().toLowerCase().trim();
 
-            if (shortName == searchKey || 
-                remarks == searchKey || 
+            final String shortName = formField['short_name']
+                .toString()
+                .toLowerCase()
+                .trim();
+            final String remarks = formField['remarks']
+                .toString()
+                .toLowerCase()
+                .trim();
+
+            if (shortName == searchKey ||
+                remarks == searchKey ||
                 (mappedRemarks != null && remarks == mappedRemarks) ||
-                (searchKey == 'vehicle plate' && (remarks == 'vehicle_plate' || remarks == 'vehicle_plate_number')) ||
+                (searchKey == 'vehicle plate' &&
+                    (remarks == 'vehicle_plate' ||
+                        remarks == 'vehicle_plate_number')) ||
                 (remarks == 'vehicle_plate' && searchKey.contains('plate')) ||
-                (remarks == 'vehicle_plate_number' && searchKey.contains('plate'))) {
+                (remarks == 'vehicle_plate_number' &&
+                    searchKey.contains('plate'))) {
               final fieldType = formField['field_type'];
 
               // 1. field_type 10, 11, 12 -> answer_file
@@ -546,7 +637,9 @@ class InformasiUmumController extends GetxController {
                 formField.remove('answer_file');
               }
 
-              debugPrint('Updated Answer: $fieldShortName (remarks: $remarks) -> $value');
+              debugPrint(
+                'Updated Answer: $fieldShortName (remarks: $remarks) -> $value',
+              );
               found = true;
             }
           }
@@ -579,8 +672,20 @@ class InformasiUmumController extends GetxController {
       updateAnswer('Visit End', collection['visitor_period_end']);
 
       // ── Step 3: Vehicle fields ───────────────────────────────────────
+      String formattedVehicleType = vehicleType.value.replaceAll(
+        'vehicle_',
+        '',
+      );
+      if (formattedVehicleType.isNotEmpty) {
+        formattedVehicleType =
+            formattedVehicleType[0].toUpperCase() +
+            formattedVehicleType.substring(1);
+        if (formattedVehicleType == 'Private_car') {
+          formattedVehicleType = 'Private Car';
+        }
+      }
       updateAnswer('Is Driving/Riding', isDriving.value.toString());
-      updateAnswer('Vehicle Type', vehicleType.value);
+      updateAnswer('Vehicle Type', formattedVehicleType);
       updateAnswer('Vehicle Plate', vehiclePlateController.text);
 
       // ── Step 4 & 5: Photos ──────────────────────────────────────────
@@ -713,8 +818,26 @@ class InformasiUmumController extends GetxController {
         "registered_site": rootSiteId,
         "flow": "SubmitPraregister",
         "visitor_role": visitorRole,
+        "is_driving": isDriving.value,
+        "vehicle_type": isDriving.value ? formattedVehicleType : "",
+        "vehicle_plate_number": isDriving.value
+            ? vehiclePlateController.text
+            : "",
+        "vehicle_plate": isDriving.value ? vehiclePlateController.text : "",
         "data_visitor": [
-          {"question_page": questionPage},
+          {
+            "trx_visitor_id": trxVisitorId,
+            "id": trxVisitorId,
+            "visitor_id": visitorId,
+            "visitor_type": visitorTypeId,
+            "is_driving": isDriving.value,
+            "vehicle_type": isDriving.value ? formattedVehicleType : "",
+            "vehicle_plate_number": isDriving.value
+                ? vehiclePlateController.text
+                : "",
+            "vehicle_plate": isDriving.value ? vehiclePlateController.text : "",
+            "question_page": questionPage,
+          },
         ],
       };
 
