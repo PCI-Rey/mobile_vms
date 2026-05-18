@@ -12,8 +12,10 @@ class GuestHomeController extends GetxController {
   final HiveService _hive = HiveService();
 
   final RxList<AccessPassModel> accessPasses = <AccessPassModel>[].obs;
+  final RxList<AccessPassModel> activeVisits = <AccessPassModel>[].obs;
   final RxBool isLoading = false.obs;
   final RxInt selectedPassIndex = 0.obs;
+  final RxInt selectedVisitIndex = 0.obs;
 
   Timer? _refreshTimer;
 
@@ -22,12 +24,26 @@ class GuestHomeController extends GetxController {
     super.onInit();
     _loadFromHive();
     fetchAccessPass(isSilent: true);
+    fetchActiveVisits(isSilent: true);
     _startPolling();
   }
 
   void selectPass(int index) {
     if (index >= 0 && index < accessPasses.length) {
       selectedPassIndex.value = index;
+    }
+  }
+
+  void selectVisit(int index) {
+    if (index >= 0 && index < activeVisits.length) {
+      selectedVisitIndex.value = index;
+      
+      // Sync selected access pass if matching invitationCode is found
+      final matchCode = activeVisits[index].invitationCode;
+      final passIdx = accessPasses.indexWhere((p) => p.invitationCode == matchCode);
+      if (passIdx != -1) {
+        selectedPassIndex.value = passIdx;
+      }
     }
   }
 
@@ -42,6 +58,7 @@ class GuestHomeController extends GetxController {
     _refreshTimer?.cancel();
     _refreshTimer = Timer.periodic(const Duration(seconds: 3), (timer) {
       fetchAccessPass(isSilent: true);
+      fetchActiveVisits(isSilent: true);
     });
   }
 
@@ -128,6 +145,49 @@ class GuestHomeController extends GetxController {
       }
     } finally {
       if (!isSilent) isLoading.value = false;
+    }
+  }
+
+  Future<void> fetchActiveVisits({bool isSilent = false}) async {
+    final user = _hive.getUser();
+    final token = user?.token;
+
+    if (token == null) return;
+
+    try {
+      final response = await _api.getActiveVisits(token);
+      debugPrint("===== GET ACTIVE VISITS RESPONSE =====");
+      debugPrint(response.data.toString());
+      debugPrint("====================================");
+      if (response.data['status'] == 'success') {
+        final collection = response.data['collection'] as List<dynamic>? ?? [];
+        final now = DateTime.now();
+        final newPasses = collection
+            .map((e) => AccessPassModel.fromJson(e as Map<String, dynamic>))
+            .toList();
+
+        final filteredPasses = newPasses.where((item) {
+          final isExpired = item.visitorPeriodEnd.isBefore(now);
+          final isInactiveStatus =
+              item.visitorStatus.toLowerCase() == 'expired' ||
+              item.visitorStatus.toLowerCase() == 'completed' ||
+              item.visitorStatus.toLowerCase() == 'cancelled' ||
+              item.visitorStatus.toLowerCase() == 'rejected';
+          return !isExpired && !isInactiveStatus;
+        }).toList();
+
+        activeVisits.assignAll(filteredPasses);
+
+        if (filteredPasses.isNotEmpty) {
+          if (selectedVisitIndex.value >= filteredPasses.length) {
+            selectedVisitIndex.value = 0;
+          }
+        } else {
+          selectedVisitIndex.value = 0;
+        }
+      }
+    } catch (e) {
+      debugPrint('fetchActiveVisits error: $e');
     }
   }
 

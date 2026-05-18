@@ -365,6 +365,20 @@ class ApiService {
     }
   }
 
+  Future<Response> getActiveVisits(String token) async {
+    try {
+      final response = await _dio.get(
+        '/$pathApi/invitation/active-invitation',
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+      return response;
+    } on DioException catch (e) {
+      debugPrint('Dio Error getActiveVisits: ${e.message}');
+      if (e.response != null) return e.response!;
+      rethrow;
+    }
+  }
+
   Future<Response> getOngoingInvitation(
     String token, {
     String? startDate,

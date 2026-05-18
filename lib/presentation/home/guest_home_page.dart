@@ -176,7 +176,7 @@ class _GuestHomePageState extends State<GuestHomePage> {
                     ),
                   ),
                   child: Text(
-                    '${guestCtrl.accessPasses.length} ${'records'.tr}',
+                    '${guestCtrl.activeVisits.length} ${'records'.tr}',
                     style: TextStyle(
                       color: AppColors.primary500,
                       fontSize: rfs(context, 12),
@@ -193,18 +193,18 @@ class _GuestHomePageState extends State<GuestHomePage> {
             if (guestCtrl.isLoading.value) {
               return const Center(child: CircularProgressIndicator());
             }
-            if (guestCtrl.accessPasses.isEmpty) {
+            if (guestCtrl.activeVisits.isEmpty) {
               return _buildEmptyVisits(context);
             }
             return Column(
               children: [
-                for (int i = 0; i < guestCtrl.accessPasses.length; i++) ...[
+                for (int i = 0; i < guestCtrl.activeVisits.length; i++) ...[
                   Obx(() => VisitSummaryCard(
-                    item: guestCtrl.accessPasses[i],
-                    isSelected: guestCtrl.selectedPassIndex.value == i,
-                    onTap: () => guestCtrl.selectPass(i),
+                    item: guestCtrl.activeVisits[i],
+                    isSelected: guestCtrl.selectedVisitIndex.value == i,
+                    onTap: () => guestCtrl.selectVisit(i),
                   )),
-                  if (i < guestCtrl.accessPasses.length - 1)
+                  if (i < guestCtrl.activeVisits.length - 1)
                     vSpace(context, 10),
                 ],
               ],
