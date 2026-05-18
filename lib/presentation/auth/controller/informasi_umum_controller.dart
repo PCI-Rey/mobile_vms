@@ -1,5 +1,6 @@
 import 'dart:developer';
 import 'package:dio/dio.dart' as dio;
+import 'dart:math' show Random;
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -449,6 +450,30 @@ class InformasiUmumController extends GetxController {
         questionPage = jsonDecode(jsonEncode(pageList));
       }
 
+      // Format vehicle type dynamically early so it can be used for both injection and updateAnswer
+      String formattedVehicleType = vehicleType.value.replaceAll(
+        'vehicle_',
+        '',
+      );
+      if (formattedVehicleType.isNotEmpty) {
+        formattedVehicleType =
+            formattedVehicleType[0].toUpperCase() +
+            formattedVehicleType.substring(1);
+        if (formattedVehicleType == 'Private_car') {
+          formattedVehicleType = 'Private Car';
+        }
+      }
+
+      // Helper to generate dynamic UUID v4
+      String generateUuid() {
+        final random = Random();
+        const hexDigits = '0123456789abcdef';
+        String randomHex(int length) {
+          return List.generate(length, (_) => hexDigits[random.nextInt(16)]).join();
+        }
+        return '${randomHex(8)}-${randomHex(4)}-4${randomHex(3)}-${hexDigits[random.nextInt(4) + 8]}${randomHex(3)}-${randomHex(12)}';
+      }
+
       // Check if vehicle page or fields exist in questionPage
       bool hasVehiclePage = false;
       for (var page in questionPage) {
@@ -474,7 +499,7 @@ class InformasiUmumController extends GetxController {
           'Vehicle fields not found in questionPage template, programmatically injecting Vehicle/Parking Information page...',
         );
         questionPage.add({
-          "id": "38bd9858-31eb-4353-8de1-f98c3069ec1a",
+          "id": generateUuid(),
           "sort": questionPage.length,
           "name": "Vehicle/Parking Information",
           "status": 0,
@@ -492,10 +517,10 @@ class InformasiUmumController extends GetxController {
               "is_enable": true,
               "mandatory": true,
               "remarks": "is_driving",
-              "custom_field_id": "cbf8c4d7-7b42-4384-b95c-1fac5d642e55",
+              "custom_field_id": generateUuid(),
               "multiple_option_fields": [],
               "visitor_form_type": 1,
-              "answer_text": "true",
+              "answer_text": isDriving.value.toString(),
             },
             {
               "sort": 1,
@@ -506,10 +531,10 @@ class InformasiUmumController extends GetxController {
               "is_enable": true,
               "mandatory": true,
               "remarks": "vehicle_type",
-              "custom_field_id": "bbbc5e97-80a7-4f4c-904d-ee0be441ff83",
+              "custom_field_id": generateUuid(),
               "multiple_option_fields": [],
               "visitor_form_type": 1,
-              "answer_text": "",
+              "answer_text": isDriving.value ? formattedVehicleType : "",
             },
             {
               "sort": 2,
@@ -520,10 +545,10 @@ class InformasiUmumController extends GetxController {
               "is_enable": true,
               "mandatory": true,
               "remarks": "vehicle_plate",
-              "custom_field_id": "dc13be39-5491-4ccb-b92f-b24dac840479",
+              "custom_field_id": generateUuid(),
               "multiple_option_fields": [],
               "visitor_form_type": 1,
-              "answer_text": "",
+              "answer_text": isDriving.value ? vehiclePlateController.text : "",
             },
           ],
         });
@@ -672,18 +697,6 @@ class InformasiUmumController extends GetxController {
       updateAnswer('Visit End', collection['visitor_period_end']);
 
       // ── Step 3: Vehicle fields ───────────────────────────────────────
-      String formattedVehicleType = vehicleType.value.replaceAll(
-        'vehicle_',
-        '',
-      );
-      if (formattedVehicleType.isNotEmpty) {
-        formattedVehicleType =
-            formattedVehicleType[0].toUpperCase() +
-            formattedVehicleType.substring(1);
-        if (formattedVehicleType == 'Private_car') {
-          formattedVehicleType = 'Private Car';
-        }
-      }
       updateAnswer('Is Driving/Riding', isDriving.value.toString());
       updateAnswer('Vehicle Type', formattedVehicleType);
       updateAnswer('Vehicle Plate', vehiclePlateController.text);
