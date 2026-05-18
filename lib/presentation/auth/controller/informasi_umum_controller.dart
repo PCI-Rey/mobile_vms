@@ -473,7 +473,8 @@ class InformasiUmumController extends GetxController {
           'visit end': 'visitor_period_end',
           'is driving/riding': 'is_driving',
           'vehicle type': 'vehicle_type',
-          'vehicle plate': 'vehicle_plate',
+          'vehicle plate': 'vehicle_plate_number',
+          'vehicle plate number': 'vehicle_plate_number',
           'selfie image': 'selfie_image',
           'identity image': 'identity_image',
         };
@@ -492,7 +493,11 @@ class InformasiUmumController extends GetxController {
             final String shortName = formField['short_name'].toString().toLowerCase().trim();
             final String remarks = formField['remarks'].toString().toLowerCase().trim();
 
-            if (shortName == searchKey || remarks == searchKey || (mappedRemarks != null && remarks == mappedRemarks)) {
+            if (shortName == searchKey || 
+                remarks == searchKey || 
+                (mappedRemarks != null && remarks == mappedRemarks) ||
+                (searchKey == 'vehicle plate' && (remarks == 'vehicle_plate' || remarks == 'vehicle_plate_number')) ||
+                (remarks == 'vehicle_plate_number' && searchKey.contains('plate'))) {
               final fieldType = formField['field_type'];
 
               // 1. field_type 10, 11, 12 -> answer_file
