@@ -435,6 +435,24 @@ class InformasiUmumController extends GetxController {
         questionPage = jsonDecode(jsonEncode(pageList));
       }
 
+      // Log the full questionPage structure for debugging
+      debugPrint('=== DEBUG: questionPage PAGES AND FIELDS ===');
+      for (int i = 0; i < questionPage.length; i++) {
+        final page = questionPage[i];
+        if (page is Map) {
+          debugPrint('Page $i: "${page['name']}" (id: ${page['id']})');
+          final form = page['form'];
+          if (form is List) {
+            for (var formField in form) {
+              if (formField is Map) {
+                debugPrint('  Field: "${formField['short_name']}" | remarks: "${formField['remarks']}" | type: ${formField['field_type']}');
+              }
+            }
+          }
+        }
+      }
+      debugPrint('============================================');
+
       // Helper function to update answers (more flexible: search all pages if needed)
       void updateAnswer(
         String fieldShortName,
@@ -442,6 +460,27 @@ class InformasiUmumController extends GetxController {
         bool isFile = false,
       }) {
         bool found = false;
+        
+        // Map common field short names to their machine-readable remarks fallback
+        final Map<String, String> keyToRemarks = {
+          'full name': 'name',
+          'email': 'email',
+          'phone': 'phone',
+          'organization': 'organization',
+          'indentity id': 'indentity_id',
+          'agenda': 'agenda',
+          'visit start': 'visitor_period_start',
+          'visit end': 'visitor_period_end',
+          'is driving/riding': 'is_driving',
+          'vehicle type': 'vehicle_type',
+          'vehicle plate': 'vehicle_plate',
+          'selfie image': 'selfie_image',
+          'identity image': 'identity_image',
+        };
+
+        final String searchKey = fieldShortName.toLowerCase().trim();
+        final String? mappedRemarks = keyToRemarks[searchKey];
+
         for (var page in questionPage) {
           // Guard: page harus Map, bukan String (bisa terjadi kalau iterasi Map keys)
           if (page is! Map) continue;
@@ -449,8 +488,11 @@ class InformasiUmumController extends GetxController {
           if (form is! List) continue;
           for (var formField in form) {
             if (formField is! Map) continue;
-            if (formField['short_name'].toString().toLowerCase().trim() ==
-                fieldShortName.toLowerCase().trim()) {
+            
+            final String shortName = formField['short_name'].toString().toLowerCase().trim();
+            final String remarks = formField['remarks'].toString().toLowerCase().trim();
+
+            if (shortName == searchKey || remarks == searchKey || (mappedRemarks != null && remarks == mappedRemarks)) {
               final fieldType = formField['field_type'];
 
               // 1. field_type 10, 11, 12 -> answer_file
@@ -479,7 +521,7 @@ class InformasiUmumController extends GetxController {
                 formField.remove('answer_file');
               }
 
-              debugPrint('Updated Answer: $fieldShortName -> $value');
+              debugPrint('Updated Answer: $fieldShortName (remarks: $remarks) -> $value');
               found = true;
             }
           }
