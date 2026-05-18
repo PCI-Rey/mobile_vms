@@ -66,10 +66,11 @@ class InvitationController extends GetxController {
     // or have statuses that indicate they are no longer active
     filtered = filtered.where((item) {
       final isExpired = item.visitorPeriodEnd.isBefore(now);
-      final isInactiveStatus = item.visitorStatus.toLowerCase() == 'expired' || 
-                               item.visitorStatus.toLowerCase() == 'completed' ||
-                               item.visitorStatus.toLowerCase() == 'cancelled' ||
-                               item.visitorStatus.toLowerCase() == 'rejected';
+      final isInactiveStatus =
+          item.visitorStatus.toLowerCase() == 'expired' ||
+          item.visitorStatus.toLowerCase() == 'completed' ||
+          item.visitorStatus.toLowerCase() == 'cancelled' ||
+          item.visitorStatus.toLowerCase() == 'rejected';
       return !isExpired && !isInactiveStatus;
     }).toList();
 
@@ -325,24 +326,26 @@ class InvitationController extends GetxController {
           response.data['status_code'] == 200) {
         await fetchShareLinks(resetPage: true); // Refresh list
         fetchDashboardShareLinks(); // Refresh dashboard list
-        
+
         // Return the created item if available in response
         if (response.data['item'] != null) {
           return Map<String, dynamic>.from(response.data['item']);
         }
-        
+
         // Fallback: get the first item from the refreshed list
         if (shareLinks.isNotEmpty) {
           return shareLinks.first;
         }
-        
+
         return {}; // Success but no item data
       }
       return null;
     } catch (e) {
       if (e is DioException && e.response != null) {
         debugPrint('createShareLinkAction error response: ${e.response?.data}');
-        throw e.response?.data['message'] ?? e.response?.data.toString() ?? 'Failed to create share link';
+        throw e.response?.data['message'] ??
+            e.response?.data.toString() ??
+            'Failed to create share link';
       }
       debugPrint('createShareLinkAction error: $e');
       throw 'Failed to create share link';

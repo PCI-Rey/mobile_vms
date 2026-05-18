@@ -490,15 +490,19 @@ class _ShareLinkListDialogState extends State<ShareLinkListDialog> {
   }
 
   void _confirmDelete(String id) {
-    Get.dialog(
-      AlertDialog(
+    showDialog(
+      context: context,
+      builder: (dialogCtx) => AlertDialog(
         title: const Text('Delete Share Link'),
         content: const Text('Are you sure you want to delete this share link?'),
         actions: [
-          TextButton(onPressed: () => Get.back(), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.pop(dialogCtx),
+            child: const Text('Cancel'),
+          ),
           TextButton(
             onPressed: () async {
-              Get.back();
+              Navigator.pop(dialogCtx);
               final success = await controller.deleteShareLinkAction(id);
               if (success) {
                 Get.snackbar(

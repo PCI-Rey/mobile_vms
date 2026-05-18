@@ -117,7 +117,10 @@ class ShareLinkCard extends StatelessWidget {
         : const Color(0xFF43A047);
     final String status = isExpired ? 'Expired' : 'Active';
 
-    final String url = item['url'] ?? '';
+    final String shortenUrl = (item['shorten_url'] ?? '').toString().trim();
+    final String url = (shortenUrl.isNotEmpty && shortenUrl != 'null')
+        ? shortenUrl
+        : (item['url'] ?? '').toString().trim();
 
     String formatDate(String? dateStr) {
       if (dateStr == null) return '-';

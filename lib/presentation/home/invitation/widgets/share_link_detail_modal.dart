@@ -41,7 +41,10 @@ class ShareLinkDetailModal {
       }
     }
 
-    final String url = item['url'] ?? '';
+    final String shortenUrl = (item['shorten_url'] ?? '').toString().trim();
+    final String url = (shortenUrl.isNotEmpty && shortenUrl != 'null')
+        ? shortenUrl
+        : (item['url'] ?? '').toString().trim();
 
     showModalBottomSheet(
       context: context,
@@ -260,7 +263,7 @@ class ShareLinkDetailModal {
                               color: Colors.red.shade600,
                               onTap: () {
                                 Navigator.pop(ctx);
-                                _confirmDelete(item['id'].toString());
+                                _confirmDelete(context, item['id'].toString());
                               },
                             ),
                           ],
@@ -277,18 +280,22 @@ class ShareLinkDetailModal {
     );
   }
 
-  static void _confirmDelete(String id) {
+  static void _confirmDelete(BuildContext context, String id) {
     final controller = Get.find<InvitationController>();
-    Get.dialog(
-      AlertDialog(
+    showDialog(
+      context: context,
+      builder: (dialogCtx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: const Text('Delete Share Link'),
         content: const Text('Are you sure you want to delete this share link?'),
         actions: [
-          TextButton(onPressed: () => Get.back(), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.pop(dialogCtx),
+            child: const Text('Cancel'),
+          ),
           TextButton(
             onPressed: () async {
-              Get.back();
+              Navigator.pop(dialogCtx);
               final success = await controller.deleteShareLinkAction(id);
               if (success) {
                 Get.snackbar(
