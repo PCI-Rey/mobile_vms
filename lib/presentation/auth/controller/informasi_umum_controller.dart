@@ -502,10 +502,15 @@ class InformasiUmumController extends GetxController {
                 formField.remove('answer_datetime');
               } else if (fieldType == 9) {
                 if (value != null && value.toString().isNotEmpty) {
-                  // Nilai dari API sudah UTC, cukup pastikan ada suffix 'Z'
+                  // Keep clean ISO YYYY-MM-DDTHH:mm:ss format without Z suffix to prevent backend offset shifting
                   String dtVal = value.toString();
-                  if (!dtVal.endsWith('Z') && !dtVal.contains('+')) {
-                    dtVal = '${dtVal}Z';
+                  if (dtVal.contains('.')) {
+                    dtVal = dtVal.replaceAll(RegExp(r'\.\d+'), '');
+                  }
+                  if (dtVal.endsWith('Z')) {
+                    dtVal = dtVal.substring(0, dtVal.length - 1);
+                  } else if (dtVal.contains('+')) {
+                    dtVal = dtVal.split('+').first;
                   }
                   formField['answer_datetime'] = dtVal;
                   formField.remove('answer_text');
@@ -604,10 +609,15 @@ class InformasiUmumController extends GetxController {
               final fieldType = field['field_type'];
               if (fieldType == 9) {
                 if (value != null && value.isNotEmpty) {
-                  // Nilai dari API sudah UTC, cukup pastikan ada suffix 'Z'
+                  // Keep clean ISO YYYY-MM-DDTHH:mm:ss format without Z suffix to prevent backend offset shifting
                   String dtVal = value;
-                  if (!dtVal.endsWith('Z') && !dtVal.contains('+')) {
-                    dtVal = '${dtVal}Z';
+                  if (dtVal.contains('.')) {
+                    dtVal = dtVal.replaceAll(RegExp(r'\.\d+'), '');
+                  }
+                  if (dtVal.endsWith('Z')) {
+                    dtVal = dtVal.substring(0, dtVal.length - 1);
+                  } else if (dtVal.contains('+')) {
+                    dtVal = dtVal.split('+').first;
                   }
                   field['answer_datetime'] = dtVal;
                   field.remove('answer_text');
