@@ -450,18 +450,16 @@ class InformasiUmumController extends GetxController {
         questionPage = jsonDecode(jsonEncode(pageList));
       }
 
-      // Format vehicle type dynamically early so it can be used for both injection and updateAnswer
-      String formattedVehicleType = vehicleType.value.replaceAll(
-        'vehicle_',
-        '',
-      );
-      if (formattedVehicleType.isNotEmpty) {
-        formattedVehicleType =
-            formattedVehicleType[0].toUpperCase() +
-            formattedVehicleType.substring(1);
-        if (formattedVehicleType == 'Private_car') {
-          formattedVehicleType = 'Private Car';
-        }
+      // Format vehicle type dynamically early so it can be used for both injection and updateAnswer.
+      // The backend database only accepts 'Car', 'Bus', and 'Motor'. We map all UI options to these three valid categories.
+      String formattedVehicleType = 'Car';
+      final typeVal = vehicleType.value.toLowerCase();
+      if (typeVal.contains('car') || typeVal.contains('other')) {
+        formattedVehicleType = 'Car';
+      } else if (typeVal.contains('bus') || typeVal.contains('truck')) {
+        formattedVehicleType = 'Bus';
+      } else if (typeVal.contains('motor') || typeVal.contains('bicycle')) {
+        formattedVehicleType = 'Motor';
       }
 
       // Helper to generate dynamic UUID v4
@@ -881,21 +879,27 @@ class InformasiUmumController extends GetxController {
         throw Exception('Tidak ada response dari server');
       }
 
+      final responseData = submitResponse.data;
       if (submitResponse.statusCode != 200 ||
-          submitResponse.data['status'] == 'bad_request') {
-        final errorMsg =
-            submitResponse.data?['msg']?.toString() ?? 'Bad Request';
-        final collection = submitResponse.data?['collection'];
-        if (collection is List && collection.isNotEmpty) {
-          final detail = collection.map((e) => e['message']).join(', ');
-          throw Exception('$errorMsg: $detail');
+          (responseData is Map && responseData['status'] == 'bad_request')) {
+        String errorMsg = 'Bad Request';
+        if (responseData is Map) {
+          errorMsg = responseData['msg']?.toString() ?? 'Bad Request';
+          final collection = responseData['collection'];
+          if (collection is List && collection.isNotEmpty) {
+            final detail = collection.map((e) => e['message']).join(', ');
+            throw Exception('$errorMsg: $detail');
+          }
+        } else if (responseData is String) {
+          errorMsg = responseData;
         }
         throw Exception(errorMsg);
       }
 
-      final submitMsg =
-          submitResponse.data?['msg']?.toString() ?? 'Form berhasil dikirim';
-      final submitTitle = submitResponse.data?['title']?.toString();
+      final submitMsg = responseData is Map
+          ? responseData['msg']?.toString() ?? 'Form berhasil dikirim'
+          : 'Form berhasil dikirim';
+      final submitTitle = responseData is Map ? responseData['title']?.toString() : null;
 
       // After submit success, re-check invitation code to get the token
       final (newUser, isPraregisterDone, _, error, checkTitle) =
