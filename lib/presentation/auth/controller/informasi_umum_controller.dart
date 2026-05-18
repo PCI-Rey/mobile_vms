@@ -419,8 +419,22 @@ class InformasiUmumController extends GetxController {
 
       // Copy question_page array to modify it
       List<dynamic> questionPage = [];
+      dynamic raw;
       if (collection['question_page'] != null) {
-        final raw = collection['question_page'];
+        raw = collection['question_page'];
+      } else if (collection['data_visitor'] is List &&
+          (collection['data_visitor'] as List).isNotEmpty &&
+          collection['data_visitor'][0]['question_page'] != null) {
+        raw = collection['data_visitor'][0]['question_page'];
+      } else if (rawData!['question_page'] != null) {
+        raw = rawData!['question_page'];
+      } else if (rawData!['data_visitor'] is List &&
+          (rawData!['data_visitor'] as List).isNotEmpty &&
+          rawData!['data_visitor'][0]['question_page'] != null) {
+        raw = rawData!['data_visitor'][0]['question_page'];
+      }
+
+      if (raw != null) {
         // question_page bisa datang sebagai List atau Map (tergantung API response)
         List<dynamic> pageList;
         if (raw is List) {
@@ -473,8 +487,8 @@ class InformasiUmumController extends GetxController {
           'visit end': 'visitor_period_end',
           'is driving/riding': 'is_driving',
           'vehicle type': 'vehicle_type',
-          'vehicle plate': 'vehicle_plate_number',
-          'vehicle plate number': 'vehicle_plate_number',
+          'vehicle plate': 'vehicle_plate',
+          'vehicle plate number': 'vehicle_plate',
           'selfie image': 'selfie_image',
           'identity image': 'identity_image',
         };
@@ -497,6 +511,7 @@ class InformasiUmumController extends GetxController {
                 remarks == searchKey || 
                 (mappedRemarks != null && remarks == mappedRemarks) ||
                 (searchKey == 'vehicle plate' && (remarks == 'vehicle_plate' || remarks == 'vehicle_plate_number')) ||
+                (remarks == 'vehicle_plate' && searchKey.contains('plate')) ||
                 (remarks == 'vehicle_plate_number' && searchKey.contains('plate'))) {
               final fieldType = formField['field_type'];
 
@@ -696,7 +711,7 @@ class InformasiUmumController extends GetxController {
         "is_group": collection['is_group'] ?? false,
         "tz": collection['tz'] ?? "Asia/Jakarta",
         "registered_site": rootSiteId,
-        "flow": "Invitation",
+        "flow": "SubmitPraregister",
         "visitor_role": visitorRole,
         "data_visitor": [
           {"question_page": questionPage},
