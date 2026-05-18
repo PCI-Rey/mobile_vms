@@ -18,6 +18,7 @@ class AccessPassModel {
   final String parkingSlot;
   final String parkingArea;
   final String vehiclePlateNumber;
+  final String vehicleType;
   final bool isDriving;
   final String tz;
   final String siteId;
@@ -42,6 +43,7 @@ class AccessPassModel {
     required this.parkingSlot,
     required this.parkingArea,
     required this.vehiclePlateNumber,
+    required this.vehicleType,
     required this.isDriving,
     required this.tz,
     required this.siteId,
@@ -97,6 +99,7 @@ class AccessPassModel {
       parkingSlot: json['parking_slot']?.toString() ?? '',
       parkingArea: json['parking_area']?.toString() ?? '',
       vehiclePlateNumber: json['vehicle_plate_number']?.toString() ?? '',
+      vehicleType: json['vehicle_type']?.toString() ?? '',
       isDriving: json['is_driving'] == true,
       tz: json['tz']?.toString() ?? '',
       siteId: json['site_id']?.toString() ?? '',
@@ -123,6 +126,7 @@ class AccessPassModel {
     'parking_slot': parkingSlot,
     'parking_area': parkingArea,
     'vehicle_plate_number': vehiclePlateNumber,
+    'vehicle_type': vehicleType,
     'is_driving': isDriving,
     'tz': tz,
     'site_id': siteId,

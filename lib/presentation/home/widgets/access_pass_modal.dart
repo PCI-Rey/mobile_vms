@@ -296,37 +296,32 @@ class AccessPassModal {
                                 ),
                               ],
                             ),
-                            if (item.isDriving) ...[
+                            if (item.isDriving || item.vehiclePlateNumber.isNotEmpty) ...[
                               vSpace(ctx, 6),
                               Row(
                                 children: [
                                   Expanded(
                                     child: AccessPassModal.buildInfoTile(
                                       ctx,
-                                      Icons.location_on_outlined,
-                                      'Area',
-                                      item.parkingArea.isEmpty || item.parkingArea.toLowerCase() == 'not available'
-                                          ? 'Not available'
-                                          : item.parkingArea,
-                                    ),
-                                  ),
-                                  hSpace(ctx, 6),
-                                  Expanded(
-                                    child: AccessPassModal.buildInfoTile(
-                                      ctx,
-                                      Icons.local_parking_outlined,
-                                      'Slot',
-                                      item.parkingSlot.isEmpty || item.parkingSlot.toLowerCase() == 'not available'
-                                          ? 'Not available'
-                                          : item.parkingSlot,
-                                    ),
-                                  ),
-                                  hSpace(ctx, 6),
-                                  Expanded(
-                                    child: AccessPassModal.buildInfoTile(
-                                      ctx,
                                       Icons.directions_car_outlined,
-                                      'Plate',
+                                      'Vehicle Type',
+                                      (() {
+                                        final type = item.vehicleType;
+                                        if (type.isEmpty) return 'Car';
+                                        final cleaned = type.replaceAll('vehicle_', '').replaceAll('_', ' ');
+                                        return cleaned.split(' ').map((word) {
+                                          if (word.isEmpty) return '';
+                                          return word[0].toUpperCase() + word.substring(1);
+                                        }).join(' ');
+                                      })(),
+                                    ),
+                                  ),
+                                  hSpace(ctx, 6),
+                                  Expanded(
+                                    child: AccessPassModal.buildInfoTile(
+                                      ctx,
+                                      Icons.badge_outlined,
+                                      'Plate Number',
                                       item.vehiclePlateNumber.isEmpty ? '-' : item.vehiclePlateNumber,
                                     ),
                                   ),
