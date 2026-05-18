@@ -296,38 +296,38 @@ class AccessPassModal {
                                 ),
                               ],
                             ),
-                            if (item.isDriving || item.vehiclePlateNumber.isNotEmpty) ...[
-                              vSpace(ctx, 6),
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: AccessPassModal.buildInfoTile(
-                                      ctx,
-                                      Icons.directions_car_outlined,
-                                      'Vehicle Type',
-                                      (() {
-                                        final type = item.vehicleType;
-                                        if (type.isEmpty) return 'Car';
-                                        final cleaned = type.replaceAll('vehicle_', '').replaceAll('_', ' ');
-                                        return cleaned.split(' ').map((word) {
-                                          if (word.isEmpty) return '';
-                                          return word[0].toUpperCase() + word.substring(1);
-                                        }).join(' ');
-                                      })(),
-                                    ),
+                            vSpace(ctx, 6),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: AccessPassModal.buildInfoTile(
+                                    ctx,
+                                    Icons.directions_car_outlined,
+                                    'Vehicle Type',
+                                    (() {
+                                      final type = item.vehicleType;
+                                      if (type.isEmpty || type.toLowerCase() == 'not available') return 'Not available';
+                                      final cleaned = type.replaceAll('vehicle_', '').replaceAll('_', ' ');
+                                      return cleaned.split(' ').map((word) {
+                                        if (word.isEmpty) return '';
+                                        return word[0].toUpperCase() + word.substring(1);
+                                      }).join(' ');
+                                    })(),
                                   ),
-                                  hSpace(ctx, 6),
-                                  Expanded(
-                                    child: AccessPassModal.buildInfoTile(
-                                      ctx,
-                                      Icons.badge_outlined,
-                                      'Plate Number',
-                                      item.vehiclePlateNumber.isEmpty ? '-' : item.vehiclePlateNumber,
-                                    ),
+                                ),
+                                hSpace(ctx, 6),
+                                Expanded(
+                                  child: AccessPassModal.buildInfoTile(
+                                    ctx,
+                                    Icons.badge_outlined,
+                                    'Plate Number',
+                                    item.vehiclePlateNumber.isEmpty || item.vehiclePlateNumber.toLowerCase() == 'not available'
+                                        ? 'Not available'
+                                        : item.vehiclePlateNumber,
                                   ),
-                                ],
-                              ),
-                            ],
+                                ),
+                              ],
+                            ),
                           ],
                         ),
                       ),
