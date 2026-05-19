@@ -450,18 +450,19 @@ class InformasiUmumController extends GetxController {
         questionPage = jsonDecode(jsonEncode(pageList));
       }
 
-      // Backend only accepts 3 valid enum values for vehicle_type (lowercase): 'car', 'bus', 'motor'.
-      // All UI options are mapped transparently to these 3 categories.
-      String formattedVehicleType;
-      final typeVal = vehicleType.value.toLowerCase();
-      if (typeVal.contains('bus') || typeVal.contains('truck')) {
-        formattedVehicleType = 'bus';
-      } else if (typeVal.contains('motor') || typeVal.contains('bicycle')) {
-        formattedVehicleType = 'motor';
-      } else {
-        // 'vehicle_car', 'vehicle_private_car', 'vehicle_other', and any unknown → car
-        formattedVehicleType = 'car';
-      }
+      // Map the internal vehicle key to its proper display name to send in question_page.
+      // The strict enum validation was only on data_visitor[0].vehicle_type (now removed).
+      const vehicleDisplayNames = {
+        'vehicle_car': 'Car',
+        'vehicle_bus': 'Bus',
+        'vehicle_motor': 'Motor',
+        'vehicle_bicycle': 'Bicycle',
+        'vehicle_truck': 'Truck',
+        'vehicle_private_car': 'Private Car',
+        'vehicle_other': 'Other',
+      };
+      final String formattedVehicleType =
+          vehicleDisplayNames[vehicleType.value] ?? vehicleType.value;
 
       // Helper to generate dynamic UUID v4
       String generateUuid() {
