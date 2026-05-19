@@ -450,19 +450,18 @@ class InformasiUmumController extends GetxController {
         questionPage = jsonDecode(jsonEncode(pageList));
       }
 
-      // Format vehicle type: convert 'vehicle_X' key to proper display name for the backend.
-      // e.g. 'vehicle_car' -> 'Car', 'vehicle_private_car' -> 'Private Car', 'vehicle_bicycle' -> 'Bicycle'
-      const vehicleTypeMap = {
-        'vehicle_car': 'Car',
-        'vehicle_bus': 'Bus',
-        'vehicle_motor': 'Motor',
-        'vehicle_bicycle': 'Bicycle',
-        'vehicle_truck': 'Truck',
-        'vehicle_private_car': 'Private Car',
-        'vehicle_other': 'Other',
-      };
-      final String formattedVehicleType =
-          vehicleTypeMap[vehicleType.value] ?? vehicleType.value;
+      // Backend only accepts 3 valid enum values for vehicle_type (lowercase): 'car', 'bus', 'motor'.
+      // All UI options are mapped transparently to these 3 categories.
+      String formattedVehicleType;
+      final typeVal = vehicleType.value.toLowerCase();
+      if (typeVal.contains('bus') || typeVal.contains('truck')) {
+        formattedVehicleType = 'bus';
+      } else if (typeVal.contains('motor') || typeVal.contains('bicycle')) {
+        formattedVehicleType = 'motor';
+      } else {
+        // 'vehicle_car', 'vehicle_private_car', 'vehicle_other', and any unknown → car
+        formattedVehicleType = 'car';
+      }
 
       // Helper to generate dynamic UUID v4
       String generateUuid() {
@@ -474,30 +473,88 @@ class InformasiUmumController extends GetxController {
         return '${randomHex(8)}-${randomHex(4)}-4${randomHex(3)}-${hexDigits[random.nextInt(4) + 8]}${randomHex(3)}-${randomHex(12)}';
       }
 
-      // Check if vehicle page or fields exist in questionPage
-      bool hasVehiclePage = false;
+      // Find the vehicle page in questionPage (even if form is empty) and fill in the fields.
+      // This avoids creating a duplicate page when the backend returns an empty vehicle page.
+      final List<Map<String, dynamic>> vehicleFormFields = [
+        {
+          "sort": 0,
+          "short_name": "Is Driving/Riding",
+          "long_display_text": "Are you driving?",
+          "field_type": 5,
+          "is_primary": true,
+          "is_enable": true,
+          "mandatory": true,
+          "remarks": "is_driving",
+          "custom_field_id": generateUuid(),
+          "multiple_option_fields": [],
+          "visitor_form_type": 1,
+          "answer_text": isDriving.value.toString(),
+        },
+        {
+          "sort": 1,
+          "short_name": "Vehicle Type",
+          "long_display_text": "Vehicle Type",
+          "field_type": 5,
+          "is_primary": true,
+          "is_enable": true,
+          "mandatory": true,
+          "remarks": "vehicle_type",
+          "custom_field_id": generateUuid(),
+          "multiple_option_fields": [],
+          "visitor_form_type": 1,
+          "answer_text": isDriving.value ? formattedVehicleType : "",
+        },
+        {
+          "sort": 2,
+          "short_name": "Vehicle Plate",
+          "long_display_text": "Vehicle Plate Number",
+          "field_type": 0,
+          "is_primary": true,
+          "is_enable": true,
+          "mandatory": true,
+          "remarks": "vehicle_plate",
+          "custom_field_id": generateUuid(),
+          "multiple_option_fields": [],
+          "visitor_form_type": 1,
+          "answer_text": isDriving.value ? vehiclePlateController.text : "",
+        },
+      ];
+
+      // Check if there is already a vehicle page (with or without fields).
+      bool vehiclePageFilled = false;
       for (var page in questionPage) {
         if (page is Map) {
-          final form = page['form'];
-          if (form is List) {
-            for (var field in form) {
-              if (field is Map &&
-                  (field['remarks'] == 'is_driving' ||
-                      field['remarks'] == 'vehicle_type' ||
-                      field['remarks'] == 'vehicle_plate')) {
-                hasVehiclePage = true;
-                break;
+          final pageName = (page['name'] as String? ?? '').toLowerCase();
+          if (pageName.contains('vehicle') || pageName.contains('parking')) {
+            // Found the vehicle page — fill/replace its form fields with our values
+            final existingForm = page['form'];
+            if (existingForm is List && existingForm.isNotEmpty) {
+              // Page already has fields — update answer_text values dynamically
+              for (var field in existingForm) {
+                if (field is Map) {
+                  if (field['remarks'] == 'is_driving') {
+                    field['answer_text'] = isDriving.value.toString();
+                  } else if (field['remarks'] == 'vehicle_type') {
+                    field['answer_text'] = isDriving.value ? formattedVehicleType : '';
+                  } else if (field['remarks'] == 'vehicle_plate') {
+                    field['answer_text'] = isDriving.value ? vehiclePlateController.text : '';
+                  }
+                }
               }
+            } else {
+              // Page exists but form is empty — inject our fields into it
+              debugPrint('Vehicle page found with empty form, filling in fields...');
+              page['form'] = vehicleFormFields;
             }
+            vehiclePageFilled = true;
+            break;
           }
         }
-        if (hasVehiclePage) break;
       }
 
-      if (!hasVehiclePage) {
-        debugPrint(
-          'Vehicle fields not found in questionPage template, programmatically injecting Vehicle/Parking Information page...',
-        );
+      if (!vehiclePageFilled) {
+        // No vehicle page found at all — add a new one
+        debugPrint('No vehicle page found in questionPage, injecting new Vehicle/Parking Information page...');
         questionPage.add({
           "id": generateUuid(),
           "sort": questionPage.length,
@@ -507,50 +564,7 @@ class InformasiUmumController extends GetxController {
           "can_multiple_used": false,
           "self_only": false,
           "foreign_id": "",
-          "form": [
-            {
-              "sort": 0,
-              "short_name": "Is Driving/Riding",
-              "long_display_text": "Are you driving?",
-              "field_type": 5,
-              "is_primary": true,
-              "is_enable": true,
-              "mandatory": true,
-              "remarks": "is_driving",
-              "custom_field_id": generateUuid(),
-              "multiple_option_fields": [],
-              "visitor_form_type": 1,
-              "answer_text": isDriving.value.toString(),
-            },
-            {
-              "sort": 1,
-              "short_name": "Vehicle Type",
-              "long_display_text": "Vehicle Type",
-              "field_type": 5,
-              "is_primary": true,
-              "is_enable": true,
-              "mandatory": true,
-              "remarks": "vehicle_type",
-              "custom_field_id": generateUuid(),
-              "multiple_option_fields": [],
-              "visitor_form_type": 1,
-              "answer_text": isDriving.value ? formattedVehicleType : "",
-            },
-            {
-              "sort": 2,
-              "short_name": "Vehicle Plate",
-              "long_display_text": "Vehicle Plate Number",
-              "field_type": 0,
-              "is_primary": true,
-              "is_enable": true,
-              "mandatory": true,
-              "remarks": "vehicle_plate",
-              "custom_field_id": generateUuid(),
-              "multiple_option_fields": [],
-              "visitor_form_type": 1,
-              "answer_text": isDriving.value ? vehiclePlateController.text : "",
-            },
-          ],
+          "form": vehicleFormFields,
         });
       }
 
@@ -839,23 +853,18 @@ class InformasiUmumController extends GetxController {
         "vehicle_plate": isDriving.value ? vehiclePlateController.text : "",
         "data_visitor": [
           {
-            "trx_visitor_id": trxVisitorId,
-            "id": trxVisitorId,
-            "visitor_id": visitorId,
-            "visitor_type": visitorTypeId,
-            "is_driving": isDriving.value,
-            "vehicle_type": isDriving.value ? formattedVehicleType : "",
-            "vehicle_plate_number": isDriving.value
-                ? vehiclePlateController.text
-                : "",
-            "vehicle_plate": isDriving.value ? vehiclePlateController.text : "",
             "question_page": questionPage,
           },
         ],
       };
 
       debugPrint('=== SUBMIT PRA FORM ===');
-      log(jsonEncode(payload));
+      final payloadJson = jsonEncode(payload);
+      // Chunk the payload since debugPrint has a character limit
+      const chunkSize = 800;
+      for (int i = 0; i < payloadJson.length; i += chunkSize) {
+        debugPrint(payloadJson.substring(i, i + chunkSize > payloadJson.length ? payloadJson.length : i + chunkSize));
+      }
 
       // Submit form — retry sampai 2x karena backend kadang butuh percobaan kedua
       dio.Response? submitResponse;
@@ -869,6 +878,8 @@ class InformasiUmumController extends GetxController {
           debugPrint(
             'Submit attempt $attempt: status ${submitResponse.statusCode}, retrying...',
           );
+          // Print response body to help diagnose 400 errors
+          debugPrint('Response body: ${submitResponse.data}');
         } catch (e) {
           debugPrint('Submit attempt $attempt failed: $e');
           if (attempt == 3) rethrow; // gagal semua, lempar error
