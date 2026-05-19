@@ -866,9 +866,6 @@ class InformasiUmumController extends GetxController {
         "vehicle_plate": isDriving.value ? vehiclePlateController.text : "",
         "data_visitor": [
           {
-            // Send raw value directly
-            "vehicle_type": isDriving.value ? rawVehicleType : "",
-            "vehicle_plate": isDriving.value ? vehiclePlateController.text : "",
             "question_page": questionPage,
           },
         ],
@@ -916,7 +913,7 @@ class InformasiUmumController extends GetxController {
           errorMsg = responseData['msg']?.toString() ?? 'Bad Request';
           final collection = responseData['collection'];
           if (collection is List && collection.isNotEmpty) {
-            final detail = collection.map((e) => e['message']).join(', ');
+            final detail = collection.map((e) => e is Map ? e['message'] : e.toString()).join(', ');
             throw Exception('$errorMsg: $detail');
           }
         } else if (responseData is String) {
