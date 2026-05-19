@@ -472,40 +472,40 @@ class InformasiUmumController extends GetxController {
             vehicleDisplayNames[vehicleType.value] ?? vehicleType.value;
       }
 
-      // enumVehicleType: EXACT case-sensitive values required by backend API multiple_option_fields.
-      // If we don't send these exact strings, the backend rejects or silently drops the field.
+      // enumVehicleType: format expected by the root data_visitor.vehicle_type column.
+      // We use 'vehicle_xxx' because the Guest Pass UI explicitly checks for and cleans this prefix.
       final String enumVehicleType;
       switch (vehicleType.value) {
         case 'vehicle_car':
         case 'Car':
-          enumVehicleType = 'car';
+          enumVehicleType = 'vehicle_car';
           break;
         case 'vehicle_bus':
         case 'Bus':
-          enumVehicleType = 'bus';
+          enumVehicleType = 'vehicle_bus';
           break;
         case 'vehicle_motor':
         case 'Motor':
-          enumVehicleType = 'motor';
+          enumVehicleType = 'vehicle_motor';
           break;
         case 'vehicle_bicycle':
         case 'Bicycle':
-          enumVehicleType = 'Bicycle'; // exact case from API
+          enumVehicleType = 'vehicle_bicycle';
           break;
         case 'vehicle_truck':
         case 'Truck':
-          enumVehicleType = 'truck';
+          enumVehicleType = 'vehicle_truck';
           break;
         case 'vehicle_private_car':
         case 'Private Car':
-          enumVehicleType = 'private_car';
+          enumVehicleType = 'vehicle_private_car';
           break;
         case 'vehicle_other':
         case 'Other':
-          enumVehicleType = 'Other'; // exact case from API
+          enumVehicleType = 'vehicle_other';
           break;
         default:
-          enumVehicleType = 'car';
+          enumVehicleType = 'vehicle_car';
       }
 
       // Helper to generate dynamic UUID v4
