@@ -450,29 +450,25 @@ class InformasiUmumController extends GetxController {
         questionPage = jsonDecode(jsonEncode(pageList));
       }
 
-      // formattedVehicleType: full display name used inside question_page.form for record keeping.
+      // formattedVehicleType: display name used inside question_page.form for record keeping.
       const vehicleDisplayNames = {
         'vehicle_car': 'Car',
         'vehicle_bus': 'Bus',
         'vehicle_motor': 'Motor',
-        'vehicle_bicycle': 'Bicycle',
-        'vehicle_truck': 'Truck',
-        'vehicle_private_car': 'Private Car',
         'vehicle_other': 'Other',
       };
       final String formattedVehicleType =
           vehicleDisplayNames[vehicleType.value] ?? vehicleType.value;
 
-      // enumVehicleType: mapped to the 3 valid enum values the backend database accepts at
-      // data_visitor[0].vehicle_type. This is what gets stored and returned in the response.
-      // Bicycle/Motor → 'Motor', Bus/Truck → 'Bus', everything else → 'Car'.
+      // enumVehicleType: 3 valid enum values backend database accepts at data_visitor[0].vehicle_type.
+      // 'Other' maps to 'Car' since backend has no 'Other' enum.
       final String enumVehicleType;
-      final typeVal = vehicleType.value.toLowerCase();
-      if (typeVal.contains('bus') || typeVal.contains('truck')) {
+      if (vehicleType.value == 'vehicle_bus') {
         enumVehicleType = 'Bus';
-      } else if (typeVal.contains('motor') || typeVal.contains('bicycle')) {
+      } else if (vehicleType.value == 'vehicle_motor') {
         enumVehicleType = 'Motor';
       } else {
+        // vehicle_car, vehicle_other, or any unknown → Car
         enumVehicleType = 'Car';
       }
 

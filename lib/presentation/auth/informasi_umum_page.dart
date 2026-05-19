@@ -507,26 +507,17 @@ class _Step3 extends StatelessWidget {
                   'vehicle_car': 'vehicle_car',
                   'vehicle_bus': 'vehicle_bus',
                   'vehicle_motor': 'vehicle_motor',
-                  'vehicle_bicycle': 'vehicle_bicycle',
-                  'vehicle_truck': 'vehicle_truck',
-                  'vehicle_private_car': 'vehicle_private_car',
                   'vehicle_other': 'vehicle_other',
                   // Legacy English keys from old API format
                   'Car': 'vehicle_car',
                   'Bus': 'vehicle_bus',
                   'Motor': 'vehicle_motor',
-                  'Bicycle': 'vehicle_bicycle',
-                  'Truck': 'vehicle_truck',
-                  'Private Car': 'vehicle_private_car',
                   'Other': 'vehicle_other',
                 };
                 const apiKeys = [
                   'vehicle_car',
                   'vehicle_bus',
                   'vehicle_motor',
-                  'vehicle_bicycle',
-                  'vehicle_truck',
-                  'vehicle_private_car',
                   'vehicle_other',
                 ];
                 final normalizedValue =
