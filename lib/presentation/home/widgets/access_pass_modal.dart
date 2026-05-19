@@ -8,8 +8,6 @@ import '../../../core/components/custom_circle_image.dart';
 import '../../../core/gen/assets.gen.dart';
 
 class AccessPassModal {
-  static const _blue = Color(0xFF1976D2);
-  static const _blueDark = Color(0xFF0E5DB5);
   static const _bgPage = Color(0xFFF4F7FB);
 
   static void show(BuildContext context, dynamic item) {

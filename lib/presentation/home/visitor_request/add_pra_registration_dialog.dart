@@ -2788,135 +2788,148 @@ class _VisitorSearchFieldState extends State<_VisitorSearchField> {
     final size = renderBox.size;
 
     return OverlayEntry(
-      builder: (context) => Positioned(
-        width: size.width,
-        child: CompositedTransformFollower(
-          link: _layerLink,
-          showWhenUnlinked: false,
-          offset: Offset(0, size.height + 4),
-          child: Material(
-            elevation: 8,
-            borderRadius: BorderRadius.circular(12),
-            shadowColor: Colors.black26,
-            child: Container(
-              constraints: const BoxConstraints(maxHeight: 260),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: const Color(0xFFE0E0E0)),
-              ),
-              child: Obx(() {
-                final ctrl = widget.controller;
-                if (ctrl.isLoadingVisitors.value) {
-                  return const Padding(
-                    padding: EdgeInsets.all(16),
-                    child: Center(
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    ),
-                  );
-                }
-                final results = ctrl.filteredVisitors;
-                if (results.isEmpty) {
-                  return Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Text(
-                      ctrl.visitorSearchQuery.value.isEmpty
-                          ? 'Type to search visitors...'
-                          : 'No visitor found',
-                      style: const TextStyle(color: Colors.grey, fontSize: 13),
-                    ),
-                  );
-                }
-                return ListView.separated(
-                  padding: EdgeInsets.zero,
-                  shrinkWrap: true,
-                  itemCount: results.length > 50 ? 50 : results.length,
-                  separatorBuilder: (context, index) =>
-                      const Divider(height: 1, color: Color(0xFFF0F0F0)),
-                  itemBuilder: (context, i) {
-                    final v = results[i];
-                    final name = v['name']?.toString() ?? '';
-                    final org = v['organization']?.toString() ?? '';
-                    final email = v['email']?.toString() ?? '';
-                    return InkWell(
-                      borderRadius: i == 0
-                          ? const BorderRadius.only(
-                              topLeft: Radius.circular(12),
-                              topRight: Radius.circular(12),
-                            )
-                          : BorderRadius.zero,
-                      onTap: () => _onVisitorSelected(v),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 14,
-                          vertical: 10,
-                        ),
-                        child: Row(
-                          children: [
-                            Container(
-                              width: 36,
-                              height: 36,
-                              decoration: BoxDecoration(
-                                color: AppColors.primary500.withValues(
-                                  alpha: 0.1,
-                                ),
-                                shape: BoxShape.circle,
-                              ),
-                              child: Center(
-                                child: Text(
-                                  name.isNotEmpty ? name[0].toUpperCase() : '?',
-                                  style: const TextStyle(
-                                    color: AppColors.primary500,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 15,
-                                  ),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    name,
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.w600,
-                                      fontSize: 13,
-                                      color: Colors.black87,
-                                    ),
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                  if (org.isNotEmpty || email.isNotEmpty)
-                                    Text(
-                                      [
-                                        if (org.isNotEmpty) org,
-                                        if (email.isNotEmpty) email,
-                                      ].join(' · '),
-                                      style: const TextStyle(
-                                        fontSize: 11,
-                                        color: Colors.grey,
-                                      ),
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                ],
-                              ),
-                            ),
-                            const Icon(
-                              Icons.chevron_right,
-                              size: 16,
-                              color: Colors.grey,
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
-                  },
-                );
-              }),
+      builder: (context) => Stack(
+        children: [
+          Positioned.fill(
+            child: GestureDetector(
+              behavior: HitTestBehavior.translucent,
+              onTap: () {
+                _closeDropdown();
+                _focusNode.unfocus();
+              },
             ),
           ),
-        ),
+          Positioned(
+            width: size.width,
+            child: CompositedTransformFollower(
+              link: _layerLink,
+              showWhenUnlinked: false,
+              offset: Offset(0, size.height + 4),
+              child: Material(
+                elevation: 8,
+                borderRadius: BorderRadius.circular(12),
+                shadowColor: Colors.black26,
+                child: Container(
+                  constraints: const BoxConstraints(maxHeight: 260),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: const Color(0xFFE0E0E0)),
+                  ),
+                  child: Obx(() {
+                    final ctrl = widget.controller;
+                    if (ctrl.isLoadingVisitors.value) {
+                      return const Padding(
+                        padding: EdgeInsets.all(16),
+                        child: Center(
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                      );
+                    }
+                    final results = ctrl.filteredVisitors;
+                    if (results.isEmpty) {
+                      return Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Text(
+                          ctrl.visitorSearchQuery.value.isEmpty
+                              ? 'Type to search visitors...'
+                              : 'No visitor found',
+                          style: const TextStyle(color: Colors.grey, fontSize: 13),
+                        ),
+                      );
+                    }
+                    return ListView.separated(
+                      padding: EdgeInsets.zero,
+                      shrinkWrap: true,
+                      itemCount: results.length > 50 ? 50 : results.length,
+                      separatorBuilder: (context, index) =>
+                          const Divider(height: 1, color: Color(0xFFF0F0F0)),
+                      itemBuilder: (context, i) {
+                        final v = results[i];
+                        final name = v['name']?.toString() ?? '';
+                        final org = v['organization']?.toString() ?? '';
+                        final email = v['email']?.toString() ?? '';
+                        return InkWell(
+                          borderRadius: i == 0
+                              ? const BorderRadius.only(
+                                  topLeft: Radius.circular(12),
+                                  topRight: Radius.circular(12),
+                                )
+                              : BorderRadius.zero,
+                          onTap: () => _onVisitorSelected(v),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 14,
+                              vertical: 10,
+                            ),
+                            child: Row(
+                              children: [
+                                Container(
+                                  width: 36,
+                                  height: 36,
+                                  decoration: BoxDecoration(
+                                    color: AppColors.primary500.withValues(
+                                      alpha: 0.1,
+                                    ),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: Center(
+                                    child: Text(
+                                      name.isNotEmpty ? name[0].toUpperCase() : '?',
+                                      style: const TextStyle(
+                                        color: AppColors.primary500,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 15,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        name,
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.w600,
+                                          fontSize: 13,
+                                          color: Colors.black87,
+                                        ),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      if (org.isNotEmpty || email.isNotEmpty)
+                                        Text(
+                                          [
+                                            if (org.isNotEmpty) org,
+                                            if (email.isNotEmpty) email,
+                                          ].join(' · '),
+                                          style: const TextStyle(
+                                            fontSize: 11,
+                                            color: Colors.grey,
+                                          ),
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                    ],
+                                  ),
+                                ),
+                                const Icon(
+                                  Icons.chevron_right,
+                                  size: 16,
+                                  color: Colors.grey,
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    );
+                  }),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -3077,133 +3090,146 @@ class _EmployeeSearchFieldState extends State<_EmployeeSearchField> {
     final size = renderBox.size;
 
     return OverlayEntry(
-      builder: (context) => Positioned(
-        width: size.width,
-        child: CompositedTransformFollower(
-          link: _layerLink,
-          showWhenUnlinked: false,
-          offset: Offset(0, size.height + 4),
-          child: Material(
-            elevation: 8,
-            borderRadius: BorderRadius.circular(12),
-            shadowColor: Colors.black26,
-            child: Container(
-              constraints: const BoxConstraints(maxHeight: 260),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: const Color(0xFFE0E0E0)),
-              ),
-              child: Obx(() {
-                final ctrl = widget.controller;
-                if (ctrl.isLoadingEmployees.value) {
-                  return const Padding(
-                    padding: EdgeInsets.all(16),
-                    child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
-                  );
-                }
-                final results = ctrl.filteredEmployees;
-                if (results.isEmpty) {
-                  return Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Text(
-                      ctrl.employeeSearchQuery.value.isEmpty
-                          ? 'Type to search employees...'
-                          : 'No employee found',
-                      style: const TextStyle(color: Colors.grey, fontSize: 13),
-                    ),
-                  );
-                }
-                return ListView.separated(
-                  padding: EdgeInsets.zero,
-                  shrinkWrap: true,
-                  itemCount: results.length > 50 ? 50 : results.length,
-                  separatorBuilder: (context, index) =>
-                      const Divider(height: 1, color: Color(0xFFF0F0F0)),
-                  itemBuilder: (context, i) {
-                    final e = results[i];
-                    final name = e['name']?.toString() ?? '';
-                    final org = e['organization']?.toString() ?? e['Organization']?['name']?.toString() ?? e['company']?.toString() ?? '';
-                    final email = e['email']?.toString() ?? '';
-                    return InkWell(
-                      borderRadius: i == 0
-                          ? const BorderRadius.only(
-                              topLeft: Radius.circular(12),
-                              topRight: Radius.circular(12),
-                            )
-                          : BorderRadius.zero,
-                      onTap: () => _onEmployeeSelected(e),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 14,
-                          vertical: 10,
-                        ),
-                        child: Row(
-                          children: [
-                            Container(
-                              width: 36,
-                              height: 36,
-                              decoration: BoxDecoration(
-                                color: AppColors.primary500.withValues(
-                                  alpha: 0.1,
-                                ),
-                                shape: BoxShape.circle,
-                              ),
-                              child: Center(
-                                child: Text(
-                                  name.isNotEmpty ? name[0].toUpperCase() : '?',
-                                  style: const TextStyle(
-                                    color: AppColors.primary500,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 15,
-                                  ),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    name,
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.w600,
-                                      fontSize: 13,
-                                      color: Colors.black87,
-                                    ),
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                  if (org.isNotEmpty || email.isNotEmpty)
-                                    Text(
-                                      [
-                                        if (org.isNotEmpty) org,
-                                        if (email.isNotEmpty) email,
-                                      ].join(' · '),
-                                      style: const TextStyle(
-                                        fontSize: 11,
-                                        color: Colors.grey,
-                                      ),
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                ],
-                              ),
-                            ),
-                            const Icon(
-                              Icons.chevron_right,
-                              size: 16,
-                              color: Colors.grey,
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
-                  },
-                );
-              }),
+      builder: (context) => Stack(
+        children: [
+          Positioned.fill(
+            child: GestureDetector(
+              behavior: HitTestBehavior.translucent,
+              onTap: () {
+                _closeDropdown();
+                _focusNode.unfocus();
+              },
             ),
           ),
-        ),
+          Positioned(
+            width: size.width,
+            child: CompositedTransformFollower(
+              link: _layerLink,
+              showWhenUnlinked: false,
+              offset: Offset(0, size.height + 4),
+              child: Material(
+                elevation: 8,
+                borderRadius: BorderRadius.circular(12),
+                shadowColor: Colors.black26,
+                child: Container(
+                  constraints: const BoxConstraints(maxHeight: 260),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: const Color(0xFFE0E0E0)),
+                  ),
+                  child: Obx(() {
+                    final ctrl = widget.controller;
+                    if (ctrl.isLoadingEmployees.value) {
+                      return const Padding(
+                        padding: EdgeInsets.all(16),
+                        child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                      );
+                    }
+                    final results = ctrl.filteredEmployees;
+                    if (results.isEmpty) {
+                      return Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Text(
+                          ctrl.employeeSearchQuery.value.isEmpty
+                              ? 'Type to search employees...'
+                              : 'No employee found',
+                          style: const TextStyle(color: Colors.grey, fontSize: 13),
+                        ),
+                      );
+                    }
+                    return ListView.separated(
+                      padding: EdgeInsets.zero,
+                      shrinkWrap: true,
+                      itemCount: results.length > 50 ? 50 : results.length,
+                      separatorBuilder: (context, index) =>
+                          const Divider(height: 1, color: Color(0xFFF0F0F0)),
+                      itemBuilder: (context, i) {
+                        final e = results[i];
+                        final name = e['name']?.toString() ?? '';
+                        final org = e['organization']?.toString() ?? e['Organization']?['name']?.toString() ?? e['company']?.toString() ?? '';
+                        final email = e['email']?.toString() ?? '';
+                        return InkWell(
+                          borderRadius: i == 0
+                              ? const BorderRadius.only(
+                                  topLeft: Radius.circular(12),
+                                  topRight: Radius.circular(12),
+                                )
+                              : BorderRadius.zero,
+                          onTap: () => _onEmployeeSelected(e),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 14,
+                              vertical: 10,
+                            ),
+                            child: Row(
+                              children: [
+                                Container(
+                                  width: 36,
+                                  height: 36,
+                                  decoration: BoxDecoration(
+                                    color: AppColors.primary500.withValues(
+                                      alpha: 0.1,
+                                    ),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: Center(
+                                    child: Text(
+                                      name.isNotEmpty ? name[0].toUpperCase() : '?',
+                                      style: const TextStyle(
+                                        color: AppColors.primary500,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 15,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        name,
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.w600,
+                                          fontSize: 13,
+                                          color: Colors.black87,
+                                        ),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      if (org.isNotEmpty || email.isNotEmpty)
+                                        Text(
+                                          [
+                                            if (org.isNotEmpty) org,
+                                            if (email.isNotEmpty) email,
+                                          ].join(' · '),
+                                          style: const TextStyle(
+                                            fontSize: 11,
+                                            color: Colors.grey,
+                                          ),
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                    ],
+                                  ),
+                                ),
+                                const Icon(
+                                  Icons.chevron_right,
+                                  size: 16,
+                                  color: Colors.grey,
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    );
+                  }),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
