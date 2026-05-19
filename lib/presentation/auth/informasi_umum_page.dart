@@ -503,18 +503,26 @@ class _Step3 extends StatelessWidget {
             if (ctrl.isDriving.value) ...[
               _requiredLabel('vehicle_type'.tr),
               () {
+                const labelMap = {
+                  'vehicle_car': 'vehicle_car',
+                  'vehicle_bus': 'vehicle_bus',
+                  'vehicle_motor': 'vehicle_motor',
+                  // Legacy English keys from old API format
+                  'Car': 'vehicle_car',
+                  'Bus': 'vehicle_bus',
+                  'Motor': 'vehicle_motor',
+                };
                 const apiKeys = [
-                  'car',
-                  'bus',
-                  'motor',
-                  'bicycle',
-                  'truck',
-                  'private_car',
-                  'other',
+                  'vehicle_car',
+                  'vehicle_bus',
+                  'vehicle_motor',
                 ];
-                final normalizedValue = apiKeys.contains(ctrl.vehicleType.value)
-                    ? ctrl.vehicleType.value
-                    : 'car';
+                final normalizedValue =
+                    labelMap.containsKey(ctrl.vehicleType.value)
+                    ? (apiKeys.contains(ctrl.vehicleType.value)
+                          ? ctrl.vehicleType.value
+                          : labelMap[ctrl.vehicleType.value]!)
+                    : 'vehicle_car';
 
                 return DropdownButton2<String>(
                   isExpanded: true,
@@ -523,7 +531,7 @@ class _Step3 extends StatelessWidget {
                       .map(
                         (key) => DropdownMenuItem<String>(
                           value: key,
-                          child: Text('vehicle_$key'.tr),
+                          child: Text(key.tr),
                         ),
                       )
                       .toList(),
@@ -549,16 +557,6 @@ class _Step3 extends StatelessWidget {
                   underline: const SizedBox.shrink(),
                 );
               }(),
-              // Show free-text input when 'other' is selected
-              if (ctrl.vehicleType.value == 'other') ...[
-                const SizedBox(height: 8),
-                CustomTextField(
-                  controller: ctrl.vehicleOtherController,
-                  label: '',
-                  showLabel: false,
-                  hintText: 'vehicle_other_hint'.tr,
-                ),
-              ],
               _requiredLabel('vehicle_plate'.tr),
               CustomTextField(
                 controller: ctrl.vehiclePlateController,

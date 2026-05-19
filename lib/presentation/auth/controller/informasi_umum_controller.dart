@@ -44,7 +44,7 @@ class InformasiUmumController extends GetxController {
 
   // Step 3: Vehicle/Parking Information
   final isDriving = true.obs;
-  final vehicleType = 'car'.obs;
+  final vehicleType = 'Car'.obs;
   final vehiclePlateController = TextEditingController();
   // Free-text input shown when user selects 'Other' as vehicle type
   final vehicleOtherController = TextEditingController();
@@ -80,7 +80,12 @@ class InformasiUmumController extends GetxController {
         rawData?['collection'] as Map<String, dynamic>? ?? rawData;
 
     isDriving.value = collection?['is_driving'] ?? false;
-    vehicleType.value = collection?['vehicle_type']?.toString() ?? 'Car';
+    final rawType = collection?['vehicle_type']?.toString() ?? 'Car';
+    if (rawType == 'vehicle_other' || rawType == 'Other') {
+      vehicleType.value = 'Car';
+    } else {
+      vehicleType.value = rawType;
+    }
 
     // Recreate PageController so it's never disposed/stale
     try {
@@ -453,18 +458,15 @@ class InformasiUmumController extends GetxController {
       }
 
       // formattedVehicleType: display name used inside question_page.form for record keeping.
-      // When 'other' is selected, use the free-text typed by the user.
+      // When 'Other' is selected, use the free-text typed by the user.
       const vehicleDisplayNames = {
-        'car': 'Car',
-        'bus': 'Bus',
-        'motor': 'Motor',
-        'bicycle': 'Bicycle',
-        'truck': 'Truck',
-        'private_car': 'Private Car',
-        'other': 'Other',
+        'vehicle_car': 'Car',
+        'vehicle_bus': 'Bus',
+        'vehicle_motor': 'Motor',
+        'vehicle_other': 'Other',
       };
       final String formattedVehicleType;
-      if (vehicleType.value == 'other') {
+      if (vehicleType.value == 'vehicle_other') {
         final typed = vehicleOtherController.text.trim();
         formattedVehicleType = typed.isNotEmpty ? typed : 'Other';
       } else {
@@ -472,20 +474,16 @@ class InformasiUmumController extends GetxController {
             vehicleDisplayNames[vehicleType.value] ?? vehicleType.value;
       }
 
-      // rawVehicleType: the exact lowercase value sent directly to backend's root (e.g. 'truck', 'private_car')
-      final String rawVehicleType = vehicleType.value;
-
-      // dbVehicleType: map the selected raw value to the database enums ('Car', 'Bus', 'Motor')
-      // so the database saves it and the GET active visits/access pass endpoints return it successfully.
-      final String dbVehicleType;
-      final typeVal = rawVehicleType.toLowerCase();
-      if (typeVal.contains('bus') || typeVal.contains('truck')) {
-        dbVehicleType = 'Bus';
-      } else if (typeVal.contains('motor') || typeVal.contains('bicycle')) {
-        dbVehicleType = 'Motor';
+      // enumVehicleType: 3 valid enum values backend database accepts at data_visitor[0].vehicle_type.
+      // 'Other' maps to 'Car' since backend has no 'Other' enum.
+      final String enumVehicleType;
+      if (vehicleType.value == 'vehicle_bus') {
+        enumVehicleType = 'Bus';
+      } else if (vehicleType.value == 'vehicle_motor') {
+        enumVehicleType = 'Motor';
       } else {
-        // car, private_car, other, or default -> Car (database fallback)
-        dbVehicleType = 'Car';
+        // vehicle_car, vehicle_other, or any unknown → Car
+        enumVehicleType = 'Car';
       }
 
       // Helper to generate dynamic UUID v4
@@ -871,16 +869,16 @@ class InformasiUmumController extends GetxController {
         "flow": "SubmitPraregister",
         "visitor_role": visitorRole,
         "is_driving": isDriving.value,
-        // Send raw value at root level (e.g. 'truck', 'private_car') as requested by backend team
-        "vehicle_type": isDriving.value ? rawVehicleType : "",
+        // Use enumVehicleType (Car/Bus/Motor) at root level — backend validates against its enum
+        "vehicle_type": isDriving.value ? enumVehicleType : "",
         "vehicle_plate_number": isDriving.value
             ? vehiclePlateController.text
             : "",
         "vehicle_plate": isDriving.value ? vehiclePlateController.text : "",
         "data_visitor": [
           {
-            // Send the mapped database enum ('Car', 'Bus', 'Motor') here so the DB saves it and GET API returns it
-            "vehicle_type": isDriving.value ? dbVehicleType : "",
+            // vehicle_type at data_visitor level also uses enum-safe value
+            "vehicle_type": isDriving.value ? enumVehicleType : "",
             "vehicle_plate": isDriving.value ? vehiclePlateController.text : "",
             "question_page": questionPage,
           },
@@ -929,7 +927,7 @@ class InformasiUmumController extends GetxController {
           errorMsg = responseData['msg']?.toString() ?? 'Bad Request';
           final collection = responseData['collection'];
           if (collection is List && collection.isNotEmpty) {
-            final detail = collection.map((e) => e is Map ? e['message'] : e.toString()).join(', ');
+            final detail = collection.map((e) => e['message']).join(', ');
             throw Exception('$errorMsg: $detail');
           }
         } else if (responseData is String) {
