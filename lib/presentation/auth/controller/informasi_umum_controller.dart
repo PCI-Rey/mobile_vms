@@ -450,8 +450,7 @@ class InformasiUmumController extends GetxController {
         questionPage = jsonDecode(jsonEncode(pageList));
       }
 
-      // Map the internal vehicle key to its proper display name to send in question_page.
-      // The strict enum validation was only on data_visitor[0].vehicle_type (now removed).
+      // formattedVehicleType: full display name used inside question_page.form for record keeping.
       const vehicleDisplayNames = {
         'vehicle_car': 'Car',
         'vehicle_bus': 'Bus',
@@ -463,6 +462,19 @@ class InformasiUmumController extends GetxController {
       };
       final String formattedVehicleType =
           vehicleDisplayNames[vehicleType.value] ?? vehicleType.value;
+
+      // enumVehicleType: mapped to the 3 valid enum values the backend database accepts at
+      // data_visitor[0].vehicle_type. This is what gets stored and returned in the response.
+      // Bicycle/Motor → 'Motor', Bus/Truck → 'Bus', everything else → 'Car'.
+      final String enumVehicleType;
+      final typeVal = vehicleType.value.toLowerCase();
+      if (typeVal.contains('bus') || typeVal.contains('truck')) {
+        enumVehicleType = 'Bus';
+      } else if (typeVal.contains('motor') || typeVal.contains('bicycle')) {
+        enumVehicleType = 'Motor';
+      } else {
+        enumVehicleType = 'Car';
+      }
 
       // Helper to generate dynamic UUID v4
       String generateUuid() {
@@ -847,13 +859,17 @@ class InformasiUmumController extends GetxController {
         "flow": "SubmitPraregister",
         "visitor_role": visitorRole,
         "is_driving": isDriving.value,
-        "vehicle_type": isDriving.value ? formattedVehicleType : "",
+        // Use enumVehicleType (Car/Bus/Motor) at root level — backend validates against its enum
+        "vehicle_type": isDriving.value ? enumVehicleType : "",
         "vehicle_plate_number": isDriving.value
             ? vehiclePlateController.text
             : "",
         "vehicle_plate": isDriving.value ? vehiclePlateController.text : "",
         "data_visitor": [
           {
+            // vehicle_type at data_visitor level also uses enum-safe value
+            "vehicle_type": isDriving.value ? enumVehicleType : "",
+            "vehicle_plate": isDriving.value ? vehiclePlateController.text : "",
             "question_page": questionPage,
           },
         ],
