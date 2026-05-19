@@ -450,17 +450,19 @@ class InformasiUmumController extends GetxController {
         questionPage = jsonDecode(jsonEncode(pageList));
       }
 
-      // Format vehicle type dynamically early so it can be used for both injection and updateAnswer.
-      // The backend database only accepts 'Car', 'Bus', and 'Motor'. We map all UI options to these three valid categories.
-      String formattedVehicleType = 'Car';
-      final typeVal = vehicleType.value.toLowerCase();
-      if (typeVal.contains('car') || typeVal.contains('other')) {
-        formattedVehicleType = 'Car';
-      } else if (typeVal.contains('bus') || typeVal.contains('truck')) {
-        formattedVehicleType = 'Bus';
-      } else if (typeVal.contains('motor') || typeVal.contains('bicycle')) {
-        formattedVehicleType = 'Motor';
-      }
+      // Format vehicle type: convert 'vehicle_X' key to proper display name for the backend.
+      // e.g. 'vehicle_car' -> 'Car', 'vehicle_private_car' -> 'Private Car', 'vehicle_bicycle' -> 'Bicycle'
+      const vehicleTypeMap = {
+        'vehicle_car': 'Car',
+        'vehicle_bus': 'Bus',
+        'vehicle_motor': 'Motor',
+        'vehicle_bicycle': 'Bicycle',
+        'vehicle_truck': 'Truck',
+        'vehicle_private_car': 'Private Car',
+        'vehicle_other': 'Other',
+      };
+      final String formattedVehicleType =
+          vehicleTypeMap[vehicleType.value] ?? vehicleType.value;
 
       // Helper to generate dynamic UUID v4
       String generateUuid() {
