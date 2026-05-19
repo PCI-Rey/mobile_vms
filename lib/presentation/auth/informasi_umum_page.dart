@@ -560,6 +560,16 @@ class _Step3 extends StatelessWidget {
                   underline: const SizedBox.shrink(),
                 );
               }(),
+              // Show free-text input when 'Other' is selected
+              if (ctrl.vehicleType.value == 'vehicle_other') ...[
+                const SizedBox(height: 8),
+                CustomTextField(
+                  controller: ctrl.vehicleOtherController,
+                  label: '',
+                  showLabel: false,
+                  hintText: 'vehicle_other_hint'.tr,
+                ),
+              ],
               _requiredLabel('vehicle_plate'.tr),
               CustomTextField(
                 controller: ctrl.vehiclePlateController,

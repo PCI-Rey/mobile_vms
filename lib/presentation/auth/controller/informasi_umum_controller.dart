@@ -46,6 +46,8 @@ class InformasiUmumController extends GetxController {
   final isDriving = true.obs;
   final vehicleType = 'Car'.obs;
   final vehiclePlateController = TextEditingController();
+  // Free-text input shown when user selects 'Other' as vehicle type
+  final vehicleOtherController = TextEditingController();
 
   // Step 4: Selfie Image
   final selfieImage = Rxn<File>();
@@ -451,14 +453,21 @@ class InformasiUmumController extends GetxController {
       }
 
       // formattedVehicleType: display name used inside question_page.form for record keeping.
+      // When 'Other' is selected, use the free-text typed by the user.
       const vehicleDisplayNames = {
         'vehicle_car': 'Car',
         'vehicle_bus': 'Bus',
         'vehicle_motor': 'Motor',
         'vehicle_other': 'Other',
       };
-      final String formattedVehicleType =
-          vehicleDisplayNames[vehicleType.value] ?? vehicleType.value;
+      final String formattedVehicleType;
+      if (vehicleType.value == 'vehicle_other') {
+        final typed = vehicleOtherController.text.trim();
+        formattedVehicleType = typed.isNotEmpty ? typed : 'Other';
+      } else {
+        formattedVehicleType =
+            vehicleDisplayNames[vehicleType.value] ?? vehicleType.value;
+      }
 
       // enumVehicleType: 3 valid enum values backend database accepts at data_visitor[0].vehicle_type.
       // 'Other' maps to 'Car' since backend has no 'Other' enum.
@@ -985,6 +994,7 @@ class InformasiUmumController extends GetxController {
     visitStartController.dispose();
     visitEndController.dispose();
     vehiclePlateController.dispose();
+    vehicleOtherController.dispose();
     super.onClose();
   }
 }
