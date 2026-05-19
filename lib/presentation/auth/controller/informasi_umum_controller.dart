@@ -472,8 +472,23 @@ class InformasiUmumController extends GetxController {
             vehicleDisplayNames[vehicleType.value] ?? vehicleType.value;
       }
 
-      // rawVehicleType: the exact lowercase value sent directly to backend's data_visitor[0].vehicle_type
+      // rawVehicleType: the exact lowercase value sent directly to backend
       final String rawVehicleType = vehicleType.value;
+
+      // dbVehicleType: map the selected raw value to the database enums ('vehicle_car', 'vehicle_bus', 'vehicle_motor', 'vehicle_other')
+      // so the database saves it and the GET active visits/access pass endpoints return it successfully.
+      final String dbVehicleType;
+      final typeVal = rawVehicleType.toLowerCase();
+      if (typeVal.contains('bus') || typeVal.contains('truck')) {
+        dbVehicleType = 'vehicle_bus';
+      } else if (typeVal.contains('motor') || typeVal.contains('bicycle')) {
+        dbVehicleType = 'vehicle_motor';
+      } else if (typeVal.contains('other')) {
+        dbVehicleType = 'vehicle_other';
+      } else {
+        // car, private_car, or default
+        dbVehicleType = 'vehicle_car';
+      }
 
       // Helper to generate dynamic UUID v4
       String generateUuid() {
@@ -858,8 +873,8 @@ class InformasiUmumController extends GetxController {
         "flow": "SubmitPraregister",
         "visitor_role": visitorRole,
         "is_driving": isDriving.value,
-        // Send raw value directly as requested by backend (e.g. 'car', 'other', 'bicycle')
-        "vehicle_type": isDriving.value ? rawVehicleType : "",
+        // Send database-compatible mapped enum value (e.g. 'vehicle_car', 'vehicle_bus', etc.) so the database saves it
+        "vehicle_type": isDriving.value ? dbVehicleType : "",
         "vehicle_plate_number": isDriving.value
             ? vehiclePlateController.text
             : "",
