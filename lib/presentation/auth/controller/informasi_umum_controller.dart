@@ -458,6 +458,9 @@ class InformasiUmumController extends GetxController {
         'vehicle_car': 'Car',
         'vehicle_bus': 'Bus',
         'vehicle_motor': 'Motor',
+        'vehicle_bicycle': 'Bicycle',
+        'vehicle_truck': 'Truck',
+        'vehicle_private_car': 'Private Car',
         'vehicle_other': 'Other',
       };
       final String formattedVehicleType;
@@ -469,16 +472,40 @@ class InformasiUmumController extends GetxController {
             vehicleDisplayNames[vehicleType.value] ?? vehicleType.value;
       }
 
-      // enumVehicleType: 3 valid enum values backend database accepts at data_visitor[0].vehicle_type.
-      // 'Other' maps to 'Car' since backend has no 'Other' enum.
+      // enumVehicleType: EXACT case-sensitive values required by backend API multiple_option_fields.
+      // If we don't send these exact strings, the backend rejects or silently drops the field.
       final String enumVehicleType;
-      if (vehicleType.value == 'vehicle_bus') {
-        enumVehicleType = 'Bus';
-      } else if (vehicleType.value == 'vehicle_motor') {
-        enumVehicleType = 'Motor';
-      } else {
-        // vehicle_car, vehicle_other, or any unknown → Car
-        enumVehicleType = 'Car';
+      switch (vehicleType.value) {
+        case 'vehicle_car':
+        case 'Car':
+          enumVehicleType = 'car';
+          break;
+        case 'vehicle_bus':
+        case 'Bus':
+          enumVehicleType = 'bus';
+          break;
+        case 'vehicle_motor':
+        case 'Motor':
+          enumVehicleType = 'motor';
+          break;
+        case 'vehicle_bicycle':
+        case 'Bicycle':
+          enumVehicleType = 'Bicycle'; // exact case from API
+          break;
+        case 'vehicle_truck':
+        case 'Truck':
+          enumVehicleType = 'truck';
+          break;
+        case 'vehicle_private_car':
+        case 'Private Car':
+          enumVehicleType = 'private_car';
+          break;
+        case 'vehicle_other':
+        case 'Other':
+          enumVehicleType = 'Other'; // exact case from API
+          break;
+        default:
+          enumVehicleType = 'car';
       }
 
       // Helper to generate dynamic UUID v4
