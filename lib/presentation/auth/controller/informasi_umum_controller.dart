@@ -44,7 +44,7 @@ class InformasiUmumController extends GetxController {
 
   // Step 3: Vehicle/Parking Information
   final isDriving = true.obs;
-  final vehicleType = 'Car'.obs;
+  final vehicleType = 'car'.obs;
   final vehiclePlateController = TextEditingController();
   // Free-text input shown when user selects 'Other' as vehicle type
   final vehicleOtherController = TextEditingController();
@@ -453,18 +453,18 @@ class InformasiUmumController extends GetxController {
       }
 
       // formattedVehicleType: display name used inside question_page.form for record keeping.
-      // When 'Other' is selected, use the free-text typed by the user.
+      // When 'other' is selected, use the free-text typed by the user.
       const vehicleDisplayNames = {
-        'vehicle_car': 'Car',
-        'vehicle_bus': 'Bus',
-        'vehicle_motor': 'Motor',
-        'vehicle_bicycle': 'Bicycle',
-        'vehicle_truck': 'Truck',
-        'vehicle_private_car': 'Private Car',
-        'vehicle_other': 'Other',
+        'car': 'Car',
+        'bus': 'Bus',
+        'motor': 'Motor',
+        'bicycle': 'Bicycle',
+        'truck': 'Truck',
+        'private_car': 'Private Car',
+        'other': 'Other',
       };
       final String formattedVehicleType;
-      if (vehicleType.value == 'vehicle_other') {
+      if (vehicleType.value == 'other') {
         final typed = vehicleOtherController.text.trim();
         formattedVehicleType = typed.isNotEmpty ? typed : 'Other';
       } else {
@@ -472,41 +472,8 @@ class InformasiUmumController extends GetxController {
             vehicleDisplayNames[vehicleType.value] ?? vehicleType.value;
       }
 
-      // enumVehicleType: format expected by the root data_visitor.vehicle_type column.
-      // We use 'vehicle_xxx' because the Guest Pass UI explicitly checks for and cleans this prefix.
-      final String enumVehicleType;
-      switch (vehicleType.value) {
-        case 'vehicle_car':
-        case 'Car':
-          enumVehicleType = 'vehicle_car';
-          break;
-        case 'vehicle_bus':
-        case 'Bus':
-          enumVehicleType = 'vehicle_bus';
-          break;
-        case 'vehicle_motor':
-        case 'Motor':
-          enumVehicleType = 'vehicle_motor';
-          break;
-        case 'vehicle_bicycle':
-        case 'Bicycle':
-          enumVehicleType = 'vehicle_bicycle';
-          break;
-        case 'vehicle_truck':
-        case 'Truck':
-          enumVehicleType = 'vehicle_truck';
-          break;
-        case 'vehicle_private_car':
-        case 'Private Car':
-          enumVehicleType = 'vehicle_private_car';
-          break;
-        case 'vehicle_other':
-        case 'Other':
-          enumVehicleType = 'vehicle_other';
-          break;
-        default:
-          enumVehicleType = 'vehicle_car';
-      }
+      // rawVehicleType: the exact lowercase value sent directly to backend's data_visitor[0].vehicle_type
+      final String rawVehicleType = vehicleType.value;
 
       // Helper to generate dynamic UUID v4
       String generateUuid() {
@@ -891,16 +858,16 @@ class InformasiUmumController extends GetxController {
         "flow": "SubmitPraregister",
         "visitor_role": visitorRole,
         "is_driving": isDriving.value,
-        // Use enumVehicleType (Car/Bus/Motor) at root level — backend validates against its enum
-        "vehicle_type": isDriving.value ? enumVehicleType : "",
+        // Send raw value directly as requested by backend (e.g. 'car', 'other', 'bicycle')
+        "vehicle_type": isDriving.value ? rawVehicleType : "",
         "vehicle_plate_number": isDriving.value
             ? vehiclePlateController.text
             : "",
         "vehicle_plate": isDriving.value ? vehiclePlateController.text : "",
         "data_visitor": [
           {
-            // vehicle_type at data_visitor level also uses enum-safe value
-            "vehicle_type": isDriving.value ? enumVehicleType : "",
+            // Send raw value directly
+            "vehicle_type": isDriving.value ? rawVehicleType : "",
             "vehicle_plate": isDriving.value ? vehiclePlateController.text : "",
             "question_page": questionPage,
           },
