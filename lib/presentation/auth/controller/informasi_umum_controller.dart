@@ -472,7 +472,7 @@ class InformasiUmumController extends GetxController {
             vehicleDisplayNames[vehicleType.value] ?? vehicleType.value;
       }
 
-      // rawVehicleType: the exact lowercase value sent directly to backend
+      // rawVehicleType: the exact lowercase value sent directly to backend's root (e.g. 'truck', 'private_car')
       final String rawVehicleType = vehicleType.value;
 
       // dbVehicleType: map the selected raw value to the database enums ('Car', 'Bus', 'Motor')
@@ -871,14 +871,17 @@ class InformasiUmumController extends GetxController {
         "flow": "SubmitPraregister",
         "visitor_role": visitorRole,
         "is_driving": isDriving.value,
-        // Send database-compatible mapped enum value (e.g. 'vehicle_car', 'vehicle_bus', etc.) so the database saves it
-        "vehicle_type": isDriving.value ? dbVehicleType : "",
+        // Send raw value at root level (e.g. 'truck', 'private_car') as requested by backend team
+        "vehicle_type": isDriving.value ? rawVehicleType : "",
         "vehicle_plate_number": isDriving.value
             ? vehiclePlateController.text
             : "",
         "vehicle_plate": isDriving.value ? vehiclePlateController.text : "",
         "data_visitor": [
           {
+            // Send the mapped database enum ('Car', 'Bus', 'Motor') here so the DB saves it and GET API returns it
+            "vehicle_type": isDriving.value ? dbVehicleType : "",
+            "vehicle_plate": isDriving.value ? vehiclePlateController.text : "",
             "question_page": questionPage,
           },
         ],
