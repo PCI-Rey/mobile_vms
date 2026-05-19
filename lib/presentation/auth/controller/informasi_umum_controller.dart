@@ -475,19 +475,17 @@ class InformasiUmumController extends GetxController {
       // rawVehicleType: the exact lowercase value sent directly to backend
       final String rawVehicleType = vehicleType.value;
 
-      // dbVehicleType: map the selected raw value to the database enums ('vehicle_car', 'vehicle_bus', 'vehicle_motor', 'vehicle_other')
+      // dbVehicleType: map the selected raw value to the database enums ('Car', 'Bus', 'Motor')
       // so the database saves it and the GET active visits/access pass endpoints return it successfully.
       final String dbVehicleType;
       final typeVal = rawVehicleType.toLowerCase();
       if (typeVal.contains('bus') || typeVal.contains('truck')) {
-        dbVehicleType = 'vehicle_bus';
+        dbVehicleType = 'Bus';
       } else if (typeVal.contains('motor') || typeVal.contains('bicycle')) {
-        dbVehicleType = 'vehicle_motor';
-      } else if (typeVal.contains('other')) {
-        dbVehicleType = 'vehicle_other';
+        dbVehicleType = 'Motor';
       } else {
-        // car, private_car, or default
-        dbVehicleType = 'vehicle_car';
+        // car, private_car, other, or default -> Car (database fallback)
+        dbVehicleType = 'Car';
       }
 
       // Helper to generate dynamic UUID v4
