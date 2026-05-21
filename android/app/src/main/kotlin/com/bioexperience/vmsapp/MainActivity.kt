@@ -1,4 +1,4 @@
-package com.example.flutter_visitor_app
+package com.bioexperience.vmsapp
 
 import io.flutter.embedding.android.FlutterActivity
 
