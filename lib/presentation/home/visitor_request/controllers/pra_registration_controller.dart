@@ -30,6 +30,7 @@ class GroupVisitorRow {
   final RxBool isEmployee = false.obs;
   final RxString selectedEmployeeId = ''.obs;
   final RxString selectedEmployeeName = ''.obs;
+  final RxString selectedVisitorRole = ''.obs;
 
   void dispose() {
     fullName.dispose();
@@ -44,7 +45,8 @@ class GroupVisitorRow {
       email.text.trim().isNotEmpty &&
       phone.text.trim().isNotEmpty &&
       organization.text.trim().isNotEmpty &&
-      identityId.text.trim().isNotEmpty;
+      identityId.text.trim().isNotEmpty &&
+      selectedVisitorRole.value.trim().isNotEmpty;
 }
 
 // ─── Controller ───────────────────────────────────────────────────────────────
@@ -62,6 +64,9 @@ class PraRegistrationController extends GetxController {
   final RxBool isLoadingDetail = false.obs;
 
   final Rx<bool?> isGroup = Rx<bool?>(null);
+
+  // ── Visitor Role ──────────────────────────────────────────────────────────
+  final RxString selectedVisitorRole = ''.obs;
 
   final RxString name = ''.obs;
   final RxString email = ''.obs;
@@ -176,6 +181,7 @@ class PraRegistrationController extends GetxController {
     isEmployee.value = false;
     selectedEmployeeId.value = '';
     selectedEmployeeName.value = '';
+    selectedVisitorRole.value = '';
     nameCtrl.clear();
     emailCtrl.clear();
     phoneCtrl.clear();
@@ -355,6 +361,7 @@ class PraRegistrationController extends GetxController {
     isEmployee.value = false;
     selectedEmployeeId.value = '';
     selectedEmployeeName.value = '';
+    selectedVisitorRole.value = '';
     nameCtrl.clear();
     emailCtrl.clear();
     phoneCtrl.clear();
@@ -383,6 +390,7 @@ class PraRegistrationController extends GetxController {
     isEmployee.value = false;
     selectedEmployeeId.value = '';
     selectedEmployeeName.value = '';
+    selectedVisitorRole.value = '';
     nameCtrl.clear();
     emailCtrl.clear();
     phoneCtrl.clear();
@@ -393,7 +401,7 @@ class PraRegistrationController extends GetxController {
     for (var section in formStructure.value?.sectionPageVisitorTypes ?? <SectionPageVisitorType>[]) {
       for (var field in section.praForm) {
         final rem = field.remarks.toLowerCase();
-        if (rem == 'name' || rem == 'email' || rem == 'phone' || rem == 'organization' || rem == 'indentity_id' || rem == 'identity_id') {
+        if (rem == 'name' || rem == 'email' || rem == 'phone' || rem == 'organization' || rem == 'indentity_id' || rem == 'identity_id' || rem == 'visitor_role') {
           field.answerText = '';
         }
       }
@@ -528,7 +536,12 @@ class PraRegistrationController extends GetxController {
         if (groupVisitors.isEmpty) return false;
         return groupVisitors.every((v) => v.isValid);
       } else {
-        return name.value.trim().isNotEmpty && email.value.trim().isNotEmpty && phone.value.trim().isNotEmpty && organization.value.trim().isNotEmpty && identityId.value.trim().isNotEmpty;
+        return name.value.trim().isNotEmpty &&
+            email.value.trim().isNotEmpty &&
+            phone.value.trim().isNotEmpty &&
+            organization.value.trim().isNotEmpty &&
+            identityId.value.trim().isNotEmpty &&
+            selectedVisitorRole.value.trim().isNotEmpty;
       }
     } else if (step == 2) {
       return selectedHostId.value.isNotEmpty && 
@@ -631,7 +644,9 @@ class PraRegistrationController extends GetxController {
       dev.log('[SUBMIT] Starting submission flow...', name: 'PraReg');
 
       Map<String, dynamic> body;
-      const resolvedRole = 'Visitor';
+      final resolvedRole = selectedVisitorRole.value.isNotEmpty
+          ? selectedVisitorRole.value
+          : 'Visitor';
 
       // ── Build question_page for Single (used in data_visitor) ──────────
       final questionPage = detail.sectionPageVisitorTypes.map((section) {
@@ -703,6 +718,9 @@ class PraRegistrationController extends GetxController {
         // ── GROUP MODE ─────────────────────────────────────────────────────
         // Map each visitor to their own entry in list_group to ensure server processes all of them
         final List<Map<String, dynamic>> listGroup = groupVisitors.map((visitor) {
+          final visitorRole = visitor.selectedVisitorRole.value.isNotEmpty
+              ? visitor.selectedVisitorRole.value
+              : 'Visitor';
           final visitorAnswers = {
             'name': visitor.fullName.text.trim(),
             'email': visitor.email.text.trim(),
@@ -712,6 +730,7 @@ class PraRegistrationController extends GetxController {
             'is_employee': visitor.isEmployee.value.toString(),
             'employee_name': visitor.isEmployee.value ? visitor.selectedEmployeeId.value : '',
             'employee': visitor.isEmployee.value ? visitor.selectedEmployeeId.value : '',
+            'visitor_role': visitorRole,
           };
 
           final qp = detail.sectionPageVisitorTypes.map((section) {
@@ -781,6 +800,7 @@ class PraRegistrationController extends GetxController {
             'type_registered': 1,
             'tz': deviceTz,
             'flow': 'Praregister',
+            'visitor_role': visitorRole,
             if (selectedSiteId.value.isNotEmpty) 'registered_site': selectedSiteId.value,
             'group_code': groupCode.value,
             'group_name': groupName.value.trim(),
@@ -864,6 +884,7 @@ class PraRegistrationController extends GetxController {
 
   String _answerTextForRemarks(String remarks, VisitFormField field) {
     switch (remarks.toLowerCase()) {
+      case 'visitor_role': return selectedVisitorRole.value.isNotEmpty ? selectedVisitorRole.value : field.answerText;
       case 'name': return name.value;
       case 'email': return email.value;
       case 'phone': return phone.value;
@@ -886,6 +907,7 @@ class PraRegistrationController extends GetxController {
 
   String _answerTextForRemarksInGroup(String remarks, VisitFormField field, Map<String, String> answers) {
     switch (remarks.toLowerCase()) {
+      case 'visitor_role': return answers['visitor_role'] ?? '';
       case 'name': return answers['name'] ?? '';
       case 'email': return answers['email'] ?? '';
       case 'phone': return answers['phone'] ?? '';

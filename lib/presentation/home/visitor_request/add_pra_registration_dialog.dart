@@ -1177,6 +1177,60 @@ class _Step1VisitorInfo extends StatelessWidget {
                         );
                       }),
 
+                      // Role Dropdown
+                      Obx(() {
+                        final roles =
+                            controller.formStructure.value?.visitorRoles ?? [];
+                        if (roles.isEmpty) return const SizedBox.shrink();
+                        final selected = v.selectedVisitorRole.value;
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            RichText(
+                              text: const TextSpan(
+                                text: 'Role',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.black87,
+                                ),
+                                children: [
+                                  TextSpan(
+                                    text: ' *',
+                                    style: TextStyle(
+                                      color: Colors.red,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Builder(
+                              builder: (ctx) => GestureDetector(
+                                onTap: () async {
+                                  final result =
+                                      await _showVisitorRolePicker(
+                                        ctx,
+                                        roles,
+                                        selected,
+                                      );
+                                  if (result != null) {
+                                    v.selectedVisitorRole.value = result.role;
+                                    controller.updateForm();
+                                  }
+                                },
+                                child: _DropdownTrigger(
+                                  text: selected,
+                                  hint: 'Pilih Role',
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                          ],
+                        );
+                      }),
+
                       Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -1276,6 +1330,95 @@ class _Step1VisitorInfo extends StatelessWidget {
       );
     });
   }
+}
+
+// ── Shared visitor role picker ────────────────────────────────────────────────
+
+Future<VisitorRoleItem?> _showVisitorRolePicker(
+  BuildContext context,
+  List<VisitorRoleItem> items,
+  String currentRole,
+) {
+  return showModalBottomSheet<VisitorRoleItem>(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.white,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+    ),
+    builder: (sheetCtx) => SafeArea(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            margin: const EdgeInsets.symmetric(vertical: 10),
+            width: 36,
+            height: 4,
+            decoration: BoxDecoration(
+              color: AppColors.grey300,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          const Text(
+            'Pilih Role',
+            style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+          ),
+          const SizedBox(height: 8),
+          const Divider(height: 1),
+          ConstrainedBox(
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(context).size.height * 0.45,
+            ),
+            child: ListView.builder(
+              shrinkWrap: true,
+              itemCount: items.length,
+              itemBuilder: (_, i) {
+                final item = items[i];
+                final selected = item.role == currentRole;
+                return InkWell(
+                  onTap: () => Navigator.of(sheetCtx).pop(item),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 14,
+                    ),
+                    color: selected
+                        ? AppColors.primary500.withValues(alpha: 0.08)
+                        : Colors.transparent,
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            item.role,
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: selected
+                                  ? AppColors.primary500
+                                  : Colors.black87,
+                              fontWeight: selected
+                                  ? FontWeight.w600
+                                  : FontWeight.normal,
+                            ),
+                          ),
+                        ),
+                        if (selected)
+                          const Icon(
+                            Icons.check_rounded,
+                            size: 18,
+                            color: AppColors.primary500,
+                          ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+          const SizedBox(height: 8),
+        ],
+      ),
+    ),
+  );
 }
 
 // ── Shared employee picker ──────────────────────────────────────────────────────
@@ -1630,6 +1773,35 @@ class _FormFieldWidget extends StatelessWidget {
   }
 
   Widget _buildInputWidget(BuildContext ctx) {
+    if (field.remarks == 'visitor_role') {
+      return Obx(() {
+        final roles = controller.formStructure.value?.visitorRoles ?? [];
+        final selected = controller.selectedVisitorRole.value;
+        final selectedRole = roles.isNotEmpty
+            ? roles.firstWhereOrNull((r) => r.role == selected)
+            : null;
+        return _buildPickerTrigger(
+          displayText: selectedRole?.role ?? '',
+          hint: 'Pilih Role',
+          onTap: (ctx) async {
+            if (roles.isEmpty) return;
+            final result = await _showPickerSheet<VisitorRoleItem>(
+              ctx,
+              title: 'Pilih Role',
+              items: roles,
+              labelOf: (r) => r.role,
+              isSelected: (r) => r.role == selected,
+            );
+            if (result != null) {
+              controller.selectedVisitorRole.value = result.role;
+              field.answerText = result.role;
+              controller.updateForm();
+            }
+          },
+        );
+      });
+    }
+
     if (field.remarks == 'host') {
       return Obx(() {
         final list = controller.hosts.toList();

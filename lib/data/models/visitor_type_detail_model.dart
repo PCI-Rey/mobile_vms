@@ -1,3 +1,28 @@
+// ─── Visitor Role Item ───────────────────────────────────────────────────────
+
+class VisitorRoleItem {
+  final String role;
+  final bool active;
+  final bool isDefault;
+  final String visitorRolesId;
+
+  const VisitorRoleItem({
+    required this.role,
+    required this.active,
+    required this.isDefault,
+    required this.visitorRolesId,
+  });
+
+  factory VisitorRoleItem.fromJson(Map<String, dynamic> json) {
+    return VisitorRoleItem(
+      role: json['role']?.toString() ?? '',
+      active: json['active'] == true,
+      isDefault: json['is_default'] == true,
+      visitorRolesId: json['visitor_roles_id']?.toString() ?? '',
+    );
+  }
+}
+
 class MultipleOptionField {
   final String id;
   final String name;
@@ -167,8 +192,12 @@ class SectionPageVisitorType {
 
 class VisitorTypeDetailModel {
   final List<SectionPageVisitorType> sectionPageVisitorTypes;
+  final List<VisitorRoleItem> visitorRoles;
 
-  const VisitorTypeDetailModel({required this.sectionPageVisitorTypes});
+  const VisitorTypeDetailModel({
+    required this.sectionPageVisitorTypes,
+    this.visitorRoles = const [],
+  });
 
   factory VisitorTypeDetailModel.fromJson(Map<String, dynamic> json) {
     final sections =
@@ -177,6 +206,14 @@ class VisitorTypeDetailModel {
                 SectionPageVisitorType.fromJson(e as Map<String, dynamic>))
             .toList();
 
-    return VisitorTypeDetailModel(sectionPageVisitorTypes: sections);
+    final roles = (json['visitor_roles'] as List<dynamic>? ?? [])
+        .map((e) => VisitorRoleItem.fromJson(e as Map<String, dynamic>))
+        .where((r) => r.active)
+        .toList();
+
+    return VisitorTypeDetailModel(
+      sectionPageVisitorTypes: sections,
+      visitorRoles: roles,
+    );
   }
 }
