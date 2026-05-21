@@ -6,6 +6,7 @@ import '../informasi_umum_page.dart';
 import '../../dashboard.dart';
 import 'user_controller.dart';
 import '../../home/controllers/guest_home_controller.dart';
+import '../../../core/services/notification_service.dart';
 
 class VerificationCodeController extends GetxController {
   final AuthDatasource authDatasource = AuthDatasource();
@@ -56,6 +57,11 @@ class VerificationCodeController extends GetxController {
         Get.delete<GuestHomeController>(force: true);
         
         Get.offAll(() => const Dashboard());
+
+        // Subscribe to user-specific FCM topic (non-fatal)
+        if (userModel.id.isNotEmpty) {
+          NotificationService.instance.subscribeToUserTopic(userModel.id);
+        }
       } else {
         // Always create a fresh controller (delete old one first if exists)
         Get.delete<InformasiUmumController>(force: true);

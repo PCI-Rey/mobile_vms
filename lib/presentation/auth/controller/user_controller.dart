@@ -6,6 +6,7 @@ import 'login_controller.dart';
 import 'verification_code_controller.dart';
 import 'informasi_umum_controller.dart';
 import '../../home/controllers/guest_home_controller.dart';
+import '../../../core/services/notification_service.dart';
 
 class UserController extends GetxController {
   static UserController get to => Get.find();
@@ -28,6 +29,13 @@ class UserController extends GetxController {
 
   Future<void> clearUser() async {
     isLoggingOut.value = true;
+
+    // Unsubscribe from user-specific FCM topic before clearing user data
+    final userId = user.value?.id;
+    if (userId != null && userId.isNotEmpty) {
+      NotificationService.instance.unsubscribeFromUserTopic(userId);
+    }
+
     final (success, msg, title) = await _authDatasource
         .logout(); // revoke token + clear local session
     user.value = null;

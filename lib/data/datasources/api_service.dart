@@ -63,6 +63,7 @@ class ApiService {
 
       final response = await _dio.post(
         '/$pathApi/on-portal/submit/pra-form',
+        queryParameters: visitorTypeId != null ? {'id': visitorTypeId} : null,
         data: payload,
         options: token != null
             ? Options(headers: {'Authorization': 'Bearer $token'})

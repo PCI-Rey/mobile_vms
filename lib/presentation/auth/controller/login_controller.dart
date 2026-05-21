@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../data/datasources/auth_datasource.dart';
+import '../../../core/services/notification_service.dart';
 import 'user_controller.dart';
 import '../../dashboard.dart';
 
@@ -39,11 +40,16 @@ class LoginController extends GetxController {
 
     isLoading.value = true;
 
-    final (userModel, title, message) = await authDatasource.login(email, password);
+    final (userModel, title, message) = await authDatasource.login(
+      email,
+      password,
+    );
     isLoading.value = false;
 
     if (userModel != null) {
-      final userCtrl = Get.isRegistered<UserController>() ? Get.find<UserController>() : Get.put(UserController());
+      final userCtrl = Get.isRegistered<UserController>()
+          ? Get.find<UserController>()
+          : Get.put(UserController());
       await userCtrl.loadUser();
       Get.snackbar(
         (title ?? 'success').capitalizeFirst ?? 'Success',
@@ -54,6 +60,11 @@ class LoginController extends GetxController {
         duration: const Duration(seconds: 3),
       );
       Get.offAll(() => const Dashboard());
+
+      // Subscribe to user-specific FCM topic (non-fatal)
+      if (userModel.id.isNotEmpty) {
+        NotificationService.instance.subscribeToUserTopic(userModel.id);
+      }
     } else {
       final errorMessage = message ?? 'Gagal Login';
       final errorTitle = (title ?? 'Error').capitalizeFirst ?? 'Error';
@@ -66,7 +77,7 @@ class LoginController extends GetxController {
         usernameError.value = errorMessage;
         passwordError.value = errorMessage;
       }
-      
+
       // Always show snackbar for all login errors for consistency
       Get.snackbar(
         errorTitle,

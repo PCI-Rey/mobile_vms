@@ -24,6 +24,8 @@ class AccessPassModel {
   final String siteId;
   final String visitorName;
   final bool isPraregisterDone;
+  final String visitorRole;
+
 
   AccessPassModel({
     required this.id,
@@ -49,6 +51,7 @@ class AccessPassModel {
     required this.siteId,
     required this.visitorName,
     required this.isPraregisterDone,
+    required this.visitorRole,
   });
 
   factory AccessPassModel.fromRawJson(String str) =>
@@ -105,6 +108,7 @@ class AccessPassModel {
       siteId: json['site_id']?.toString() ?? '',
       visitorName: json['visitor_name']?.toString() ?? '',
       isPraregisterDone: json['is_praregister_done'] == true,
+      visitorRole: json['visitor_role']?.toString() ?? '',
     );
   }
 
@@ -132,6 +136,7 @@ class AccessPassModel {
     'site_id': siteId,
     'visitor_name': visitorName,
     'is_praregister_done': isPraregisterDone,
+    'visitor_role': visitorRole,
   };
 
   /// Parse a datetime string from the API as UTC and convert to device local time.

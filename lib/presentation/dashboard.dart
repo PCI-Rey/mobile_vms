@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_visitor_app/core/services/notification_service.dart';
 import 'home/guest_home_page.dart';
 import 'history/history_page.dart';
 import 'home/home_page.dart';
@@ -8,6 +9,7 @@ import '../core/core.dart';
 import '../core/helper/responsive_helper.dart';
 // import 'widgets/is_block_page.dart';
 import '../data/datasources/auth_datasource.dart';
+import '../data/models/user_model.dart';
 import '../presentation/auth/login_page.dart';
 // import '../presentation/auth/controller/language_controller.dart';
 import 'package:get/get.dart';
@@ -23,12 +25,40 @@ class _DashboardState extends State<Dashboard> {
   int _selectedIndex = 0;
 
   String? _role;
+  UserModel? _user;
   late List<Widget> _widgets = [];
 
   @override
   void initState() {
+    var fcm = NotificationService.instance;
+    // ini bisa diganti dengan visitor id
+    fcm.subscribeToUserTopic("testtopics");
     super.initState();
     _loadRoleAndSetup();
+  }
+
+  bool _checkIsGuest(String role, UserModel? user) {
+    if (user == null) return true;
+    final r = role.toLowerCase();
+    // Jika role explicitly guest, visitor, atau driver
+    if (r == 'guest' || r == 'visitor' || r == 'driver') return true;
+    // Jika user memiliki visitor_code atau invitation_code
+    if (user.invitationCode != null && user.invitationCode!.isNotEmpty)
+      return true;
+    if (user.visitorCode != null && user.visitorCode!.isNotEmpty) return true;
+
+    // Default fallback: semua role yang bukan role internal employee dianggap guest/visitor
+    final employeeRoles = [
+      'operator',
+      'employee',
+      'admin',
+      'superadmin',
+      'staff',
+    ];
+    if (!employeeRoles.contains(r)) {
+      return true;
+    }
+    return false;
   }
 
   Future<void> _loadRoleAndSetup() async {
@@ -46,12 +76,13 @@ class _DashboardState extends State<Dashboard> {
 
     setState(() {
       _role = role;
+      _user = user;
     });
 
-    _setupByRole(role);
+    _setupByRole(role, user);
   }
 
-  void _setupByRole(String role) {
+  void _setupByRole(String role, UserModel user) {
     List<Widget> widgets = [
       const HomePage(),
       ParkingPage(),
@@ -59,7 +90,7 @@ class _DashboardState extends State<Dashboard> {
       const ProfilePage(),
     ];
 
-    if (role == 'guest' || role == 'visitor') {
+    if (_checkIsGuest(role, user)) {
       widgets = [const GuestHomePage(), const ProfilePage()];
     } else if (role == 'operator') {
       widgets = [
@@ -76,31 +107,55 @@ class _DashboardState extends State<Dashboard> {
     });
   }
 
-  List<BottomNavigationBarItem> _getNavItems(String role) {
+  List<BottomNavigationBarItem> _getNavItems(String role, UserModel? user) {
     final items = [
       BottomNavigationBarItem(
-        icon: Assets.icons.home.image(height: rw(context, 24), width: rw(context, 24)),
-        activeIcon: Assets.icons.homeSelected.image(height: rw(context, 24), width: rw(context, 24)),
+        icon: Assets.icons.home.image(
+          height: rw(context, 24),
+          width: rw(context, 24),
+        ),
+        activeIcon: Assets.icons.homeSelected.image(
+          height: rw(context, 24),
+          width: rw(context, 24),
+        ),
         label: 'home'.tr,
       ),
       BottomNavigationBarItem(
-        icon: Assets.icons.parking.image(height: rw(context, 24), width: rw(context, 24)),
-        activeIcon: Assets.icons.parkingSelected.image(height: rw(context, 24), width: rw(context, 24)),
+        icon: Assets.icons.parking.image(
+          height: rw(context, 24),
+          width: rw(context, 24),
+        ),
+        activeIcon: Assets.icons.parkingSelected.image(
+          height: rw(context, 24),
+          width: rw(context, 24),
+        ),
         label: 'parking'.tr,
       ),
       BottomNavigationBarItem(
-        icon: Assets.icons.history.image(height: rw(context, 24), width: rw(context, 24)),
-        activeIcon: Assets.icons.historySelected.image(height: rw(context, 24), width: rw(context, 24)),
+        icon: Assets.icons.history.image(
+          height: rw(context, 24),
+          width: rw(context, 24),
+        ),
+        activeIcon: Assets.icons.historySelected.image(
+          height: rw(context, 24),
+          width: rw(context, 24),
+        ),
         label: 'history'.tr,
       ),
       BottomNavigationBarItem(
-        icon: Assets.icons.profile.image(height: rw(context, 24), width: rw(context, 24)),
-        activeIcon: Assets.icons.profileSelected.image(height: rw(context, 24), width: rw(context, 24)),
+        icon: Assets.icons.profile.image(
+          height: rw(context, 24),
+          width: rw(context, 24),
+        ),
+        activeIcon: Assets.icons.profileSelected.image(
+          height: rw(context, 24),
+          width: rw(context, 24),
+        ),
         label: 'profile'.tr,
       ),
     ];
 
-    if (role == 'guest' || role == 'visitor') {
+    if (_checkIsGuest(role, user)) {
       return [items[0], items[3]];
     }
 
@@ -109,11 +164,11 @@ class _DashboardState extends State<Dashboard> {
 
   @override
   Widget build(BuildContext context) {
-    if (_role == null) {
+    if (_role == null || _user == null) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
-    final bool isGuest = _role == 'guest' || _role == 'visitor';
+    final bool isGuest = _checkIsGuest(_role!, _user);
 
     return Scaffold(
       backgroundColor: isGuest ? const Color(0xFF1976D2) : Colors.white,
@@ -150,10 +205,8 @@ class _DashboardState extends State<Dashboard> {
                     fontSize: rfs(context, 12),
                     fontWeight: FontWeight.bold,
                   ),
-                  unselectedLabelStyle: TextStyle(
-                    fontSize: rfs(context, 12),
-                  ),
-                  items: _getNavItems(_role!),
+                  unselectedLabelStyle: TextStyle(fontSize: rfs(context, 12)),
+                  items: _getNavItems(_role!, _user),
                 ),
               ),
             ),

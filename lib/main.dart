@@ -6,11 +6,22 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'presentation/auth/controller/user_controller.dart';
 import 'presentation/auth/controller/language_controller.dart';
 import 'core/localization/app_translations.dart';
 import 'core/core.dart';
+import 'core/services/notification_service.dart';
+import 'firebase_options.dart';
 // import 'routes/routes.dart';
+
+// FCM Background message handler — MUST be top-level function
+@pragma('vm:entry-point')
+Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  debugPrint('🔔 [FCM] Background message: ${message.messageId}');
+}
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -19,7 +30,22 @@ void main() async {
   await Hive.openBox('authBox');
   await Hive.openBox('dashboardBox');
   await initializeDateFormatting('id_ID', null);
-  
+
+  // Initialize Firebase
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+
+  // Set FCM background handler (must be before runApp)
+  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+
+  // Initialize Local Notification Service (non-fatal if fails)
+  try {
+    await NotificationService.instance.initialize();
+  } catch (e) {
+    debugPrint('⚠️ [NotificationService] Init failed: $e');
+  }
+
   // Inject Controllers
   Get.put(UserController());
   Get.put(LanguageController());

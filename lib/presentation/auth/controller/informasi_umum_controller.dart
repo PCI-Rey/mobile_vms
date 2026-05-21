@@ -14,6 +14,7 @@ import '../../../data/models/user_model.dart';
 import '../../dashboard.dart';
 import 'user_controller.dart';
 import '../../home/controllers/guest_home_controller.dart';
+import '../../../core/services/notification_service.dart';
 
 class InformasiUmumController extends GetxController {
   final AuthDatasource authDatasource = AuthDatasource();
@@ -491,8 +492,12 @@ class InformasiUmumController extends GetxController {
         final random = Random();
         const hexDigits = '0123456789abcdef';
         String randomHex(int length) {
-          return List.generate(length, (_) => hexDigits[random.nextInt(16)]).join();
+          return List.generate(
+            length,
+            (_) => hexDigits[random.nextInt(16)],
+          ).join();
         }
+
         return '${randomHex(8)}-${randomHex(4)}-4${randomHex(3)}-${hexDigits[random.nextInt(4) + 8]}${randomHex(3)}-${randomHex(12)}';
       }
 
@@ -558,15 +563,21 @@ class InformasiUmumController extends GetxController {
                   if (field['remarks'] == 'is_driving') {
                     field['answer_text'] = isDriving.value.toString();
                   } else if (field['remarks'] == 'vehicle_type') {
-                    field['answer_text'] = isDriving.value ? formattedVehicleType : '';
+                    field['answer_text'] = isDriving.value
+                        ? formattedVehicleType
+                        : '';
                   } else if (field['remarks'] == 'vehicle_plate') {
-                    field['answer_text'] = isDriving.value ? vehiclePlateController.text : '';
+                    field['answer_text'] = isDriving.value
+                        ? vehiclePlateController.text
+                        : '';
                   }
                 }
               }
             } else {
               // Page exists but form is empty — inject our fields into it
-              debugPrint('Vehicle page found with empty form, filling in fields...');
+              debugPrint(
+                'Vehicle page found with empty form, filling in fields...',
+              );
               page['form'] = vehicleFormFields;
             }
             vehiclePageFilled = true;
@@ -577,7 +588,9 @@ class InformasiUmumController extends GetxController {
 
       if (!vehiclePageFilled) {
         // No vehicle page found at all — add a new one
-        debugPrint('No vehicle page found in questionPage, injecting new Vehicle/Parking Information page...');
+        debugPrint(
+          'No vehicle page found in questionPage, injecting new Vehicle/Parking Information page...',
+        );
         questionPage.add({
           "id": generateUuid(),
           "sort": questionPage.length,
@@ -870,16 +883,18 @@ class InformasiUmumController extends GetxController {
         "visitor_role": visitorRole,
         "is_driving": isDriving.value,
         // Use enumVehicleType (Car/Bus/Motor) at root level — backend validates against its enum
-        "vehicle_type": isDriving.value ? enumVehicleType : "",
+        "vehicle_type": isDriving.value ? enumVehicleType : null,
         "vehicle_plate_number": isDriving.value
             ? vehiclePlateController.text
-            : "",
-        "vehicle_plate": isDriving.value ? vehiclePlateController.text : "",
+            : null,
+        "vehicle_plate": isDriving.value ? vehiclePlateController.text : null,
         "data_visitor": [
           {
             // vehicle_type at data_visitor level also uses enum-safe value
-            "vehicle_type": isDriving.value ? enumVehicleType : "",
-            "vehicle_plate": isDriving.value ? vehiclePlateController.text : "",
+            "vehicle_type": isDriving.value ? enumVehicleType : null,
+            "vehicle_plate": isDriving.value
+                ? vehiclePlateController.text
+                : null,
             "question_page": questionPage,
           },
         ],
@@ -890,7 +905,14 @@ class InformasiUmumController extends GetxController {
       // Chunk the payload since debugPrint has a character limit
       const chunkSize = 800;
       for (int i = 0; i < payloadJson.length; i += chunkSize) {
-        debugPrint(payloadJson.substring(i, i + chunkSize > payloadJson.length ? payloadJson.length : i + chunkSize));
+        debugPrint(
+          payloadJson.substring(
+            i,
+            i + chunkSize > payloadJson.length
+                ? payloadJson.length
+                : i + chunkSize,
+          ),
+        );
       }
 
       // Submit form — retry sampai 2x karena backend kadang butuh percobaan kedua
@@ -899,6 +921,7 @@ class InformasiUmumController extends GetxController {
         try {
           submitResponse = await apiService.submitPraForm(
             payload,
+            visitorTypeId: visitorTypeId,
             token: userModel.token,
           );
           if (submitResponse.statusCode == 200) break; // sukses, stop retry
@@ -939,7 +962,9 @@ class InformasiUmumController extends GetxController {
       final submitMsg = responseData is Map
           ? responseData['msg']?.toString() ?? 'Form berhasil dikirim'
           : 'Form berhasil dikirim';
-      final submitTitle = responseData is Map ? responseData['title']?.toString() : null;
+      final submitTitle = responseData is Map
+          ? responseData['title']?.toString()
+          : null;
 
       // After submit success, re-check invitation code to get the token
       final (newUser, isPraregisterDone, _, error, checkTitle) =
@@ -963,6 +988,11 @@ class InformasiUmumController extends GetxController {
         Get.delete<GuestHomeController>(force: true);
 
         Get.offAll(() => const Dashboard());
+
+        // Subscribe to user-specific FCM topic (non-fatal)
+        if (newUser.id.isNotEmpty) {
+          NotificationService.instance.subscribeToUserTopic(newUser.id);
+        }
       } else {
         // Submit sukses tapi token belum tersedia
         throw Exception(

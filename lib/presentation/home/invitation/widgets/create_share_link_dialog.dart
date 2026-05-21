@@ -47,8 +47,8 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
   bool isExpiredEnabled = false;
   String? selectedExpiredMinutes = '0';
 
-  bool isQuotaEnabled = false;
-  final TextEditingController quotaCtrl = TextEditingController(text: '0');
+  bool isQuotaEnabled = true;
+  final TextEditingController quotaCtrl = TextEditingController(text: '');
 
   bool isSingleUse = false;
 
@@ -340,16 +340,12 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
                                 setState(() => selectedExpiredMinutes = v),
                           ),
                         ),
-                        _buildFieldRow(
+                        _buildRequiredFieldRow(
                           label: 'Visitor Quota Limit',
-                          isEnabled: isSingleUse ? true : isQuotaEnabled,
-                          onToggle: isSingleUse
-                              ? (v) {} // Disable toggle if single use is active
-                              : (v) => setState(() => isQuotaEnabled = v),
                           input: _buildTextField(
-                            hint: '0',
+                            hint: 'Cannot be empty',
                             controller: quotaCtrl,
-                            enabled: isSingleUse ? false : isQuotaEnabled,
+                            enabled: !isSingleUse,
                             keyboardType: TextInputType.number,
                           ),
                         ),
@@ -471,6 +467,41 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
                     0xFF005596,
                   ).withValues(alpha: 0.5),
                   activeThumbColor: const Color(0xFF005596),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          input,
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRequiredFieldRow({
+    required String label,
+    required Widget input,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Text(
+                label,
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 13,
+                ),
+              ),
+              const Text(
+                ' *',
+                style: TextStyle(
+                  color: Colors.red,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 13,
                 ),
               ),
             ],
@@ -705,7 +736,23 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
   }
 
   Future<void> _submit(bool sendEmail) async {
-    // Validation
+    // Validation — Visitor Quota Limit is required
+    final quotaValue = int.tryParse(quotaCtrl.text.trim());
+    if (!isSingleUse &&
+        (quotaCtrl.text.trim().isEmpty ||
+            quotaValue == null ||
+            quotaValue < 1)) {
+      Get.snackbar(
+        'Required',
+        'Visitor Quota Limit is required and must be at least 1',
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+        snackPosition: SnackPosition.TOP,
+        margin: const EdgeInsets.all(12),
+      );
+      return;
+    }
+
     if (!isHostEnabled &&
         !isSiteEnabled &&
         !isVisitorTypeEnabled &&
@@ -779,7 +826,7 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
         ),
       if (isExpiredEnabled)
         'expired_number': int.tryParse(selectedExpiredMinutes ?? '0') ?? 0,
-      if (isQuotaEnabled) 'max_usage': int.tryParse(quotaCtrl.text) ?? 0,
+      'max_usage': isSingleUse ? 1 : (int.tryParse(quotaCtrl.text.trim()) ?? 1),
       'is_single_use': isSingleUse,
       if (email != null) 'email': email,
       'tz': 'Asia/Jakarta',

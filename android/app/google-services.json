@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "321260026726",
+    "project_id": "bio-vms-bi26",
+    "storage_bucket": "bio-vms-bi26.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:321260026726:android:07c1d09ed46365dfb766a7",
+        "android_client_info": {
+          "package_name": "com.bioexperience.vmsapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCs8miAa-olicUPcbVYol3ymz6-wqaDTOg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

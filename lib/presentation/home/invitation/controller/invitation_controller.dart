@@ -328,16 +328,15 @@ class InvitationController extends GetxController {
         fetchDashboardShareLinks(); // Refresh dashboard list
 
         // Return the created item if available in response
+        Map<String, dynamic>? createdItem;
         if (response.data['item'] != null) {
-          return Map<String, dynamic>.from(response.data['item']);
+          createdItem = Map<String, dynamic>.from(response.data['item']);
+        } else if (shareLinks.isNotEmpty) {
+          createdItem = shareLinks.first;
         }
 
-        // Fallback: get the first item from the refreshed list
-        if (shareLinks.isNotEmpty) {
-          return shareLinks.first;
-        }
-
-        return {}; // Success but no item data
+        // FCM notifications (create + expiry warning) dikirim oleh backend
+        return createdItem ?? {}; // Success but no item data
       }
       return null;
     } catch (e) {
@@ -351,6 +350,8 @@ class InvitationController extends GetxController {
       throw 'Failed to create share link';
     }
   }
+
+
 
   Future<bool> deleteShareLinkAction(String id) async {
     final user = _hive.getUser();

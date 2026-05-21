@@ -8,7 +8,6 @@ import '../../../../data/datasources/hive_service.dart';
 import '../../../../data/models/visitor_type_model.dart';
 import '../../../../data/models/visitor_type_detail_model.dart';
 import '../../invitation/controller/invitation_controller.dart';
-import 'package:flutter_timezone/flutter_timezone.dart';
 
 // ─── Simple model for dropdown items (Employee, Host, Site) ──────────────────
 
@@ -635,8 +634,12 @@ class PraRegistrationController extends GetxController {
     try {
       String deviceTz = 'Asia/Jakarta';
       try {
-        final tzInfo = await FlutterTimezone.getLocalTimezone();
-        deviceTz = tzInfo.identifier;
+        // Use UTC offset to derive timezone string (no external package needed)
+        final offset = DateTime.now().timeZoneOffset;
+        final hours = offset.inHours;
+        if (hours == 7) { deviceTz = 'Asia/Jakarta'; }
+        else if (hours == 8) { deviceTz = 'Asia/Makassar'; }
+        else if (hours == 9) { deviceTz = 'Asia/Jayapura'; }
       } catch (e) {
         debugPrint('Timezone error: $e');
       }

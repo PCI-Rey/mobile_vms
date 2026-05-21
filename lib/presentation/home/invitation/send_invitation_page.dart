@@ -250,17 +250,6 @@ class _SendInvitationPageState extends State<SendInvitationPage> {
                     },
                     child: _buildFilterChip(context, 'Filter'),
                   ),
-                  hSpace(context, 10),
-                  Obx(() {
-                    final inviteCtrl = Get.find<InvitationController>();
-                    return GestureDetector(
-                      onTap: () => inviteCtrl.toggleSort(),
-                      child: _buildSortChip(
-                        context,
-                        inviteCtrl.isNewestFirst.value ? 'Newest' : 'Oldest',
-                      ),
-                    );
-                  }),
                   if (selectedGedung != null) ...[
                     hSpace(context, 10),
                     _buildFilterValueChip(
@@ -511,6 +500,8 @@ class _SendInvitationPageState extends State<SendInvitationPage> {
                 item.visitorStatus,
                 badgeColor: statusColor,
               ),
+              if (item.visitorRole.isNotEmpty)
+                _buildDetailRow(context, 'Visitor Role', item.visitorRole),
               _buildDetailRow(context, 'Host', item.hostName),
               _buildDetailRow(context, 'Location', item.sitePlaceName),
               _buildDetailRow(context, 'Agenda', item.agenda),
@@ -667,32 +658,6 @@ class _SendInvitationPageState extends State<SendInvitationPage> {
     );
   }
 
-  Widget _buildSortChip(BuildContext context, String label) {
-    return Container(
-      height: rh(context, 32),
-      padding: EdgeInsets.symmetric(horizontal: rw(context, 12)),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border.all(color: Colors.grey.shade300),
-        borderRadius: BorderRadius.circular(rw(context, 50)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            FontAwesomeIcons.sort,
-            size: rw(context, 12),
-            color: Colors.grey,
-          ),
-          hSpace(context, 6),
-          Text(
-            label,
-            style: TextStyle(fontSize: rfs(context, 12), color: Colors.black87),
-          ),
-        ],
-      ),
-    );
-  }
 
   Widget _buildFilterValueChip(
     BuildContext context,
