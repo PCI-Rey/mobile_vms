@@ -7,6 +7,8 @@ import '../dashboard.dart';
 import 'controller/user_controller.dart';
 import '../home/controllers/guest_home_controller.dart';
 import '../../core/services/notification_service.dart';
+import '../../data/datasources/hive_service.dart';
+import 'verification_code_page.dart';
 
 class WaitingApprovalPage extends StatefulWidget {
   final String invitationCode;
@@ -22,23 +24,84 @@ class WaitingApprovalPage extends StatefulWidget {
   State<WaitingApprovalPage> createState() => _WaitingApprovalPageState();
 }
 
-class _WaitingApprovalPageState extends State<WaitingApprovalPage> {
+class _WaitingApprovalPageState extends State<WaitingApprovalPage>
+    with TickerProviderStateMixin {
   final AuthDatasource _authDatasource = AuthDatasource();
   final RxBool _isChecking = false.obs;
+  final RxBool _isApproved = false.obs;
+
+  late final AnimationController _animationController;
+  late final AnimationController _pulseController;
+  late final AnimationController _successController;
+  late final Animation<double> _pulseAnimation;
+  late final Animation<double> _scaleAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 4),
+    )..repeat();
+
+    _pulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1200),
+    );
+    _pulseAnimation = Tween<double>(begin: 1.0, end: 1.25).animate(
+      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
+    );
+
+    _successController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1000),
+    );
+    _scaleAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _successController, curve: Curves.elasticOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    _pulseController.dispose();
+    _successController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _minimizeForm() async {
+    final hive = HiveService();
+    final forms = hive.getMinimizedForms();
+
+    final index = forms.indexWhere((e) => e['code'] == widget.invitationCode);
+    if (index >= 0) {
+      forms[index]['message'] = widget.message;
+      forms[index]['timestamp'] = DateTime.now().millisecondsSinceEpoch;
+    } else {
+      forms.add({
+        'code': widget.invitationCode,
+        'message': widget.message,
+        'timestamp': DateTime.now().millisecondsSinceEpoch,
+      });
+    }
+
+    await hive.saveMinimizedForms(forms);
+    Get.offAll(() => const VerificationCodePage());
+  }
 
   Future<void> _checkCurrentStatus() async {
+    if (_isApproved.value) return;
     _isChecking.value = true;
     try {
       final (userModel, isPraregisterDone, rawData, message, title) =
           await _authDatasource.checkVisitorCode(widget.invitationCode);
 
       if (userModel != null && isPraregisterDone) {
-        // Automatically login the user
-        await _authDatasource.saveAuthData(userModel);
-        final userCtrl = Get.isRegistered<UserController>()
-            ? Get.find<UserController>()
-            : Get.put(UserController());
-        await userCtrl.loadUser();
+        // Trigger success animations and redirecting button state
+        _animationController.stop();
+        _isApproved.value = true;
+        _pulseController.repeat(reverse: true);
+        _successController.forward();
 
         Get.snackbar(
           (title ?? 'success').capitalizeFirst ?? 'Success',
@@ -48,6 +111,16 @@ class _WaitingApprovalPageState extends State<WaitingApprovalPage> {
           snackPosition: SnackPosition.TOP,
           duration: const Duration(seconds: 4),
         );
+
+        // Wait exactly 3 seconds to let user see checkmark animation and redirecting state
+        await Future.delayed(const Duration(seconds: 3));
+
+        // Automatically login the user
+        await _authDatasource.saveAuthData(userModel);
+        final userCtrl = Get.isRegistered<UserController>()
+            ? Get.find<UserController>()
+            : Get.put(UserController());
+        await userCtrl.loadUser();
 
         // Ensure guest home data is fresh
         Get.delete<GuestHomeController>(force: true);
@@ -102,55 +175,84 @@ class _WaitingApprovalPageState extends State<WaitingApprovalPage> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    vSpace(context, 40),
+                    vSpace(context, 10),
 
                     // Glowing Illustration
-                    Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        // Soft outer glow circle
-                        Container(
-                          width: rw(context, 160),
-                          height: rw(context, 160),
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: AppColors.primary500.withValues(alpha: 0.08),
-                          ),
-                        ),
-                        // Inner glow circle
-                        Container(
-                          width: rw(context, 120),
-                          height: rw(context, 120),
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: AppColors.primary500.withValues(alpha: 0.12),
-                          ),
-                        ),
-                        // Premium gold-themed hourglass container
-                        Container(
-                          width: rw(context, 85),
-                          height: rw(context, 85),
-                          decoration: const BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: Colors.white,
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black12,
-                                blurRadius: 10,
-                                offset: Offset(0, 4),
-                              ),
-                            ],
-                          ),
-                          child: Icon(
-                            Icons.history_toggle_off_rounded,
-                            color: AppColors.primary500,
-                            size: rw(context, 45),
-                          ),
-                        ),
-                      ],
-                    ),
+                    Obx(() {
+                      final isApproved = _isApproved.value;
+                      final primaryColor = isApproved ? Colors.green : AppColors.primary500;
 
-                    vSpace(context, 32),
+                      return Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          // Soft outer glow circle (with pulsing animation when approved!)
+                          isApproved
+                              ? ScaleTransition(
+                                  scale: _pulseAnimation,
+                                  child: Container(
+                                    width: rw(context, 125),
+                                    height: rw(context, 125),
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      color: Colors.green.withValues(alpha: 0.08),
+                                    ),
+                                  ),
+                                )
+                              : Container(
+                                  width: rw(context, 125),
+                                  height: rw(context, 125),
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: AppColors.primary500.withValues(alpha: 0.08),
+                                  ),
+                                ),
+                          // Inner glow circle
+                          Container(
+                            width: rw(context, 92),
+                            height: rw(context, 92),
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: primaryColor.withValues(alpha: 0.12),
+                            ),
+                          ),
+                          // Premium themed container
+                          Container(
+                            width: rw(context, 65),
+                            height: rw(context, 65),
+                            decoration: const BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: Colors.white,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black12,
+                                  blurRadius: 10,
+                                  offset: Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            child: isApproved
+                                ? ScaleTransition(
+                                    scale: _scaleAnimation,
+                                    child: Icon(
+                                      Icons.check_rounded,
+                                      color: Colors.green.shade600,
+                                      size: rw(context, 38),
+                                    ),
+                                  )
+                                : RotationTransition(
+                                    turns: _animationController,
+                                    child: Icon(
+                                      Icons.history_toggle_off_rounded,
+                                      color: AppColors.primary500,
+                                      size: rw(context, 35),
+                                    ),
+                                  ),
+                          ),
+                        ],
+                      );
+                    }),
+
+                    vSpace(context, 15),
 
                     // Badge status
                     Container(
@@ -178,7 +280,7 @@ class _WaitingApprovalPageState extends State<WaitingApprovalPage> {
                       ),
                     ),
 
-                    vSpace(context, 20),
+                    vSpace(context, 10),
 
                     // Main title (Indonesian & English)
                     Text(
@@ -201,7 +303,7 @@ class _WaitingApprovalPageState extends State<WaitingApprovalPage> {
                       ),
                     ),
 
-                    vSpace(context, 20),
+                    vSpace(context, 10),
 
                     // Description card (shows dynamic API response)
                     Container(
@@ -231,7 +333,7 @@ class _WaitingApprovalPageState extends State<WaitingApprovalPage> {
                       ),
                     ),
 
-                    vSpace(context, 28),
+                    vSpace(context, 15),
 
                     // Step Tracker Card (Beautiful timeline explanation)
                     Container(
@@ -253,7 +355,7 @@ class _WaitingApprovalPageState extends State<WaitingApprovalPage> {
                               color: const Color(0xFF1E293B),
                             ),
                           ),
-                          vSpace(context, 16),
+                          vSpace(context, 10),
                           _buildTimelineStep(
                             context: context,
                             icon: Icons.check_circle_rounded,
@@ -312,6 +414,37 @@ class _WaitingApprovalPageState extends State<WaitingApprovalPage> {
                 children: [
                   // Refresh/Check Status Button
                   Obx(() {
+                    if (_isApproved.value) {
+                      return ElevatedButton.icon(
+                        onPressed: null, // Disable actions while redirecting
+                        icon: const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2.0,
+                          ),
+                        ),
+                        label: const Text(
+                          'Redirecting...',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                          ),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.green.shade600,
+                          foregroundColor: Colors.white,
+                          disabledBackgroundColor: Colors.green.shade600,
+                          minimumSize: Size(double.infinity, rh(context, 48)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(rw(context, 12)),
+                          ),
+                          elevation: 0,
+                        ),
+                      );
+                    }
+
                     if (_isChecking.value) {
                       return Container(
                         width: double.infinity,
@@ -353,9 +486,9 @@ class _WaitingApprovalPageState extends State<WaitingApprovalPage> {
 
                   vSpace(context, 12),
 
-                  // Back to verification page button
+                  // Minimize button
                   OutlinedButton(
-                    onPressed: () => Get.back(),
+                    onPressed: _minimizeForm,
                     style: OutlinedButton.styleFrom(
                       foregroundColor: const Color(0xFF64748B),
                       side: BorderSide(color: Colors.grey.shade300),
@@ -365,7 +498,7 @@ class _WaitingApprovalPageState extends State<WaitingApprovalPage> {
                       ),
                     ),
                     child: const Text(
-                      'Kembali / Back',
+                      'Minimize / Sembunyikan',
                       style: TextStyle(fontWeight: FontWeight.w600),
                     ),
                   ),

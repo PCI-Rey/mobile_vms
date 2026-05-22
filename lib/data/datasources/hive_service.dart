@@ -67,4 +67,18 @@ class HiveService {
     final box = Hive.box(dashboardBoxName);
     await box.clear();
   }
+
+  // --- Minimized Forms ---
+
+  Future<void> saveMinimizedForms(List<Map<String, dynamic>> forms) async {
+    final box = Hive.box(dashboardBoxName);
+    await box.put('minimized_forms', forms);
+  }
+
+  List<Map<String, dynamic>> getMinimizedForms() {
+    final box = Hive.box(dashboardBoxName);
+    final List<dynamic>? rawList = box.get('minimized_forms');
+    if (rawList == null) return [];
+    return rawList.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+  }
 }

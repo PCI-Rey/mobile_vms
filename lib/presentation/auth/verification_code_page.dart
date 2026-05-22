@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../core/helper/responsive_helper.dart';
 import 'controller/verification_code_controller.dart';
+import 'waiting_approval_page.dart';
+import 'login_page.dart';
 
 class VerificationCodePage extends StatefulWidget {
   const VerificationCodePage({super.key});
@@ -26,6 +28,35 @@ class _VerificationCodePageState extends State<VerificationCodePage> {
 
     controller.invitationCodeController.clear();
     controller.codeError.value = null;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      controller.loadMinimizedForms();
+    });
+  }
+
+  void _confirmDelete(BuildContext context, String code) {
+    showDialog(
+      context: context,
+      builder: (dialogCtx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Delete Minimized Form'),
+        content: const Text(
+          'Are you sure you want to delete this minimized form?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogCtx),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(dialogCtx);
+              controller.removeMinimizedForm(code);
+            },
+            child: const Text('Delete', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -92,62 +123,62 @@ class _VerificationCodePageState extends State<VerificationCodePage> {
                           mainAxisSize: MainAxisSize.min,
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                          // Logo Circle
-                          Container(
-                            width: sw * 0.28,
-                            height: sw * 0.28,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: Colors.white,
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.12),
-                                  blurRadius: 20,
-                                  offset: const Offset(0, 8),
-                                ),
-                                BoxShadow(
-                                  color: Colors.white.withValues(alpha: 0.3),
-                                  blurRadius: 30,
-                                  spreadRadius: 4,
-                                ),
-                              ],
-                            ),
-                            padding: EdgeInsets.all(sw * 0.05),
-                            child: Image.asset(
-                              'assets/images/VMS.png',
-                              fit: BoxFit.contain,
-                            ),
-                          ),
-
-                          SizedBox(height: sw * 0.05),
-
-                          FittedBox(
-                            fit: BoxFit.scaleDown,
-                            child: Text(
-                              'VIRTUAL MANAGEMENT SYSTEM',
-                              style: TextStyle(
+                            // Logo Circle
+                            Container(
+                              width: sw * 0.28,
+                              height: sw * 0.28,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
                                 color: Colors.white,
-                                fontSize: rfs(context, 20),
-                                fontWeight: FontWeight.w800,
-                                letterSpacing: 1.2,
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withValues(alpha: 0.12),
+                                    blurRadius: 20,
+                                    offset: const Offset(0, 8),
+                                  ),
+                                  BoxShadow(
+                                    color: Colors.white.withValues(alpha: 0.3),
+                                    blurRadius: 30,
+                                    spreadRadius: 4,
+                                  ),
+                                ],
+                              ),
+                              padding: EdgeInsets.all(sw * 0.05),
+                              child: Image.asset(
+                                'assets/images/VMS.png',
+                                fit: BoxFit.contain,
                               ),
                             ),
-                          ),
 
-                          SizedBox(height: sw * 0.015),
+                            SizedBox(height: sw * 0.05),
 
-                          Text(
-                            'verify_code'.tr,
-                            style: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.75),
-                              fontSize: rfs(context, 13),
-                              fontWeight: FontWeight.w400,
+                            FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: Text(
+                                'VIRTUAL MANAGEMENT SYSTEM',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: rfs(context, 20),
+                                  fontWeight: FontWeight.w800,
+                                  letterSpacing: 1.2,
+                                ),
+                              ),
                             ),
-                          ),
-                        ],
+
+                            SizedBox(height: sw * 0.015),
+
+                            Text(
+                              'verify_code'.tr,
+                              style: TextStyle(
+                                color: Colors.white.withValues(alpha: 0.75),
+                                fontSize: rfs(context, 13),
+                                fontWeight: FontWeight.w400,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-                  ),
 
                     // ── White bottom card ─────────────────────────
                     Expanded(
@@ -386,6 +417,199 @@ class _VerificationCodePageState extends State<VerificationCodePage> {
                                   ),
                                 );
                               }),
+                              Obx(() {
+                                if (controller.minimizedForms.isEmpty) {
+                                  return const SizedBox.shrink();
+                                }
+                                return Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    SizedBox(height: sw * 0.08),
+                                    Row(
+                                      children: [
+                                        Text(
+                                          'Waiting Approval Form',
+                                          style: TextStyle(
+                                            fontSize: rfs(context, 14),
+                                            fontWeight: FontWeight.w700,
+                                            color: const Color(0xFF1E293B),
+                                          ),
+                                        ),
+                                        const Spacer(),
+                                        Container(
+                                          padding: EdgeInsets.symmetric(
+                                            horizontal: sw * 0.02,
+                                            vertical: sw * 0.005,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: _blue.withValues(alpha: 0.1),
+                                            borderRadius: BorderRadius.circular(
+                                              sw * 0.03,
+                                            ),
+                                          ),
+                                          child: Text(
+                                            '${controller.minimizedForms.length}',
+                                            style: TextStyle(
+                                              fontSize: rfs(context, 11),
+                                              fontWeight: FontWeight.w700,
+                                              color: _blue,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    SizedBox(height: sw * 0.03),
+                                    ListView.separated(
+                                      shrinkWrap: true,
+                                      physics:
+                                          const NeverScrollableScrollPhysics(),
+                                      itemCount:
+                                          controller.minimizedForms.length,
+                                      separatorBuilder: (context, index) =>
+                                          SizedBox(height: sw * 0.03),
+                                      itemBuilder: (context, index) {
+                                        final form =
+                                            controller.minimizedForms[index];
+                                        final code = form['code'] as String;
+                                        final msg = form['message'] as String;
+                                        return Container(
+                                          padding: EdgeInsets.all(sw * 0.04),
+                                          decoration: BoxDecoration(
+                                            color: Colors.white,
+                                            borderRadius: BorderRadius.circular(
+                                              sw * 0.03,
+                                            ),
+                                            border: Border.all(
+                                              color: Colors.grey.shade200,
+                                            ),
+                                            boxShadow: [
+                                              BoxShadow(
+                                                color: Colors.black.withValues(
+                                                  alpha: 0.02,
+                                                ),
+                                                blurRadius: 6,
+                                                offset: const Offset(0, 2),
+                                              ),
+                                            ],
+                                          ),
+                                          child: Row(
+                                            children: [
+                                              // Mini Hourglass icon
+                                              Container(
+                                                padding: EdgeInsets.all(
+                                                  sw * 0.02,
+                                                ),
+                                                decoration: BoxDecoration(
+                                                  shape: BoxShape.circle,
+                                                  color: _blue.withValues(
+                                                    alpha: 0.08,
+                                                  ),
+                                                ),
+                                                child: Icon(
+                                                  Icons
+                                                      .history_toggle_off_rounded,
+                                                  color: _blue,
+                                                  size: sw * 0.05,
+                                                ),
+                                              ),
+                                              SizedBox(width: sw * 0.03),
+                                              Expanded(
+                                                child: Column(
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment.start,
+                                                  children: [
+                                                    Text(
+                                                      code,
+                                                      style: TextStyle(
+                                                        fontSize: rfs(
+                                                          context,
+                                                          13,
+                                                        ),
+                                                        fontWeight:
+                                                            FontWeight.w700,
+                                                        color: const Color(
+                                                          0xFF1E293B,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                    SizedBox(
+                                                      height: sw * 0.005,
+                                                    ),
+                                                    Text(
+                                                      msg,
+                                                      maxLines: 1,
+                                                      overflow:
+                                                          TextOverflow.ellipsis,
+                                                      style: TextStyle(
+                                                        fontSize: rfs(
+                                                          context,
+                                                          11,
+                                                        ),
+                                                        color: const Color(
+                                                          0xFF64748B,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                              SizedBox(width: sw * 0.02),
+                                              // Maximize/Reopen Text Button
+                                              TextButton(
+                                                onPressed: () {
+                                                  Get.to(
+                                                    () => WaitingApprovalPage(
+                                                      invitationCode: code,
+                                                      message: msg,
+                                                    ),
+                                                  );
+                                                },
+                                                style: TextButton.styleFrom(
+                                                  padding: EdgeInsets.symmetric(
+                                                    horizontal: sw * 0.03,
+                                                    vertical: sw * 0.01,
+                                                  ),
+                                                  backgroundColor: _blue,
+                                                  foregroundColor: Colors.white,
+                                                  shape: RoundedRectangleBorder(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          sw * 0.02,
+                                                        ),
+                                                  ),
+                                                ),
+                                                child: Text(
+                                                  'Maximize',
+                                                  style: TextStyle(
+                                                    fontSize: rfs(context, 11),
+                                                    fontWeight: FontWeight.w700,
+                                                  ),
+                                                ),
+                                              ),
+                                              SizedBox(width: sw * 0.01),
+                                              // Close/Remove icon button
+                                              IconButton(
+                                                onPressed: () => _confirmDelete(
+                                                  context,
+                                                  code,
+                                                ),
+                                                icon: Icon(
+                                                  Icons.close_rounded,
+                                                  color: Colors.red.shade400,
+                                                  size: sw * 0.045,
+                                                ),
+                                                padding: EdgeInsets.zero,
+                                                constraints:
+                                                    const BoxConstraints(),
+                                              ),
+                                            ],
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                  ],
+                                );
+                              }),
                             ],
                           ),
                         ),
@@ -404,7 +628,13 @@ class _VerificationCodePageState extends State<VerificationCodePage> {
                     Icons.arrow_back_ios_new,
                     color: Colors.white,
                   ),
-                  onPressed: () => Get.back(),
+                  onPressed: () {
+                    if (Navigator.canPop(context)) {
+                      Get.back();
+                    } else {
+                      Get.offAll(() => const LoginPage());
+                    }
+                  },
                 ),
               ),
             ],
