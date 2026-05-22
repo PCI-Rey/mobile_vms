@@ -5,6 +5,7 @@ import 'package:get/get.dart';
 import '../../../../data/datasources/api_service.dart';
 import '../../../../data/datasources/hive_service.dart';
 import '../../../../data/models/access_pass_model.dart';
+import '../../../../data/models/approval_ticket_model.dart';
 
 class InvitationController extends GetxController {
   final ApiService _api = ApiService();
@@ -14,6 +15,10 @@ class InvitationController extends GetxController {
   final RxList<AccessPassModel> ongoingInvitations = <AccessPassModel>[].obs;
   final RxBool isLoading = false.obs;
   final RxBool isNewestFirst = true.obs; // Default: Terbaru di atas
+
+  // Approval Ticket States
+  final RxList<ApprovalTicketModel> approvalTickets = <ApprovalTicketModel>[].obs;
+  final RxBool isApprovalLoading = false.obs;
 
   Timer? _cleanupTimer;
 
@@ -27,6 +32,7 @@ class InvitationController extends GetxController {
   void onInit() {
     super.onInit();
     fetchOngoingInvitations();
+    fetchApprovalTickets(); // Load approval tickets immediately
     fetchMasterData(); // Fetch master data (sites, visitor types, etc) for lookups
     // Re-filter every 60 seconds to remove expired invitations in real-time
     _cleanupTimer = Timer.periodic(const Duration(seconds: 60), (_) {
@@ -369,6 +375,112 @@ class InvitationController extends GetxController {
       return false;
     } catch (e) {
       debugPrint('deleteShareLinkAction error: $e');
+      return false;
+    }
+  }
+
+  // ─── Approval Ticket Action ──────────────────────────────────────────
+
+  Future<void> fetchApprovalTickets({bool isSilent = false}) async {
+    final user = _hive.getUser();
+    final token = user?.token;
+    if (token == null) return;
+
+    if (!isSilent) isApprovalLoading.value = true;
+    try {
+      final response = await _api.getApprovalTickets(token);
+      if (response.data['status'] == 'success' ||
+          response.data['status_code'] == 200) {
+        final collection = response.data['collection'] as List<dynamic>? ?? [];
+        debugPrint('fetchApprovalTickets raw collection: $collection');
+        final newTickets = collection
+            .map((e) => ApprovalTicketModel.fromJson(e as Map<String, dynamic>))
+            .toList();
+        approvalTickets.assignAll(newTickets);
+      }
+    } catch (e) {
+      debugPrint('fetchApprovalTickets error: $e');
+    } finally {
+      if (!isSilent) isApprovalLoading.value = false;
+    }
+  }
+
+  Future<bool> approveTicketAction(String approvalTicketId) async {
+    final user = _hive.getUser();
+    final token = user?.token;
+    if (token == null) return false;
+
+    try {
+      final response = await _api.approveTicket(token, approvalTicketId);
+      if (response.data['status'] == 'success' ||
+          response.data['status_code'] == 200) {
+        Get.snackbar(
+          'Success',
+          response.data['msg']?.toString() ?? 'Ticket approved successfully',
+          snackPosition: SnackPosition.TOP,
+          backgroundColor: Colors.green,
+          colorText: Colors.white,
+        );
+        fetchApprovalTickets(isSilent: true); // Refresh list
+        return true;
+      }
+      Get.snackbar(
+        'Failed',
+        response.data['msg']?.toString() ?? 'Failed to approve ticket',
+        snackPosition: SnackPosition.TOP,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
+      return false;
+    } catch (e) {
+      debugPrint('approveTicketAction error: $e');
+      Get.snackbar(
+        'Error',
+        'An error occurred: $e',
+        snackPosition: SnackPosition.TOP,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
+      return false;
+    }
+  }
+
+  Future<bool> rejectTicketAction(String approvalTicketId) async {
+    final user = _hive.getUser();
+    final token = user?.token;
+    if (token == null) return false;
+
+    try {
+      final response = await _api.rejectTicket(token, approvalTicketId);
+      if (response.data['status'] == 'success' ||
+          response.data['status_code'] == 200) {
+        Get.snackbar(
+          'Success',
+          response.data['msg']?.toString() ?? 'Ticket rejected successfully',
+          snackPosition: SnackPosition.TOP,
+          backgroundColor: Colors.green,
+          colorText: Colors.white,
+        );
+        fetchApprovalTickets(isSilent: true); // Refresh list
+        return true;
+      }
+      Get.snackbar(
+        'Failed',
+        response.data['msg']?.toString() ?? 'Failed to reject ticket',
+        snackPosition: SnackPosition.TOP,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
+      return false;
+    } catch (e) {
+      debugPrint('rejectTicketAction error: $e');
+      Get.snackbar(
+        'Error',
+        'An error occurred: $e',
+        snackPosition: SnackPosition.TOP,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
       return false;
     }
   }

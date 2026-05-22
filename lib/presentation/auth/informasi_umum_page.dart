@@ -8,6 +8,15 @@ import 'controller/language_controller.dart';
 import '../../data/models/user_model.dart';
 import '../../../core/core.dart';
 
+String _localTr(String key, String fallbackIndo, String fallbackEn) {
+  final val = key.tr;
+  if (val == key) {
+    final isEn = Get.locale?.languageCode == 'en';
+    return isEn ? fallbackEn : fallbackIndo;
+  }
+  return val;
+}
+
 class InformasiUmumPage extends StatefulWidget {
   final UserModel? userModel;
   final String? invitationCode;
@@ -119,7 +128,9 @@ class _InformasiUmumPageState extends State<InformasiUmumPage> {
             Container(
               width: double.infinity,
               padding: const EdgeInsets.symmetric(vertical: 16),
-              color: const Color(0xFF00529C), // Senada dengan warna background logo BI/VMS.png
+              color: const Color(
+                0xFF00529C,
+              ), // Senada dengan warna background logo BI/VMS.png
               child: Column(
                 children: [
                   Image.asset('assets/images/VMS.png', height: 64),
@@ -139,17 +150,21 @@ class _InformasiUmumPageState extends State<InformasiUmumPage> {
 
             // ── PageView ─────────────────────────────────
             Expanded(
-              child: PageView(
-                controller: _ctrl.pageController,
-                physics: const NeverScrollableScrollPhysics(),
-                onPageChanged: (i) => _ctrl.currentPage.value = i,
-                children: [
-                  _Step1(ctrl: _ctrl),
-                  _Step2(ctrl: _ctrl),
-                  _Step3(ctrl: _ctrl),
-                  _Step4(ctrl: _ctrl),
-                  _Step5(ctrl: _ctrl),
-                ],
+              child: Obx(
+                () => PageView(
+                  controller: _ctrl.pageController,
+                  physics: const NeverScrollableScrollPhysics(),
+                  onPageChanged: (i) => _ctrl.currentPage.value = i,
+                  children: [
+                    _WhoFillStep(ctrl: _ctrl),
+                    if (_ctrl.isSelfRegistered.value == false) _StepOther(ctrl: _ctrl),
+                    _Step1(ctrl: _ctrl),
+                    _Step2(ctrl: _ctrl),
+                    _Step3(ctrl: _ctrl),
+                    _Step4(ctrl: _ctrl),
+                    _Step5(ctrl: _ctrl),
+                  ],
+                ),
               ),
             ),
 
@@ -187,11 +202,12 @@ class _InformasiUmumPageState extends State<InformasiUmumPage> {
 
                   // Dots indicator (flexible center)
                   Expanded(
-                    child: Obx(
-                      () => Row(
+                    child: Obx(() {
+                      final totalDots = _ctrl.isSelfRegistered.value == false ? 7 : 6;
+                      return Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: List.generate(
-                          5,
+                          totalDots,
                           (i) => Container(
                             margin: const EdgeInsets.symmetric(horizontal: 4),
                             width: 8,
@@ -204,8 +220,8 @@ class _InformasiUmumPageState extends State<InformasiUmumPage> {
                             ),
                           ),
                         ),
-                      ),
-                    ),
+                      );
+                    }),
                   ),
 
                   // Next / Submit button (fixed width)
@@ -221,12 +237,19 @@ class _InformasiUmumPageState extends State<InformasiUmumPage> {
                           ),
                         );
                       }
-                      final isLast = _ctrl.currentPage.value == 4;
+                      final isLast =
+                          _ctrl.currentPage.value ==
+                          (_ctrl.isSelfRegistered.value == false ? 6 : 5);
+                      final isValid = _ctrl.isCurrentStepValid.value;
                       return ElevatedButton(
-                        onPressed: isLast ? _ctrl.submit : _ctrl.nextPage,
+                        onPressed: isValid
+                            ? (isLast ? _ctrl.submit : _ctrl.nextPage)
+                            : null,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.primary500,
                           foregroundColor: Colors.white,
+                          disabledBackgroundColor: Colors.grey.shade300,
+                          disabledForegroundColor: Colors.grey.shade500,
                           padding: EdgeInsets.zero,
                           elevation: 0,
                         ),
@@ -512,11 +535,7 @@ class _Step3 extends StatelessWidget {
                   'Bus': 'vehicle_bus',
                   'Motor': 'vehicle_motor',
                 };
-                const apiKeys = [
-                  'vehicle_car',
-                  'vehicle_bus',
-                  'vehicle_motor',
-                ];
+                const apiKeys = ['vehicle_car', 'vehicle_bus', 'vehicle_motor'];
                 final normalizedValue =
                     labelMap.containsKey(ctrl.vehicleType.value)
                     ? (apiKeys.contains(ctrl.vehicleType.value)
@@ -781,6 +800,418 @@ class _Step5 extends StatelessWidget {
           ),
           const SizedBox(height: 20),
         ],
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+// Step 0: Who Fills the Form Page
+// ─────────────────────────────────────────────────────────────
+
+class _WhoFillStep extends StatelessWidget {
+  final InformasiUmumController ctrl;
+  const _WhoFillStep({required this.ctrl});
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SizedBox(height: 20),
+          Center(
+            child: Text(
+              _localTr(
+                'who_fill_title',
+                'SIAPA YANG MENGISI FORMULIR INI?',
+                'WHO FILL THIS FORM?',
+              ),
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: AppColors.grey900,
+                letterSpacing: 0.5,
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Center(
+            child: Text(
+              _localTr(
+                'who_fill_subtitle',
+                'Silakan pilih siapa yang mengisi formulir pendaftaran ini.',
+                'Please select who is completing this registration form.',
+              ),
+              style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
+              textAlign: TextAlign.center,
+            ),
+          ),
+          const SizedBox(height: 40),
+          Obx(() {
+            final isSelf = ctrl.isSelfRegistered.value == true;
+            final isOther = ctrl.isSelfRegistered.value == false;
+            return Column(
+              children: [
+                // Yourself Option Card
+                GestureDetector(
+                  onTap: () {
+                    ctrl.isSelfRegistered.value = true;
+                  },
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 250),
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: isSelf
+                          ? AppColors.primary50.withOpacity(0.5)
+                          : Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: isSelf
+                            ? AppColors.primary500
+                            : Colors.grey.shade300,
+                        width: 2,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: isSelf
+                              ? AppColors.primary500.withOpacity(0.08)
+                              : Colors.black.withOpacity(0.02),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: isSelf
+                                ? AppColors.primary500
+                                : Colors.grey.shade100,
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            Icons.person,
+                            color: isSelf ? Colors.white : Colors.grey.shade600,
+                            size: 28,
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                _localTr(
+                                  'yourself_title',
+                                  'DIRI SENDIRI',
+                                  'YOURSELF',
+                                ),
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: isSelf
+                                      ? AppColors.primary500
+                                      : AppColors.grey900,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                _localTr(
+                                  'yourself_subtitle',
+                                  'Saya mendaftar untuk diri saya sendiri.',
+                                  'I am registering for myself.',
+                                ),
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: Colors.grey.shade500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        if (isSelf)
+                          Icon(
+                            Icons.check_circle,
+                            color: AppColors.primary500,
+                            size: 26,
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                // Other Option Card
+                GestureDetector(
+                  onTap: () {
+                    ctrl.isSelfRegistered.value = false;
+                  },
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 250),
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                       color: isOther
+                          ? AppColors.primary50.withOpacity(0.5)
+                          : Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: isOther
+                            ? AppColors.primary500
+                            : Colors.grey.shade300,
+                        width: 2,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: isOther
+                              ? AppColors.primary500.withOpacity(0.08)
+                              : Colors.black.withOpacity(0.02),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: isOther
+                                ? AppColors.primary500
+                                : Colors.grey.shade100,
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            Icons.people,
+                            color: isOther
+                                ? Colors.white
+                                : Colors.grey.shade600,
+                            size: 28,
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                _localTr('other_title', 'ORANG LAIN', 'OTHER'),
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: isOther
+                                      ? AppColors.primary500
+                                      : AppColors.grey900,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                _localTr(
+                                  'other_subtitle',
+                                  'Saya mendaftar atas nama orang lain.',
+                                  'I am registering on behalf of someone else.',
+                                ),
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: Colors.grey.shade500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        if (isOther)
+                          Icon(
+                            Icons.check_circle,
+                            color: AppColors.primary500,
+                            size: 26,
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            );
+          }),
+        ],
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+// Step 0.5: Other Form Filler Information Page
+// ─────────────────────────────────────────────────────────────
+
+class _StepOther extends StatelessWidget {
+  final InformasiUmumController ctrl;
+  const _StepOther({required this.ctrl});
+
+  Widget _requiredLabel(String text) => Padding(
+    padding: const EdgeInsets.only(top: 10, bottom: 4),
+    child: RichText(
+      text: TextSpan(
+        text: text,
+        style: const TextStyle(
+          fontSize: 14,
+          fontWeight: FontWeight.w600,
+          color: Colors.black87,
+        ),
+        children: const [
+          TextSpan(
+            text: ' *',
+            style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+          ),
+        ],
+      ),
+    ),
+  );
+
+  @override
+  Widget build(BuildContext context) {
+    return Obx(
+      () => SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Text(
+                _localTr(
+                  'filler_info_title',
+                  'INFORMASI PENGISI FORMULIR',
+                  'FORM FILLER INFORMATION',
+                ),
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            const SizedBox(height: 6),
+            Center(
+              child: Text(
+                _localTr(
+                  'filler_info_subtitle',
+                  'Silakan isi detail data orang yang mengisi formulir pendaftaran ini.',
+                  'Please fill in the details of the person completing this registration form.',
+                ),
+                style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
+                textAlign: TextAlign.center,
+              ),
+            ),
+            const SizedBox(height: 16),
+            _requiredLabel('fullname'.tr),
+            CustomTextField(
+              controller: ctrl.filledByNameController,
+              label: '',
+              showLabel: false,
+              hintText: _localTr(
+                'filler_name_hint',
+                'Masukkan nama Anda',
+                'Enter your name',
+              ),
+              errorText: ctrl.fieldErrors['filledByName'],
+              onChanged: (v) =>
+                  ctrl.validateField('filledByName', v, 'fullname'.tr),
+            ),
+            _requiredLabel('email'.tr),
+            CustomTextField(
+              controller: ctrl.filledByEmailController,
+              label: '',
+              showLabel: false,
+              hintText: 'yourname@gmail.com',
+              keyboardType: TextInputType.emailAddress,
+              errorText: ctrl.fieldErrors['filledByEmail'],
+              onChanged: (v) =>
+                  ctrl.validateField('filledByEmail', v, 'email'.tr),
+            ),
+            _requiredLabel('phone'.tr),
+            CustomTextField(
+              controller: ctrl.filledByPhoneController,
+              label: '',
+              showLabel: false,
+              hintText: '08xx xxxx xxxx',
+              keyboardType: TextInputType.phone,
+              errorText: ctrl.fieldErrors['filledByPhone'],
+              onChanged: (v) =>
+                  ctrl.validateField('filledByPhone', v, 'phone'.tr),
+            ),
+            _requiredLabel('relationship'.tr),
+            DropdownButton2<String>(
+              isExpanded: true,
+              value: ctrl.filledByRelationship.value,
+              hint: Text(
+                _localTr(
+                  'select_relationship',
+                  'Pilih Hubungan',
+                  'Select Relationship',
+                ),
+                style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
+              ),
+              items: ctrl.relationshipOptions
+                  .map(
+                    (key) =>
+                        DropdownMenuItem<String>(value: key, child: Text(key)),
+                  )
+                  .toList(),
+              onChanged: (v) {
+                if (v != null) {
+                  ctrl.filledByRelationship.value = v;
+                  if (v != 'Other') {
+                    ctrl.filledByRelationshipOtherController.clear();
+                    ctrl.fieldErrors.remove('filledByRelationshipOther');
+                  }
+                }
+              },
+              buttonStyleData: ButtonStyleData(
+                height: 50,
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                decoration: BoxDecoration(
+                  color: AppColors.primary50,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: AppColors.grey300, width: 1.5),
+                ),
+              ),
+              dropdownStyleData: DropdownStyleData(
+                maxHeight: 250,
+                offset: const Offset(0, -10),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              underline: const SizedBox.shrink(),
+            ),
+            if (ctrl.filledByRelationship.value == 'Other') ...[
+              const SizedBox(height: 10),
+              CustomTextField(
+                controller: ctrl.filledByRelationshipOtherController,
+                label: _localTr(
+                  'relationship_details_title',
+                  'Detail Hubungan Lainnya',
+                  'Other Relationship Details',
+                ),
+                hintText: _localTr(
+                  'relationship_details_hint',
+                  'Masukkan jenis hubungan (misal: Kurir)',
+                  'Enter relationship type (e.g. Courier)',
+                ),
+                errorText: ctrl.fieldErrors['filledByRelationshipOther'],
+                onChanged: (v) => ctrl.validateField(
+                  'filledByRelationshipOther',
+                  v,
+                  _localTr(
+                    'relationship_details_title',
+                    'Detail Hubungan Lainnya',
+                    'Other Relationship Details',
+                  ),
+                ),
+              ),
+            ],
+            const SizedBox(height: 20),
+          ],
+        ),
       ),
     );
   }

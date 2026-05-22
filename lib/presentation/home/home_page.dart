@@ -71,7 +71,11 @@ class _HomePageState extends State<HomePage> {
                 Expanded(
                   child: RefreshIndicator(
                     onRefresh: () async {
-                      await invitationController.fetchShareLinks(resetPage: true);
+                      await Future.wait([
+                        invitationController.fetchShareLinks(resetPage: true),
+                        invitationController.fetchApprovalTickets(),
+                        invitationController.fetchDashboardShareLinks(),
+                      ]);
                     },
                     child: SingleChildScrollView(
                       physics: const AlwaysScrollableScrollPhysics(
@@ -464,6 +468,42 @@ class _HomePageState extends State<HomePage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Section: Active Visit (moved to top)
+          _buildSectionHeader(context, 'active_visit'.tr),
+          vSpace(context, 16),
+          DatePicker(
+            DateTime.now(),
+            initialSelectedDate: DateTime.now(),
+            daysCount: 30,
+            selectionColor: AppColors.primary500,
+            selectedTextColor: Colors.white,
+            deactivatedColor: Colors.grey.shade400,
+            dayTextStyle: TextStyle(
+              fontSize: rfs(context, 11),
+              fontWeight: FontWeight.w600,
+            ),
+            dateTextStyle: TextStyle(
+              fontSize: rfs(context, 16),
+              fontWeight: FontWeight.w800,
+            ),
+            monthTextStyle: TextStyle(
+              fontSize: rfs(context, 10),
+              fontWeight: FontWeight.w500,
+            ),
+            onDateChange: (date) => debugPrint("Tanggal dipilih (Active Visit): $date"),
+          ),
+
+          vSpace(context, 24),
+          const Divider(height: 1, color: Color(0xFFF0F0F0)),
+          vSpace(context, 24),
+
+          // Itinerary List
+          const IteneraryList(),
+
+          vSpace(context, 32),
+          const Divider(height: 1, color: Color(0xFFF0F0F0)),
+          vSpace(context, 32),
+
           // Section: Share Link (formerly Schedule)
           _buildSectionHeader(context, 'Share Link'),
           vSpace(context, 16),
@@ -486,7 +526,7 @@ class _HomePageState extends State<HomePage> {
               fontSize: rfs(context, 10),
               fontWeight: FontWeight.w500,
             ),
-            onDateChange: (date) => debugPrint("Tanggal dipilih: $date"),
+            onDateChange: (date) => debugPrint("Tanggal dipilih (Share Link): $date"),
           ),
 
           vSpace(context, 24),
@@ -495,15 +535,6 @@ class _HomePageState extends State<HomePage> {
 
           // List of Share Link Data (replaces Extended Request)
           const ShareLinkHomeList(),
-
-          vSpace(context, 32),
-
-          // Section: Active Visit
-          _buildSectionHeader(context, 'active_visit'.tr),
-          vSpace(context, 16),
-
-          // Itinerary List
-          const IteneraryList(),
 
           vSpace(context, 20),
         ],

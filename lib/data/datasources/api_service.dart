@@ -499,4 +499,68 @@ class ApiService {
       rethrow;
     }
   }
+
+  Future<Response> getApprovalTickets(
+    String token, {
+    int draw = 1,
+    int start = 0,
+    int length = 10,
+    String sortColumn = 'name',
+    String sortDir = 'desc',
+    String entityType = 'Invitation',
+  }) async {
+    try {
+      final response = await _dio.get(
+        '/$pathApi/approval-ticket/with-actors/dt',
+        queryParameters: {
+          'draw': draw,
+          'start': start,
+          'length': length,
+          'sort_column': sortColumn,
+          'sort_dir': sortDir,
+          'search[value]': '',
+          'search[regex]': 'true',
+          'entity-type': entityType,
+        },
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+      return response;
+    } on DioException catch (e) {
+      debugPrint('Dio Error getApprovalTickets: ${e.message}');
+      if (e.response != null) return e.response!;
+      rethrow;
+    }
+  }
+
+  Future<Response> approveTicket(String token, String approvalTicketId) async {
+    try {
+      final response = await _dio.post(
+        '/$pathApi/approval-ticket/$approvalTicketId/approve',
+        data: const {},
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+      return response;
+    } on DioException catch (e) {
+      debugPrint('Dio Error approveTicket: ${e.message}');
+      debugPrint('Dio Error approveTicket response data: ${e.response?.data}');
+      if (e.response != null) return e.response!;
+      rethrow;
+    }
+  }
+
+  Future<Response> rejectTicket(String token, String approvalTicketId) async {
+    try {
+      final response = await _dio.post(
+        '/$pathApi/approval-ticket/$approvalTicketId/reject',
+        data: const {},
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+      return response;
+    } on DioException catch (e) {
+      debugPrint('Dio Error rejectTicket: ${e.message}');
+      debugPrint('Dio Error rejectTicket response data: ${e.response?.data}');
+      if (e.response != null) return e.response!;
+      rethrow;
+    }
+  }
 }

@@ -38,14 +38,21 @@ class _DashboardState extends State<Dashboard> {
   }
 
   bool _checkIsGuest(String role, UserModel? user) {
-    if (user == null) return true;
+    if (user == null) {
+      return true;
+    }
     final r = role.toLowerCase();
     // Jika role explicitly guest, visitor, atau driver
-    if (r == 'guest' || r == 'visitor' || r == 'driver') return true;
-    // Jika user memiliki visitor_code atau invitation_code
-    if (user.invitationCode != null && user.invitationCode!.isNotEmpty)
+    if (r == 'guest' || r == 'visitor' || r == 'driver') {
       return true;
-    if (user.visitorCode != null && user.visitorCode!.isNotEmpty) return true;
+    }
+    // Jika user memiliki visitor_code atau invitation_code
+    if (user.invitationCode != null && user.invitationCode!.isNotEmpty) {
+      return true;
+    }
+    if (user.visitorCode != null && user.visitorCode!.isNotEmpty) {
+      return true;
+    }
 
     // Default fallback: semua role yang bukan role internal employee dianggap guest/visitor
     final employeeRoles = [

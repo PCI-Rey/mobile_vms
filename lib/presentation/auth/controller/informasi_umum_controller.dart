@@ -12,6 +12,7 @@ import '../../../data/datasources/auth_datasource.dart';
 import '../../../data/datasources/api_service.dart';
 import '../../../data/models/user_model.dart';
 import '../../dashboard.dart';
+import '../waiting_approval_page.dart';
 import 'user_controller.dart';
 import '../../home/controllers/guest_home_controller.dart';
 import '../../../core/services/notification_service.dart';
@@ -28,6 +29,28 @@ class InformasiUmumController extends GetxController {
   // Page tracking
   late PageController pageController;
   final currentPage = 0.obs;
+
+  // Step 0: Who Fill This Form
+  final isSelfRegistered = Rxn<bool>();
+  final filledByNameController = TextEditingController();
+  final filledByEmailController = TextEditingController();
+  final filledByPhoneController = TextEditingController();
+  final filledByRelationship = Rxn<String>();
+  final filledByRelationshipOtherController = TextEditingController();
+  final relationshipOptions = [
+    'Secretary',
+    'Assistant',
+    'VendorPIC',
+    'EventOrganizer',
+    'Family',
+    'Colleague',
+    'Admin',
+    'HR',
+    'Receptionist',
+    'Host',
+    'Invented',
+    'Other'
+  ];
 
   // Step 1: Visitor Information
   final fullNameController = TextEditingController();
@@ -63,6 +86,81 @@ class InformasiUmumController extends GetxController {
   final identityUrl = Rxn<String>();
   final fieldErrors = RxMap<String, String?>();
 
+  final isCurrentStepValid = false.obs;
+
+  @override
+  void onInit() {
+    super.onInit();
+    fullNameController.addListener(updateStepValidity);
+    emailController.addListener(updateStepValidity);
+    phoneController.addListener(updateStepValidity);
+    organizationController.addListener(updateStepValidity);
+    identityIdController.addListener(updateStepValidity);
+    vehiclePlateController.addListener(updateStepValidity);
+    filledByNameController.addListener(updateStepValidity);
+    filledByEmailController.addListener(updateStepValidity);
+    filledByPhoneController.addListener(updateStepValidity);
+    filledByRelationshipOtherController.addListener(updateStepValidity);
+
+    ever(currentPage, (_) => updateStepValidity());
+    ever(isSelfRegistered, (_) => updateStepValidity());
+    ever(isDriving, (_) => updateStepValidity());
+    ever(filledByRelationship, (_) => updateStepValidity());
+
+    updateStepValidity();
+  }
+
+  void updateStepValidity() {
+    isCurrentStepValid.value = _checkStepValidity();
+  }
+
+  bool _checkStepValidity() {
+    if (currentPage.value == 0) {
+      return isSelfRegistered.value != null;
+    }
+    if (isSelfRegistered.value == true) {
+      if (currentPage.value == 1) {
+        return fullNameController.text.trim().isNotEmpty &&
+            emailController.text.trim().isNotEmpty &&
+            phoneController.text.trim().isNotEmpty &&
+            organizationController.text.trim().isNotEmpty &&
+            identityIdController.text.trim().isNotEmpty;
+      }
+      if (currentPage.value == 3) {
+        if (isDriving.value) {
+          return vehiclePlateController.text.trim().isNotEmpty;
+        }
+        return true;
+      }
+    } else if (isSelfRegistered.value == false) {
+      if (currentPage.value == 1) {
+        final isOtherValid = filledByNameController.text.trim().isNotEmpty &&
+            filledByEmailController.text.trim().isNotEmpty &&
+            filledByPhoneController.text.trim().isNotEmpty;
+        if (!isOtherValid) return false;
+        if (filledByRelationship.value == null) return false;
+        if (filledByRelationship.value == 'Other') {
+          return filledByRelationshipOtherController.text.trim().isNotEmpty;
+        }
+        return true;
+      }
+      if (currentPage.value == 2) {
+        return fullNameController.text.trim().isNotEmpty &&
+            emailController.text.trim().isNotEmpty &&
+            phoneController.text.trim().isNotEmpty &&
+            organizationController.text.trim().isNotEmpty &&
+            identityIdController.text.trim().isNotEmpty;
+      }
+      if (currentPage.value == 4) {
+        if (isDriving.value) {
+          return vehiclePlateController.text.trim().isNotEmpty;
+        }
+        return true;
+      }
+    }
+    return true;
+  }
+
   void initializeData(UserModel user, String code, Map<String, dynamic>? data) {
     userModel = user;
     invitationCode = code;
@@ -70,6 +168,12 @@ class InformasiUmumController extends GetxController {
 
     // Reset navigation state — ensures fresh start every time page is opened
     currentPage.value = 0;
+    isSelfRegistered.value = null;
+    filledByNameController.clear();
+    filledByEmailController.clear();
+    filledByPhoneController.clear();
+    filledByRelationship.value = null;
+    filledByRelationshipOtherController.clear();
     fieldErrors.clear();
     selfieImage.value = null;
     identityImage.value = null;
@@ -124,6 +228,7 @@ class InformasiUmumController extends GetxController {
 
     // Eagerly mark empty required fields so red borders show on page open
     _markStep1Errors();
+    updateStepValidity();
   }
 
   /// Konversi UTC datetime string ke local time dan format seperti web:
@@ -172,19 +277,6 @@ class InformasiUmumController extends GetxController {
   void validateField(String key, String value, String label) {
     if (value.trim().isEmpty) {
       fieldErrors[key] = 'error_required'.trParams({'field': label});
-
-      // Show snackbar for the specific field that was just cleared
-      if (Get.isSnackbarOpen) Get.closeAllSnackbars();
-      Get.snackbar(
-        'Kolom Harus Diisi'.tr,
-        '$label tidak boleh kosong.',
-        backgroundColor: Colors.red.shade700,
-        colorText: Colors.white,
-        snackPosition: SnackPosition.TOP,
-        margin: const EdgeInsets.all(12),
-        duration: const Duration(seconds: 2),
-        icon: const Icon(Icons.warning_amber_rounded, color: Colors.white),
-      );
     } else {
       fieldErrors.remove(key);
     }
@@ -229,54 +321,87 @@ class InformasiUmumController extends GetxController {
   }
 
   void nextPage() {
-    // Validate before proceeding
-    if (currentPage.value == 0 && !validateStep1()) return;
-    if (currentPage.value == 2 && !validateStep3()) return;
+    if (isSelfRegistered.value == true) {
+      if (currentPage.value == 1 && !validateStep1()) return;
+      if (currentPage.value == 3 && !validateStep3()) return;
 
-    if (currentPage.value < 4) {
-      pageController.nextPage(
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
-      );
+      if (currentPage.value < 5) {
+        final targetPage = currentPage.value + 1;
+        currentPage.value = targetPage;
+        pageController.animateToPage(
+          targetPage,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeInOut,
+        );
+      }
+    } else if (isSelfRegistered.value == false) {
+      if (currentPage.value == 1 && !validateStepOther()) return;
+      if (currentPage.value == 2 && !validateStep1()) return;
+      if (currentPage.value == 4 && !validateStep3()) return;
+
+      if (currentPage.value < 6) {
+        final targetPage = currentPage.value + 1;
+        currentPage.value = targetPage;
+        pageController.animateToPage(
+          targetPage,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeInOut,
+        );
+      }
     }
+  }
+
+  bool validateStepOther() {
+    final errors = <String, String?>{};
+    if (filledByNameController.text.trim().isEmpty) {
+      errors['filledByName'] = 'fullname'.tr;
+    }
+    if (filledByEmailController.text.trim().isEmpty) {
+      errors['filledByEmail'] = 'email'.tr;
+    }
+    if (filledByPhoneController.text.trim().isEmpty) {
+      errors['filledByPhone'] = 'phone'.tr;
+    }
+    if (filledByRelationship.value == 'Other' &&
+        filledByRelationshipOtherController.text.trim().isEmpty) {
+      errors['filledByRelationshipOther'] = 'relationship'.tr;
+    }
+
+    // Set red borders on all empty fields
+    fieldErrors.assignAll(
+      errors.map((k, v) => MapEntry(k, 'error_required'.trParams({'field': v ?? ''}))),
+    );
+
+    if (errors.isNotEmpty) {
+      return false;
+    }
+    return true;
   }
 
   bool validateStep1() {
     final errors = <String, String?>{};
     if (fullNameController.text.trim().isEmpty) {
-      errors['fullname'] = 'Fullname';
+      errors['fullname'] = 'fullname'.tr;
     }
     if (emailController.text.trim().isEmpty) {
-      errors['email'] = 'Email';
+      errors['email'] = 'email'.tr;
     }
     if (phoneController.text.trim().isEmpty) {
-      errors['phone'] = 'Phone';
+      errors['phone'] = 'phone'.tr;
     }
     if (organizationController.text.trim().isEmpty) {
-      errors['organization'] = 'Instansi/Organization';
+      errors['organization'] = 'organization'.tr;
     }
     if (identityIdController.text.trim().isEmpty) {
-      errors['identityId'] = 'Identity Id (KTP)';
+      errors['identityId'] = 'identity_id'.tr;
     }
 
     // Set red borders on all empty fields
     fieldErrors.assignAll(
-      errors.map((k, v) => MapEntry(k, '$v belum diisi, mohon diisi')),
+      errors.map((k, v) => MapEntry(k, 'error_required'.trParams({'field': v ?? ''}))),
     );
 
     if (errors.isNotEmpty) {
-      // Build a single message listing all missing fields
-      final names = errors.values.join(', ');
-      Get.snackbar(
-        'Mohon Lengkapi Data',
-        '$names belum diisi, mohon diisi terlebih dahulu.',
-        backgroundColor: Colors.red.shade700,
-        colorText: Colors.white,
-        snackPosition: SnackPosition.TOP,
-        margin: const EdgeInsets.all(12),
-        duration: const Duration(seconds: 4),
-        icon: const Icon(Icons.warning_amber_rounded, color: Colors.white),
-      );
       return false;
     }
     return true;
@@ -285,21 +410,12 @@ class InformasiUmumController extends GetxController {
   bool validateStep3() {
     final errors = <String, String?>{};
     if (isDriving.value && vehiclePlateController.text.trim().isEmpty) {
-      errors['vehiclePlate'] = 'Vehicle Plate Number belum diisi, mohon diisi';
+      errors['vehiclePlate'] = 'error_required'.trParams({'field': 'vehicle_plate'.tr});
     }
 
     fieldErrors.assignAll(errors);
 
     if (errors.isNotEmpty) {
-      Get.snackbar(
-        'Mohon Lengkapi Data',
-        errors.values.first!,
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
-        snackPosition: SnackPosition.TOP,
-        margin: const EdgeInsets.all(12),
-        duration: const Duration(seconds: 3),
-      );
       return false;
     }
     return true;
@@ -307,7 +423,10 @@ class InformasiUmumController extends GetxController {
 
   void previousPage() {
     if (currentPage.value > 0) {
-      pageController.previousPage(
+      final targetPage = currentPage.value - 1;
+      currentPage.value = targetPage;
+      pageController.animateToPage(
+        targetPage,
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeInOut,
       );
@@ -748,8 +867,8 @@ class InformasiUmumController extends GetxController {
 
       // ── Step 3: Vehicle fields ───────────────────────────────────────
       updateAnswer('Is Driving/Riding', isDriving.value.toString());
-      updateAnswer('Vehicle Type', formattedVehicleType);
-      updateAnswer('Vehicle Plate', vehiclePlateController.text);
+      updateAnswer('Vehicle Type', isDriving.value ? formattedVehicleType : "");
+      updateAnswer('Vehicle Plate', isDriving.value ? vehiclePlateController.text : "");
 
       // ── Step 4 & 5: Photos ──────────────────────────────────────────
       String? selfieValue = selfieUrl.value;
@@ -871,6 +990,16 @@ class InformasiUmumController extends GetxController {
       }
 
       final payload = {
+        "is_self_registered": isSelfRegistered.value ?? true,
+        "filled_by_name": isSelfRegistered.value == true
+            ? null
+            : filledByNameController.text.trim(),
+        "filled_by_email": isSelfRegistered.value == true
+            ? null
+            : filledByEmailController.text.trim(),
+        "filled_by_phone": isSelfRegistered.value == true
+            ? null
+            : filledByPhoneController.text.trim(),
         "trx_visitor_id": trxVisitorId,
         "visitor_id": visitorId,
         "application_id": applicationId,
@@ -967,7 +1096,7 @@ class InformasiUmumController extends GetxController {
           : null;
 
       // After submit success, re-check invitation code to get the token
-      final (newUser, isPraregisterDone, _, error, checkTitle) =
+      final (newUser, isPraregisterDone, checkRawData, error, checkTitle) =
           await authDatasource.checkVisitorCode(invitationCode);
 
       if (newUser != null && isPraregisterDone && newUser.token != null) {
@@ -993,6 +1122,11 @@ class InformasiUmumController extends GetxController {
         if (newUser.id.isNotEmpty) {
           NotificationService.instance.subscribeToUserTopic(newUser.id);
         }
+      } else if (checkRawData != null && checkRawData['status'] == 'process') {
+        Get.offAll(() => WaitingApprovalPage(
+              invitationCode: invitationCode,
+              message: submitMsg,
+            ));
       } else {
         // Submit sukses tapi token belum tersedia
         throw Exception(
@@ -1018,6 +1152,10 @@ class InformasiUmumController extends GetxController {
     try {
       pageController.dispose();
     } catch (_) {}
+    filledByNameController.dispose();
+    filledByEmailController.dispose();
+    filledByPhoneController.dispose();
+    filledByRelationshipOtherController.dispose();
     fullNameController.dispose();
     emailController.dispose();
     phoneController.dispose();

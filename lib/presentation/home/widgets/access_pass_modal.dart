@@ -303,6 +303,7 @@ class AccessPassModal {
                                     Icons.directions_car_outlined,
                                     'Vehicle Type',
                                     (() {
+                                      if (!item.isDriving) return 'Not Driving';
                                       final type = item.vehicleType;
                                       if (type.isEmpty || type.toLowerCase() == 'not available') return 'Not available';
                                       final cleaned = type.replaceAll('vehicle_', '').replaceAll('_', ' ');
@@ -319,7 +320,7 @@ class AccessPassModal {
                                     ctx,
                                     Icons.badge_outlined,
                                     'Plate Number',
-                                    item.vehiclePlateNumber.isEmpty || item.vehiclePlateNumber.toLowerCase() == 'not available'
+                                    !item.isDriving || item.vehiclePlateNumber.isEmpty || item.vehiclePlateNumber.toLowerCase() == 'not available'
                                         ? 'Not available'
                                         : item.vehiclePlateNumber,
                                   ),

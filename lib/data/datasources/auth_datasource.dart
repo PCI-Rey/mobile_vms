@@ -49,7 +49,7 @@ class AuthDatasource {
       final response = await _apiService.checkVisitorCode(invitationCode);
 
       if (response.statusCode == 200) {
-        final data = response.data;
+        final data = response.data as Map<String, dynamic>;
         if (data['status'] == 'success' || data['status'] == 'fiil_form') {
           final collection = data['collection'] as Map<String, dynamic>;
           final isPraregisterDone = collection['is_praregister_done'] == true;
@@ -83,6 +83,8 @@ class AuthDatasource {
           }
 
           return (userModel, isPraregisterDone, collection, data['msg'] as String?, data['title'] as String?);
+        } else if (data['status'] == 'process') {
+          return (null, false, data as Map<String, dynamic>?, data['msg'] as String?, data['title'] as String?);
         } else {
           return (null, false, null, (data['msg'] as String?), data['title'] as String?);
         }

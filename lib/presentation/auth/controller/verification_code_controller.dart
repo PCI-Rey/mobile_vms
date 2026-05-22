@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import '../../../data/datasources/auth_datasource.dart';
 import '../controller/informasi_umum_controller.dart';
 import '../informasi_umum_page.dart';
+import '../waiting_approval_page.dart';
 import '../../dashboard.dart';
 import 'user_controller.dart';
 import '../../home/controllers/guest_home_controller.dart';
@@ -68,6 +69,11 @@ class VerificationCodeController extends GetxController {
         Get.put(InformasiUmumController()).initializeData(userModel, code, rawData);
         Get.to(() => InformasiUmumPage(userModel: userModel, invitationCode: code, rawData: rawData));
       }
+    } else if (rawData != null && rawData['status'] == 'process') {
+      Get.to(() => WaitingApprovalPage(
+            invitationCode: code,
+            message: message ?? 'Your visit application is currently in process.',
+          ));
     } else {
       codeError.value = message ?? 'Kode undangan tidak valid';
       Get.snackbar(
