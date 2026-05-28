@@ -19,6 +19,7 @@ import 'agenda/widgets/itenerary_list.dart';
 
 import '../../core/core.dart';
 import 'access_pass/access_pass_page.dart';
+import 'approval/approval_page.dart';
 import 'invitation/controller/invitation_controller.dart';
 
 class HomePage extends StatefulWidget {
@@ -310,7 +311,7 @@ class _HomePageState extends State<HomePage> {
           'icon': Icons.fact_check_outlined,
           'bgColor': const Color(0xFFFAEEDA),
           'iconColor': const Color(0xFF854F0B),
-          'onTap': () => debugPrint('Approval clicked'),
+          'onTap': () => context.push(const ApprovalPage()),
         },
         {
           'label': langCtrl.selectedLang.value == 'id'
@@ -468,8 +469,8 @@ class _HomePageState extends State<HomePage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Section: Active Visit (moved to top)
-          _buildSectionHeader(context, 'active_visit'.tr),
+          // Section: Approval
+          _buildSectionHeader(context, 'Approval'),
           vSpace(context, 16),
           DatePicker(
             DateTime.now(),
@@ -504,7 +505,7 @@ class _HomePageState extends State<HomePage> {
           const Divider(height: 1, color: Color(0xFFF0F0F0)),
           vSpace(context, 32),
 
-          // Section: Share Link (formerly Schedule)
+          // Section: Share Link
           _buildSectionHeader(context, 'Share Link'),
           vSpace(context, 16),
           DatePicker(
