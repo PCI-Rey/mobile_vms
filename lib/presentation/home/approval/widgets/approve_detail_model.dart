@@ -93,13 +93,23 @@ class _ApprovalDetailModalState extends State<ApprovalDetailModal> {
       statusFg = const Color(0xFFC62828);
     }
 
-    return DraggableScrollableSheet(
-      initialChildSize: 0.85,
-      minChildSize: 0.5,
-      maxChildSize: 0.95,
-      builder: (_, scrollCtrl) {
-        return Container(
-          decoration: BoxDecoration(
+    return Stack(
+      children: [
+        GestureDetector(
+          onTap: () => Navigator.of(context).pop(),
+          child: Container(
+            color: Colors.transparent,
+          ),
+        ),
+        DraggableScrollableSheet(
+          initialChildSize: 0.85,
+          minChildSize: 0.5,
+          maxChildSize: 0.95,
+          builder: (_, scrollCtrl) {
+            return GestureDetector(
+              onTap: () {}, // Prevent taps inside from bubbling up
+              child: Container(
+                decoration: BoxDecoration(
             color: const Color(0xFFF8FAFF),
             borderRadius: BorderRadius.vertical(
               top: Radius.circular(rw(context, 20)),
@@ -258,10 +268,13 @@ class _ApprovalDetailModalState extends State<ApprovalDetailModal> {
               ),
             ],
           ),
-        );
-      },
-    );
-  }
+        ),
+      );
+    },
+  ),
+],
+);
+}
 }
 
 // ── Sub-widgets ──────────────────────────────────────────────────────────────
