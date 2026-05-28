@@ -23,19 +23,36 @@ class SendInvitationPage extends StatefulWidget {
   State<SendInvitationPage> createState() => _SendInvitationPageState();
 }
 
-class _SendInvitationPageState extends State<SendInvitationPage> {
+class _SendInvitationPageState extends State<SendInvitationPage>
+    with SingleTickerProviderStateMixin {
   final controller = Get.put(InvitationController());
   DateTime? startDate;
   DateTime? endDate;
   String? selectedGedung;
 
-  // 0 = Invitation, 1 = Share Link
-  late int _selectedTab;
+  late TabController _tabController;
 
   @override
   void initState() {
     super.initState();
-    _selectedTab = widget.initialTab;
+    _tabController = TabController(
+      length: 2,
+      vsync: this,
+      initialIndex: widget.initialTab,
+    );
+    _tabController.addListener(() {
+      if (_tabController.indexIsChanging) return;
+      if (_tabController.index == 1) {
+        controller.fetchShareLinks(resetPage: true);
+      }
+      setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
   }
 
   @override
@@ -46,7 +63,7 @@ class _SendInvitationPageState extends State<SendInvitationPage> {
         title: Text(
           "Create Invitation",
           style: TextStyle(
-            fontSize: rfs(context, 25),
+            fontSize: rfs(context, 20),
             fontWeight: FontWeight.w700,
             color: Colors.black87,
           ),
@@ -55,7 +72,7 @@ class _SendInvitationPageState extends State<SendInvitationPage> {
         leading: const BackButton(),
         actions: [
           // Tombol Tambah + hanya muncul di tab Invitation
-          if (_selectedTab == 0)
+          if (_tabController.index == 0)
             IconButton(
               onPressed: () async {
                 final result = await showAddPraRegistrationDialog(context);
@@ -82,7 +99,7 @@ class _SendInvitationPageState extends State<SendInvitationPage> {
               ),
             ),
           // Tombol Add Share Link hanya muncul di tab Share Link
-          if (_selectedTab == 1)
+          if (_tabController.index == 1)
             IconButton(
               onPressed: () {
                 showDialog(
@@ -113,84 +130,36 @@ class _SendInvitationPageState extends State<SendInvitationPage> {
       ),
       body: Column(
         children: [
-          // ── Tab Switcher ──────────────────────────────────────────
+          // ── Tab Bar ───────────────────────────────────────────────
           Container(
             color: Colors.white,
-            padding: EdgeInsets.symmetric(
-              horizontal: rw(context, 20),
-              vertical: rh(context, 10),
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: GestureDetector(
-                    onTap: () => setState(() => _selectedTab = 0),
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 200),
-                      padding: EdgeInsets.symmetric(vertical: rh(context, 10)),
-                      decoration: BoxDecoration(
-                        color: _selectedTab == 0
-                            ? AppColors.primary500
-                            : Colors.grey.shade100,
-                        borderRadius: BorderRadius.circular(rw(context, 10)),
-                      ),
-                      child: Center(
-                        child: Text(
-                          'Invitation',
-                          style: TextStyle(
-                            fontWeight: FontWeight.w700,
-                            fontSize: rfs(context, 13),
-                            color: _selectedTab == 0
-                                ? Colors.white
-                                : Colors.grey.shade600,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-                hSpace(context, 10),
-                Expanded(
-                  child: GestureDetector(
-                    onTap: () {
-                      setState(() => _selectedTab = 1);
-                      // Trigger load share links when switching to Share Link tab
-                      controller.fetchShareLinks(resetPage: true);
-                    },
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 200),
-                      padding: EdgeInsets.symmetric(vertical: rh(context, 10)),
-                      decoration: BoxDecoration(
-                        color: _selectedTab == 1
-                            ? AppColors.primary500
-                            : Colors.grey.shade100,
-                        borderRadius: BorderRadius.circular(rw(context, 10)),
-                      ),
-                      child: Center(
-                        child: Text(
-                          'Share Link',
-                          style: TextStyle(
-                            fontWeight: FontWeight.w700,
-                            fontSize: rfs(context, 13),
-                            color: _selectedTab == 1
-                                ? Colors.white
-                                : Colors.grey.shade600,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
+            child: TabBar(
+              controller: _tabController,
+              labelColor: AppColors.primary600,
+              unselectedLabelColor: Colors.grey.shade500,
+              indicatorColor: AppColors.primary600,
+              indicatorWeight: 2.5,
+              labelStyle: TextStyle(
+                fontSize: rfs(context, 14),
+                fontWeight: FontWeight.w700,
+              ),
+              unselectedLabelStyle: TextStyle(
+                fontSize: rfs(context, 14),
+                fontWeight: FontWeight.w500,
+              ),
+              tabs: const [
+                Tab(text: 'Invitation'),
+                Tab(text: 'Share Link'),
               ],
             ),
           ),
-          const Divider(height: 1),
 
           // ── Content Area ──────────────────────────────────────────
           Expanded(
-            child: _selectedTab == 0
-                ? _buildInvitationTab()
-                : _buildShareLinkTab(),
+            child: TabBarView(
+              controller: _tabController,
+              children: [_buildInvitationTab(), _buildShareLinkTab()],
+            ),
           ),
         ],
       ),
@@ -198,258 +167,274 @@ class _SendInvitationPageState extends State<SendInvitationPage> {
   }
 
   Widget _buildInvitationTab() {
-    return RefreshIndicator(
-      onRefresh: () async {
-        final inviteCtrl = Get.find<InvitationController>();
-        await inviteCtrl.fetchOngoingInvitations();
-      },
-      child: SingleChildScrollView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        padding: EdgeInsets.all(rw(context, 20.0)),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: [
-                  GestureDetector(
-                    onTap: () async {
-                      final inviteCtrl = Get.find<InvitationController>();
-                      final result =
-                          await showModalBottomSheet<Map<String, dynamic>>(
-                            context: context,
-                            enableDrag: true,
-                            isDismissible: true,
-                            isScrollControlled: true,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.vertical(
-                                top: Radius.circular(rw(context, 16)),
-                              ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // ── Filter bar ─────────────────────────────────────────────
+        Padding(
+          padding: EdgeInsets.symmetric(
+            horizontal: rw(context, 20),
+            vertical: rh(context, 10),
+          ),
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                GestureDetector(
+                  onTap: () async {
+                    final inviteCtrl = Get.find<InvitationController>();
+                    final result =
+                        await showModalBottomSheet<Map<String, dynamic>>(
+                          context: context,
+                          enableDrag: true,
+                          isDismissible: true,
+                          isScrollControlled: true,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.vertical(
+                              top: Radius.circular(rw(context, 16)),
                             ),
-                            builder: (context) => FilterBottomSheet(
-                              initialStartDate: startDate,
-                              initialEndDate: endDate,
-                              initialSiteId: inviteCtrl.selectedSiteId.value,
-                            ),
-                          );
+                          ),
+                          builder: (context) => FilterBottomSheet(
+                            initialStartDate: startDate,
+                            initialEndDate: endDate,
+                            initialSiteId: inviteCtrl.selectedSiteId.value,
+                          ),
+                        );
 
-                      if (result != null) {
-                        setState(() {
-                          startDate = result['startDate'];
-                          endDate = result['endDate'];
-                          selectedGedung = result['siteName'];
-                        });
-                        inviteCtrl.setFilters(
-                          start: startDate,
-                          end: endDate,
-                          siteId: result['siteId'],
-                          siteName: result['siteName'],
-                        );
-                      }
+                    if (result != null) {
+                      setState(() {
+                        startDate = result['startDate'];
+                        endDate = result['endDate'];
+                        selectedGedung = result['siteName'];
+                      });
+                      inviteCtrl.setFilters(
+                        start: startDate,
+                        end: endDate,
+                        siteId: result['siteId'],
+                        siteName: result['siteName'],
+                      );
+                    }
+                  },
+                  child: _buildFilterChip(context, 'Filter'),
+                ),
+                if (selectedGedung != null) ...[
+                  hSpace(context, 8),
+                  _buildFilterValueChip(
+                    context,
+                    selectedGedung!,
+                    onClear: () {
+                      final inviteCtrl = Get.find<InvitationController>();
+                      setState(() => selectedGedung = null);
+                      inviteCtrl.setFilters(
+                        start: startDate,
+                        end: endDate,
+                        siteId: null,
+                        siteName: null,
+                      );
                     },
-                    child: _buildFilterChip(context, 'Filter'),
                   ),
-                  if (selectedGedung != null) ...[
-                    hSpace(context, 10),
-                    _buildFilterValueChip(
-                      context,
-                      selectedGedung!,
-                      onClear: () {
-                        final inviteCtrl = Get.find<InvitationController>();
-                        setState(() => selectedGedung = null);
-                        inviteCtrl.setFilters(
-                          start: startDate,
-                          end: endDate,
-                          siteId: null,
-                          siteName: null,
+                ],
+                if (startDate != null || endDate != null) ...[
+                  hSpace(context, 8),
+                  _buildFilterValueChip(
+                    context,
+                    _formatDateRange(startDate, endDate),
+                    onClear: () {
+                      final inviteCtrl = Get.find<InvitationController>();
+                      setState(() {
+                        startDate = null;
+                        endDate = null;
+                      });
+                      inviteCtrl.setFilters(
+                        start: null,
+                        end: null,
+                        siteId: inviteCtrl.selectedSiteId.value,
+                        siteName: inviteCtrl.selectedSiteName.value,
+                      );
+                    },
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+        Container(height: 1, color: const Color(0xFFF0F0F0)),
+
+        // ── List ──────────────────────────────────────────────────
+        Expanded(
+          child: RefreshIndicator(
+            onRefresh: () async {
+              final inviteCtrl = Get.find<InvitationController>();
+              await inviteCtrl.fetchOngoingInvitations();
+            },
+            child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: EdgeInsets.all(rw(context, 20.0)),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Loading indicator for background refresh
+                  Obx(() {
+                    final inviteCtrl = Get.isRegistered<InvitationController>()
+                        ? Get.find<InvitationController>()
+                        : null;
+                    if (inviteCtrl != null &&
+                        inviteCtrl.isLoading.value &&
+                        inviteCtrl.ongoingInvitations.isNotEmpty) {
+                      return Padding(
+                        padding: EdgeInsets.only(bottom: rh(context, 12)),
+                        child: LinearProgressIndicator(
+                          minHeight: rh(context, 2),
+                          backgroundColor: Colors.transparent,
+                          valueColor: const AlwaysStoppedAnimation<Color>(
+                            AppColors.primary500,
+                          ),
+                        ),
+                      );
+                    }
+                    return const SizedBox.shrink();
+                  }),
+                  Obx(() {
+                    final inviteCtrl = Get.isRegistered<InvitationController>()
+                        ? Get.find<InvitationController>()
+                        : Get.put(InvitationController());
+
+                    if (inviteCtrl.isLoading.value &&
+                        inviteCtrl.ongoingInvitations.isEmpty) {
+                      return Center(
+                        child: Padding(
+                          padding: EdgeInsets.all(rw(context, 40.0)),
+                          child: const CircularProgressIndicator(),
+                        ),
+                      );
+                    }
+
+                    if (inviteCtrl.ongoingInvitations.isEmpty) {
+                      return Center(
+                        child: Padding(
+                          padding: EdgeInsets.all(rw(context, 40.0)),
+                          child: Column(
+                            children: [
+                              Icon(
+                                Icons.inventory_2_outlined,
+                                size: rw(context, 48),
+                                color: Colors.grey[400],
+                              ),
+                              vSpace(context, 16),
+                              Text(
+                                'No Invitation Found',
+                                style: TextStyle(
+                                  color: Colors.grey[600],
+                                  fontWeight: FontWeight.w500,
+                                  fontSize: rfs(context, 14),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    }
+
+                    return ListView.separated(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: inviteCtrl.ongoingInvitations.length,
+                      separatorBuilder: (context, index) => vSpace(context, 12),
+                      itemBuilder: (context, index) {
+                        final item = inviteCtrl.ongoingInvitations[index];
+                        final isCheckout = item.visitorStatus
+                            .toLowerCase()
+                            .contains('checkout');
+                        final isCheckin = item.visitorStatus
+                            .toLowerCase()
+                            .contains('checkin');
+                        final isPreregis = item.visitorStatus
+                            .toLowerCase()
+                            .contains('preregis');
+                        final isDone = item.isPraregisterDone;
+
+                        IconData statusIcon;
+                        Color statusColor;
+
+                        if (isCheckout) {
+                          statusIcon = Icons.cancel;
+                          statusColor = AppColors.success500;
+                        } else if (isCheckin) {
+                          statusIcon = Icons.check_circle;
+                          statusColor = AppColors.success500;
+                        } else if (isPreregis && isDone) {
+                          statusIcon = Icons.fact_check;
+                          statusColor = Colors.grey;
+                        } else {
+                          statusIcon = Icons.assignment_late;
+                          statusColor = Colors.grey;
+                        }
+
+                        return GestureDetector(
+                          onTap: () =>
+                              _showInvitationDetailDialog(item, statusColor),
+                          child: CustomCard(
+                            image: Icon(
+                              statusIcon,
+                              color: Colors.white,
+                              size: rw(context, 20),
+                            ),
+                            size: rw(context, 26),
+                            title: item.visitorName,
+                            subtitle: item.sitePlaceName.isNotEmpty
+                                ? item.sitePlaceName
+                                : item.groupName,
+                            additional: DateFormat(
+                              'EEE, dd MMM yyyy',
+                            ).format(item.visitorPeriodStart),
+                            additionalDesc:
+                                '${DateFormat('HH:mm').format(item.visitorPeriodStart)} - ${DateFormat('HH:mm').format(item.visitorPeriodEnd)}',
+                            backgroundIconColor: statusColor,
+                            trailing: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                Text(
+                                  item.invitationCode,
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: rfs(context, 12),
+                                  ),
+                                ),
+                                vSpace(context, 4),
+                                Container(
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: rw(context, 8),
+                                    vertical: rh(context, 2),
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: statusColor,
+                                    borderRadius: BorderRadius.circular(
+                                      rw(context, 4),
+                                    ),
+                                  ),
+                                  child: Text(
+                                    item.visitorStatus,
+                                    style: TextStyle(
+                                      fontSize: rfs(context, 10),
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
                         );
                       },
-                    ),
-                  ],
-                  if (startDate != null || endDate != null) ...[
-                    hSpace(context, 10),
-                    _buildFilterValueChip(
-                      context,
-                      _formatDateRange(startDate, endDate),
-                      onClear: () {
-                        final inviteCtrl = Get.find<InvitationController>();
-                        setState(() {
-                          startDate = null;
-                          endDate = null;
-                        });
-                        inviteCtrl.setFilters(
-                          start: null,
-                          end: null,
-                          siteId: inviteCtrl.selectedSiteId.value,
-                          siteName: inviteCtrl.selectedSiteName.value,
-                        );
-                      },
-                    ),
-                  ],
+                    );
+                  }),
                 ],
               ),
             ),
-            vSpace(context, 16),
-            // Loading indicator for background refresh
-            Obx(() {
-              final inviteCtrl = Get.isRegistered<InvitationController>()
-                  ? Get.find<InvitationController>()
-                  : null;
-              if (inviteCtrl != null &&
-                  inviteCtrl.isLoading.value &&
-                  inviteCtrl.ongoingInvitations.isNotEmpty) {
-                return Padding(
-                  padding: EdgeInsets.only(bottom: rh(context, 12)),
-                  child: LinearProgressIndicator(
-                    minHeight: rh(context, 2),
-                    backgroundColor: Colors.transparent,
-                    valueColor: const AlwaysStoppedAnimation<Color>(
-                      AppColors.primary500,
-                    ),
-                  ),
-                );
-              }
-              return const SizedBox.shrink();
-            }),
-            Obx(() {
-              final inviteCtrl = Get.isRegistered<InvitationController>()
-                  ? Get.find<InvitationController>()
-                  : Get.put(InvitationController());
-
-              if (inviteCtrl.isLoading.value &&
-                  inviteCtrl.ongoingInvitations.isEmpty) {
-                return Center(
-                  child: Padding(
-                    padding: EdgeInsets.all(rw(context, 40.0)),
-                    child: const CircularProgressIndicator(),
-                  ),
-                );
-              }
-
-              if (inviteCtrl.ongoingInvitations.isEmpty) {
-                return Center(
-                  child: Padding(
-                    padding: EdgeInsets.all(rw(context, 40.0)),
-                    child: Column(
-                      children: [
-                        Icon(
-                          Icons.inventory_2_outlined,
-                          size: rw(context, 48),
-                          color: Colors.grey[400],
-                        ),
-                        vSpace(context, 16),
-                        Text(
-                          'No Invitation Found',
-                          style: TextStyle(
-                            color: Colors.grey[600],
-                            fontWeight: FontWeight.w500,
-                            fontSize: rfs(context, 14),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              }
-
-              return ListView.separated(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: inviteCtrl.ongoingInvitations.length,
-                separatorBuilder: (context, index) => vSpace(context, 12),
-                itemBuilder: (context, index) {
-                  final item = inviteCtrl.ongoingInvitations[index];
-                  final isCheckout = item.visitorStatus.toLowerCase().contains(
-                    'checkout',
-                  );
-                  final isCheckin = item.visitorStatus.toLowerCase().contains(
-                    'checkin',
-                  );
-                  final isPreregis = item.visitorStatus.toLowerCase().contains(
-                    'preregis',
-                  );
-                  final isDone = item.isPraregisterDone;
-
-                  // Tentukan Ikon dan Warna berdasarkan 4 Status
-                  IconData statusIcon;
-                  Color statusColor;
-
-                  if (isCheckout) {
-                    statusIcon = Icons.cancel;
-                    statusColor = AppColors.success500;
-                  } else if (isCheckin) {
-                    statusIcon = Icons.check_circle;
-                    statusColor = AppColors.success500;
-                  } else if (isPreregis && isDone) {
-                    statusIcon = Icons.fact_check;
-                    statusColor = Colors.grey;
-                  } else {
-                    statusIcon = Icons.assignment_late;
-                    statusColor = Colors.grey;
-                  }
-
-                  return GestureDetector(
-                    onTap: () => _showInvitationDetailDialog(item, statusColor),
-                    child: CustomCard(
-                      image: Icon(
-                        statusIcon,
-                        color: Colors.white,
-                        size: rw(context, 20),
-                      ),
-                      size: rw(context, 26),
-                      title: item.visitorName,
-                      subtitle: item.sitePlaceName.isNotEmpty
-                          ? item.sitePlaceName
-                          : item.groupName,
-                      additional: DateFormat(
-                        'EEE, dd MMM yyyy',
-                      ).format(item.visitorPeriodStart),
-                      additionalDesc:
-                          '${DateFormat('HH:mm').format(item.visitorPeriodStart)} - ${DateFormat('HH:mm').format(item.visitorPeriodEnd)}',
-                      backgroundIconColor: statusColor,
-                      trailing: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          Text(
-                            item.invitationCode,
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: rfs(context, 12),
-                            ),
-                          ),
-                          vSpace(context, 4),
-                          Container(
-                            padding: EdgeInsets.symmetric(
-                              horizontal: rw(context, 8),
-                              vertical: rh(context, 2),
-                            ),
-                            decoration: BoxDecoration(
-                              color: statusColor,
-                              borderRadius: BorderRadius.circular(
-                                rw(context, 4),
-                              ),
-                            ),
-                            child: Text(
-                              item.visitorStatus,
-                              style: TextStyle(
-                                fontSize: rfs(context, 10),
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                },
-              );
-            }),
-          ],
+          ),
         ),
-      ),
+      ],
     );
   }
 
@@ -636,7 +621,6 @@ class _SendInvitationPageState extends State<SendInvitationPage> {
       height: rh(context, 32),
       padding: EdgeInsets.symmetric(horizontal: rw(context, 12)),
       decoration: BoxDecoration(
-        color: Colors.white,
         border: Border.all(color: Colors.grey.shade300),
         borderRadius: BorderRadius.circular(rw(context, 50)),
       ),
@@ -658,7 +642,6 @@ class _SendInvitationPageState extends State<SendInvitationPage> {
     );
   }
 
-
   Widget _buildFilterValueChip(
     BuildContext context,
     String label, {
@@ -668,7 +651,6 @@ class _SendInvitationPageState extends State<SendInvitationPage> {
       height: rh(context, 32),
       padding: EdgeInsets.symmetric(horizontal: rw(context, 10)),
       decoration: BoxDecoration(
-        color: Colors.white,
         border: Border.all(color: Colors.grey.shade300),
         borderRadius: BorderRadius.circular(rw(context, 50)),
       ),

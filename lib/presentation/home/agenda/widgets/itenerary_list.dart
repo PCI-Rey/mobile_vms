@@ -298,7 +298,10 @@ class _IteneraryListState extends State<IteneraryList> {
                   child: OutlinedButton(
                     onPressed: () {
                       if (ticket.approvalTicketId != null) {
-                        controller.rejectTicketAction(ticket.approvalTicketId!);
+                        controller.rejectTicketAction(
+                          ticket.approvalTicketId!,
+                          ticket.actorId ?? '',
+                        );
                       }
                     },
                     style: OutlinedButton.styleFrom(
@@ -328,6 +331,7 @@ class _IteneraryListState extends State<IteneraryList> {
                       if (ticket.approvalTicketId != null) {
                         controller.approveTicketAction(
                           ticket.approvalTicketId!,
+                          ticket.actorId ?? '',
                         );
                       }
                     },

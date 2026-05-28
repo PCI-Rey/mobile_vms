@@ -405,13 +405,13 @@ class InvitationController extends GetxController {
     }
   }
 
-  Future<bool> approveTicketAction(String approvalTicketId) async {
+  Future<bool> approveTicketAction(String approvalTicketId, String actorId) async {
     final user = _hive.getUser();
     final token = user?.token;
     if (token == null) return false;
 
     try {
-      final response = await _api.approveTicket(token, approvalTicketId);
+      final response = await _api.approveTicket(token, approvalTicketId, actorId);
       if (response.data['status'] == 'success' ||
           response.data['status_code'] == 200) {
         Get.snackbar(
@@ -445,13 +445,13 @@ class InvitationController extends GetxController {
     }
   }
 
-  Future<bool> rejectTicketAction(String approvalTicketId) async {
+  Future<bool> rejectTicketAction(String approvalTicketId, String actorId) async {
     final user = _hive.getUser();
     final token = user?.token;
     if (token == null) return false;
 
     try {
-      final response = await _api.rejectTicket(token, approvalTicketId);
+      final response = await _api.rejectTicket(token, approvalTicketId, actorId);
       if (response.data['status'] == 'success' ||
           response.data['status_code'] == 200) {
         Get.snackbar(
@@ -484,4 +484,167 @@ class InvitationController extends GetxController {
       return false;
     }
   }
+
+  // ─── Transaction Visitors ────────────────────────────────────────────
+
+  /// Fetch list of visitors for a transaction.
+  /// [entityId] is the `entity_id` field from the approval ticket.
+  Future<List<Map<String, dynamic>>> fetchTransactionVisitors(
+    String entityId,
+  ) async {
+    final user = _hive.getUser();
+    final token = user?.token;
+    if (token == null) return [];
+
+    try {
+      final response = await _api.getTransactionVisitors(token, entityId);
+      final data = response.data;
+      if (data['status'] == 'success' || data['status_code'] == 200) {
+        final raw = data['collection'] ?? data['data'] ?? data['visitors'];
+        if (raw is List) {
+          return raw.whereType<Map<String, dynamic>>().toList();
+        }
+      }
+      return [];
+    } catch (e) {
+      debugPrint('fetchTransactionVisitors error: $e');
+      return [];
+    }
+  }
+
+  /// POST approve-meetinghost. Returns true on success (no snackbar — caller handles UI).
+  Future<bool> approveMeetingHostAction(
+    String approvalTicketId,
+    List<String> listTrxVisitorId,
+  ) async {
+    final user = _hive.getUser();
+    final token = user?.token;
+    if (token == null) return false;
+
+    try {
+      final response = await _api.approveMeetingHost(
+        token,
+        approvalTicketId,
+        listTrxVisitorId,
+      );
+      return response.data['status'] == 'success' ||
+          response.data['status_code'] == 200;
+    } catch (e) {
+      debugPrint('approveMeetingHostAction error: $e');
+      return false;
+    }
+  }
+
+  /// Refactored Approve action that executes BOTH approve-meetinghost and approve endpoints.
+  Future<bool> approveMeetingHostAndTicketsAction({
+    required String approvalTicketId,
+    required String actorId,
+    required List<String> listTrxVisitorId,
+  }) async {
+    final user = _hive.getUser();
+    final token = user?.token;
+    if (token == null) return false;
+
+    try {
+      isApprovalLoading.value = true;
+      // 1. Call approve-meetinghost
+      final responseHost = await _api.approveMeetingHost(
+        token,
+        approvalTicketId,
+        listTrxVisitorId,
+      );
+
+      final approveHostOk = responseHost.data['status'] == 'success' ||
+          responseHost.data['status_code'] == 200;
+
+      if (!approveHostOk) {
+        Get.snackbar(
+          'Failed',
+          responseHost.data['msg']?.toString() ?? 'Gagal menyetujui host meeting.',
+          snackPosition: SnackPosition.TOP,
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+        );
+        return false;
+      }
+
+      // 2. Call approve endpoint ONCE with the approvalTicketId and actorId
+      final res = await _api.approveTicket(token, approvalTicketId, actorId);
+      final approveOk = res.data['status'] == 'success' || res.data['status_code'] == 200;
+
+      if (approveOk) {
+        Get.snackbar(
+          'Success',
+          'Berhasil menyetujui approval.',
+          snackPosition: SnackPosition.TOP,
+          backgroundColor: Colors.green,
+          colorText: Colors.white,
+        );
+        fetchApprovalTickets(isSilent: true);
+        return true;
+      }
+
+      Get.snackbar(
+        'Failed',
+        res.data['msg']?.toString() ?? 'Gagal menyetujui ticket.',
+        snackPosition: SnackPosition.TOP,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
+      return false;
+    } catch (e) {
+      debugPrint('approveMeetingHostAndTicketsAction error: $e');
+      Get.snackbar(
+        'Error',
+        'Terjadi kesalahan: $e',
+        snackPosition: SnackPosition.TOP,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
+      return false;
+    } finally {
+      isApprovalLoading.value = false;
+    }
+  }
+
+  /// Refactored Reject action that calls the workflow reject endpoint.
+  Future<bool> rejectMeetingHostAction({
+    required String approvalTicketId,
+    required String actorId,
+  }) async {
+    final user = _hive.getUser();
+    final token = user?.token;
+    if (token == null) return false;
+
+    try {
+      isApprovalLoading.value = true;
+      final res = await _api.rejectTicket(token, approvalTicketId, actorId);
+      if (res.data['status'] == 'success' || res.data['status_code'] == 200) {
+        Get.snackbar(
+          'Success',
+          'Berhasil menolak approval.',
+          snackPosition: SnackPosition.TOP,
+          backgroundColor: Colors.green,
+          colorText: Colors.white,
+        );
+        fetchApprovalTickets(isSilent: true);
+        return true;
+      }
+
+      Get.snackbar(
+        'Failed',
+        res.data['msg']?.toString() ?? 'Gagal menolak approval.',
+        snackPosition: SnackPosition.TOP,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
+      return false;
+    } catch (e) {
+      debugPrint('rejectMeetingHostAction error: $e');
+      return false;
+    } finally {
+      isApprovalLoading.value = false;
+    }
+  }
 }
+

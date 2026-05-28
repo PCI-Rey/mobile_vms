@@ -532,12 +532,21 @@ class ApiService {
     }
   }
 
-  Future<Response> approveTicket(String token, String approvalTicketId) async {
+  Future<Response> approveTicket(
+    String token,
+    String approvalTicketId,
+    String actorId,
+  ) async {
     try {
       final response = await _dio.post(
         '/$pathApi/approval-ticket/$approvalTicketId/approve',
-        data: const {},
-        options: Options(headers: {'Authorization': 'Bearer $token'}),
+        data: '"$actorId"',
+        options: Options(
+          headers: {
+            'Authorization': 'Bearer $token',
+            'Content-Type': 'application/json',
+          },
+        ),
       );
       return response;
     } on DioException catch (e) {
@@ -548,17 +557,64 @@ class ApiService {
     }
   }
 
-  Future<Response> rejectTicket(String token, String approvalTicketId) async {
+  Future<Response> rejectTicket(
+    String token,
+    String approvalTicketId,
+    String actorId,
+  ) async {
     try {
       final response = await _dio.post(
         '/$pathApi/approval-ticket/$approvalTicketId/reject',
-        data: const {},
-        options: Options(headers: {'Authorization': 'Bearer $token'}),
+        data: '"$actorId"',
+        options: Options(
+          headers: {
+            'Authorization': 'Bearer $token',
+            'Content-Type': 'application/json',
+          },
+        ),
       );
       return response;
     } on DioException catch (e) {
       debugPrint('Dio Error rejectTicket: ${e.message}');
       debugPrint('Dio Error rejectTicket response data: ${e.response?.data}');
+      if (e.response != null) return e.response!;
+      rethrow;
+    }
+  }
+
+  /// GET /api/visitor/transaction/{transactionVisitorId}/visitors
+  Future<Response> getTransactionVisitors(
+    String token,
+    String transactionVisitorId,
+  ) async {
+    try {
+      final response = await _dio.get(
+        '/$pathApi/visitor/transaction/$transactionVisitorId/visitors',
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+      return response;
+    } on DioException catch (e) {
+      debugPrint('Dio Error getTransactionVisitors: ${e.message}');
+      if (e.response != null) return e.response!;
+      rethrow;
+    }
+  }
+
+  /// POST /api/approval-ticket/{approvalTicketId}/approve-meetinghost
+  Future<Response> approveMeetingHost(
+    String token,
+    String approvalTicketId,
+    List<String> listTrxVisitorId,
+  ) async {
+    try {
+      final response = await _dio.post(
+        '/$pathApi/approval-ticket/$approvalTicketId/approve-meetinghost',
+        data: {'list_trx_visitor_id': listTrxVisitorId},
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+      return response;
+    } on DioException catch (e) {
+      debugPrint('Dio Error approveMeetingHost: ${e.message}');
       if (e.response != null) return e.response!;
       rethrow;
     }
