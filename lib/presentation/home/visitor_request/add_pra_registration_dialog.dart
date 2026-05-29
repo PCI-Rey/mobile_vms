@@ -958,6 +958,7 @@ class _Step1VisitorInfo extends StatelessWidget {
                           _EmployeeSearchField(
                             controller: controller,
                             initialValue: v.selectedEmployeeName.value,
+                            syncWith: v.selectedEmployeeName,
                             onSelected: (emp) {
                               final id = emp['id']?.toString() ?? '';
                               controller.onGroupEmployeeSelected(v, id);
@@ -3182,12 +3183,16 @@ class _EmployeeSearchField extends StatefulWidget {
   final String initialValue;
   final void Function(Map<String, dynamic> employee) onSelected;
   final void Function()? onClear;
+  /// Observable yang akan di-sync ke search field.
+  /// Jika tidak diberikan, secara default listen ke controller.selectedEmployeeName.
+  final RxString? syncWith;
 
   const _EmployeeSearchField({
     required this.controller,
     required this.onSelected,
     this.initialValue = '',
     this.onClear,
+    this.syncWith,
   });
 
   @override
@@ -3201,6 +3206,7 @@ class _EmployeeSearchFieldState extends State<_EmployeeSearchField> {
   final LayerLink _layerLink = LayerLink();
   OverlayEntry? _overlayEntry;
   late final VoidCallback _focusListener;
+  Worker? _nameWorker;
 
   @override
   void initState() {
@@ -3215,8 +3221,21 @@ class _EmployeeSearchFieldState extends State<_EmployeeSearchField> {
       }
     };
     _focusNode.addListener(_focusListener);
+    // Listen ke observable yang relevan:
+    // - syncWith jika diberikan (contoh: per-row group visitor)
+    // - fallback ke controller.selectedEmployeeName (single mode)
+    final targetObs = widget.syncWith ?? widget.controller.selectedEmployeeName;
+    _nameWorker = ever(
+      targetObs,
+      (String newName) {
+        if (!mounted) return;
+        if (_searchCtrl.text != newName) {
+          _searchCtrl.text = newName;
+        }
+      },
+    );
   }
-  
+
   @override
   void didUpdateWidget(_EmployeeSearchField oldWidget) {
     super.didUpdateWidget(oldWidget);
@@ -3227,6 +3246,7 @@ class _EmployeeSearchFieldState extends State<_EmployeeSearchField> {
 
   @override
   void dispose() {
+    _nameWorker?.dispose();
     _focusNode.removeListener(_focusListener);
     _overlayEntry?.remove();
     _overlayEntry = null;
