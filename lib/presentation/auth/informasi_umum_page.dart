@@ -338,12 +338,15 @@ class _Step1 extends StatelessWidget {
               },
               buttonStyleData: ButtonStyleData(
                 height: 50,
-                padding: const EdgeInsets.symmetric(horizontal: 12),
+                padding: const EdgeInsets.only(left: 0, right: 12),
                 decoration: BoxDecoration(
                   color: AppColors.primary50,
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(color: AppColors.grey300, width: 1.5),
                 ),
+              ),
+              menuItemStyleData: const MenuItemStyleData(
+                padding: EdgeInsets.symmetric(horizontal: 12),
               ),
               dropdownStyleData: DropdownStyleData(
                 maxHeight: 250,
@@ -597,12 +600,15 @@ class _Step3 extends StatelessWidget {
                   },
                   buttonStyleData: ButtonStyleData(
                     height: 50,
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    padding: const EdgeInsets.only(left: 0, right: 12),
                     decoration: BoxDecoration(
                       color: AppColors.primary50,
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(color: AppColors.grey300, width: 1.5),
                     ),
+                  ),
+                  menuItemStyleData: const MenuItemStyleData(
+                    padding: EdgeInsets.symmetric(horizontal: 12),
                   ),
                   dropdownStyleData: DropdownStyleData(
                     maxHeight: 250,
