@@ -26,13 +26,15 @@ class _ApprovalPageState extends State<ApprovalPage>
   DateTime? _pendingEndDate;
   DateTime? _approvedStartDate;
   DateTime? _approvedEndDate;
+  DateTime? _rejectedStartDate;
+  DateTime? _rejectedEndDate;
 
   late final InvitationController controller;
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(length: 3, vsync: this);
 
     if (Get.isRegistered<InvitationController>()) {
       controller = Get.find<InvitationController>();
@@ -131,6 +133,47 @@ class _ApprovalPageState extends State<ApprovalPage>
     return list;
   }
 
+  List<ApprovalTicketModel> get _rejectedTickets {
+    List<ApprovalTicketModel> list = controller.approvalTickets
+        .where((t) =>
+            (t.approvalActorStatus ?? '').toLowerCase() == 'rejected' ||
+            (t.approvalActorStatus ?? '').toLowerCase() == 'reject')
+        .toList();
+
+    if (_rejectedStartDate != null) {
+      list = list.where((t) {
+        final d = t.visitorPeriodStart;
+        if (d == null) return true;
+        return !d.isBefore(
+          DateTime(
+            _rejectedStartDate!.year,
+            _rejectedStartDate!.month,
+            _rejectedStartDate!.day,
+          ),
+        );
+      }).toList();
+    }
+
+    if (_rejectedEndDate != null) {
+      list = list.where((t) {
+        final d = t.visitorPeriodStart;
+        if (d == null) return true;
+        return !d.isAfter(
+          DateTime(
+            _rejectedEndDate!.year,
+            _rejectedEndDate!.month,
+            _rejectedEndDate!.day,
+            23,
+            59,
+            59,
+          ),
+        );
+      }).toList();
+    }
+
+    return list;
+  }
+
   // ── Build ─────────────────────────────────────────────────────────────────
 
   @override
@@ -177,6 +220,7 @@ class _ApprovalPageState extends State<ApprovalPage>
               tabs: const [
                 Tab(text: 'Pending'),
                 Tab(text: 'Approved'),
+                Tab(text: 'Rejected'),
               ],
             ),
           ),
@@ -210,6 +254,18 @@ class _ApprovalPageState extends State<ApprovalPage>
                     _approvedEndDate = null;
                   }),
                   onConfirmAction: _confirmAction,
+                  formatDateRange: _formatDateRange,
+                ),
+                _RejectedTabView(
+                  controller: controller,
+                  startDate: _rejectedStartDate,
+                  endDate: _rejectedEndDate,
+                  rejectedTickets: () => _rejectedTickets,
+                  onFilterTap: _openRejectedFilter,
+                  onClearDateFilter: () => setState(() {
+                    _rejectedStartDate = null;
+                    _rejectedEndDate = null;
+                  }),
                   formatDateRange: _formatDateRange,
                 ),
               ],
@@ -260,6 +316,28 @@ class _ApprovalPageState extends State<ApprovalPage>
       setState(() {
         _approvedStartDate = result['startDate'];
         _approvedEndDate = result['endDate'];
+      });
+    }
+  }
+
+  Future<void> _openRejectedFilter() async {
+    final result = await showModalBottomSheet<Map<String, dynamic>>(
+      context: context,
+      enableDrag: true,
+      isDismissible: true,
+      isScrollControlled: true,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(rw(context, 16)),
+        ),
+      ),
+      builder: (context) => const FilterBottomSheet(),
+    );
+
+    if (result != null) {
+      setState(() {
+        _rejectedStartDate = result['startDate'];
+        _rejectedEndDate = result['endDate'];
       });
     }
   }
@@ -559,6 +637,112 @@ class _ApprovedTabView extends StatelessWidget {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
+// REJECTED TAB
+// ═══════════════════════════════════════════════════════════════════════════
+
+class _RejectedTabView extends StatelessWidget {
+  const _RejectedTabView({
+    required this.controller,
+    required this.startDate,
+    required this.endDate,
+    required this.rejectedTickets,
+    required this.onFilterTap,
+    required this.onClearDateFilter,
+    required this.formatDateRange,
+  });
+
+  final InvitationController controller;
+  final DateTime? startDate;
+  final DateTime? endDate;
+  final List<ApprovalTicketModel> Function() rejectedTickets;
+  final VoidCallback onFilterTap;
+  final VoidCallback onClearDateFilter;
+  final String Function(DateTime?, DateTime?) formatDateRange;
+
+  bool get _hasDateFilter => startDate != null || endDate != null;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // ── Filter bar ────────────────────────────────────────────────
+        Padding(
+          padding: EdgeInsets.symmetric(
+            horizontal: rw(context, 20),
+            vertical: rh(context, 10),
+          ),
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                GestureDetector(
+                  onTap: onFilterTap,
+                  child: const _FilterChip(label: 'Filter'),
+                ),
+                if (_hasDateFilter) ...[
+                  hSpace(context, 8),
+                  _FilterValueChip(
+                    label: formatDateRange(startDate, endDate),
+                    onClear: onClearDateFilter,
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+        Container(height: 1, color: const Color(0xFFF0F0F0)),
+
+        // ── List ────────────────────────────────────────────────────
+        Expanded(
+          child: Obx(() {
+            if (controller.isApprovalLoading.value &&
+                controller.approvalTickets.isEmpty) {
+              return const Center(child: CircularProgressIndicator());
+            }
+
+            final tickets = rejectedTickets();
+
+            if (tickets.isEmpty) {
+              return _EmptyState(
+                onRefresh: controller.fetchApprovalTickets,
+                message: 'Tidak ada approval yang ditolak',
+                icon: Icons.cancel_outlined,
+              );
+            }
+
+            return RefreshIndicator(
+              onRefresh: () => controller.fetchApprovalTickets(),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _ListHeader(count: tickets.length, label: 'Rejected'),
+                  Expanded(
+                    child: ListView.builder(
+                      padding: EdgeInsets.fromLTRB(
+                        rw(context, 16),
+                        rh(context, 8),
+                        rw(context, 16),
+                        rh(context, 24),
+                      ),
+                      itemCount: tickets.length,
+                      itemBuilder: (context, index) => Padding(
+                        padding: EdgeInsets.only(bottom: rh(context, 12)),
+                        child: _RejectedCard(ticket: tickets[index]),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }),
+        ),
+      ],
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
 // SHARED WIDGETS
 // ═══════════════════════════════════════════════════════════════════════════
 
@@ -612,9 +796,14 @@ class _ListHeader extends StatelessWidget {
 }
 
 class _EmptyState extends StatelessWidget {
-  const _EmptyState({required this.onRefresh, required this.message});
+  const _EmptyState({
+    required this.onRefresh,
+    required this.message,
+    this.icon = Icons.fact_check_outlined,
+  });
   final Future<void> Function() onRefresh;
   final String message;
+  final IconData icon;
 
   @override
   Widget build(BuildContext context) {
@@ -628,7 +817,7 @@ class _EmptyState extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Icon(
-                  Icons.fact_check_outlined,
+                  icon,
                   size: rw(context, 64),
                   color: Colors.grey.shade300,
                 ),
@@ -1021,6 +1210,141 @@ class _ApprovalCard extends StatelessWidget {
         ),
       ), // end Container
     ); // end GestureDetector
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// REJECTED CARD  (read-only, no action buttons)
+// ═══════════════════════════════════════════════════════════════════════════
+
+class _RejectedCard extends StatelessWidget {
+  const _RejectedCard({required this.ticket});
+  final ApprovalTicketModel ticket;
+
+  @override
+  Widget build(BuildContext context) {
+    final start = ticket.visitorPeriodStart;
+    final end = ticket.visitorPeriodEnd;
+    final fmt = DateFormat('EEE, dd MMM yyyy');
+    final timeFmt = DateFormat('HH:mm');
+    final dateStr = start != null ? fmt.format(start) : '-';
+    final timeStr = (start != null && end != null)
+        ? '${timeFmt.format(start)} - ${timeFmt.format(end)}'
+        : '-';
+
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(rw(context, 14)),
+        border: Border.all(color: const Color(0xFFFFCDD2), width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: rw(context, 8),
+            offset: Offset(0, rh(context, 2)),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: EdgeInsets.fromLTRB(
+              rw(context, 16),
+              rh(context, 14),
+              rw(context, 16),
+              rh(context, 14),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Left: info
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (ticket.visitorTypeName != null) ...[
+                        Text(
+                          ticket.visitorTypeName!,
+                          style: TextStyle(
+                            fontSize: rfs(context, 11),
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.primary600,
+                          ),
+                        ),
+                        vSpace(context, 4),
+                      ],
+                      Text(
+                        ticket.agenda ?? '-',
+                        style: TextStyle(
+                          fontSize: rfs(context, 15),
+                          fontWeight: FontWeight.w700,
+                          color: Colors.black87,
+                        ),
+                      ),
+                      vSpace(context, 6),
+                      Text(
+                        '${ticket.hostName ?? '-'} · ${ticket.hostOrganizationName ?? '-'}',
+                        style: TextStyle(
+                          fontSize: rfs(context, 12),
+                          color: Colors.grey.shade600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                hSpace(context, 12),
+
+                // Right: status + date/time
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: rw(context, 9),
+                        vertical: rh(context, 3),
+                      ),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFFEBEE),
+                        borderRadius: BorderRadius.circular(rw(context, 20)),
+                      ),
+                      child: Text(
+                        ticket.approvalActorStatus ?? 'Rejected',
+                        style: TextStyle(
+                          fontSize: rfs(context, 11),
+                          fontWeight: FontWeight.w700,
+                          color: const Color(0xFFC62828),
+                        ),
+                      ),
+                    ),
+                    vSpace(context, 8),
+                    Text(
+                      dateStr,
+                      style: TextStyle(
+                        fontSize: rfs(context, 11),
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black87,
+                      ),
+                      textAlign: TextAlign.end,
+                    ),
+                    vSpace(context, 2),
+                    Text(
+                      timeStr,
+                      style: TextStyle(
+                        fontSize: rfs(context, 11),
+                        color: Colors.grey.shade500,
+                      ),
+                      textAlign: TextAlign.end,
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 
