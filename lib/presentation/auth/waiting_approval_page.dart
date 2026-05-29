@@ -190,37 +190,36 @@ class _WaitingApprovalPageState extends State<WaitingApprovalPage>
     final bottomPadding = MediaQuery.of(context).padding.bottom;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF4F7FB),
+      backgroundColor: Colors.white,
       body: SafeArea(
         child: Column(
           children: [
             Expanded(
               child: SingleChildScrollView(
                 padding: EdgeInsets.symmetric(
-                  horizontal: rw(context, 24),
-                  vertical: rh(context, 24),
+                  horizontal: rw(context, 28),
+                  vertical: rh(context, 32),
                 ),
                 child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    vSpace(context, 10),
+                    vSpace(context, 24),
 
-                    // Glowing Illustration
+                    // ── Animated Icon (unchanged logic) ──────────────
                     Obx(() {
                       final isApproved = _isApproved.value;
-                      final primaryColor = isApproved ? Colors.green : AppColors.primary500;
+                      final primaryColor =
+                          isApproved ? Colors.green : AppColors.primary500;
 
                       return Stack(
                         alignment: Alignment.center,
                         children: [
-                          // Soft outer glow circle (with pulsing animation when approved!)
                           isApproved
                               ? ScaleTransition(
                                   scale: _pulseAnimation,
                                   child: Container(
-                                    width: rw(context, 125),
-                                    height: rw(context, 125),
+                                    width: rw(context, 120),
+                                    height: rw(context, 120),
                                     decoration: BoxDecoration(
                                       shape: BoxShape.circle,
                                       color: Colors.green.withValues(alpha: 0.08),
@@ -228,26 +227,24 @@ class _WaitingApprovalPageState extends State<WaitingApprovalPage>
                                   ),
                                 )
                               : Container(
-                                  width: rw(context, 125),
-                                  height: rw(context, 125),
+                                  width: rw(context, 120),
+                                  height: rw(context, 120),
                                   decoration: BoxDecoration(
                                     shape: BoxShape.circle,
                                     color: AppColors.primary500.withValues(alpha: 0.08),
                                   ),
                                 ),
-                          // Inner glow circle
                           Container(
-                            width: rw(context, 92),
-                            height: rw(context, 92),
+                            width: rw(context, 88),
+                            height: rw(context, 88),
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
                               color: primaryColor.withValues(alpha: 0.12),
                             ),
                           ),
-                          // Premium themed container
                           Container(
-                            width: rw(context, 65),
-                            height: rw(context, 65),
+                            width: rw(context, 60),
+                            height: rw(context, 60),
                             decoration: const BoxDecoration(
                               shape: BoxShape.circle,
                               color: Colors.white,
@@ -265,7 +262,7 @@ class _WaitingApprovalPageState extends State<WaitingApprovalPage>
                                     child: Icon(
                                       Icons.check_rounded,
                                       color: Colors.green.shade600,
-                                      size: rw(context, 38),
+                                      size: rw(context, 32),
                                     ),
                                   )
                                 : RotationTransition(
@@ -273,7 +270,7 @@ class _WaitingApprovalPageState extends State<WaitingApprovalPage>
                                     child: Icon(
                                       Icons.history_toggle_off_rounded,
                                       color: AppColors.primary500,
-                                      size: rw(context, 35),
+                                      size: rw(context, 30),
                                     ),
                                   ),
                           ),
@@ -281,143 +278,99 @@ class _WaitingApprovalPageState extends State<WaitingApprovalPage>
                       );
                     }),
 
-                    vSpace(context, 15),
+                    vSpace(context, 28),
 
-                    // Badge status
+                    // ── Title ─────────────────────────────────────────
+                    Text(
+                      'Waiting for Approval',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: rfs(context, 20),
+                        fontWeight: FontWeight.w800,
+                        color: const Color(0xFF0F172A),
+                        letterSpacing: -0.3,
+                      ),
+                    ),
+
+                    vSpace(context, 12),
+
+                    // ── Status message from API ───────────────────────
+                    Text(
+                      widget.message,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: rfs(context, 13),
+                        height: 1.55,
+                        color: const Color(0xFF64748B),
+                        fontWeight: FontWeight.w400,
+                      ),
+                    ),
+
+                    vSpace(context, 24),
+
+                    // ── Invitation code chip ──────────────────────────
                     Container(
                       padding: EdgeInsets.symmetric(
                         horizontal: rw(context, 16),
-                        vertical: rh(context, 6),
+                        vertical: rh(context, 10),
                       ),
                       decoration: BoxDecoration(
-                        color: AppColors.primary50,
-                        borderRadius: BorderRadius.circular(rw(context, 20)),
-                        border: Border.all(
-                          color: AppColors.primary100,
-                        ),
+                        color: const Color(0xFFF8FAFF),
+                        borderRadius: BorderRadius.circular(rw(context, 10)),
+                        border: Border.all(color: const Color(0xFFE2E8F0)),
                       ),
-                      child: Text(
-                        'process_status'.tr == 'process_status'
-                            ? 'DALAM PROSES / IN PROCESS'
-                            : 'process_status'.tr,
-                        style: TextStyle(
-                          fontSize: rfs(context, 11),
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.primary600,
-                          letterSpacing: 0.8,
-                        ),
-                      ),
-                    ),
-
-                    vSpace(context, 10),
-
-                    // Main title (Indonesian & English)
-                    Text(
-                      'Mohon Bersabar',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: rfs(context, 24),
-                        fontWeight: FontWeight.w800,
-                        color: const Color(0xFF1E293B),
-                      ),
-                    ),
-                    vSpace(context, 4),
-                    Text(
-                      'Please Wait a Moment',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: rfs(context, 15),
-                        fontWeight: FontWeight.w500,
-                        color: const Color(0xFF64748B),
-                      ),
-                    ),
-
-                    vSpace(context, 10),
-
-                    // Description card (shows dynamic API response)
-                    Container(
-                      width: double.infinity,
-                      padding: EdgeInsets.all(rw(context, 16)),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(rw(context, 16)),
-                        border: Border.all(color: Colors.grey.shade100),
-                        boxShadow: const [
-                          BoxShadow(
-                            color: Colors.black12,
-                            blurRadius: 8,
-                            offset: Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: Text(
-                        widget.message,
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: rfs(context, 13.5),
-                          height: 1.5,
-                          fontWeight: FontWeight.w500,
-                          color: const Color(0xFF334155),
-                        ),
-                      ),
-                    ),
-
-                    vSpace(context, 15),
-
-                    // Step Tracker Card (Beautiful timeline explanation)
-                    Container(
-                      width: double.infinity,
-                      padding: EdgeInsets.all(rw(context, 20)),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(rw(context, 18)),
-                        border: Border.all(color: Colors.grey.shade100),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
+                          Icon(
+                            Icons.confirmation_number_outlined,
+                            size: rw(context, 16),
+                            color: AppColors.primary500,
+                          ),
+                          hSpace(context, 8),
                           Text(
-                            'Alur Pendaftaran / Registration Flow:',
+                            widget.invitationCode,
                             style: TextStyle(
                               fontSize: rfs(context, 13),
                               fontWeight: FontWeight.w700,
-                              color: const Color(0xFF1E293B),
+                              color: const Color(0xFF334155),
+                              letterSpacing: 0.5,
                             ),
-                          ),
-                          vSpace(context, 10),
-                          _buildTimelineStep(
-                            context: context,
-                            icon: Icons.check_circle_rounded,
-                            iconColor: Colors.green,
-                            title: 'Formulir Terkirim / Form Submitted',
-                            subtitle: 'Pendaftaran kunjungan Anda berhasil kami terima.',
-                            isLast: false,
-                          ),
-                          _buildTimelineStep(
-                            context: context,
-                            icon: Icons.hourglass_top_rounded,
-                            iconColor: Colors.orange,
-                            title: 'Proses Peninjauan / Under Review',
-                            subtitle: 'Host (tuan rumah) sedang memeriksa permohonan kunjungan Anda.',
-                            isLast: false,
-                          ),
-                          _buildTimelineStep(
-                            context: context,
-                            icon: Icons.mark_email_unread_rounded,
-                            iconColor: Colors.grey.shade400,
-                            title: 'Notifikasi Keputusan / Final Notification',
-                            subtitle: 'Hasil persetujuan akan dikirimkan otomatis ke email Anda.',
-                            isLast: true,
                           ),
                         ],
                       ),
+                    ),
+
+                    vSpace(context, 36),
+
+                    // ── Progress steps (minimal) ─────────────────────
+                    _buildMinimalStep(
+                      context,
+                      number: '1',
+                      label: 'Form submitted successfully',
+                      done: true,
+                    ),
+                    _buildStepDivider(context),
+                    _buildMinimalStep(
+                      context,
+                      number: '2',
+                      label: 'Under review by host',
+                      done: false,
+                      active: true,
+                    ),
+                    _buildStepDivider(context),
+                    _buildMinimalStep(
+                      context,
+                      number: '3',
+                      label: 'Decision notification via email',
+                      done: false,
                     ),
                   ],
                 ),
               ),
             ),
 
-            // Sticky Bottom Actions
+            // ── Bottom Actions ───────────────────────────────────────
             Container(
               padding: EdgeInsets.fromLTRB(
                 rw(context, 24),
@@ -425,30 +378,23 @@ class _WaitingApprovalPageState extends State<WaitingApprovalPage>
                 rw(context, 24),
                 bottomPadding + rh(context, 16),
               ),
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.vertical(
-                  top: Radius.circular(24),
+                border: Border(
+                  top: BorderSide(color: Colors.grey.shade100),
                 ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black12,
-                    blurRadius: 10,
-                    offset: Offset(0, -3),
-                  ),
-                ],
               ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // Refresh/Check Status Button
+                  // Check Status / Redirecting button
                   Obx(() {
                     if (_isApproved.value) {
                       return ElevatedButton.icon(
-                        onPressed: null, // Disable actions while redirecting
+                        onPressed: null,
                         icon: const SizedBox(
-                          width: 18,
-                          height: 18,
+                          width: 16,
+                          height: 16,
                           child: CircularProgressIndicator(
                             color: Colors.white,
                             strokeWidth: 2.0,
@@ -456,10 +402,7 @@ class _WaitingApprovalPageState extends State<WaitingApprovalPage>
                         ),
                         label: const Text(
                           'Redirecting...',
-                          style: TextStyle(
-                            fontWeight: FontWeight.w700,
-                            color: Colors.white,
-                          ),
+                          style: TextStyle(fontWeight: FontWeight.w700),
                         ),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.green.shade600,
@@ -467,7 +410,7 @@ class _WaitingApprovalPageState extends State<WaitingApprovalPage>
                           disabledBackgroundColor: Colors.green.shade600,
                           minimumSize: Size(double.infinity, rh(context, 48)),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(rw(context, 12)),
+                            borderRadius: BorderRadius.circular(rw(context, 10)),
                           ),
                           elevation: 0,
                         ),
@@ -480,12 +423,12 @@ class _WaitingApprovalPageState extends State<WaitingApprovalPage>
                         height: rh(context, 48),
                         decoration: BoxDecoration(
                           color: AppColors.primary500,
-                          borderRadius: BorderRadius.circular(rw(context, 12)),
+                          borderRadius: BorderRadius.circular(rw(context, 10)),
                         ),
                         child: const Center(
                           child: SizedBox(
-                            width: 22,
-                            height: 22,
+                            width: 20,
+                            height: 20,
                             child: CircularProgressIndicator(
                               color: Colors.white,
                               strokeWidth: 2.5,
@@ -494,11 +437,12 @@ class _WaitingApprovalPageState extends State<WaitingApprovalPage>
                         ),
                       );
                     }
+
                     return ElevatedButton.icon(
                       onPressed: _checkCurrentStatus,
-                      icon: const Icon(Icons.refresh_rounded, color: Colors.white),
+                      icon: const Icon(Icons.refresh_rounded, size: 18),
                       label: const Text(
-                        'Periksa Status / Check Status',
+                        'Check Status',
                         style: TextStyle(fontWeight: FontWeight.w700),
                       ),
                       style: ElevatedButton.styleFrom(
@@ -506,29 +450,28 @@ class _WaitingApprovalPageState extends State<WaitingApprovalPage>
                         foregroundColor: Colors.white,
                         minimumSize: Size(double.infinity, rh(context, 48)),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(rw(context, 12)),
+                          borderRadius: BorderRadius.circular(rw(context, 10)),
                         ),
                         elevation: 0,
                       ),
                     );
                   }),
 
-                  vSpace(context, 12),
+                  vSpace(context, 8),
 
                   // Minimize button
-                  OutlinedButton(
+                  TextButton(
                     onPressed: _minimizeForm,
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: const Color(0xFF64748B),
-                      side: BorderSide(color: Colors.grey.shade300),
-                      minimumSize: Size(double.infinity, rh(context, 48)),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(rw(context, 12)),
-                      ),
+                    style: TextButton.styleFrom(
+                      foregroundColor: const Color(0xFF94A3B8),
+                      minimumSize: Size(double.infinity, rh(context, 44)),
                     ),
-                    child: const Text(
-                      'Minimize / Sembunyikan',
-                      style: TextStyle(fontWeight: FontWeight.w600),
+                    child: Text(
+                      'Minimize',
+                      style: TextStyle(
+                        fontSize: rfs(context, 13.5),
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
                 ],
@@ -540,62 +483,80 @@ class _WaitingApprovalPageState extends State<WaitingApprovalPage>
     );
   }
 
-  Widget _buildTimelineStep({
-    required BuildContext context,
-    required IconData icon,
-    required Color iconColor,
-    required String title,
-    required String subtitle,
-    required bool isLast,
+  Widget _buildMinimalStep(
+    BuildContext context, {
+    required String number,
+    required String label,
+    required bool done,
+    bool active = false,
   }) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Column(
-          children: [
-            Container(
-              padding: EdgeInsets.all(rw(context, 2)),
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: iconColor.withValues(alpha: 0.1),
-              ),
-              child: Icon(icon, size: rw(context, 20), color: iconColor),
+    Color iconBg = const Color(0xFFF1F5F9);
+    Color textColor = const Color(0xFF64748B);
+    Color numberColor = const Color(0xFF94A3B8);
+    FontWeight fontWeight = FontWeight.w400;
+
+    if (done) {
+      iconBg = Colors.green.withValues(alpha: 0.1);
+      textColor = const Color(0xFF334155);
+      fontWeight = FontWeight.w500;
+    } else if (active) {
+      iconBg = AppColors.primary500.withValues(alpha: 0.1);
+      textColor = const Color(0xFF0F172A);
+      numberColor = AppColors.primary500;
+      fontWeight = FontWeight.w600;
+    }
+
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: rw(context, 16)),
+      child: Row(
+        children: [
+          Container(
+            width: rw(context, 26),
+            height: rw(context, 26),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: iconBg,
             ),
-            if (!isLast)
-              Container(
-                width: 2,
-                height: rh(context, 35),
-                color: Colors.grey.shade200,
-              ),
-          ],
-        ),
-        hSpace(context, 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                title,
-                style: TextStyle(
-                  fontSize: rfs(context, 12.5),
-                  fontWeight: FontWeight.w700,
-                  color: const Color(0xFF334155),
-                ),
-              ),
-              vSpace(context, 2),
-              Text(
-                subtitle,
-                style: TextStyle(
-                  fontSize: rfs(context, 11),
-                  color: const Color(0xFF64748B),
-                  height: 1.4,
-                ),
-              ),
-              vSpace(context, 12),
-            ],
+            child: Center(
+              child: done
+                  ? Icon(Icons.check_rounded, size: rw(context, 14), color: Colors.green)
+                  : Text(
+                      number,
+                      style: TextStyle(
+                        fontSize: rfs(context, 11),
+                        fontWeight: FontWeight.w700,
+                        color: numberColor,
+                      ),
+                    ),
+            ),
           ),
+          hSpace(context, 14),
+          Expanded(
+            child: Text(
+              label,
+              style: TextStyle(
+                fontSize: rfs(context, 13),
+                fontWeight: fontWeight,
+                color: textColor,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStepDivider(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.only(left: rw(context, 29)),
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: Container(
+          width: 1.5,
+          height: rh(context, 16),
+          color: const Color(0xFFE2E8F0),
         ),
-      ],
+      ),
     );
   }
 }
