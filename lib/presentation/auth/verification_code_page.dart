@@ -26,9 +26,11 @@ class _VerificationCodePageState extends State<VerificationCodePage> {
         ? Get.find<VerificationCodeController>()
         : Get.put(VerificationCodeController());
 
-    controller.invitationCodeController.clear();
-    controller.codeError.value = null;
+    // Defer mutations until after the first frame to avoid
+    // setState() called during build error
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      controller.invitationCodeController.clear();
+      controller.codeError.value = null;
       controller.loadMinimizedForms();
     });
   }

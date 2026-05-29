@@ -504,7 +504,7 @@ class ApiService {
     String token, {
     int draw = 1,
     int start = 0,
-    int length = 10,
+    int length = 9999,
     String sortColumn = 'name',
     String sortDir = 'desc',
     String entityType = 'Invitation',

@@ -65,7 +65,20 @@ class HiveService {
 
   Future<void> clearDashboardData() async {
     final box = Hive.box(dashboardBoxName);
-    await box.clear();
+    // Hapus semua key KECUALI 'minimized_forms'
+    // supaya waiting approval forms tetap tersimpan meski user logout
+    final keysToDelete = box.keys
+        .where((key) => key != 'minimized_forms')
+        .toList();
+    for (final key in keysToDelete) {
+      await box.delete(key);
+    }
+  }
+
+  /// Hapus minimized_forms secara eksplisit (dipanggil saat user klik tombol X)
+  Future<void> clearMinimizedForms() async {
+    final box = Hive.box(dashboardBoxName);
+    await box.delete('minimized_forms');
   }
 
   // --- Minimized Forms ---

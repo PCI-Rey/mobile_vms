@@ -30,6 +30,10 @@ class _WaitingApprovalPageState extends State<WaitingApprovalPage>
   final RxBool _isChecking = false.obs;
   final RxBool _isApproved = false.obs;
 
+  // Flag: true kalau form sudah disimpan/selesai (minimize atau approved)
+  // Kalau false saat dispose(), auto-save ke Hive
+  bool _alreadySavedOrDone = false;
+
   late final AnimationController _animationController;
   late final AnimationController _pulseController;
   late final AnimationController _successController;
@@ -63,13 +67,37 @@ class _WaitingApprovalPageState extends State<WaitingApprovalPage>
 
   @override
   void dispose() {
+    // Auto-save ke Hive kalau form belum disimpan (e.g. back button / Get.offAll)
+    if (!_alreadySavedOrDone) {
+      _autoSaveToHive();
+    }
     _animationController.dispose();
     _pulseController.dispose();
     _successController.dispose();
     super.dispose();
   }
 
+  /// Simpan form ke Hive secara sinkron (dipanggil dari dispose)
+  void _autoSaveToHive() {
+    final hive = HiveService();
+    final forms = hive.getMinimizedForms();
+    final index = forms.indexWhere((e) => e['code'] == widget.invitationCode);
+    final entry = {
+      'code': widget.invitationCode,
+      'message': widget.message,
+      'timestamp': DateTime.now().millisecondsSinceEpoch,
+    };
+    if (index >= 0) {
+      forms[index] = entry;
+    } else {
+      forms.add(entry);
+    }
+    // Gunakan fire-and-forget, dispose() tidak bisa await
+    hive.saveMinimizedForms(forms);
+  }
+
   Future<void> _minimizeForm() async {
+    _alreadySavedOrDone = true; // Tandai sudah disimpan manual
     final hive = HiveService();
     final forms = hive.getMinimizedForms();
 
@@ -100,6 +128,7 @@ class _WaitingApprovalPageState extends State<WaitingApprovalPage>
         // Trigger success animations and redirecting button state
         _animationController.stop();
         _isApproved.value = true;
+        _alreadySavedOrDone = true; // Tandai sudah selesai (approved)
         _pulseController.repeat(reverse: true);
         _successController.forward();
 
