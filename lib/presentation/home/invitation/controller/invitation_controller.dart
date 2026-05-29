@@ -17,7 +17,8 @@ class InvitationController extends GetxController {
   final RxBool isNewestFirst = true.obs; // Default: Terbaru di atas
 
   // Approval Ticket States
-  final RxList<ApprovalTicketModel> approvalTickets = <ApprovalTicketModel>[].obs;
+  final RxList<ApprovalTicketModel> approvalTickets =
+      <ApprovalTicketModel>[].obs;
   final RxBool isApprovalLoading = false.obs;
 
   Timer? _cleanupTimer;
@@ -357,8 +358,6 @@ class InvitationController extends GetxController {
     }
   }
 
-
-
   Future<bool> deleteShareLinkAction(String id) async {
     final user = _hive.getUser();
     final token = user?.token;
@@ -405,13 +404,20 @@ class InvitationController extends GetxController {
     }
   }
 
-  Future<bool> approveTicketAction(String approvalTicketId, String actorId) async {
+  Future<bool> approveTicketAction(
+    String approvalTicketId,
+    String actorId,
+  ) async {
     final user = _hive.getUser();
     final token = user?.token;
     if (token == null) return false;
 
     try {
-      final response = await _api.approveTicket(token, approvalTicketId, actorId);
+      final response = await _api.approveTicket(
+        token,
+        approvalTicketId,
+        actorId,
+      );
       if (response.data['status'] == 'success' ||
           response.data['status_code'] == 200) {
         Get.snackbar(
@@ -445,13 +451,20 @@ class InvitationController extends GetxController {
     }
   }
 
-  Future<bool> rejectTicketAction(String approvalTicketId, String actorId) async {
+  Future<bool> rejectTicketAction(
+    String approvalTicketId,
+    String actorId,
+  ) async {
     final user = _hive.getUser();
     final token = user?.token;
     if (token == null) return false;
 
     try {
-      final response = await _api.rejectTicket(token, approvalTicketId, actorId);
+      final response = await _api.rejectTicket(
+        token,
+        approvalTicketId,
+        actorId,
+      );
       if (response.data['status'] == 'success' ||
           response.data['status_code'] == 200) {
         Get.snackbar(
@@ -554,13 +567,15 @@ class InvitationController extends GetxController {
         listTrxVisitorId,
       );
 
-      final approveHostOk = responseHost.data['status'] == 'success' ||
+      final approveHostOk =
+          responseHost.data['status'] == 'success' ||
           responseHost.data['status_code'] == 200;
 
       if (!approveHostOk) {
         Get.snackbar(
           'Failed',
-          responseHost.data['msg']?.toString() ?? 'Gagal menyetujui host meeting.',
+          responseHost.data['msg']?.toString() ??
+              'Gagal menyetujui host meeting.',
           snackPosition: SnackPosition.TOP,
           backgroundColor: Colors.red,
           colorText: Colors.white,
@@ -570,7 +585,8 @@ class InvitationController extends GetxController {
 
       // 2. Call approve endpoint ONCE with the approvalTicketId and actorId
       final res = await _api.approveTicket(token, approvalTicketId, actorId);
-      final approveOk = res.data['status'] == 'success' || res.data['status_code'] == 200;
+      final approveOk =
+          res.data['status'] == 'success' || res.data['status_code'] == 200;
 
       if (approveOk) {
         Get.snackbar(
@@ -647,4 +663,3 @@ class InvitationController extends GetxController {
     }
   }
 }
-

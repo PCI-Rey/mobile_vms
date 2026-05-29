@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
@@ -5,6 +6,7 @@ import '../../../../core/core.dart';
 import '../../../../core/helper/responsive_helper.dart';
 import '../../invitation/controller/invitation_controller.dart';
 import '../../../../data/models/approval_ticket_model.dart';
+import '../../approval/approval_page.dart';
 
 class IteneraryList extends StatefulWidget {
   const IteneraryList({super.key});
@@ -18,6 +20,69 @@ class _IteneraryListState extends State<IteneraryList> {
       Get.isRegistered<InvitationController>()
       ? Get.find<InvitationController>()
       : Get.put(InvitationController());
+
+  Timer? _carouselTimer;
+  final PageController _pageController = PageController(
+    viewportFraction: 1.0,
+    initialPage: 1200,
+  );
+  final RxInt _currentPage = 1200.obs;
+  Worker? _listWorker;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (controller.approvalTickets.isEmpty) {
+        controller.fetchApprovalTickets();
+      }
+    });
+
+    _listWorker = ever(controller.approvalTickets, (list) {
+      if (_pageController.hasClients && list.isNotEmpty) {
+        final listLength = list.length > 3 ? 3 : list.length;
+        final targetPage = 1200 - (1200 % listLength);
+        _pageController.jumpToPage(targetPage);
+        _currentPage.value = targetPage;
+        _resetCarouselTimer();
+      }
+    });
+
+    _startCarouselTimer();
+  }
+
+  void _startCarouselTimer() {
+    _carouselTimer = Timer.periodic(const Duration(seconds: 7), (timer) {
+      if (mounted &&
+          controller.approvalTickets.isNotEmpty &&
+          _pageController.hasClients) {
+        final listLength = controller.approvalTickets.length > 3
+            ? 3
+            : controller.approvalTickets.length;
+        if (listLength > 1) {
+          _currentPage.value++;
+          _pageController.animateToPage(
+            _currentPage.value,
+            duration: const Duration(milliseconds: 800),
+            curve: Curves.fastOutSlowIn,
+          );
+        }
+      }
+    });
+  }
+
+  void _resetCarouselTimer() {
+    _carouselTimer?.cancel();
+    _startCarouselTimer();
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    _carouselTimer?.cancel();
+    _listWorker?.dispose();
+    super.dispose();
+  }
 
   bool _checkNeedApproval(ApprovalTicketModel ticket) {
     if (ticket.needApproval != null) {
@@ -109,33 +174,109 @@ class _IteneraryListState extends State<IteneraryList> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Header
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'List Invitation',
-                style: TextStyles.bodyLarge.copyWith(
+          Text(
+            'List Approval',
+            style: TextStyle(
+              fontSize: rfs(context, 15),
+              fontWeight: FontWeight.w700,
+              color: Colors.black87,
+            ),
+          ),
+          vSpace(context, 12),
+
+          // Carousel
+          SizedBox(
+            height: rh(context, () {
+              final tickets = controller.approvalTickets;
+              final list = tickets.length > 3
+                  ? tickets.take(3).toList()
+                  : tickets;
+              if (list.isEmpty) return 165.0;
+              final listLength = list.length;
+              final currentIndex = _currentPage.value % listLength;
+              final currentTicket = list[currentIndex];
+
+              final isPending =
+                  currentTicket.approvalActorStatus?.toLowerCase() ==
+                      'pending' ||
+                  currentTicket.approvalStatus?.toLowerCase() == 'pending';
+              final bool hasButtons =
+                  isPending && _checkNeedApproval(currentTicket);
+              return hasButtons ? 245.0 : 165.0;
+            }()),
+            child: PageView.builder(
+              controller: _pageController,
+              onPageChanged: (int index) {
+                _currentPage.value = index;
+              },
+              itemBuilder: (context, index) {
+                final tickets = controller.approvalTickets;
+                final list = tickets.length > 3
+                    ? tickets.take(3).toList()
+                    : tickets;
+                final int realIndex = index % list.length;
+                final ticket = list[realIndex];
+
+                return Padding(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: rw(context, 2),
+                    vertical: rh(context, 4),
+                  ),
+                  child: _buildApprovalCard(context, ticket),
+                );
+              },
+            ),
+          ),
+          vSpace(context, 12),
+
+          // Carousel Indicators
+          if (controller.approvalTickets.length > 1) ...[
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: List.generate(
+                controller.approvalTickets.length > 3
+                    ? 3
+                    : controller.approvalTickets.length,
+                (index) {
+                  final listLength = controller.approvalTickets.length > 3
+                      ? 3
+                      : controller.approvalTickets.length;
+                  final isActive = (_currentPage.value % listLength) == index;
+                  return AnimatedContainer(
+                    duration: const Duration(milliseconds: 300),
+                    margin: EdgeInsets.symmetric(horizontal: rw(context, 4)),
+                    height: rw(context, 6),
+                    width: isActive ? rw(context, 16) : rw(context, 6),
+                    decoration: BoxDecoration(
+                      color: isActive
+                          ? AppColors.primary500
+                          : Colors.grey.shade300,
+                      borderRadius: BorderRadius.circular(rw(context, 3)),
+                    ),
+                  );
+                },
+              ),
+            ),
+            vSpace(context, 12),
+          ],
+
+          // More Approval button
+          Align(
+            alignment: Alignment.centerRight,
+            child: TextButton.icon(
+              onPressed: () {
+                Get.to(() => const ApprovalPage());
+              },
+              icon: Icon(Icons.arrow_forward_rounded, size: rw(context, 16)),
+              label: const Text('Show More Approval'),
+              style: TextButton.styleFrom(
+                foregroundColor: AppColors.primary500,
+                textStyle: TextStyle(
                   fontWeight: FontWeight.w600,
+                  fontSize: rfs(context, 13),
                 ),
               ),
-              Text(
-                '${controller.approvalTickets.length} requests',
-                style: TextStyles.bodySmall.copyWith(color: Colors.grey[600]),
-              ),
-            ],
-          ),
-          const SpaceHeight(12),
-
-          // List of approval cards
-          ListView.separated(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: controller.approvalTickets.length,
-            separatorBuilder: (context, index) => const SizedBox(height: 14),
-            itemBuilder: (context, index) {
-              final ticket = controller.approvalTickets[index];
-              return _buildApprovalCard(context, ticket);
-            },
+            ),
           ),
         ],
       );

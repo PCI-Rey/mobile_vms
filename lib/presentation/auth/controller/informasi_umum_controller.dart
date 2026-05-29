@@ -49,10 +49,12 @@ class InformasiUmumController extends GetxController {
     'Receptionist',
     'Host',
     'Invented',
-    'Other'
+    'Other',
   ];
 
   // Step 1: Visitor Information
+  final selectedVisitorRole = 'Visitor'.obs;
+  final visitorRolesList = <String>[].obs;
   final fullNameController = TextEditingController();
   final emailController = TextEditingController();
   final phoneController = TextEditingController();
@@ -134,7 +136,8 @@ class InformasiUmumController extends GetxController {
       }
     } else if (isSelfRegistered.value == false) {
       if (currentPage.value == 1) {
-        final isOtherValid = filledByNameController.text.trim().isNotEmpty &&
+        final isOtherValid =
+            filledByNameController.text.trim().isNotEmpty &&
             filledByEmailController.text.trim().isNotEmpty &&
             filledByPhoneController.text.trim().isNotEmpty;
         if (!isOtherValid) return false;
@@ -183,6 +186,33 @@ class InformasiUmumController extends GetxController {
     isUploadingIdentity.value = false;
     final collection =
         rawData?['collection'] as Map<String, dynamic>? ?? rawData;
+
+    // Prefill selectedVisitorRole and visitorRolesList
+    selectedVisitorRole.value =
+        collection?['visitor_role']?.toString() ?? 'Visitor';
+
+    final typeData = collection?['visitor_type_data'] as Map<String, dynamic>?;
+    final rolesRaw = typeData?['visitor_roles'];
+    final List<String> extractedRoles = [];
+    if (rolesRaw is List) {
+      for (var r in rolesRaw) {
+        if (r is Map && r['role'] != null) {
+          extractedRoles.add(r['role'].toString());
+        }
+      }
+    }
+    // Fallback if empty
+    if (extractedRoles.isEmpty) {
+      extractedRoles.addAll(['Visitor', 'Driver']);
+    }
+    visitorRolesList.assignAll(extractedRoles);
+
+    // If current selected role is not in the list, set it to the default active role or first role
+    if (!visitorRolesList.contains(selectedVisitorRole.value)) {
+      if (visitorRolesList.isNotEmpty) {
+        selectedVisitorRole.value = visitorRolesList.first;
+      }
+    }
 
     isDriving.value = collection?['is_driving'] ?? false;
     final rawType = collection?['vehicle_type']?.toString() ?? 'Car';
@@ -369,7 +399,9 @@ class InformasiUmumController extends GetxController {
 
     // Set red borders on all empty fields
     fieldErrors.assignAll(
-      errors.map((k, v) => MapEntry(k, 'error_required'.trParams({'field': v ?? ''}))),
+      errors.map(
+        (k, v) => MapEntry(k, 'error_required'.trParams({'field': v ?? ''})),
+      ),
     );
 
     if (errors.isNotEmpty) {
@@ -398,7 +430,9 @@ class InformasiUmumController extends GetxController {
 
     // Set red borders on all empty fields
     fieldErrors.assignAll(
-      errors.map((k, v) => MapEntry(k, 'error_required'.trParams({'field': v ?? ''}))),
+      errors.map(
+        (k, v) => MapEntry(k, 'error_required'.trParams({'field': v ?? ''})),
+      ),
     );
 
     if (errors.isNotEmpty) {
@@ -410,7 +444,9 @@ class InformasiUmumController extends GetxController {
   bool validateStep3() {
     final errors = <String, String?>{};
     if (isDriving.value && vehiclePlateController.text.trim().isEmpty) {
-      errors['vehiclePlate'] = 'error_required'.trParams({'field': 'vehicle_plate'.tr});
+      errors['vehiclePlate'] = 'error_required'.trParams({
+        'field': 'vehicle_plate'.tr,
+      });
     }
 
     fieldErrors.assignAll(errors);
@@ -854,6 +890,7 @@ class InformasiUmumController extends GetxController {
       debugPrint('trx_visitor_sites: ${rawData?['trx_visitor_sites']}');
 
       // ── Step 1: User-editable visitor info fields ──────────────────
+      updateAnswer('visitor_role', selectedVisitorRole.value);
       updateAnswer('Full Name', fullNameController.text);
       updateAnswer('Email', emailController.text);
       updateAnswer('Phone', phoneController.text);
@@ -868,7 +905,10 @@ class InformasiUmumController extends GetxController {
       // ── Step 3: Vehicle fields ───────────────────────────────────────
       updateAnswer('Is Driving/Riding', isDriving.value.toString());
       updateAnswer('Vehicle Type', isDriving.value ? formattedVehicleType : "");
-      updateAnswer('Vehicle Plate', isDriving.value ? vehiclePlateController.text : "");
+      updateAnswer(
+        'Vehicle Plate',
+        isDriving.value ? vehiclePlateController.text : "",
+      );
 
       // ── Step 4 & 5: Photos ──────────────────────────────────────────
       String? selfieValue = selfieUrl.value;
@@ -950,7 +990,7 @@ class InformasiUmumController extends GetxController {
       // Always use 'id' field for trx_visitor_id
       final trxVisitorId = collection['id']?.toString();
       final visitorTypeId = collection['visitor_type']?.toString();
-      final visitorRole = collection['visitor_role'] ?? "Visitor";
+      final visitorRole = selectedVisitorRole.value;
       final applicationId = collection['application_id']?.toString();
       final visitorId = collection['visitor_id']?.toString();
 
@@ -1123,10 +1163,12 @@ class InformasiUmumController extends GetxController {
           NotificationService.instance.subscribeToUserTopic(newUser.id);
         }
       } else if (checkRawData != null && checkRawData['status'] == 'process') {
-        Get.offAll(() => WaitingApprovalPage(
-              invitationCode: invitationCode,
-              message: submitMsg,
-            ));
+        Get.offAll(
+          () => WaitingApprovalPage(
+            invitationCode: invitationCode,
+            message: submitMsg,
+          ),
+        );
       } else {
         // Submit sukses tapi token belum tersedia
         throw Exception(

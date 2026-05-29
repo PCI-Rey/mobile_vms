@@ -157,7 +157,8 @@ class _InformasiUmumPageState extends State<InformasiUmumPage> {
                   onPageChanged: (i) => _ctrl.currentPage.value = i,
                   children: [
                     _WhoFillStep(ctrl: _ctrl),
-                    if (_ctrl.isSelfRegistered.value == false) _StepOther(ctrl: _ctrl),
+                    if (_ctrl.isSelfRegistered.value == false)
+                      _StepOther(ctrl: _ctrl),
                     _Step1(ctrl: _ctrl),
                     _Step2(ctrl: _ctrl),
                     _Step3(ctrl: _ctrl),
@@ -203,7 +204,9 @@ class _InformasiUmumPageState extends State<InformasiUmumPage> {
                   // Dots indicator (flexible center)
                   Expanded(
                     child: Obx(() {
-                      final totalDots = _ctrl.isSelfRegistered.value == false ? 7 : 6;
+                      final totalDots = _ctrl.isSelfRegistered.value == false
+                          ? 7
+                          : 6;
                       return Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: List.generate(
@@ -316,6 +319,41 @@ class _Step1 extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 16),
+            _requiredLabel(
+              _localTr('visitor_role', 'Peran Pengunjung', 'Visitor Role'),
+            ),
+            DropdownButton2<String>(
+              isExpanded: true,
+              value: ctrl.selectedVisitorRole.value,
+              items: ctrl.visitorRolesList
+                  .map(
+                    (role) => DropdownMenuItem<String>(
+                      value: role,
+                      child: Text(role),
+                    ),
+                  )
+                  .toList(),
+              onChanged: (v) {
+                if (v != null) ctrl.selectedVisitorRole.value = v;
+              },
+              buttonStyleData: ButtonStyleData(
+                height: 50,
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                decoration: BoxDecoration(
+                  color: AppColors.primary50,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: AppColors.grey300, width: 1.5),
+                ),
+              ),
+              dropdownStyleData: DropdownStyleData(
+                maxHeight: 250,
+                offset: const Offset(0, -10),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              underline: const SizedBox.shrink(),
+            ),
             _requiredLabel('fullname'.tr),
             CustomTextField(
               controller: ctrl.fullNameController,
@@ -953,7 +991,7 @@ class _WhoFillStep extends StatelessWidget {
                     duration: const Duration(milliseconds: 250),
                     padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
-                       color: isOther
+                      color: isOther
                           ? AppColors.primary50.withOpacity(0.5)
                           : Colors.white,
                       borderRadius: BorderRadius.circular(16),

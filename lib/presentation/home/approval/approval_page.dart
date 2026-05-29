@@ -135,9 +135,11 @@ class _ApprovalPageState extends State<ApprovalPage>
 
   List<ApprovalTicketModel> get _rejectedTickets {
     List<ApprovalTicketModel> list = controller.approvalTickets
-        .where((t) =>
-            (t.approvalActorStatus ?? '').toLowerCase() == 'rejected' ||
-            (t.approvalActorStatus ?? '').toLowerCase() == 'reject')
+        .where(
+          (t) =>
+              (t.approvalActorStatus ?? '').toLowerCase() == 'rejected' ||
+              (t.approvalActorStatus ?? '').toLowerCase() == 'reject',
+        )
         .toList();
 
     if (_rejectedStartDate != null) {
@@ -816,11 +818,7 @@ class _EmptyState extends StatelessWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(
-                  icon,
-                  size: rw(context, 64),
-                  color: Colors.grey.shade300,
-                ),
+                Icon(icon, size: rw(context, 64), color: Colors.grey.shade300),
                 vSpace(context, 16),
                 Text(
                   message,
@@ -1012,8 +1010,7 @@ class _ApprovalCard extends StatelessWidget {
                               color: AppColors.primary600,
                             ),
                           ),
-                        if (ticket.visitorTypeName != null)
-                          vSpace(context, 4),
+                        if (ticket.visitorTypeName != null) vSpace(context, 4),
 
                         // Agenda (title)
                         Text(
@@ -1108,10 +1105,7 @@ class _ApprovalCard extends StatelessWidget {
 
             // ── Footer ─────────────────────────────────────────────────
             if (isPending) ...[
-              Container(
-                height: 1,
-                color: const Color(0xFFF0F0F0),
-              ),
+              Container(height: 1, color: const Color(0xFFF0F0F0)),
               Padding(
                 padding: EdgeInsets.symmetric(
                   horizontal: rw(context, 12),
@@ -1128,7 +1122,10 @@ class _ApprovalCard extends StatelessWidget {
                           message:
                               'Apakah Anda yakin ingin menolak approval ini?',
                           onConfirm: () => controller.rejectMeetingHostAction(
-                            approvalTicketId: ticket.approvalTicketId ?? ticket.ticketId ?? '',
+                            approvalTicketId:
+                                ticket.approvalTicketId ??
+                                ticket.ticketId ??
+                                '',
                             actorId: ticket.actorId ?? '',
                           ),
                         ),
@@ -1186,10 +1183,7 @@ class _ApprovalCard extends StatelessWidget {
                 ),
               ),
             ] else if (isApproved && ticket.approvedAt != null) ...[
-              Container(
-                height: 1,
-                color: const Color(0xFFF0F0F0),
-              ),
+              Container(height: 1, color: const Color(0xFFF0F0F0)),
               Padding(
                 padding: EdgeInsets.fromLTRB(
                   rw(context, 16),
@@ -1232,117 +1226,149 @@ class _RejectedCard extends StatelessWidget {
         ? '${timeFmt.format(start)} - ${timeFmt.format(end)}'
         : '-';
 
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(rw(context, 14)),
-        border: Border.all(color: const Color(0xFFFFCDD2), width: 1),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: rw(context, 8),
-            offset: Offset(0, rh(context, 2)),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: EdgeInsets.fromLTRB(
-              rw(context, 16),
-              rh(context, 14),
-              rw(context, 16),
-              rh(context, 14),
+    return GestureDetector(
+      onTap: () => ApprovalDetailModal.show(context, ticket),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(rw(context, 14)),
+          border: Border.all(color: const Color(0xFFFFCDD2), width: 1),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.04),
+              blurRadius: rw(context, 8),
+              offset: Offset(0, rh(context, 2)),
             ),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Left: info
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      if (ticket.visitorTypeName != null) ...[
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: EdgeInsets.fromLTRB(
+                rw(context, 16),
+                rh(context, 14),
+                rw(context, 16),
+                rh(context, 14),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Left: info
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (ticket.visitorTypeName != null) ...[
+                          Text(
+                            ticket.visitorTypeName!,
+                            style: TextStyle(
+                              fontSize: rfs(context, 11),
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.primary600,
+                            ),
+                          ),
+                          vSpace(context, 4),
+                        ],
                         Text(
-                          ticket.visitorTypeName!,
+                          ticket.agenda ?? '-',
                           style: TextStyle(
-                            fontSize: rfs(context, 11),
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.primary600,
+                            fontSize: rfs(context, 15),
+                            fontWeight: FontWeight.w700,
+                            color: Colors.black87,
                           ),
                         ),
-                        vSpace(context, 4),
+                        vSpace(context, 6),
+                        Text(
+                          '${ticket.hostName ?? '-'} · ${ticket.hostOrganizationName ?? '-'}',
+                          style: TextStyle(
+                            fontSize: rfs(context, 12),
+                            color: Colors.grey.shade600,
+                          ),
+                        ),
+                        if (ticket.flow != null) ...[
+                          vSpace(context, 3),
+                          Text(
+                            ticket.flow!,
+                            style: TextStyle(
+                              fontSize: rfs(context, 12),
+                              color: Colors.grey.shade500,
+                            ),
+                          ),
+                        ],
                       ],
-                      Text(
-                        ticket.agenda ?? '-',
-                        style: TextStyle(
-                          fontSize: rfs(context, 15),
-                          fontWeight: FontWeight.w700,
-                          color: Colors.black87,
+                    ),
+                  ),
+
+                  hSpace(context, 12),
+
+                  // Right: status + date/time
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Container(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: rw(context, 9),
+                          vertical: rh(context, 3),
+                        ),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFFEBEE),
+                          borderRadius: BorderRadius.circular(rw(context, 20)),
+                        ),
+                        child: Text(
+                          ticket.approvalActorStatus ?? 'Rejected',
+                          style: TextStyle(
+                            fontSize: rfs(context, 11),
+                            fontWeight: FontWeight.w700,
+                            color: const Color(0xFFC62828),
+                          ),
                         ),
                       ),
-                      vSpace(context, 6),
+                      vSpace(context, 8),
                       Text(
-                        '${ticket.hostName ?? '-'} · ${ticket.hostOrganizationName ?? '-'}',
+                        dateStr,
                         style: TextStyle(
-                          fontSize: rfs(context, 12),
-                          color: Colors.grey.shade600,
+                          fontSize: rfs(context, 11),
+                          fontWeight: FontWeight.w600,
+                          color: Colors.black87,
                         ),
+                        textAlign: TextAlign.end,
+                      ),
+                      vSpace(context, 2),
+                      Text(
+                        timeStr,
+                        style: TextStyle(
+                          fontSize: rfs(context, 11),
+                          color: Colors.grey.shade500,
+                        ),
+                        textAlign: TextAlign.end,
                       ),
                     ],
                   ),
-                ),
-
-                hSpace(context, 12),
-
-                // Right: status + date/time
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Container(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: rw(context, 9),
-                        vertical: rh(context, 3),
-                      ),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFFFEBEE),
-                        borderRadius: BorderRadius.circular(rw(context, 20)),
-                      ),
-                      child: Text(
-                        ticket.approvalActorStatus ?? 'Rejected',
-                        style: TextStyle(
-                          fontSize: rfs(context, 11),
-                          fontWeight: FontWeight.w700,
-                          color: const Color(0xFFC62828),
-                        ),
-                      ),
-                    ),
-                    vSpace(context, 8),
-                    Text(
-                      dateStr,
-                      style: TextStyle(
-                        fontSize: rfs(context, 11),
-                        fontWeight: FontWeight.w600,
-                        color: Colors.black87,
-                      ),
-                      textAlign: TextAlign.end,
-                    ),
-                    vSpace(context, 2),
-                    Text(
-                      timeStr,
-                      style: TextStyle(
-                        fontSize: rfs(context, 11),
-                        color: Colors.grey.shade500,
-                      ),
-                      textAlign: TextAlign.end,
-                    ),
-                  ],
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-        ],
+            if (ticket.approvedAt != null) ...[
+              Container(height: 1, color: const Color(0xFFF0F0F0)),
+              Padding(
+                padding: EdgeInsets.fromLTRB(
+                  rw(context, 16),
+                  rh(context, 8),
+                  rw(context, 16),
+                  rh(context, 10),
+                ),
+                child: Text(
+                  'Ditolak: ${DateFormat('dd MMM yyyy, HH:mm').format(ticket.approvedAt!)}',
+                  style: TextStyle(
+                    fontSize: rfs(context, 11),
+                    color: const Color(0xFFC62828),
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
       ),
     );
   }
@@ -1365,10 +1391,8 @@ class _VisitorApprovalDialog extends StatefulWidget {
     return showDialog<void>(
       context: context,
       barrierDismissible: false,
-      builder: (_) => _VisitorApprovalDialog(
-        ticket: ticket,
-        controller: controller,
-      ),
+      builder: (_) =>
+          _VisitorApprovalDialog(ticket: ticket, controller: controller),
     );
   }
 
@@ -1465,7 +1489,8 @@ class _VisitorApprovalDialogState extends State<_VisitorApprovalDialog> {
 
     try {
       await widget.controller.approveMeetingHostAndTicketsAction(
-        approvalTicketId: widget.ticket.approvalTicketId ?? widget.ticket.ticketId ?? '',
+        approvalTicketId:
+            widget.ticket.approvalTicketId ?? widget.ticket.ticketId ?? '',
         actorId: widget.ticket.actorId ?? '',
         listTrxVisitorId: _selectedIds.toList(),
       );
@@ -1482,7 +1507,8 @@ class _VisitorApprovalDialogState extends State<_VisitorApprovalDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final allChecked = _visitors.isNotEmpty && _selectedIds.length == _visitors.length;
+    final allChecked =
+        _visitors.isNotEmpty && _selectedIds.length == _visitors.length;
 
     return AlertDialog(
       shape: RoundedRectangleBorder(
@@ -1502,79 +1528,91 @@ class _VisitorApprovalDialogState extends State<_VisitorApprovalDialog> {
         child: _isSubmitting
             ? const Center(child: CircularProgressIndicator())
             : _isLoading
-                ? const Center(child: CircularProgressIndicator())
+            ? const Center(child: CircularProgressIndicator())
             : _error != null
-                ? Center(
-                    child: Text(
-                      _error!,
-                      style: TextStyle(color: Colors.red, fontSize: rfs(context, 13)),
-                      textAlign: TextAlign.center,
-                    ),
-                  )
-                : _visitors.isEmpty
-                    ? Center(
-                        child: Text(
-                          'Tidak ada visitor ditemukan.',
-                          style: TextStyle(color: Colors.grey, fontSize: rfs(context, 13)),
-                        ),
-                      )
-                    : Column(
-                        children: [
-                          CheckboxListTile(
-                            title: Text(
-                              'Pilih Semua',
-                              style: TextStyle(
-                                fontSize: rfs(context, 13),
-                                fontWeight: FontWeight.w700,
-                                color: Colors.black87,
-                              ),
-                            ),
-                            value: allChecked,
-                            onChanged: _toggleAll,
-                            controlAffinity: ListTileControlAffinity.leading,
-                            contentPadding: EdgeInsets.zero,
-                            activeColor: AppColors.primary500,
-                          ),
-                          const Divider(height: 1),
-                          Expanded(
-                            child: ListView.builder(
-                              itemCount: _visitors.length,
-                              itemBuilder: (context, index) {
-                                final v = _visitors[index];
-                                final name = v['visitor_name']?.toString() ?? v['name']?.toString() ?? '-';
-                                final id = v['id']?.toString() ?? '';
-                                final company = v['visitor_company']?.toString() ?? v['company']?.toString() ?? '';
-                                final isChecked = _selectedIds.contains(id);
-
-                                return CheckboxListTile(
-                                  title: Text(
-                                    name,
-                                    style: TextStyle(
-                                      fontSize: rfs(context, 13),
-                                      fontWeight: FontWeight.w600,
-                                      color: Colors.black87,
-                                    ),
-                                  ),
-                                  subtitle: company.isNotEmpty
-                                      ? Text(
-                                          company,
-                                          style: TextStyle(
-                                            fontSize: rfs(context, 11),
-                                            color: Colors.grey.shade500,
-                                          ),
-                                        )
-                                      : null,
-                                  value: isChecked,
-                                  onChanged: (_) => _toggleItem(id),
-                                  controlAffinity: ListTileControlAffinity.leading,
-                                  contentPadding: EdgeInsets.zero,
-                                  activeColor: AppColors.primary500,
-                                );
-                              },
-                            ),
-                          ),
-                        ],
+            ? Center(
+                child: Text(
+                  _error!,
+                  style: TextStyle(
+                    color: Colors.red,
+                    fontSize: rfs(context, 13),
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              )
+            : _visitors.isEmpty
+            ? Center(
+                child: Text(
+                  'Tidak ada visitor ditemukan.',
+                  style: TextStyle(
+                    color: Colors.grey,
+                    fontSize: rfs(context, 13),
+                  ),
+                ),
+              )
+            : Column(
+                children: [
+                  CheckboxListTile(
+                    title: Text(
+                      'Pilih Semua',
+                      style: TextStyle(
+                        fontSize: rfs(context, 13),
+                        fontWeight: FontWeight.w700,
+                        color: Colors.black87,
                       ),
+                    ),
+                    value: allChecked,
+                    onChanged: _toggleAll,
+                    controlAffinity: ListTileControlAffinity.leading,
+                    contentPadding: EdgeInsets.zero,
+                    activeColor: AppColors.primary500,
+                  ),
+                  const Divider(height: 1),
+                  Expanded(
+                    child: ListView.builder(
+                      itemCount: _visitors.length,
+                      itemBuilder: (context, index) {
+                        final v = _visitors[index];
+                        final name =
+                            v['visitor_name']?.toString() ??
+                            v['name']?.toString() ??
+                            '-';
+                        final id = v['id']?.toString() ?? '';
+                        final company =
+                            v['visitor_company']?.toString() ??
+                            v['company']?.toString() ??
+                            '';
+                        final isChecked = _selectedIds.contains(id);
+
+                        return CheckboxListTile(
+                          title: Text(
+                            name,
+                            style: TextStyle(
+                              fontSize: rfs(context, 13),
+                              fontWeight: FontWeight.w600,
+                              color: Colors.black87,
+                            ),
+                          ),
+                          subtitle: company.isNotEmpty
+                              ? Text(
+                                  company,
+                                  style: TextStyle(
+                                    fontSize: rfs(context, 11),
+                                    color: Colors.grey.shade500,
+                                  ),
+                                )
+                              : null,
+                          value: isChecked,
+                          onChanged: (_) => _toggleItem(id),
+                          controlAffinity: ListTileControlAffinity.leading,
+                          contentPadding: EdgeInsets.zero,
+                          activeColor: AppColors.primary500,
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
       ),
       actions: [
         TextButton(
@@ -1589,7 +1627,10 @@ class _VisitorApprovalDialogState extends State<_VisitorApprovalDialog> {
           ),
         ),
         ElevatedButton(
-          onPressed: _isSubmitting || _isLoading || _error != null || _visitors.isEmpty ? null : _submit,
+          onPressed:
+              _isSubmitting || _isLoading || _error != null || _visitors.isEmpty
+              ? null
+              : _submit,
           style: ElevatedButton.styleFrom(
             backgroundColor: AppColors.primary500,
             foregroundColor: Colors.white,
@@ -1614,4 +1655,3 @@ class _VisitorApprovalDialogState extends State<_VisitorApprovalDialog> {
     );
   }
 }
-
