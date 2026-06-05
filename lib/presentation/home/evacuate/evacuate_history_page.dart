@@ -3,6 +3,7 @@ import '../../../../presentation/home/evacuate/widgets/evacuate_alert_card.dart'
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
 import '../../../core/core.dart';
+import '../../../core/helper/responsive_helper.dart';
 import '../../history/widgets/filter_bottom_sheet.dart';
 
 class EvacuateHistoryPage extends StatefulWidget {
@@ -59,7 +60,10 @@ class _EvacuateHistoryPageState extends State<EvacuateHistoryPage> {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.white,
-        title: Text('Evacuate History'),
+        title: Text(
+          'Evacuate History',
+          style: TextStyle(fontSize: rfs(context, 18)),
+        ),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1.0),
           child: Container(color: AppColors.grey300, height: 1.0),
@@ -67,7 +71,7 @@ class _EvacuateHistoryPageState extends State<EvacuateHistoryPage> {
       ),
 
       body: Padding(
-        padding: const EdgeInsets.all(20.0),
+        padding: EdgeInsets.all(rw(context, 20.0)),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
 
@@ -82,9 +86,9 @@ class _EvacuateHistoryPageState extends State<EvacuateHistoryPage> {
                           enableDrag: true,
                           isDismissible: true,
                           isScrollControlled: true,
-                          shape: const RoundedRectangleBorder(
+                          shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.vertical(
-                              top: Radius.circular(16),
+                              top: Radius.circular(rw(context, 16)),
                             ),
                           ),
                           builder: (context) => const FilterBottomSheet(),
@@ -101,7 +105,7 @@ class _EvacuateHistoryPageState extends State<EvacuateHistoryPage> {
                   child: _buildFilterChip('Filter'),
                 ),
 
-                const SizedBox(width: 10),
+                hSpace(context, 10),
 
                 if (selectedGedung != null)
                   _buildFilterValueChip(
@@ -109,7 +113,7 @@ class _EvacuateHistoryPageState extends State<EvacuateHistoryPage> {
                     onClear: () => setState(() => selectedGedung = null),
                   ),
 
-                const SizedBox(width: 10),
+                hSpace(context, 10),
 
                 if (startDate != null || endDate != null)
                   _buildFilterValueChip(
@@ -121,14 +125,14 @@ class _EvacuateHistoryPageState extends State<EvacuateHistoryPage> {
                   ),
               ],
             ),
-            const SpaceHeight(20),
+            vSpace(context, 20),
             Expanded(
               child: ListView.builder(
                 itemCount: dummyAlarms.length,
                 itemBuilder: (context, index) {
                   final alarm = dummyAlarms[index];
                   return Padding(
-                    padding: const EdgeInsets.only(bottom: 12.0),
+                    padding: EdgeInsets.only(bottom: rh(context, 12.0)),
                     child: EvacuateAlertCard(
                       visitorName: alarm['visitorName'],
                       alarmDescription: alarm['alarmDescription'],
@@ -149,18 +153,18 @@ class _EvacuateHistoryPageState extends State<EvacuateHistoryPage> {
 
   Widget _buildFilterChip(String label) {
     return Container(
-      height: 38,
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      height: rh(context, 38),
+      padding: EdgeInsets.symmetric(horizontal: rw(context, 16)),
       decoration: BoxDecoration(
         color: Colors.white,
         border: Border.all(color: Colors.grey.shade400),
-        borderRadius: BorderRadius.circular(50),
+        borderRadius: BorderRadius.circular(rw(context, 50)),
       ),
       child: Row(
         children: [
-          Text(label),
-          const SizedBox(width: 8),
-          const Icon(FontAwesomeIcons.chevronDown, size: 14),
+          Text(label, style: TextStyle(fontSize: rfs(context, 14))),
+          hSpace(context, 8),
+          Icon(FontAwesomeIcons.chevronDown, size: rw(context, 14)),
         ],
       ),
     );
@@ -168,20 +172,20 @@ class _EvacuateHistoryPageState extends State<EvacuateHistoryPage> {
 
   Widget _buildFilterValueChip(String label, {required VoidCallback onClear}) {
     return Container(
-      height: 38,
-      padding: const EdgeInsets.symmetric(horizontal: 12),
+      height: rh(context, 38),
+      padding: EdgeInsets.symmetric(horizontal: rw(context, 12)),
       decoration: BoxDecoration(
         color: Colors.white,
         border: Border.all(color: Colors.grey.shade400),
-        borderRadius: BorderRadius.circular(50),
+        borderRadius: BorderRadius.circular(rw(context, 50)),
       ),
       child: Row(
         children: [
-          Text(label, style: const TextStyle(fontSize: 12)),
-          const SizedBox(width: 8),
+          Text(label, style: TextStyle(fontSize: rfs(context, 12))),
+          hSpace(context, 8),
           GestureDetector(
             onTap: onClear,
-            child: const Icon(Icons.close, size: 16),
+            child: Icon(Icons.close, size: rw(context, 16)),
           ),
         ],
       ),

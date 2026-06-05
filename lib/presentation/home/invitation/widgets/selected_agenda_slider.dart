@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import '../../../../core/core.dart';
+import '../../../../core/helper/responsive_helper.dart';
 import '../../../../data/datasources/agenda_datasource.dart';
 import '../../../../data/models/agenda_model.dart';
 import 'selected_agenda_card.dart';
@@ -41,9 +42,9 @@ class _SelectableAgendaSliderState extends State<SelectableAgendaSlider> {
           (agenda) => Container(
             width: MediaQuery.of(context).size.width,
             padding: EdgeInsets.only(
-              bottom: isSmallScreen ? 4 : isMediumScreen ? 6 : 8,
-              right: isSmallScreen ? 6 : isMediumScreen ? 10 : 12,
-              left: isSmallScreen ? 2 : 4,
+              bottom: isSmallScreen ? rh(context, 4) : isMediumScreen ? rh(context, 6) : rh(context, 8),
+              right: isSmallScreen ? rw(context, 6) : isMediumScreen ? rw(context, 10) : rw(context, 12),
+              left: isSmallScreen ? rw(context, 2) : rw(context, 4),
             ),
             child: SelectableAgendaCard(
               title: agenda.destination,
@@ -52,7 +53,7 @@ class _SelectableAgendaSliderState extends State<SelectableAgendaSlider> {
                   "${formatTime(agenda.visitStart)} - ${formatTime(agenda.visitEnd)}",
               date: formatDate(agenda.visitStart),
               image: Assets.images.avaBuilding.image(
-                height: isSmallScreen ? 110 : isMediumScreen ? 130 : 160,
+                height: isSmallScreen ? rh(context, 110) : isMediumScreen ? rh(context, 130) : rh(context, 160),
                 fit: BoxFit.cover,
               ),
               picName: agenda.picOrHost,
@@ -78,28 +79,28 @@ class _SelectableAgendaSliderState extends State<SelectableAgendaSlider> {
       children: [
         // Header Section
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 4.0, vertical: 8.0),
+          padding: EdgeInsets.symmetric(horizontal: rw(context, 4.0), vertical: rh(context, 8.0)),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
                 'Select Agenda',
                 style: TextStyles.bodyMedium.copyWith(
-                  fontSize: isSmallScreen ? 14 : 16,
+                  fontSize: isSmallScreen ? rfs(context, 14) : rfs(context, 16),
                 ),
               ),
               if (widget.selectedAgenda != null)
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: EdgeInsets.symmetric(horizontal: rw(context, 8), vertical: rh(context, 4)),
                   decoration: BoxDecoration(
                     color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(rw(context, 12)),
                   ),
                   child: Text(
                     'Selected',
                     style: TextStyle(
                       color: Theme.of(context).primaryColor,
-                      fontSize: 12,
+                      fontSize: rfs(context, 12),
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -161,11 +162,11 @@ class _SelectableAgendaSliderState extends State<SelectableAgendaSlider> {
   }
 
   Widget _buildDotIndicators(bool isSmallScreen, bool isMediumScreen, bool isTablet) {
-    final activeWidth = isSmallScreen ? 20.0 : isMediumScreen ? 24.0 : 28.0;
-    final inactiveSize = isSmallScreen ? 6.0 : isMediumScreen ? 8.0 : 10.0;
+    final activeWidth = rw(context, isSmallScreen ? 20.0 : isMediumScreen ? 24.0 : 28.0);
+    final inactiveSize = rw(context, isSmallScreen ? 6.0 : isMediumScreen ? 8.0 : 10.0);
     final indicatorHeight = inactiveSize;
-    final horizontalMargin = isSmallScreen ? 2.0 : isMediumScreen ? 3.0 : 4.0;
-    final verticalPadding = isSmallScreen ? 6.0 : isMediumScreen ? 8.0 : 10.0;
+    final horizontalMargin = rw(context, isSmallScreen ? 2.0 : isMediumScreen ? 3.0 : 4.0);
+    final verticalPadding = rh(context, isSmallScreen ? 6.0 : isMediumScreen ? 8.0 : 10.0);
 
     return Container(
       padding: EdgeInsets.symmetric(vertical: verticalPadding),
@@ -189,8 +190,8 @@ class _SelectableAgendaSliderState extends State<SelectableAgendaSlider> {
                 boxShadow: isActive ? [
                   BoxShadow(
                     color: Theme.of(context).primaryColor.withValues(alpha: 0.3),
-                    blurRadius: 4,
-                    offset: const Offset(0, 2),
+                    blurRadius: rw(context, 4),
+                    offset: Offset(0, rh(context, 2)),
                   ),
                 ] : null,
               ),

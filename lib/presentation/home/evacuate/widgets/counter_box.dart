@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/helper/responsive_helper.dart';
 
 class CounterBox extends StatelessWidget {
   final String title;
@@ -22,40 +23,40 @@ class CounterBox extends StatelessWidget {
     
     if (screenWidth < 360) {
       // Extra small screens
-      boxWidth = (screenWidth - 48) / 3; // 48 = total margin/padding
-      fontSize = 16;
-      titleFontSize = 11;
-      padding = const EdgeInsets.symmetric(vertical: 12, horizontal: 4);
+      boxWidth = (screenWidth - rw(context, 48)) / 3;
+      fontSize = rfs(context, 16);
+      titleFontSize = rfs(context, 11);
+      padding = EdgeInsets.symmetric(vertical: rh(context, 12), horizontal: rw(context, 4));
     } else if (screenWidth < 400) {
       // Small screens
-      boxWidth = (screenWidth - 56) / 3; // 56 = total margin/padding
-      fontSize = 18;
-      titleFontSize = 12;
-      padding = const EdgeInsets.symmetric(vertical: 16, horizontal: 6);
+      boxWidth = (screenWidth - rw(context, 56)) / 3;
+      fontSize = rfs(context, 18);
+      titleFontSize = rfs(context, 12);
+      padding = EdgeInsets.symmetric(vertical: rh(context, 16), horizontal: rw(context, 6));
     } else {
       // Normal screens and above
-      boxWidth = screenWidth * 0.28; // Slightly reduced from 0.3
-      fontSize = 20;
-      titleFontSize = 14;
-      padding = const EdgeInsets.symmetric(vertical: 20, horizontal: 8);
+      boxWidth = screenWidth * 0.28;
+      fontSize = rfs(context, 20);
+      titleFontSize = rfs(context, 14);
+      padding = EdgeInsets.symmetric(vertical: rh(context, 20), horizontal: rw(context, 8));
     }
 
     return Container(
       padding: padding,
       width: boxWidth,
-      constraints: const BoxConstraints(
-        minWidth: 80, // Minimum width to prevent too small boxes
-        minHeight: 70, // Minimum height
+      constraints: BoxConstraints(
+        minWidth: rw(context, 80),
+        minHeight: rh(context, 70),
       ),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(rw(context, 10)),
         boxShadow: [
           BoxShadow(
-            offset: const Offset(0, 4),
+            offset: Offset(0, rh(context, 4)),
             color: const Color(0xffE5E7EB).withValues(alpha: 0.5),
-            blurRadius: 12,
-            spreadRadius: 2,
+            blurRadius: rw(context, 12),
+            spreadRadius: rw(context, 2),
           ),
         ],
       ),
@@ -73,7 +74,7 @@ class CounterBox extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(height: 4),
+          vSpace(context, 4),
           FittedBox(
             fit: BoxFit.scaleDown,
             child: Text(
@@ -107,7 +108,7 @@ class ResponsiveCounterRow extends StatelessWidget {
     final screenWidth = MediaQuery.of(context).size.width;
     
     // Untuk layar sangat kecil, gunakan spacing yang lebih kecil
-    double spacing = screenWidth < 360 ? 6 : 12;
+    double spacing = screenWidth < 360 ? rw(context, 6) : rw(context, 12);
     
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -116,7 +117,7 @@ class ResponsiveCounterRow extends StatelessWidget {
           return Column(
             children: counters.map((counter) => 
               Padding(
-                padding: const EdgeInsets.only(bottom: 12),
+                padding: EdgeInsets.only(bottom: rh(context, 12)),
                 child: SizedBox(
                   width: constraints.maxWidth * 0.8,
                   child: CounterBox(

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../../presentation/auth/forgot_password/change_password_page.dart';
 import 'package:pinput/pinput.dart';
+import '../../../../core/helper/responsive_helper.dart';
 import '../../../core/core.dart';
 
 class OtpConfirmationPage extends StatefulWidget {
@@ -23,54 +24,56 @@ class _OtpConfirmationPageState extends State<OtpConfirmationPage> {
         leading: const BackButton(),
       ),
       body: Padding(
-        padding: const EdgeInsets.all(20.0),
+        padding: EdgeInsets.all(rw(context, 20.0)),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const SpaceHeight(20),
-            Text('Konfirmasi Kode', style: TextStyles.headline4),
+            vSpace(context, 20),
+            Text('Konfirmasi Kode', style: TextStyles.headline4.copyWith(
+              fontSize: rfs(context, 23),
+            )),
             const Text(
               'Kami telah mengirimkan kode konfirmasi untuk mengatur ulang kata sandi ke user@email.com',
             ),
-            const SpaceHeight(30),
+            vSpace(context, 30),
             Text(
               'Kode Verifikasi',
-              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+              style: TextStyle(fontSize: rfs(context, 14), fontWeight: FontWeight.w600),
             ),
-            SpaceHeight(10),
+            vSpace(context, 10),
             SizedBox(
               width: double.infinity,
               child: Pinput(
                 length: 6,
                 defaultPinTheme: PinTheme(
-                  width: 48,
-                  height: 56,
-                  textStyle: const TextStyle(
-                    fontSize: 20,
+                  width: rw(context, 48),
+                  height: rh(context, 56),
+                  textStyle: TextStyle(
+                    fontSize: rfs(context, 20),
                     color: Colors.black,
                     fontWeight: FontWeight.w600,
                   ),
                   decoration: BoxDecoration(
                     color: AppColors.primary50,
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(rw(context, 8)),
                     border: Border.all(color: Colors.transparent),
                   ),
                 ),
                 focusedPinTheme: PinTheme(
-                  width: 48,
-                  height: 56,
-                  textStyle: const TextStyle(
-                    fontSize: 20,
+                  width: rw(context, 48),
+                  height: rh(context, 56),
+                  textStyle: TextStyle(
+                    fontSize: rfs(context, 20),
                     color: Colors.black,
                     fontWeight: FontWeight.w600,
                   ),
                   decoration: BoxDecoration(
                     color: Colors.lightBlue[200],
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(rw(context, 8)),
                     border: Border.all(color: Colors.blue),
                   ),
                 ),
-                separatorBuilder: (index) => const SizedBox(width: 10),
+                separatorBuilder: (index) => hSpace(context, 10),
                 onChanged: (value) {
                   otpCode = value;
                 },
@@ -80,7 +83,7 @@ class _OtpConfirmationPageState extends State<OtpConfirmationPage> {
               ),
             ),
 
-            const SpaceHeight(30),
+            vSpace(context, 30),
             Button.filled(
               onPressed: () {
                 context.push(ChangePasswordPage());
@@ -89,7 +92,7 @@ class _OtpConfirmationPageState extends State<OtpConfirmationPage> {
               borderColor: AppColors.grey900,
               textColor: AppColors.grey900,
             ),
-            SpaceHeight(20),
+            vSpace(context, 20),
             Button.outlined(
               onPressed: () {
                 context.push(ChangePasswordPage());

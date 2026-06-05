@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:get/get.dart';
 import '../../../data/datasources/api_service.dart';
 import '../../../data/datasources/hive_service.dart';
+import '../../../core/helper/responsive_helper.dart';
 import '../../../core/core.dart';
 
 class FilterBottomSheet extends StatefulWidget {
@@ -74,20 +75,20 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
   void _showGedungSelection(BuildContext context) {
     showModalBottomSheet(
       context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(rw(context, 20))),
       ),
       builder: (context) {
         return Container(
-          padding: const EdgeInsets.all(20),
+          padding: EdgeInsets.all(rw(context, 20)),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text(
+              Text(
                 'Pilih Gedung',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: rfs(context, 18)),
               ),
-              const SizedBox(height: 16),
+              vSpace(context, 16),
               Expanded(
                 child: ListView.builder(
                   itemCount: gedungList.length,
@@ -121,10 +122,10 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
         bottom: MediaQuery.of(context).viewInsets.bottom,
       ),
       child: Container(
-        padding: const EdgeInsets.all(20),
-        decoration: const BoxDecoration(
+        padding: EdgeInsets.all(rw(context, 20)),
+        decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(rw(context, 20))),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -133,9 +134,9 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
+                Text(
                   'Filter',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: rfs(context, 18)),
                 ),
                 GestureDetector(
                   onTap: () => Navigator.pop(context),
@@ -143,7 +144,7 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                 ),
               ],
             ),
-            const SizedBox(height: 20),
+            vSpace(context, 20),
 
             // Rentang Tanggal
             Row(
@@ -174,7 +175,7 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                     ),
                   ),
                 ),
-                const SizedBox(width: 16),
+                hSpace(context, 16),
                 Expanded(
                   child: Align(
                     alignment: Alignment.centerRight,
@@ -206,7 +207,7 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                 ),
               ],
             ),
-            const SizedBox(height: 16),
+            vSpace(context, 16),
 
             // Searchable Dropdown Gedung
             isLoadingGedung
@@ -217,15 +218,15 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text("Gedung", style: TextStyles.subtitle2),
-                        const SizedBox(height: 6),
+                        vSpace(context, 6),
                         Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 16,
+                          padding: EdgeInsets.symmetric(
+                            horizontal: rw(context, 12),
+                            vertical: rh(context, 16),
                           ),
                           decoration: BoxDecoration(
                             color: const Color(0xffF2F8FD),
-                            borderRadius: BorderRadius.circular(8),
+                            borderRadius: BorderRadius.circular(rw(context, 8)),
                           ),
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -239,7 +240,7 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                                   color: selectedGedung == null
                                       ? Colors.grey
                                       : Colors.black,
-                                  fontSize: 14,
+                                  fontSize: rfs(context, 14),
                                 ),
                               ),
                               const Icon(
@@ -253,16 +254,16 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                     ),
                   ),
 
-            const SizedBox(height: 24),
+            vSpace(context, 24),
 
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary500,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  padding: EdgeInsets.symmetric(vertical: rh(context, 14)),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(rw(context, 8)),
                   ),
                 ),
                 onPressed: () {
@@ -273,7 +274,7 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                       backgroundColor: Colors.red,
                       colorText: Colors.white,
                       snackPosition: SnackPosition.TOP,
-                      margin: const EdgeInsets.all(10),
+                      margin: EdgeInsets.all(rw(context, 10)),
                     );
                     return;
                   }
@@ -284,7 +285,7 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                       backgroundColor: Colors.red,
                       colorText: Colors.white,
                       snackPosition: SnackPosition.TOP,
-                      margin: const EdgeInsets.all(10),
+                      margin: EdgeInsets.all(rw(context, 10)),
                     );
                     return;
                   }
@@ -336,30 +337,30 @@ class FilterDateBox extends StatelessWidget {
           children: [
             Text(
               title,
-              style: const TextStyle(color: Colors.grey, fontSize: 12),
+              style: TextStyle(color: Colors.grey, fontSize: rfs(context, 12)),
             ),
             if (isRequired)
-              const Text(
+              Text(
                 ' *',
                 style: TextStyle(
                   color: Colors.red,
-                  fontSize: 12,
+                  fontSize: rfs(context, 12),
                   fontWeight: FontWeight.bold,
                 ),
               ),
           ],
         ),
-        const SizedBox(height: 6),
+        vSpace(context, 6),
         Container(
           width: double.infinity,
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+          padding: EdgeInsets.symmetric(horizontal: rw(context, 12), vertical: rh(context, 14)),
           decoration: BoxDecoration(
             color: const Color(0xffF2F8FD),
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(rw(context, 8)),
           ),
           child: Text(
             value,
-            style: const TextStyle(fontSize: 14, color: Colors.black),
+            style: TextStyle(fontSize: rfs(context, 14), color: Colors.black),
           ),
         ),
       ],

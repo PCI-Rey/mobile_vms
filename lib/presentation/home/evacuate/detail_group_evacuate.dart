@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../core/core.dart';
+import '../../../core/helper/responsive_helper.dart';
 import 'widgets/counter_box.dart';
 import 'widgets/progress_bar.dart';
 import 'widgets/reaction_pie_chart.dart';
@@ -31,8 +32,11 @@ class _DetailGrupEvacuatePageState extends State<DetailGrupEvacuatePage> {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.white,
-        title: Text("Evacuate $groupTitle"),
-        leading: BackButton(),
+        title: Text(
+          "Evacuate $groupTitle",
+          style: TextStyle(fontSize: rfs(context, 18)),
+        ),
+        leading: const BackButton(),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1.0),
           child: Container(color: AppColors.grey300, height: 1.0),
@@ -40,7 +44,7 @@ class _DetailGrupEvacuatePageState extends State<DetailGrupEvacuatePage> {
       ),
 
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.all(rw(context, 16)),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
@@ -49,16 +53,16 @@ class _DetailGrupEvacuatePageState extends State<DetailGrupEvacuatePage> {
               child: CounterBox(title: "Total $groupTitle", count: totalCount),
             ),
 
-            const SizedBox(height: 16),
+            vSpace(context, 16),
 
             ReactionPieChartTotal(
               allGroups: groups,
               showLegend: true,
-              radius: 70,
+              radius: rw(context, 70),
             ),
 
             ProgressSection(allGroups: groups),
-            const SizedBox(height: 16),
+            vSpace(context, 16),
           ],
         ),
       ),

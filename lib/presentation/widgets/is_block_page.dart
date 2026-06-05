@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/core.dart';
+import '../../core/helper/responsive_helper.dart';
 
 class BlockedOverlay extends StatelessWidget {
   const BlockedOverlay({super.key});
@@ -13,21 +14,21 @@ class BlockedOverlay extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Assets.icons.locked.image(),
-            const SizedBox(height: 20),
-            const Text(
+            vSpace(context, 20),
+            Text(
               "BLOCKED",
               style: TextStyle(
-                fontSize: 30,
+                fontSize: rfs(context, 30),
                 color: Colors.white,
                 fontWeight: FontWeight.bold,
               ),
             ),
-            const SizedBox(height: 12),
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 32),
+            vSpace(context, 12),
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: rw(context, 32)),
               child: Text(
                 "Account activity has been blocked\nImmediately contact the VMS admin/operator",
-                style: TextStyle(color: Colors.white, fontSize: 16),
+                style: TextStyle(color: Colors.white, fontSize: rfs(context, 16)),
                 textAlign: TextAlign.center,
               ),
             ),
@@ -37,3 +38,4 @@ class BlockedOverlay extends StatelessWidget {
     );
   }
 }
+

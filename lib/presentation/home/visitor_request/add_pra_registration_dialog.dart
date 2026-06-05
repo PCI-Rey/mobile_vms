@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/constants/colors.dart';
+import '../../../../core/helper/responsive_helper.dart';
 import '../../../../data/datasources/api_service.dart';
 import '../../../../data/models/visitor_type_detail_model.dart';
 import 'controllers/pra_registration_controller.dart';
@@ -36,23 +37,23 @@ Future<bool> _showExitConfirmation(BuildContext context) async {
     context: context,
     builder: (context) => AlertDialog(
       backgroundColor: Colors.white,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      title: const Text(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(rw(context, 16))),
+      title: Text(
         'Cancel Registration?',
         style: TextStyle(fontWeight: FontWeight.bold),
       ),
-      content: const Text(
+      content: Text(
         'The data you have entered will be lost. Are you sure you want to close this form?',
         textAlign: TextAlign.justify,
       ),
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(false),
-          child: const Text('No', style: TextStyle(color: Colors.grey)),
+          child: Text('No', style: TextStyle(color: Colors.grey)),
         ),
         TextButton(
           onPressed: () => Navigator.of(context).pop(true),
-          child: const Text(
+          child: Text(
             'Yes, Close',
             style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
           ),
@@ -69,31 +70,31 @@ Future<bool> _showBackConfirmation(BuildContext context) async {
         builder: (context) => AlertDialog(
           backgroundColor: Colors.white,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(rw(context, 16)),
           ),
           title: Row(
             children: [
-              const Icon(
+              Icon(
                 Icons.warning_amber_rounded,
                 color: Colors.orange,
                 size: 28,
               ),
-              const SizedBox(width: 12),
-              const Text(
+              hSpace(context, 12),
+              Text(
                 'Warning',
                 style: TextStyle(fontWeight: FontWeight.bold),
               ),
             ],
           ),
-          content: const Text(
+          content: Text(
             'Are you sure you want to go back? Going back to Visitor Type selection will reset the information you have already entered in this step.',
             textAlign: TextAlign.justify,
-            style: TextStyle(fontSize: 14, color: Color(0xFF616161)),
+            style: TextStyle(fontSize: rfs(context, 14), color: Color(0xFF616161)),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context, false),
-              child: const Text(
+              child: Text(
                 'Cancel',
                 style: TextStyle(
                   color: Colors.grey,
@@ -103,7 +104,7 @@ Future<bool> _showBackConfirmation(BuildContext context) async {
             ),
             TextButton(
               onPressed: () => Navigator.pop(context, true),
-              child: const Text(
+              child: Text(
                 'Yes, Go Back',
                 style: TextStyle(
                   color: Colors.orange,
@@ -123,19 +124,19 @@ Future<bool> _showDeleteVisitorConfirmation(BuildContext context) async {
         builder: (context) => AlertDialog(
           backgroundColor: Colors.white,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(rw(context, 16)),
           ),
-          title: const Text(
+          title: Text(
             'Delete Visitor?',
             style: TextStyle(fontWeight: FontWeight.bold),
           ),
-          content: const Text(
+          content: Text(
             'Are you sure you want to delete this visitor? This action cannot be undone.',
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context, false),
-              child: const Text(
+              child: Text(
                 'No',
                 style: TextStyle(
                   color: Colors.grey,
@@ -145,7 +146,7 @@ Future<bool> _showDeleteVisitorConfirmation(BuildContext context) async {
             ),
             TextButton(
               onPressed: () => Navigator.pop(context, true),
-              child: const Text(
+              child: Text(
                 'Yes, Delete',
                 style: TextStyle(
                   color: Colors.red,
@@ -178,8 +179,8 @@ class _AddPraRegistrationDialog extends StatelessWidget {
       },
       child: Dialog(
         backgroundColor: Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 28),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(rw(context, 20))),
+        insetPadding: EdgeInsets.symmetric(horizontal: rw(context, 16), vertical: rh(context, 28)),
         child: SizedBox(
           height: MediaQuery.of(context).size.height * 0.88,
           child: Obx(() {
@@ -205,9 +206,9 @@ class _AddPraRegistrationDialog extends StatelessWidget {
                   child: Container(
                     decoration: const BoxDecoration(color: Color(0xFFF3F4F6)),
                     child: SingleChildScrollView(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 20,
-                        vertical: 20,
+                      padding: EdgeInsets.symmetric(
+                        horizontal: rw(context, 20),
+                        vertical: rh(context, 20),
                       ),
                       child: _StepContent(step: step, controller: ctrl),
                     ),
@@ -264,15 +265,15 @@ class _DialogHeader extends StatelessWidget {
         children: [
           // Top bar: title + close
           Padding(
-            padding: const EdgeInsets.fromLTRB(20, 16, 8, 12),
+            padding: EdgeInsets.fromLTRB(20, 16, 8, 12),
             child: Row(
               children: [
                 Expanded(
                   child: Text(
                     'Create Add Pra Registration',
                     textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      fontSize: 17,
+                    style: TextStyle(
+                      fontSize: rfs(context, 17),
                       fontWeight: FontWeight.w700,
                       color: Colors.black87,
                       letterSpacing: -0.3,
@@ -282,15 +283,15 @@ class _DialogHeader extends StatelessWidget {
                 Material(
                   color: Colors.transparent,
                   child: InkWell(
-                    borderRadius: BorderRadius.circular(20),
+                    borderRadius: BorderRadius.circular(rw(context, 20)),
                     onTap: onClose,
                     child: Container(
-                      padding: const EdgeInsets.all(6),
+                      padding: EdgeInsets.all(rw(context, 6)),
                       decoration: BoxDecoration(
                         color: Colors.grey.shade100,
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.close_rounded,
                         size: 18,
                         color: Colors.black54,
@@ -309,17 +310,17 @@ class _DialogHeader extends StatelessWidget {
             total: 3,
           ),
 
-          const SizedBox(height: 14),
+          vSpace(context, 14),
 
           // Step title + icon
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Container(
-                padding: const EdgeInsets.all(6),
+                padding: EdgeInsets.all(rw(context, 6)),
                 decoration: BoxDecoration(
                   color: AppColors.primary500.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(rw(context, 8)),
                 ),
                 child: Icon(
                   _stepIcons[currentStep],
@@ -327,11 +328,11 @@ class _DialogHeader extends StatelessWidget {
                   color: AppColors.primary500,
                 ),
               ),
-              const SizedBox(width: 8),
+              hSpace(context, 8),
               Text(
                 title,
-                style: const TextStyle(
-                  fontSize: 15,
+                style: TextStyle(
+                  fontSize: rfs(context, 15),
                   fontWeight: FontWeight.w600,
                   color: Colors.black87,
                 ),
@@ -339,7 +340,7 @@ class _DialogHeader extends StatelessWidget {
             ],
           ),
 
-          const SizedBox(height: 14),
+          vSpace(context, 14),
           const Divider(height: 1, color: Color(0xFFEEEEEE)),
         ],
       );
@@ -365,7 +366,7 @@ class _StepProgressBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+      padding: EdgeInsets.symmetric(horizontal: rw(context, 32), vertical: rh(context, 16)),
       child: Row(
         children: List.generate(total, (index) {
           final isCompleted = index < currentStep;
@@ -414,7 +415,7 @@ class _StepProgressBar extends StatelessWidget {
                     ),
                     child: Center(
                       child: isCompleted
-                          ? const Icon(
+                          ? Icon(
                               Icons.check,
                               size: 16,
                               color: Colors.white,
@@ -426,7 +427,7 @@ class _StepProgressBar extends StatelessWidget {
                                 fontWeight: isCurrent
                                     ? FontWeight.bold
                                     : FontWeight.normal,
-                                fontSize: 12,
+                                fontSize: rfs(context, 12),
                               ),
                             ),
                     ),
@@ -438,7 +439,7 @@ class _StepProgressBar extends StatelessWidget {
                   Expanded(
                     child: Container(
                       height: 2,
-                      margin: const EdgeInsets.symmetric(horizontal: 8),
+                      margin: EdgeInsets.symmetric(horizontal: rw(context, 8)),
                       color: (index < currentStep)
                           ? AppColors.primary500
                           : const Color(0xFFE0E0E0),
@@ -496,12 +497,12 @@ class _Step0UserType extends StatelessWidget {
         children: [
           // ── Visitor Type section ─────────────────────────────────
           _SectionHeader(title: 'Visitor Type', isRequired: true),
-          const SizedBox(height: 12),
+          vSpace(context, 12),
 
           if (controller.isLoadingTypes.value)
-            const Center(
+            Center(
               child: Padding(
-                padding: EdgeInsets.all(24),
+                padding: EdgeInsets.all(rw(context, 24)),
                 child: CircularProgressIndicator(),
               ),
             )
@@ -510,16 +511,16 @@ class _Step0UserType extends StatelessWidget {
               final type = controller.visitorTypes[i];
               final isSelected = selectedId == type.id;
               return Padding(
-                padding: const EdgeInsets.only(bottom: 8),
+                padding: EdgeInsets.only(bottom: rh(context, 8)),
                 child: GestureDetector(
                   behavior: HitTestBehavior.opaque,
                   onTap: () =>
                       controller.onSelectVisitorType(type.id, type.name),
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 200),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 14,
-                      vertical: 14,
+                    padding: EdgeInsets.symmetric(
+                      horizontal: rw(context, 14),
+                      vertical: rh(context, 14),
                     ),
                     decoration: BoxDecoration(
                       color: isSelected
@@ -531,7 +532,7 @@ class _Step0UserType extends StatelessWidget {
                             : const Color(0xFFE0E0E0),
                         width: isSelected ? 1.5 : 1,
                       ),
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(rw(context, 12)),
                     ),
                     child: Row(
                       children: [
@@ -552,19 +553,19 @@ class _Step0UserType extends StatelessWidget {
                             ),
                           ),
                           child: isSelected
-                              ? const Icon(
+                              ? Icon(
                                   Icons.check,
                                   size: 12,
                                   color: Colors.white,
                                 )
                               : null,
                         ),
-                        const SizedBox(width: 12),
+                        hSpace(context, 12),
                         Expanded(
                           child: Text(
                             type.name,
                             style: TextStyle(
-                              fontSize: 14,
+                              fontSize: rfs(context, 14),
                               fontWeight: isSelected
                                   ? FontWeight.w600
                                   : FontWeight.normal,
@@ -590,11 +591,11 @@ class _Step0UserType extends StatelessWidget {
               );
             }),
 
-          const SizedBox(height: 24),
+          vSpace(context, 24),
 
           // ── Select Status Visitor ────────────────────────────────
           _SectionHeader(title: 'Select Status Visitor', isRequired: true),
-          const SizedBox(height: 12),
+          vSpace(context, 12),
 
           Row(
             children: [
@@ -606,7 +607,7 @@ class _Step0UserType extends StatelessWidget {
                   onTap: () => controller.isGroup.value = false,
                 ),
               ),
-              const SizedBox(width: 10),
+              hSpace(context, 10),
               Expanded(
                 child: _StatusCard(
                   label: 'Group',
@@ -624,22 +625,22 @@ class _Step0UserType extends StatelessWidget {
           ),
 
           // ── Group List (visible when Group selected) ─────────────
-          if (controller.isGroup.value == true) ..._buildGroupList(controller),
+          if (controller.isGroup.value == true) ..._buildGroupList(context, controller),
         ],
       );
     });
   }
 
-  List<Widget> _buildGroupList(PraRegistrationController controller) {
+  List<Widget> _buildGroupList(BuildContext context, PraRegistrationController controller) {
     return [
-      const SizedBox(height: 24),
+      vSpace(context, 24),
       _SectionHeader(title: 'Group List', isRequired: true),
-      const SizedBox(height: 12),
+      vSpace(context, 12),
       Container(
         decoration: BoxDecoration(
           color: Colors.white,
           border: Border.all(color: const Color(0xFFE0E0E0)),
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(rw(context, 12)),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(alpha: 0.04),
@@ -652,7 +653,7 @@ class _Step0UserType extends StatelessWidget {
           children: [
             // Table header
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              padding: EdgeInsets.symmetric(horizontal: rw(context, 14), vertical: rh(context, 10)),
               decoration: BoxDecoration(
                 color: AppColors.grey100,
                 borderRadius: const BorderRadius.only(
@@ -660,26 +661,26 @@ class _Step0UserType extends StatelessWidget {
                   topRight: Radius.circular(12),
                 ),
               ),
-              child: const Row(
+              child: Row(
                 children: [
                   Expanded(
                     flex: 3,
                     child: Text(
                       'Group Name',
                       style: TextStyle(
-                        fontSize: 12,
+                        fontSize: rfs(context, 12),
                         fontWeight: FontWeight.w600,
                         color: AppColors.grey600,
                       ),
                     ),
                   ),
-                  SizedBox(width: 8),
+                  hSpace(context, 8),
                   SizedBox(
                     width: 80,
                     child: Text(
                       'Code',
                       style: TextStyle(
-                        fontSize: 12,
+                        fontSize: rfs(context, 12),
                         fontWeight: FontWeight.w600,
                         color: AppColors.grey600,
                       ),
@@ -690,7 +691,7 @@ class _Step0UserType extends StatelessWidget {
             ),
             const Divider(height: 1, color: Color(0xFFEEEEEE)),
             Padding(
-              padding: const EdgeInsets.all(14),
+              padding: EdgeInsets.all(rw(context, 14)),
               child: Row(
                 children: [
                   Expanded(
@@ -699,28 +700,28 @@ class _Step0UserType extends StatelessWidget {
                       onChanged: (v) => controller.groupName.value = v,
                       decoration: InputDecoration(
                         hintText: 'Enter group name',
-                        hintStyle: const TextStyle(
+                        hintStyle: TextStyle(
                           color: AppColors.grey400,
-                          fontSize: 13,
+                          fontSize: rfs(context, 13),
                         ),
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 10,
+                        contentPadding: EdgeInsets.symmetric(
+                          horizontal: rw(context, 12),
+                          vertical: rh(context, 10),
                         ),
                         border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(rw(context, 8)),
                           borderSide: const BorderSide(
                             color: AppColors.grey300,
                           ),
                         ),
                         enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(rw(context, 8)),
                           borderSide: const BorderSide(
                             color: AppColors.grey300,
                           ),
                         ),
                         focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(rw(context, 8)),
                           borderSide: const BorderSide(
                             color: AppColors.primary500,
                             width: 1.5,
@@ -728,27 +729,27 @@ class _Step0UserType extends StatelessWidget {
                         ),
                         isDense: true,
                       ),
-                      style: const TextStyle(fontSize: 13),
+                      style: TextStyle(fontSize: rfs(context, 13)),
                     ),
                   ),
-                  const SizedBox(width: 8),
+                  hSpace(context, 8),
                   Obx(
                     () => Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 10,
+                      padding: EdgeInsets.symmetric(
+                        horizontal: rw(context, 10),
+                        vertical: rh(context, 10),
                       ),
                       decoration: BoxDecoration(
                         color: AppColors.primary500.withValues(alpha: 0.06),
                         border: Border.all(color: AppColors.primary200),
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(rw(context, 8)),
                       ),
                       child: Text(
                         controller.groupCode.value,
                         maxLines: 1,
                         overflow: TextOverflow.clip,
-                        style: const TextStyle(
-                          fontSize: 13,
+                        style: TextStyle(
+                          fontSize: rfs(context, 13),
                           fontWeight: FontWeight.w700,
                           letterSpacing: 0.5,
                           color: AppColors.primary500,
@@ -787,7 +788,7 @@ class _StatusCard extends StatelessWidget {
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
+        padding: EdgeInsets.symmetric(vertical: rh(context, 14), horizontal: rw(context, 12)),
         decoration: BoxDecoration(
           color: isSelected
               ? AppColors.primary500.withValues(alpha: 0.06)
@@ -796,7 +797,7 @@ class _StatusCard extends StatelessWidget {
             color: isSelected ? AppColors.primary500 : const Color(0xFFE0E0E0),
             width: isSelected ? 1.5 : 1,
           ),
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(rw(context, 12)),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -806,16 +807,16 @@ class _StatusCard extends StatelessWidget {
               size: 18,
               color: isSelected ? AppColors.primary500 : AppColors.grey500,
             ),
-            const SizedBox(width: 8),
+            hSpace(context, 8),
             Text(
               label,
               style: TextStyle(
-                fontSize: 14,
+                fontSize: rfs(context, 14),
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
                 color: isSelected ? AppColors.primary500 : Colors.black87,
               ),
             ),
-            const SizedBox(width: 8),
+            hSpace(context, 8),
             AnimatedContainer(
               duration: const Duration(milliseconds: 200),
               width: 18,
@@ -829,7 +830,7 @@ class _StatusCard extends StatelessWidget {
                 ),
               ),
               child: isSelected
-                  ? const Icon(Icons.check, size: 11, color: Colors.white)
+                  ? Icon(Icons.check, size: 11, color: Colors.white)
                   : null,
             ),
           ],
@@ -856,7 +857,7 @@ class _Step1VisitorInfo extends StatelessWidget {
 
       final detail = controller.formStructure.value;
       if (detail == null) {
-        return const Center(child: CircularProgressIndicator());
+        return Center(child: CircularProgressIndicator());
       }
 
       final sections = detail.sectionPageVisitorTypes;
@@ -867,7 +868,7 @@ class _Step1VisitorInfo extends StatelessWidget {
           sections.firstOrNull;
 
       if (section == null) {
-        return const Text('Tidak ada data form.');
+        return Text('Tidak ada data form.');
       }
 
       // Tampilkan search hanya jika Visitor Type yang dipilih BUKAN tipe Employee/Staff.
@@ -885,19 +886,19 @@ class _Step1VisitorInfo extends StatelessWidget {
           // ── Search Existing Visitor — hanya untuk Visitor type (bukan Employee/Staff) ──
           if (!isEmployeeType) ...[
             _SectionHeader(title: 'Search Existing Visitor'),
-            const SizedBox(height: 8),
+            vSpace(context, 8),
             _VisitorSearchField(
               controller: controller,
               onSelected: (v) => controller.autofillSingleFromVisitor(v),
               onClear: () => controller.clearVisitorFormInputs(),
             ),
-            const SizedBox(height: 20),
+            vSpace(context, 20),
           ],
 
           // ── Search Existing Employee — hanya untuk Employee/Staff type ──
           if (isEmployeeType) ...[
             _SectionHeader(title: 'Search Existing Employee'),
-            const SizedBox(height: 8),
+            vSpace(context, 8),
             _EmployeeSearchField(
               controller: controller,
               initialValue: controller.selectedEmployeeName.value,
@@ -907,7 +908,7 @@ class _Step1VisitorInfo extends StatelessWidget {
               },
               onClear: () => controller.clearVisitorFormInputs(),
             ),
-            const SizedBox(height: 20),
+            vSpace(context, 20),
           ],
 
           // ── Form fields from API structure ───────────────────────────
@@ -938,7 +939,7 @@ class _Step1VisitorInfo extends StatelessWidget {
               children: [
                 // Use App's native Section Header style (Left Accent Border)
                 _SectionHeader(title: 'Visitor ${i + 1}'),
-                const SizedBox(height: 10),
+                vSpace(context, 10),
 
                 // Per-row search — Visitor or Employee
                 Builder(
@@ -974,7 +975,7 @@ class _Step1VisitorInfo extends StatelessWidget {
                               controller.updateForm();
                             },
                           ),
-                          const SizedBox(height: 12),
+                          vSpace(context, 12),
                         ],
                       ));
                     }
@@ -994,7 +995,7 @@ class _Step1VisitorInfo extends StatelessWidget {
                             controller.updateForm();
                           },
                         ),
-                        const SizedBox(height: 12),
+                        vSpace(context, 12),
                       ],
                     );
                   },
@@ -1021,13 +1022,13 @@ class _Step1VisitorInfo extends StatelessWidget {
                       label: Text(
                         'Remove',
                         style: TextStyle(
-                          fontSize: 12,
+                          fontSize: rfs(context, 12),
                           color: Colors.red.shade400,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
                       style: TextButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                        padding: EdgeInsets.symmetric(horizontal: rw(context, 8)),
                         minimumSize: Size.zero,
                         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                       ),
@@ -1036,7 +1037,7 @@ class _Step1VisitorInfo extends StatelessWidget {
 
                 // Form Fields
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  padding: EdgeInsets.symmetric(horizontal: rw(context, 4)),
                   child: Column(
                     children: [
                       // Are you Employee? section
@@ -1065,15 +1066,15 @@ class _Step1VisitorInfo extends StatelessWidget {
                         return Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text(
+                            Text(
                               'Are you Employee?',
                               style: TextStyle(
-                                fontSize: 13,
+                                fontSize: rfs(context, 13),
                                 fontWeight: FontWeight.w600,
                                 color: Colors.black87,
                               ),
                             ),
-                            const SizedBox(height: 8),
+                            vSpace(context, 8),
                             Row(
                               children: [
                                 _InlineRadio(
@@ -1091,7 +1092,7 @@ class _Step1VisitorInfo extends StatelessWidget {
                                     controller.updateForm();
                                   },
                                 ),
-                                const SizedBox(width: 16),
+                                hSpace(context, 16),
                                 _InlineRadio(
                                   label: 'No',
                                   isSelected: !empEnabled,
@@ -1109,7 +1110,7 @@ class _Step1VisitorInfo extends StatelessWidget {
                                 ),
                               ],
                             ),
-                            const SizedBox(height: 16),
+                            vSpace(context, 16),
                             Opacity(
                               opacity: empEnabled ? 1.0 : 0.4,
                               child: IgnorePointer(
@@ -1118,10 +1119,10 @@ class _Step1VisitorInfo extends StatelessWidget {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     RichText(
-                                      text: const TextSpan(
+                                      text: TextSpan(
                                         text: 'Employee Name',
                                         style: TextStyle(
-                                          fontSize: 13,
+                                          fontSize: rfs(context, 13),
                                           fontWeight: FontWeight.w600,
                                           color: Colors.black87,
                                         ),
@@ -1136,7 +1137,7 @@ class _Step1VisitorInfo extends StatelessWidget {
                                         ],
                                       ),
                                     ),
-                                    const SizedBox(height: 8),
+                                    vSpace(context, 8),
                                     Obx(() {
                                       final list = controller.employees
                                           .toList();
@@ -1173,7 +1174,7 @@ class _Step1VisitorInfo extends StatelessWidget {
                                 ),
                               ),
                             ),
-                            const SizedBox(height: 16),
+                            vSpace(context, 16),
                           ],
                         );
                       }),
@@ -1188,10 +1189,10 @@ class _Step1VisitorInfo extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             RichText(
-                              text: const TextSpan(
+                              text: TextSpan(
                                 text: 'Role',
                                 style: TextStyle(
-                                  fontSize: 13,
+                                  fontSize: rfs(context, 13),
                                   fontWeight: FontWeight.w600,
                                   color: Colors.black87,
                                 ),
@@ -1206,7 +1207,7 @@ class _Step1VisitorInfo extends StatelessWidget {
                                 ],
                               ),
                             ),
-                            const SizedBox(height: 8),
+                            vSpace(context, 8),
                             Builder(
                               builder: (ctx) => GestureDetector(
                                 onTap: () async {
@@ -1227,7 +1228,7 @@ class _Step1VisitorInfo extends StatelessWidget {
                                 ),
                               ),
                             ),
-                            const SizedBox(height: 16),
+                            vSpace(context, 16),
                           ],
                         );
                       }),
@@ -1243,7 +1244,7 @@ class _Step1VisitorInfo extends StatelessWidget {
                               onChanged: (_) => controller.updateForm(),
                             ),
                           ),
-                          const SizedBox(width: 12),
+                          hSpace(context, 12),
                           Expanded(
                             child: _GroupTextField(
                               label: 'Email',
@@ -1255,7 +1256,7 @@ class _Step1VisitorInfo extends StatelessWidget {
                           ),
                         ],
                       ),
-                      const SizedBox(height: 16),
+                      vSpace(context, 16),
                       Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -1268,7 +1269,7 @@ class _Step1VisitorInfo extends StatelessWidget {
                               onChanged: (_) => controller.updateForm(),
                             ),
                           ),
-                          const SizedBox(width: 12),
+                          hSpace(context, 12),
                           Expanded(
                             child: _GroupTextField(
                               label: 'Organization',
@@ -1279,7 +1280,7 @@ class _Step1VisitorInfo extends StatelessWidget {
                           ),
                         ],
                       ),
-                      const SizedBox(height: 16),
+                      vSpace(context, 16),
                       _GroupTextField(
                         label: 'Identity ID (KTP)',
                         controller: v.identityId,
@@ -1292,23 +1293,23 @@ class _Step1VisitorInfo extends StatelessWidget {
                 ),
 
                 if (i < visitors.length - 1) ...[
-                  const SizedBox(height: 32),
+                  vSpace(context, 32),
                   const Divider(height: 1, color: Color(0xFFE0E0E0)),
-                  const SizedBox(height: 32),
+                  vSpace(context, 32),
                 ] else
-                  const SizedBox(height: 24),
+                  vSpace(context, 24),
               ],
             );
           }),
 
-          const SizedBox(height: 10),
+          vSpace(context, 10),
           Center(
             child: OutlinedButton.icon(
               onPressed: controller.addGroupVisitor,
-              icon: const Icon(Icons.add_circle_outline_rounded, size: 20),
-              label: const Text(
+              icon: Icon(Icons.add_circle_outline_rounded, size: 20),
+              label: Text(
                 'Add New Visitor',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: rfs(context, 14)),
               ),
               style: OutlinedButton.styleFrom(
                 foregroundColor: AppColors.primary500,
@@ -1316,17 +1317,17 @@ class _Step1VisitorInfo extends StatelessWidget {
                 side: BorderSide(
                   color: AppColors.primary500.withValues(alpha: 0.3),
                 ),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 28,
-                  vertical: 12,
+                padding: EdgeInsets.symmetric(
+                  horizontal: rw(context, 28),
+                  vertical: rh(context, 12),
                 ),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(30),
+                  borderRadius: BorderRadius.circular(rw(context, 30)),
                 ),
               ),
             ),
           ),
-          const SizedBox(height: 20),
+          vSpace(context, 20),
         ],
       );
     });
@@ -1352,19 +1353,19 @@ Future<VisitorRoleItem?> _showVisitorRolePicker(
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            margin: const EdgeInsets.symmetric(vertical: 10),
+            margin: EdgeInsets.symmetric(vertical: rh(context, 10)),
             width: 36,
             height: 4,
             decoration: BoxDecoration(
               color: AppColors.grey300,
-              borderRadius: BorderRadius.circular(2),
+              borderRadius: BorderRadius.circular(rw(context, 2)),
             ),
           ),
-          const Text(
+          Text(
             'Pilih Role',
-            style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+            style: TextStyle(fontSize: rfs(context, 15), fontWeight: FontWeight.w700),
           ),
-          const SizedBox(height: 8),
+          vSpace(context, 8),
           const Divider(height: 1),
           ConstrainedBox(
             constraints: BoxConstraints(
@@ -1379,9 +1380,9 @@ Future<VisitorRoleItem?> _showVisitorRolePicker(
                 return InkWell(
                   onTap: () => Navigator.of(sheetCtx).pop(item),
                   child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 20,
-                      vertical: 14,
+                    padding: EdgeInsets.symmetric(
+                      horizontal: rw(context, 20),
+                      vertical: rh(context, 14),
                     ),
                     color: selected
                         ? AppColors.primary500.withValues(alpha: 0.08)
@@ -1392,7 +1393,7 @@ Future<VisitorRoleItem?> _showVisitorRolePicker(
                           child: Text(
                             item.role,
                             style: TextStyle(
-                              fontSize: 14,
+                              fontSize: rfs(context, 14),
                               color: selected
                                   ? AppColors.primary500
                                   : Colors.black87,
@@ -1403,7 +1404,7 @@ Future<VisitorRoleItem?> _showVisitorRolePicker(
                           ),
                         ),
                         if (selected)
-                          const Icon(
+                          Icon(
                             Icons.check_rounded,
                             size: 18,
                             color: AppColors.primary500,
@@ -1415,7 +1416,7 @@ Future<VisitorRoleItem?> _showVisitorRolePicker(
               },
             ),
           ),
-          const SizedBox(height: 8),
+          vSpace(context, 8),
         ],
       ),
     ),
@@ -1441,19 +1442,19 @@ Future<DropdownItem?> _showEmployeePicker(
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            margin: const EdgeInsets.symmetric(vertical: 10),
+            margin: EdgeInsets.symmetric(vertical: rh(context, 10)),
             width: 36,
             height: 4,
             decoration: BoxDecoration(
               color: AppColors.grey300,
-              borderRadius: BorderRadius.circular(2),
+              borderRadius: BorderRadius.circular(rw(context, 2)),
             ),
           ),
-          const Text(
+          Text(
             'Pilih Employee',
-            style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+            style: TextStyle(fontSize: rfs(context, 15), fontWeight: FontWeight.w700),
           ),
-          const SizedBox(height: 8),
+          vSpace(context, 8),
           const Divider(height: 1),
           ConstrainedBox(
             constraints: BoxConstraints(
@@ -1468,9 +1469,9 @@ Future<DropdownItem?> _showEmployeePicker(
                 return InkWell(
                   onTap: () => Navigator.of(sheetCtx).pop(item),
                   child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 20,
-                      vertical: 14,
+                    padding: EdgeInsets.symmetric(
+                      horizontal: rw(context, 20),
+                      vertical: rh(context, 14),
                     ),
                     color: selected
                         ? AppColors.primary500.withValues(alpha: 0.08)
@@ -1481,7 +1482,7 @@ Future<DropdownItem?> _showEmployeePicker(
                           child: Text(
                             item.name,
                             style: TextStyle(
-                              fontSize: 14,
+                              fontSize: rfs(context, 14),
                               color: selected
                                   ? AppColors.primary500
                                   : Colors.black87,
@@ -1492,7 +1493,7 @@ Future<DropdownItem?> _showEmployeePicker(
                           ),
                         ),
                         if (selected)
-                          const Icon(
+                          Icon(
                             Icons.check_rounded,
                             size: 18,
                             color: AppColors.primary500,
@@ -1504,7 +1505,7 @@ Future<DropdownItem?> _showEmployeePicker(
               },
             ),
           ),
-          const SizedBox(height: 8),
+          vSpace(context, 8),
         ],
       ),
     ),
@@ -1545,13 +1546,13 @@ class _InlineRadio extends StatelessWidget {
               ),
             ),
             child: isSelected
-                ? const Icon(Icons.check, size: 11, color: Colors.white)
+                ? Icon(Icons.check, size: 11, color: Colors.white)
                 : null,
           ),
-          const SizedBox(width: 6),
+          hSpace(context, 6),
           Text(
             label,
-            style: const TextStyle(fontSize: 13, color: Colors.black87),
+            style: TextStyle(fontSize: rfs(context, 13), color: Colors.black87),
           ),
         ],
       ),
@@ -1572,10 +1573,10 @@ class _DropdownTrigger extends StatelessWidget {
     final hasValue = text.isNotEmpty;
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 13),
+      padding: EdgeInsets.symmetric(horizontal: rw(context, 12), vertical: rh(context, 13)),
       decoration: BoxDecoration(
         border: Border.all(color: const Color(0xFFDDDDDD)),
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(rw(context, 10)),
         color: Colors.white,
       ),
       child: Row(
@@ -1584,12 +1585,12 @@ class _DropdownTrigger extends StatelessWidget {
             child: Text(
               hasValue ? text : hint,
               style: TextStyle(
-                fontSize: 14,
+                fontSize: rfs(context, 14),
                 color: hasValue ? Colors.black87 : AppColors.grey400,
               ),
             ),
           ),
-          const Icon(
+          Icon(
             Icons.keyboard_arrow_down_rounded,
             color: AppColors.grey400,
             size: 22,
@@ -1624,8 +1625,8 @@ class _GroupTextField extends StatelessWidget {
         RichText(
           text: TextSpan(
             text: label,
-            style: const TextStyle(
-              fontSize: 13,
+            style: TextStyle(
+              fontSize: rfs(context, 13),
               fontWeight: FontWeight.w600,
               color: Colors.black87,
             ),
@@ -1640,31 +1641,31 @@ class _GroupTextField extends StatelessWidget {
             ],
           ),
         ),
-        const SizedBox(height: 8),
+        vSpace(context, 8),
         TextField(
           controller: controller,
           keyboardType: keyboardType,
           onChanged: onChanged,
-          style: const TextStyle(fontSize: 14),
+          style: TextStyle(fontSize: rfs(context, 14)),
           decoration: InputDecoration(
             filled: true,
             fillColor: Colors.white,
             hintText: hint,
-            hintStyle: const TextStyle(fontSize: 13, color: AppColors.grey400),
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 12,
-              vertical: 12,
+            hintStyle: TextStyle(fontSize: rfs(context, 13), color: AppColors.grey400),
+            contentPadding: EdgeInsets.symmetric(
+              horizontal: rw(context, 12),
+              vertical: rh(context, 12),
             ),
             border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(rw(context, 10)),
               borderSide: const BorderSide(color: Color(0xFFDDDDDD)),
             ),
             enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(rw(context, 10)),
               borderSide: const BorderSide(color: Color(0xFFDDDDDD)),
             ),
             focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(rw(context, 10)),
               borderSide: const BorderSide(
                 color: AppColors.primary500,
                 width: 1.5,
@@ -1691,7 +1692,7 @@ class _Step2PurposeVisit extends StatelessWidget {
     return Obx(() {
       final detail = controller.formStructure.value;
       if (detail == null) {
-        return const Center(child: CircularProgressIndicator());
+        return Center(child: CircularProgressIndicator());
       }
 
       final sections = detail.sectionPageVisitorTypes;
@@ -1702,7 +1703,7 @@ class _Step2PurposeVisit extends StatelessWidget {
           (sections.length > 1 ? sections[1] : null);
 
       if (section == null) {
-        return const Text('Tidak ada data form tujuan.');
+        return Text('Tidak ada data form tujuan.');
       }
 
       return Column(
@@ -1739,7 +1740,7 @@ class _FormFieldWidget extends StatelessWidget {
   @override
   Widget build(BuildContext ctx) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 18),
+      padding: EdgeInsets.only(bottom: rh(context, 18)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1749,14 +1750,14 @@ class _FormFieldWidget extends StatelessWidget {
               text: field.longDisplayText.isEmpty
                   ? field.shortName
                   : field.longDisplayText,
-              style: const TextStyle(
-                fontSize: 13,
+              style: TextStyle(
+                fontSize: rfs(context, 13),
                 fontWeight: FontWeight.w600,
                 color: Colors.black87,
               ),
               children: [
                 if (field.mandatory || controller.currentStep.value == 2)
-                  const TextSpan(
+                  TextSpan(
                     text: ' *',
                     style: TextStyle(
                       color: Colors.red,
@@ -1766,7 +1767,7 @@ class _FormFieldWidget extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(height: 7),
+          vSpace(context, 7),
           _buildInputWidget(ctx),
         ],
       ),
@@ -1781,6 +1782,32 @@ class _FormFieldWidget extends StatelessWidget {
         final selectedRole = roles.isNotEmpty
             ? roles.firstWhereOrNull((r) => r.role == selected)
             : null;
+
+        // If only 1 role is available, auto-select and show as read-only
+        if (roles.length == 1) {
+          final single = roles.first;
+          if (controller.selectedVisitorRole.value != single.role) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              controller.selectedVisitorRole.value = single.role;
+              field.answerText = single.role;
+              controller.updateForm();
+            });
+          }
+          return Container(
+            width: double.infinity,
+            padding: EdgeInsets.symmetric(horizontal: rw(context, 12), vertical: rh(context, 13)),
+            decoration: BoxDecoration(
+              border: Border.all(color: const Color(0xFFDDDDDD)),
+              borderRadius: BorderRadius.circular(rw(context, 10)),
+              color: Colors.white,
+            ),
+            child: Text(
+              single.role,
+              style: TextStyle(fontSize: rfs(context, 14), color: Colors.black87),
+            ),
+          );
+        }
+
         return _buildPickerTrigger(
           displayText: selectedRole?.role ?? '',
           hint: 'Pilih Role',
@@ -1819,15 +1846,15 @@ class _FormFieldWidget extends StatelessWidget {
           }
           return Container(
             width: double.infinity,
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 13),
+            padding: EdgeInsets.symmetric(horizontal: rw(context, 12), vertical: rh(context, 13)),
             decoration: BoxDecoration(
               border: Border.all(color: const Color(0xFFDDDDDD)),
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(rw(context, 10)),
               color: Colors.white,
             ),
             child: Text(
               single.name,
-              style: const TextStyle(fontSize: 14, color: Colors.black87),
+              style: TextStyle(fontSize: rfs(context, 14), color: Colors.black87),
             ),
           );
         }
@@ -1900,7 +1927,7 @@ class _FormFieldWidget extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _buildRadioGroup(),
-              const SizedBox(height: 4),
+              vSpace(context, 4),
               const Divider(thickness: 1, color: Color(0xFFEEEEEE)),
             ],
           );
@@ -1977,20 +2004,20 @@ class _FormFieldWidget extends StatelessWidget {
         final textDecoration = InputDecoration(
           filled: true,
           fillColor: Colors.white,
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 12,
-            vertical: 12,
+          contentPadding: EdgeInsets.symmetric(
+            horizontal: rw(context, 12),
+            vertical: rh(context, 12),
           ),
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(rw(context, 10)),
             borderSide: const BorderSide(color: Color(0xFFDDDDDD)),
           ),
           enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(rw(context, 10)),
             borderSide: const BorderSide(color: Color(0xFFDDDDDD)),
           ),
           focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(rw(context, 10)),
             borderSide: const BorderSide(
               color: AppColors.primary500,
               width: 1.5,
@@ -2029,7 +2056,7 @@ class _FormFieldWidget extends StatelessWidget {
               },
             ),
             if (showCustomField) ...[
-              const SizedBox(height: 8),
+              vSpace(context, 8),
               TextFormField(
                 initialValue: field.answerText == 'Other'
                     ? ''
@@ -2037,12 +2064,12 @@ class _FormFieldWidget extends StatelessWidget {
                 focusNode: controller.agendaFocusNode,
                 decoration: textDecoration.copyWith(
                   hintText: 'Other',
-                  hintStyle: const TextStyle(
+                  hintStyle: TextStyle(
                     color: AppColors.grey400,
-                    fontSize: 13,
+                    fontSize: rfs(context, 13),
                   ),
                 ),
-                style: const TextStyle(fontSize: 14),
+                style: TextStyle(fontSize: rfs(context, 14)),
                 onChanged: (v) {
                   field.answerText = v;
                   controller.agenda.value = v;
@@ -2088,23 +2115,23 @@ class _FormFieldWidget extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              margin: const EdgeInsets.symmetric(vertical: 10),
+              margin: EdgeInsets.symmetric(vertical: rh(context, 10)),
               width: 36,
               height: 4,
               decoration: BoxDecoration(
                 color: AppColors.grey300,
-                borderRadius: BorderRadius.circular(2),
+                borderRadius: BorderRadius.circular(rw(context, 2)),
               ),
             ),
             Text(
               title,
-              style: const TextStyle(
-                fontSize: 15,
+              style: TextStyle(
+                fontSize: rfs(context, 15),
                 fontWeight: FontWeight.w700,
                 color: Colors.black87,
               ),
             ),
-            const SizedBox(height: 8),
+            vSpace(context, 8),
             const Divider(height: 1),
             ConstrainedBox(
               constraints: BoxConstraints(
@@ -2120,9 +2147,9 @@ class _FormFieldWidget extends StatelessWidget {
                   return InkWell(
                     onTap: () => Navigator.of(sheetCtx).pop(item),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 20,
-                        vertical: 14,
+                      padding: EdgeInsets.symmetric(
+                        horizontal: rw(context, 20),
+                        vertical: rh(context, 14),
                       ),
                       color: selected
                           ? AppColors.primary500.withValues(alpha: 0.08)
@@ -2133,7 +2160,7 @@ class _FormFieldWidget extends StatelessWidget {
                             child: Text(
                               label,
                               style: TextStyle(
-                                fontSize: 14,
+                                fontSize: rfs(context, 14),
                                 color: selected
                                     ? AppColors.primary500
                                     : Colors.black87,
@@ -2144,7 +2171,7 @@ class _FormFieldWidget extends StatelessWidget {
                             ),
                           ),
                           if (selected)
-                            const Icon(
+                            Icon(
                               Icons.check_rounded,
                               size: 18,
                               color: AppColors.primary500,
@@ -2156,7 +2183,7 @@ class _FormFieldWidget extends StatelessWidget {
                 },
               ),
             ),
-            const SizedBox(height: 8),
+            vSpace(context, 8),
           ],
         ),
       ),
@@ -2201,17 +2228,17 @@ class _FormFieldWidget extends StatelessWidget {
     }
 
     final decoration = InputDecoration(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+      contentPadding: EdgeInsets.symmetric(horizontal: rw(context, 12), vertical: rh(context, 12)),
       border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(rw(context, 10)),
         borderSide: const BorderSide(color: Color(0xFFDDDDDD)),
       ),
       enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(rw(context, 10)),
         borderSide: const BorderSide(color: Color(0xFFDDDDDD)),
       ),
       focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(rw(context, 10)),
         borderSide: const BorderSide(color: AppColors.primary500, width: 1.5),
       ),
     );
@@ -2259,7 +2286,7 @@ class _FormFieldWidget extends StatelessWidget {
               return RadioListTile<String>(
                 value: opt.value,
                 activeColor: AppColors.primary500,
-                title: Text(opt.name, style: const TextStyle(fontSize: 14)),
+                title: Text(opt.name, style: TextStyle(fontSize: rfs(context, 14))),
                 contentPadding: EdgeInsets.zero,
               );
             }).toList(),
@@ -2274,7 +2301,7 @@ class _FormFieldWidget extends StatelessWidget {
       builder: (ctx, setState) => CheckboxListTile(
         value: field.answerText == 'true',
         activeColor: AppColors.primary500,
-        title: Text(field.shortName, style: const TextStyle(fontSize: 14)),
+        title: Text(field.shortName, style: TextStyle(fontSize: rfs(context, 14))),
         contentPadding: EdgeInsets.zero,
         onChanged: (v) {
           field.answerText = (v == true).toString();
@@ -2303,29 +2330,29 @@ class _FormFieldWidget extends StatelessWidget {
         decoration: InputDecoration(
           filled: true,
           fillColor: Colors.white,
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 12,
-            vertical: 12,
+          contentPadding: EdgeInsets.symmetric(
+            horizontal: rw(context, 12),
+            vertical: rh(context, 12),
           ),
           hintText: withTime
               ? 'EEEE, DD MMMM YYYY, HH:mm'
               : 'EEEE, DD MMMM YYYY',
-          hintStyle: const TextStyle(color: AppColors.grey400, fontSize: 13),
-          suffixIcon: const Icon(
+          hintStyle: TextStyle(color: AppColors.grey400, fontSize: rfs(context, 13)),
+          suffixIcon: Icon(
             Icons.calendar_today_outlined,
             color: AppColors.grey500,
             size: 18,
           ),
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(rw(context, 10)),
             borderSide: const BorderSide(color: Color(0xFFDDDDDD)),
           ),
           enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(rw(context, 10)),
             borderSide: const BorderSide(color: Color(0xFFDDDDDD)),
           ),
           focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(rw(context, 10)),
             borderSide: const BorderSide(
               color: AppColors.primary500,
               width: 1.5,
@@ -2520,33 +2547,33 @@ class _FileUploadStateState extends State<_FileUploadState> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              margin: const EdgeInsets.symmetric(vertical: 10),
+              margin: EdgeInsets.symmetric(vertical: rh(context, 10)),
               width: 36,
               height: 4,
               decoration: BoxDecoration(
                 color: AppColors.grey300,
-                borderRadius: BorderRadius.circular(2),
+                borderRadius: BorderRadius.circular(rw(context, 2)),
               ),
             ),
-            const Text(
+            Text(
               'Pilih Sumber Foto',
-              style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+              style: TextStyle(fontSize: rfs(context, 15), fontWeight: FontWeight.w700),
             ),
-            const SizedBox(height: 8),
+            vSpace(context, 8),
             const Divider(height: 1),
             ListTile(
               leading: Container(
-                padding: const EdgeInsets.all(8),
+                padding: EdgeInsets.all(rw(context, 8)),
                 decoration: BoxDecoration(
                   color: AppColors.primary500.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(rw(context, 10)),
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.camera_alt_outlined,
                   color: AppColors.primary500,
                 ),
               ),
-              title: const Text('Kamera'),
+              title: Text('Kamera'),
               onTap: () {
                 Get.back();
                 _pickAndUpload(ImageSource.camera);
@@ -2554,23 +2581,23 @@ class _FileUploadStateState extends State<_FileUploadState> {
             ),
             ListTile(
               leading: Container(
-                padding: const EdgeInsets.all(8),
+                padding: EdgeInsets.all(rw(context, 8)),
                 decoration: BoxDecoration(
                   color: AppColors.primary500.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(rw(context, 10)),
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.photo_library_outlined,
                   color: AppColors.primary500,
                 ),
               ),
-              title: const Text('Galeri'),
+              title: Text('Galeri'),
               onTap: () {
                 Get.back();
                 _pickAndUpload(ImageSource.gallery);
               },
             ),
-            const SizedBox(height: 16),
+            vSpace(context, 16),
           ],
         ),
       ),
@@ -2583,7 +2610,7 @@ class _FileUploadStateState extends State<_FileUploadState> {
       return Stack(
         children: [
           ClipRRect(
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(rw(context, 10)),
             child: Image.file(
               _pickedFile!,
               height: 160,
@@ -2606,8 +2633,8 @@ class _FileUploadStateState extends State<_FileUploadState> {
                   color: Colors.black.withValues(alpha: 0.6),
                   shape: BoxShape.circle,
                 ),
-                padding: const EdgeInsets.all(5),
-                child: const Icon(
+                padding: EdgeInsets.all(rw(context, 5)),
+                child: Icon(
                   Icons.close_rounded,
                   color: Colors.white,
                   size: 16,
@@ -2638,11 +2665,11 @@ class _FileUploadStateState extends State<_FileUploadState> {
                 : const Color(0xFFDDDDDD),
             style: BorderStyle.solid,
           ),
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(rw(context, 10)),
           color: AppColors.primary50,
         ),
         child: _isUploading
-            ? const Center(
+            ? Center(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -2654,10 +2681,10 @@ class _FileUploadStateState extends State<_FileUploadState> {
                         color: AppColors.primary500,
                       ),
                     ),
-                    SizedBox(height: 6),
+                    vSpace(context, 6),
                     Text(
                       'Mengupload...',
-                      style: TextStyle(color: AppColors.grey500, fontSize: 12),
+                      style: TextStyle(color: AppColors.grey500, fontSize: rfs(context, 12)),
                     ),
                   ],
                 ),
@@ -2666,7 +2693,7 @@ class _FileUploadStateState extends State<_FileUploadState> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Container(
-                    padding: const EdgeInsets.all(8),
+                    padding: EdgeInsets.all(rw(context, 8)),
                     decoration: BoxDecoration(
                       color: AppColors.primary500.withValues(alpha: 0.1),
                       shape: BoxShape.circle,
@@ -2679,12 +2706,12 @@ class _FileUploadStateState extends State<_FileUploadState> {
                       size: 22,
                     ),
                   ),
-                  const SizedBox(height: 6),
+                  vSpace(context, 6),
                   Text(
                     widget.cameraOnly ? 'Buka Kamera' : 'Pilih File / Foto',
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: AppColors.primary500,
-                      fontSize: 13,
+                      fontSize: rfs(context, 13),
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -2739,7 +2766,7 @@ class _BottomNav extends StatelessWidget {
             bottomRight: Radius.circular(20),
           ),
         ),
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+        padding: EdgeInsets.symmetric(horizontal: rw(context, 20), vertical: rh(context, 14)),
         child: Row(
           children: [
             // Back button
@@ -2771,16 +2798,16 @@ class _BottomNav extends StatelessWidget {
                 ),
                 foregroundColor: AppColors.primary500,
                 disabledForegroundColor: const Color(0xFFBDBDBD),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 18,
-                  vertical: 12,
+                padding: EdgeInsets.symmetric(
+                  horizontal: rw(context, 18),
+                  vertical: rh(context, 12),
                 ),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(rw(context, 10)),
                 ),
               ),
-              icon: const Icon(Icons.arrow_back_rounded, size: 16),
-              label: const Text(
+              icon: Icon(Icons.arrow_back_rounded, size: 16),
+              label: Text(
                 'Back',
                 style: TextStyle(fontWeight: FontWeight.w600),
               ),
@@ -2805,12 +2832,12 @@ class _BottomNav extends StatelessWidget {
               style: FilledButton.styleFrom(
                 backgroundColor: AppColors.primary500,
                 disabledBackgroundColor: const Color(0xFFDDDDDD),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 22,
-                  vertical: 12,
+                padding: EdgeInsets.symmetric(
+                  horizontal: rw(context, 22),
+                  vertical: rh(context, 12),
                 ),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(rw(context, 10)),
                 ),
               ),
               icon: isSubmitting
@@ -2830,7 +2857,7 @@ class _BottomNav extends StatelessWidget {
                     ),
               label: Text(
                 isLast ? 'Submit' : 'Next',
-                style: const TextStyle(fontWeight: FontWeight.w600),
+                style: TextStyle(fontWeight: FontWeight.w600),
               ),
             ),
           ],
@@ -2852,21 +2879,21 @@ class _SectionHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.only(left: 10),
+      padding: EdgeInsets.only(left: rw(context, 10)),
       decoration: const BoxDecoration(
         border: Border(left: BorderSide(color: AppColors.primary500, width: 3)),
       ),
       child: RichText(
         text: TextSpan(
           text: title,
-          style: const TextStyle(
-            fontSize: 14,
+          style: TextStyle(
+            fontSize: rfs(context, 14),
             fontWeight: FontWeight.w600,
             color: Colors.black87,
           ),
           children: [
             if (isRequired)
-              const TextSpan(
+              TextSpan(
                 text: ' *',
                 style: TextStyle(
                   color: Colors.red,
@@ -2980,20 +3007,20 @@ class _VisitorSearchFieldState extends State<_VisitorSearchField> {
               offset: Offset(0, size.height + 4),
               child: Material(
                 elevation: 8,
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(rw(context, 12)),
                 shadowColor: Colors.black26,
                 child: Container(
                   constraints: const BoxConstraints(maxHeight: 260),
                   decoration: BoxDecoration(
                     color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(rw(context, 12)),
                     border: Border.all(color: const Color(0xFFE0E0E0)),
                   ),
                   child: Obx(() {
                     final ctrl = widget.controller;
                     if (ctrl.isLoadingVisitors.value) {
-                      return const Padding(
-                        padding: EdgeInsets.all(16),
+                      return Padding(
+                        padding: EdgeInsets.all(rw(context, 16)),
                         child: Center(
                           child: CircularProgressIndicator(strokeWidth: 2),
                         ),
@@ -3002,12 +3029,12 @@ class _VisitorSearchFieldState extends State<_VisitorSearchField> {
                     final results = ctrl.filteredVisitors;
                     if (results.isEmpty) {
                       return Padding(
-                        padding: const EdgeInsets.all(16),
+                        padding: EdgeInsets.all(rw(context, 16)),
                         child: Text(
                           ctrl.visitorSearchQuery.value.isEmpty
                               ? 'Type to search visitors...'
                               : 'No visitor found',
-                          style: const TextStyle(color: Colors.grey, fontSize: 13),
+                          style: TextStyle(color: Colors.grey, fontSize: rfs(context, 13)),
                         ),
                       );
                     }
@@ -3031,9 +3058,9 @@ class _VisitorSearchFieldState extends State<_VisitorSearchField> {
                               : BorderRadius.zero,
                           onTap: () => _onVisitorSelected(v),
                           child: Padding(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 14,
-                              vertical: 10,
+                            padding: EdgeInsets.symmetric(
+                              horizontal: rw(context, 14),
+                              vertical: rh(context, 10),
                             ),
                             child: Row(
                               children: [
@@ -3049,24 +3076,24 @@ class _VisitorSearchFieldState extends State<_VisitorSearchField> {
                                   child: Center(
                                     child: Text(
                                       name.isNotEmpty ? name[0].toUpperCase() : '?',
-                                      style: const TextStyle(
+                                      style: TextStyle(
                                         color: AppColors.primary500,
                                         fontWeight: FontWeight.bold,
-                                        fontSize: 15,
+                                        fontSize: rfs(context, 15),
                                       ),
                                     ),
                                   ),
                                 ),
-                                const SizedBox(width: 12),
+                                hSpace(context, 12),
                                 Expanded(
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
                                       Text(
                                         name,
-                                        style: const TextStyle(
+                                        style: TextStyle(
                                           fontWeight: FontWeight.w600,
-                                          fontSize: 13,
+                                          fontSize: rfs(context, 13),
                                           color: Colors.black87,
                                         ),
                                         overflow: TextOverflow.ellipsis,
@@ -3077,8 +3104,8 @@ class _VisitorSearchFieldState extends State<_VisitorSearchField> {
                                             if (org.isNotEmpty) org,
                                             if (email.isNotEmpty) email,
                                           ].join(' · '),
-                                          style: const TextStyle(
-                                            fontSize: 11,
+                                          style: TextStyle(
+                                            fontSize: rfs(context, 11),
                                             color: Colors.grey,
                                           ),
                                           overflow: TextOverflow.ellipsis,
@@ -3086,7 +3113,7 @@ class _VisitorSearchFieldState extends State<_VisitorSearchField> {
                                     ],
                                   ),
                                 ),
-                                const Icon(
+                                Icon(
                                   Icons.chevron_right,
                                   size: 16,
                                   color: Colors.grey,
@@ -3120,15 +3147,15 @@ class _VisitorSearchFieldState extends State<_VisitorSearchField> {
           _overlayEntry?.markNeedsBuild();
           if (!_showDropdown) _openDropdown();
         },
-        style: const TextStyle(fontSize: 14),
+        style: TextStyle(fontSize: rfs(context, 14)),
         decoration: InputDecoration(
           hintText: 'Search visitor by name...',
-          hintStyle: const TextStyle(color: Colors.grey, fontSize: 13),
-          prefixIcon: const Icon(Icons.search, size: 20, color: Colors.grey),
+          hintStyle: TextStyle(color: Colors.grey, fontSize: rfs(context, 13)),
+          prefixIcon: Icon(Icons.search, size: 20, color: Colors.grey),
           suffixIcon: Obx(
             () => widget.controller.isLoadingVisitors.value
-                ? const Padding(
-                    padding: EdgeInsets.all(12),
+                ? Padding(
+                    padding: EdgeInsets.all(rw(context, 12)),
                     child: SizedBox(
                       width: 16,
                       height: 16,
@@ -3137,7 +3164,7 @@ class _VisitorSearchFieldState extends State<_VisitorSearchField> {
                   )
                 : _searchCtrl.text.isNotEmpty
                 ? IconButton(
-                    icon: const Icon(Icons.close, size: 18, color: Colors.grey),
+                    icon: Icon(Icons.close, size: 18, color: Colors.grey),
                     onPressed: () {
                       _searchCtrl.clear();
                       widget.controller.visitorSearchQuery.value = '';
@@ -3149,20 +3176,20 @@ class _VisitorSearchFieldState extends State<_VisitorSearchField> {
           ),
           filled: true,
           fillColor: Colors.white,
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 14,
-            vertical: 12,
+          contentPadding: EdgeInsets.symmetric(
+            horizontal: rw(context, 14),
+            vertical: rh(context, 12),
           ),
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(rw(context, 10)),
             borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
           ),
           enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(rw(context, 10)),
             borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
           ),
           focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(rw(context, 10)),
             borderSide: const BorderSide(
               color: AppColors.primary500,
               width: 1.5,
@@ -3301,32 +3328,32 @@ class _EmployeeSearchFieldState extends State<_EmployeeSearchField> {
               offset: Offset(0, size.height + 4),
               child: Material(
                 elevation: 8,
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(rw(context, 12)),
                 shadowColor: Colors.black26,
                 child: Container(
                   constraints: const BoxConstraints(maxHeight: 260),
                   decoration: BoxDecoration(
                     color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(rw(context, 12)),
                     border: Border.all(color: const Color(0xFFE0E0E0)),
                   ),
                   child: Obx(() {
                     final ctrl = widget.controller;
                     if (ctrl.isLoadingEmployees.value) {
-                      return const Padding(
-                        padding: EdgeInsets.all(16),
+                      return Padding(
+                        padding: EdgeInsets.all(rw(context, 16)),
                         child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
                       );
                     }
                     final results = ctrl.filteredEmployees;
                     if (results.isEmpty) {
                       return Padding(
-                        padding: const EdgeInsets.all(16),
+                        padding: EdgeInsets.all(rw(context, 16)),
                         child: Text(
                           ctrl.employeeSearchQuery.value.isEmpty
                               ? 'Type to search employees...'
                               : 'No employee found',
-                          style: const TextStyle(color: Colors.grey, fontSize: 13),
+                          style: TextStyle(color: Colors.grey, fontSize: rfs(context, 13)),
                         ),
                       );
                     }
@@ -3350,9 +3377,9 @@ class _EmployeeSearchFieldState extends State<_EmployeeSearchField> {
                               : BorderRadius.zero,
                           onTap: () => _onEmployeeSelected(e),
                           child: Padding(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 14,
-                              vertical: 10,
+                            padding: EdgeInsets.symmetric(
+                              horizontal: rw(context, 14),
+                              vertical: rh(context, 10),
                             ),
                             child: Row(
                               children: [
@@ -3368,24 +3395,24 @@ class _EmployeeSearchFieldState extends State<_EmployeeSearchField> {
                                   child: Center(
                                     child: Text(
                                       name.isNotEmpty ? name[0].toUpperCase() : '?',
-                                      style: const TextStyle(
+                                      style: TextStyle(
                                         color: AppColors.primary500,
                                         fontWeight: FontWeight.bold,
-                                        fontSize: 15,
+                                        fontSize: rfs(context, 15),
                                       ),
                                     ),
                                   ),
                                 ),
-                                const SizedBox(width: 12),
+                                hSpace(context, 12),
                                 Expanded(
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
                                       Text(
                                         name,
-                                        style: const TextStyle(
+                                        style: TextStyle(
                                           fontWeight: FontWeight.w600,
-                                          fontSize: 13,
+                                          fontSize: rfs(context, 13),
                                           color: Colors.black87,
                                         ),
                                         overflow: TextOverflow.ellipsis,
@@ -3396,8 +3423,8 @@ class _EmployeeSearchFieldState extends State<_EmployeeSearchField> {
                                             if (org.isNotEmpty) org,
                                             if (email.isNotEmpty) email,
                                           ].join(' · '),
-                                          style: const TextStyle(
-                                            fontSize: 11,
+                                          style: TextStyle(
+                                            fontSize: rfs(context, 11),
                                             color: Colors.grey,
                                           ),
                                           overflow: TextOverflow.ellipsis,
@@ -3405,7 +3432,7 @@ class _EmployeeSearchFieldState extends State<_EmployeeSearchField> {
                                     ],
                                   ),
                                 ),
-                                const Icon(
+                                Icon(
                                   Icons.chevron_right,
                                   size: 16,
                                   color: Colors.grey,
@@ -3438,15 +3465,15 @@ class _EmployeeSearchFieldState extends State<_EmployeeSearchField> {
           _overlayEntry?.markNeedsBuild();
           if (!_showDropdown) _openDropdown();
         },
-        style: const TextStyle(fontSize: 14),
+        style: TextStyle(fontSize: rfs(context, 14)),
         decoration: InputDecoration(
           hintText: 'Search employee by name...',
-          hintStyle: const TextStyle(color: Colors.grey, fontSize: 13),
-          prefixIcon: const Icon(Icons.search, size: 20, color: Colors.grey),
+          hintStyle: TextStyle(color: Colors.grey, fontSize: rfs(context, 13)),
+          prefixIcon: Icon(Icons.search, size: 20, color: Colors.grey),
           suffixIcon: Obx(
             () => widget.controller.isLoadingEmployees.value
-                ? const Padding(
-                    padding: EdgeInsets.all(12),
+                ? Padding(
+                    padding: EdgeInsets.all(rw(context, 12)),
                     child: SizedBox(
                       width: 16,
                       height: 16,
@@ -3455,7 +3482,7 @@ class _EmployeeSearchFieldState extends State<_EmployeeSearchField> {
                   )
                 : _searchCtrl.text.isNotEmpty
                     ? IconButton(
-                        icon: const Icon(Icons.close, size: 18, color: Colors.grey),
+                        icon: Icon(Icons.close, size: 18, color: Colors.grey),
                         onPressed: () {
                           _searchCtrl.clear();
                           widget.controller.employeeSearchQuery.value = '';
@@ -3468,17 +3495,17 @@ class _EmployeeSearchFieldState extends State<_EmployeeSearchField> {
           filled: true,
           fillColor: Colors.white,
           contentPadding:
-              const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              EdgeInsets.symmetric(horizontal: rw(context, 14), vertical: rh(context, 12)),
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(rw(context, 10)),
             borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
           ),
           enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(rw(context, 10)),
             borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
           ),
           focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(rw(context, 10)),
             borderSide: const BorderSide(
                 color: AppColors.primary500, width: 1.5),
           ),

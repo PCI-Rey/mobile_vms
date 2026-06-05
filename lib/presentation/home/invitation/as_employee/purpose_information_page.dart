@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../core/core.dart';
+import '../../../../core/helper/responsive_helper.dart';
 import '../../../../presentation/home/invitation/as_employee/general_information_page.dart';
 
 class PurposeInformationPage extends StatefulWidget {
@@ -40,7 +41,6 @@ class _PurposeInformationPageState extends State<PurposeInformationPage> {
   @override
   void initState() {
     super.initState();
-    // Set default values from previous page
   }
 
   @override
@@ -67,11 +67,11 @@ class _PurposeInformationPageState extends State<PurposeInformationPage> {
           icon: const Icon(Icons.arrow_back_ios, color: Colors.black),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
+        title: Text(
           "Purpose Information",
           style: TextStyle(
             color: Colors.black,
-            fontSize: 18,
+            fontSize: rfs(context, 18),
             fontWeight: FontWeight.w600,
           ),
         ),
@@ -82,7 +82,7 @@ class _PurposeInformationPageState extends State<PurposeInformationPage> {
           // Form Section
           Expanded(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.all(20),
+              padding: EdgeInsets.all(rw(context, 20)),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -94,7 +94,7 @@ class _PurposeInformationPageState extends State<PurposeInformationPage> {
                     onChanged: (value) => setState(() {}),
                   ),
 
-                  const SpaceHeight(20),
+                  vSpace(context, 20),
 
                   // Destination Field - Using SearchableDropdown
                   SearchableDropdown(
@@ -109,7 +109,7 @@ class _PurposeInformationPageState extends State<PurposeInformationPage> {
                     },
                   ),
 
-                  const SpaceHeight(20),
+                  vSpace(context, 20),
 
                   // Visit Time Field
                   CustomTextField(
@@ -122,7 +122,7 @@ class _PurposeInformationPageState extends State<PurposeInformationPage> {
                     onChanged: (value) => setState(() {}),
                   ),
 
-                  const SpaceHeight(40),
+                  vSpace(context, 40),
                 ],
               ),
             ),
@@ -130,15 +130,15 @@ class _PurposeInformationPageState extends State<PurposeInformationPage> {
 
           // Bottom Buttons
           Container(
-            padding: const EdgeInsets.all(20),
+            padding: EdgeInsets.all(rw(context, 20)),
             decoration: BoxDecoration(
               color: Colors.white,
               boxShadow: [
                 BoxShadow(
                   color: Colors.grey.withValues(alpha: 0.1),
                   spreadRadius: 1,
-                  blurRadius: 3,
-                  offset: const Offset(0, -1),
+                  blurRadius: rw(context, 3),
+                  offset: Offset(0, rh(context, -1)),
                 ),
               ],
             ),
@@ -149,12 +149,12 @@ class _PurposeInformationPageState extends State<PurposeInformationPage> {
                   child: Button.outlined(
                     onPressed: () => Navigator.pop(context),
                     label: 'Back',
-                    height: 50,
-                    borderRadius: 8,
+                    height: rh(context, 50),
+                    borderRadius: rw(context, 8),
                   ),
                 ),
 
-                const SizedBox(width: 16),
+                hSpace(context, 16),
 
                 // Next Button
                 Expanded(
@@ -162,10 +162,9 @@ class _PurposeInformationPageState extends State<PurposeInformationPage> {
                     onPressed: () {
                       context.push(const GeneralInformationPage());
                     },
-
                     label: 'Next',
-                    height: 50,
-                    borderRadius: 8,
+                    height: rh(context, 50),
+                    borderRadius: rw(context, 8),
                     disabled: !_isFormValid(),
                     color: _isFormValid()
                         ? AppColors.primary500
@@ -223,29 +222,6 @@ class _PurposeInformationPageState extends State<PurposeInformationPage> {
       }
     }
   }
-
-/*
-  void _handleNext() {
-    // Collect form data
-    final purposeData = {
-      'picHost': picHostController.text,
-      'destination': selectedDestination,
-      'visitTime': visitTimeController.text,
-    };
-
-    // Show success message
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Text('Purpose Information Saved!'),
-        backgroundColor: AppColors.primary500,
-      ),
-    );
-
-    // Navigate to next page or process the data
-    debugPrint('Purpose Data: $purposeData');
-  }
-*/
-// ignore: unused_element
 }
 
 // SearchableDropdown Widget - Adopted from FilterBottomSheet
@@ -345,10 +321,10 @@ class _SearchableDropdownState extends State<SearchableDropdown> {
     Size size = renderBox.size;
 
     // Calculate item height (48 px per item)
-    double itemHeight = 48;
+    double itemHeight = rh(context, 48);
     double listHeight =
-        (filteredItems.isEmpty ? 48 : filteredItems.length * itemHeight)
-            .clamp(0, 200)
+        (filteredItems.isEmpty ? rh(context, 48) : filteredItems.length * itemHeight)
+            .clamp(0, rh(context, 200))
             .toDouble();
 
     return OverlayEntry(
@@ -357,17 +333,17 @@ class _SearchableDropdownState extends State<SearchableDropdown> {
         child: CompositedTransformFollower(
           link: _layerLink,
           showWhenUnlinked: false,
-          offset: Offset(0.0, size.height + 5.0),
+          offset: Offset(0.0, size.height + rh(context, 5.0)),
           child: Material(
             elevation: 4.0,
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(rw(context, 8)),
             child: ConstrainedBox(
               constraints: BoxConstraints(maxHeight: listHeight),
               child: filteredItems.isEmpty
                   ? Container(
                       alignment: Alignment.center,
-                      height: 48,
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      height: rh(context, 48),
+                      padding: EdgeInsets.symmetric(horizontal: rw(context, 16)),
                       child: const Text(
                         'No destination found',
                         style: TextStyle(color: Colors.grey),
@@ -388,7 +364,7 @@ class _SearchableDropdownState extends State<SearchableDropdown> {
                           },
                           child: Container(
                             height: itemHeight,
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            padding: EdgeInsets.symmetric(horizontal: rw(context, 16)),
                             alignment: Alignment.centerLeft,
                             decoration: BoxDecoration(
                               border: index < filteredItems.length - 1
@@ -402,7 +378,7 @@ class _SearchableDropdownState extends State<SearchableDropdown> {
                             ),
                             child: Text(
                               item,
-                              style: const TextStyle(fontSize: 16),
+                              style: TextStyle(fontSize: rfs(context, 16)),
                             ),
                           ),
                         );
@@ -427,9 +403,9 @@ class _SearchableDropdownState extends State<SearchableDropdown> {
           hintText: widget.hintText,
           filled: true,
           fillColor: const Color(0xffF2F8FD),
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 12,
-            vertical: 16,
+          contentPadding: EdgeInsets.symmetric(
+            horizontal: rw(context, 12),
+            vertical: rh(context, 16),
           ),
           suffixIcon: GestureDetector(
             onTap: _toggleDropdown,
@@ -440,7 +416,7 @@ class _SearchableDropdownState extends State<SearchableDropdown> {
             ),
           ),
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(rw(context, 8)),
             borderSide: BorderSide.none,
           ),
         ),

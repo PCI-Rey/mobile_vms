@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
+import '../../../core/helper/responsive_helper.dart';
 
 class ScanTicketPage extends StatefulWidget {
   const ScanTicketPage({super.key});
@@ -14,20 +15,21 @@ class _ScanTicketPageState extends State<ScanTicketPage> {
 
   @override
   Widget build(BuildContext context) {
+    final scanAreaSize = rw(context, 250.0);
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios, color: Colors.black),
+          icon: const Icon(Icons.arrow_back_ios, color: Colors.black),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           'Scan Ticket',
           style: TextStyle(
             color: Colors.black,
-            fontSize: 18,
+            fontSize: rfs(context, 18),
             fontWeight: FontWeight.w500,
           ),
         ),
@@ -61,15 +63,15 @@ class _ScanTicketPageState extends State<ScanTicketPage> {
 
           // Custom overlay with transparent center using CustomPainter
           CustomPaint(
-            painter: ScannerOverlayPainter(),
+            painter: ScannerOverlayPainter(scanAreaSize: scanAreaSize),
             child: const SizedBox(width: double.infinity, height: double.infinity),
           ),
 
           // Scanner frame with corner brackets
           Center(
             child: SizedBox(
-              width: 250,
-              height: 250,
+              width: scanAreaSize,
+              height: scanAreaSize,
               child: Stack(
                 children: [
                   // Top-left corner
@@ -77,12 +79,12 @@ class _ScanTicketPageState extends State<ScanTicketPage> {
                     top: 0,
                     left: 0,
                     child: Container(
-                      width: 30,
-                      height: 30,
+                      width: rw(context, 30),
+                      height: rw(context, 30),
                       decoration: BoxDecoration(
                         border: Border(
-                          top: BorderSide(color: Colors.white, width: 4),
-                          left: BorderSide(color: Colors.white, width: 4),
+                          top: BorderSide(color: Colors.white, width: rw(context, 4)),
+                          left: BorderSide(color: Colors.white, width: rw(context, 4)),
                         ),
                       ),
                     ),
@@ -92,12 +94,12 @@ class _ScanTicketPageState extends State<ScanTicketPage> {
                     top: 0,
                     right: 0,
                     child: Container(
-                      width: 30,
-                      height: 30,
+                      width: rw(context, 30),
+                      height: rw(context, 30),
                       decoration: BoxDecoration(
                         border: Border(
-                          top: BorderSide(color: Colors.white, width: 4),
-                          right: BorderSide(color: Colors.white, width: 4),
+                          top: BorderSide(color: Colors.white, width: rw(context, 4)),
+                          right: BorderSide(color: Colors.white, width: rw(context, 4)),
                         ),
                       ),
                     ),
@@ -107,12 +109,12 @@ class _ScanTicketPageState extends State<ScanTicketPage> {
                     bottom: 0,
                     left: 0,
                     child: Container(
-                      width: 30,
-                      height: 30,
+                      width: rw(context, 30),
+                      height: rw(context, 30),
                       decoration: BoxDecoration(
                         border: Border(
-                          bottom: BorderSide(color: Colors.white, width: 4),
-                          left: BorderSide(color: Colors.white, width: 4),
+                          bottom: BorderSide(color: Colors.white, width: rw(context, 4)),
+                          left: BorderSide(color: Colors.white, width: rw(context, 4)),
                         ),
                       ),
                     ),
@@ -122,12 +124,12 @@ class _ScanTicketPageState extends State<ScanTicketPage> {
                     bottom: 0,
                     right: 0,
                     child: Container(
-                      width: 30,
-                      height: 30,
+                      width: rw(context, 30),
+                      height: rw(context, 30),
                       decoration: BoxDecoration(
                         border: Border(
-                          bottom: BorderSide(color: Colors.white, width: 4),
-                          right: BorderSide(color: Colors.white, width: 4),
+                          bottom: BorderSide(color: Colors.white, width: rw(context, 4)),
+                          right: BorderSide(color: Colors.white, width: rw(context, 4)),
                         ),
                       ),
                     ),
@@ -139,7 +141,7 @@ class _ScanTicketPageState extends State<ScanTicketPage> {
 
           // Instructions text
           Positioned(
-            bottom: 100,
+            bottom: rh(context, 100),
             left: 0,
             right: 0,
             child: Column(
@@ -149,17 +151,17 @@ class _ScanTicketPageState extends State<ScanTicketPage> {
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     color: Colors.white,
-                    fontSize: 16,
+                    fontSize: rfs(context, 16),
                     fontWeight: FontWeight.w400,
                   ),
                 ),
-                SizedBox(height: 8),
+                vSpace(context, 8),
                 Text(
                   'The QR code will be scanned automatically',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     color: Colors.white70,
-                    fontSize: 14,
+                    fontSize: rfs(context, 14),
                     fontWeight: FontWeight.w300,
                   ),
                 ),
@@ -187,26 +189,26 @@ class _ScanTicketPageState extends State<ScanTicketPage> {
       builder: (context) => AlertDialog(
         title: Row(
           children: [
-            Icon(Icons.qr_code, color: Colors.green),
-            SizedBox(width: 8),
-            Text('QR Code Scanned'),
+            const Icon(Icons.qr_code, color: Colors.green),
+            hSpace(context, 8),
+            const Text('QR Code Scanned'),
           ],
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('QR Code Content:'),
-            SizedBox(height: 8),
+            const Text('QR Code Content:'),
+            vSpace(context, 8),
             Container(
-              padding: EdgeInsets.all(12),
+              padding: EdgeInsets.all(rw(context, 12)),
               decoration: BoxDecoration(
                 color: Colors.grey[100],
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(rw(context, 8)),
               ),
               child: Text(
                 qrData,
-                style: TextStyle(fontFamily: 'monospace', fontSize: 12),
+                style: TextStyle(fontFamily: 'monospace', fontSize: rfs(context, 12)),
               ),
             ),
           ],
@@ -218,14 +220,14 @@ class _ScanTicketPageState extends State<ScanTicketPage> {
               // Resume scanning
               cameraController.start();
             },
-            child: Text('Scan Another'),
+            child: const Text('Scan Another'),
           ),
           ElevatedButton(
             onPressed: () {
               Navigator.pop(context);
               Navigator.pop(context, qrData);
             },
-            child: Text('Use QR Code'),
+            child: const Text('Use QR Code'),
           ),
         ],
       ),
@@ -241,13 +243,17 @@ class _ScanTicketPageState extends State<ScanTicketPage> {
 
 // Custom painter for creating overlay with transparent center
 class ScannerOverlayPainter extends CustomPainter {
+  final double scanAreaSize;
+
+  ScannerOverlayPainter({required this.scanAreaSize});
+
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()..color = Colors.black.withValues(alpha: 0.5);
 
     // Calculate center position for the transparent area
     final center = Offset(size.width / 2, size.height / 2);
-    final scanArea = Rect.fromCenter(center: center, width: 250, height: 250);
+    final scanArea = Rect.fromCenter(center: center, width: scanAreaSize, height: scanAreaSize);
 
     // Create a path that covers the entire canvas
     final overlayPath = Path()
@@ -255,7 +261,7 @@ class ScannerOverlayPainter extends CustomPainter {
 
     // Subtract the scan area to make it transparent
     final scanAreaPath = Path()
-      ..addRRect(RRect.fromRectAndRadius(scanArea, Radius.circular(12)));
+      ..addRRect(RRect.fromRectAndRadius(scanArea, const Radius.circular(12)));
 
     // Combine paths to create the overlay with transparent center
     final finalPath = Path.combine(

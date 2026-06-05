@@ -251,6 +251,18 @@ class PraRegistrationController extends GetxController {
           }
         }
         formStructure.value = structure;
+        // Auto-select the visitor role if there is only one available
+        if (structure.visitorRoles.length == 1 && selectedVisitorRole.value.isEmpty) {
+          selectedVisitorRole.value = structure.visitorRoles.first.role;
+          // Also set the answerText on the visitor_role field if present
+          for (var section in structure.sectionPageVisitorTypes) {
+            for (var field in section.praForm) {
+              if (field.remarks.toLowerCase() == 'visitor_role') {
+                field.answerText = structure.visitorRoles.first.role;
+              }
+            }
+          }
+        }
       }
     } catch (e) {
       debugPrint('fetchFormStructure error: $e');

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../core/constants/colors.dart';
+import '../../../../core/helper/responsive_helper.dart';
 import '../../../../data/datasources/agenda_datasource.dart';
 
 class VisitorTable extends StatelessWidget {
@@ -28,31 +29,32 @@ class VisitorTable extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white, // Background putih
         border: Border.all(width: 1, color: AppColors.grey300),
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(rw(context, 10)),
       ),
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
         child: ConstrainedBox(
           constraints: BoxConstraints(
-            minWidth: MediaQuery.of(
-              context,
-            ).size.width, // Minimal selebar layar
+            minWidth: MediaQuery.of(context).size.width, // Minimal selebar layar
           ),
           child: DataTable(
             columnSpacing: 0, // Hilangkan spacing default
-            headingRowHeight: 56,
-            dataRowMinHeight: 60,
-            dataRowMaxHeight: 60,
+            headingRowHeight: rh(context, 56),
+            dataRowMinHeight: rh(context, 60),
+            dataRowMaxHeight: rh(context, 60),
             headingRowColor: WidgetStateProperty.all(Colors.grey.shade50),
             columns: [
               DataColumn(
                 label: Expanded(
                   child: Container(
                     alignment: Alignment.center,
-                    child: const Text(
+                    child: Text(
                       'Name',
                       textAlign: TextAlign.center,
-                      style: TextStyle(fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: rfs(context, 14),
+                      ),
                     ),
                   ),
                 ),
@@ -61,10 +63,13 @@ class VisitorTable extends StatelessWidget {
                 label: Expanded(
                   child: Container(
                     alignment: Alignment.center,
-                    child: const Text(
+                    child: Text(
                       'Gedung',
                       textAlign: TextAlign.center,
-                      style: TextStyle(fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: rfs(context, 14),
+                      ),
                     ),
                   ),
                 ),
@@ -73,10 +78,13 @@ class VisitorTable extends StatelessWidget {
                 label: Expanded(
                   child: Container(
                     alignment: Alignment.center,
-                    child: const Text(
+                    child: Text(
                       'Status',
                       textAlign: TextAlign.center,
-                      style: TextStyle(fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: rfs(context, 14),
+                      ),
                     ),
                   ),
                 ),
@@ -85,10 +93,13 @@ class VisitorTable extends StatelessWidget {
                 label: Expanded(
                   child: Container(
                     alignment: Alignment.center,
-                    child: const Text(
+                    child: Text(
                       'Check Time',
                       textAlign: TextAlign.center,
-                      style: TextStyle(fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: rfs(context, 14),
+                      ),
                     ),
                   ),
                 ),
@@ -104,7 +115,7 @@ class VisitorTable extends StatelessWidget {
                       child: Text(
                         row.name,
                         textAlign: TextAlign.center,
-                        style: const TextStyle(fontSize: 14),
+                        style: TextStyle(fontSize: rfs(context, 14)),
                       ),
                     ),
                   ),
@@ -115,7 +126,7 @@ class VisitorTable extends StatelessWidget {
                       child: Text(
                         row.gedung,
                         textAlign: TextAlign.center,
-                        style: const TextStyle(fontSize: 14),
+                        style: TextStyle(fontSize: rfs(context, 14)),
                       ),
                     ),
                   ),
@@ -124,20 +135,20 @@ class VisitorTable extends StatelessWidget {
                       width: double.infinity,
                       alignment: Alignment.center,
                       child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 6,
+                        padding: EdgeInsets.symmetric(
+                          horizontal: rw(context, 12),
+                          vertical: rh(context, 6),
                         ),
                         decoration: BoxDecoration(
                           color: _getStatusColor(row.status),
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(rw(context, 8)),
                         ),
                         child: Text(
                           row.status,
-                          style: const TextStyle(
+                          style: TextStyle(
                             color: Colors.white,
                             fontWeight: FontWeight.bold,
-                            fontSize: 12,
+                            fontSize: rfs(context, 12),
                           ),
                           textAlign: TextAlign.center,
                         ),
@@ -151,7 +162,7 @@ class VisitorTable extends StatelessWidget {
                       child: Text(
                         row.checkTime,
                         textAlign: TextAlign.center,
-                        style: const TextStyle(fontSize: 14),
+                        style: TextStyle(fontSize: rfs(context, 14)),
                       ),
                     ),
                   ),
@@ -193,3 +204,4 @@ class _VisitorRow {
     required this.checkTime,
   });
 }
+

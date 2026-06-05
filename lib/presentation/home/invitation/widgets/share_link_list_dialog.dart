@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
+import '../../../../core/helper/responsive_helper.dart';
 import '../controller/invitation_controller.dart';
 import 'create_share_link_dialog.dart';
 import 'invite_share_link_dialog.dart';
@@ -45,25 +46,25 @@ class _ShareLinkListDialogState extends State<ShareLinkListDialog> {
             icon: const Icon(Icons.close, color: Colors.black),
             onPressed: () => Navigator.pop(context),
           ),
-          title: const Text(
+          title: Text(
             'List Share Link',
             style: TextStyle(
               color: Colors.black,
               fontWeight: FontWeight.bold,
-              fontSize: 18,
+              fontSize: rfs(context, 18),
             ),
           ),
           centerTitle: true,
           actions: [
             IconButton(
-              icon: const Icon(
+              icon: Icon(
                 Icons.add_circle,
-                color: Color(0xFF005596),
-                size: 28,
+                color: const Color(0xFF005596),
+                size: rw(context, 28),
               ),
               onPressed: () => _showCreateDialog(),
             ),
-            const SizedBox(width: 8),
+            hSpace(context, 8),
           ],
         ),
         body: Obx(() {
@@ -79,8 +80,8 @@ class _ShareLinkListDialogState extends State<ShareLinkListDialog> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.link_off, size: 64, color: Colors.grey.shade300),
-                  const SizedBox(height: 16),
+                  Icon(Icons.link_off, size: rw(context, 64), color: Colors.grey.shade300),
+                  vSpace(context, 16),
                   Text(
                     'No share links found',
                     style: TextStyle(color: Colors.grey.shade500),
@@ -93,11 +94,11 @@ class _ShareLinkListDialogState extends State<ShareLinkListDialog> {
           return RefreshIndicator(
             onRefresh: () => controller.fetchShareLinks(resetPage: true),
             child: ListView.separated(
-              padding: const EdgeInsets.all(16),
+              padding: EdgeInsets.all(rw(context, 16)),
               physics:
                   const AlwaysScrollableScrollPhysics(), // Memastikan bisa ditarik meski data sedikit
               itemCount: controller.shareLinks.length,
-              separatorBuilder: (context, index) => const SizedBox(height: 12),
+              separatorBuilder: (context, index) => vSpace(context, 12),
               itemBuilder: (context, index) {
                 final item = controller.shareLinks[index];
                 return _buildShareLinkCard(
@@ -125,15 +126,15 @@ class _ShareLinkListDialogState extends State<ShareLinkListDialog> {
           final total = controller.shareLinkTotalRecords.value;
 
           return Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            padding: EdgeInsets.symmetric(horizontal: rw(context, 16), vertical: rh(context, 8)),
             decoration: BoxDecoration(
               color: Colors.white,
               border: Border(top: BorderSide(color: Colors.grey.shade200)),
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withValues(alpha: 0.05),
-                  blurRadius: 10,
-                  offset: const Offset(0, -2),
+                  blurRadius: rw(context, 10),
+                  offset: Offset(0, rh(context, -2)),
                 ),
               ],
             ),
@@ -143,36 +144,36 @@ class _ShareLinkListDialogState extends State<ShareLinkListDialog> {
                 children: [
                   Text(
                     'Showing $start to $end of $total',
-                    style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                    style: TextStyle(fontSize: rfs(context, 12), color: Colors.grey.shade600),
                   ),
                   Row(
                     children: [
                       IconButton(
-                        icon: const Icon(Icons.chevron_left, size: 20),
+                        icon: Icon(Icons.chevron_left, size: rw(context, 20)),
                         onPressed: controller.shareLinkCurrentPage.value > 0
                             ? () => controller.prevShareLinkPage()
                             : null,
                       ),
                       Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 6,
+                        padding: EdgeInsets.symmetric(
+                          horizontal: rw(context, 12),
+                          vertical: rh(context, 6),
                         ),
                         decoration: BoxDecoration(
                           color: const Color(0xFF005596).withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(4),
+                          borderRadius: BorderRadius.circular(rw(context, 4)),
                         ),
                         child: Text(
                           '${controller.shareLinkCurrentPage.value + 1}',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontWeight: FontWeight.bold,
-                            color: Color(0xFF005596),
-                            fontSize: 12,
+                            color: const Color(0xFF005596),
+                            fontSize: rfs(context, 12),
                           ),
                         ),
                       ),
                       IconButton(
-                        icon: const Icon(Icons.chevron_right, size: 20),
+                        icon: Icon(Icons.chevron_right, size: rw(context, 20)),
                         onPressed:
                             (controller.shareLinkCurrentPage.value + 1) *
                                     controller.shareLinkPageSize.value <
@@ -257,13 +258,13 @@ class _ShareLinkListDialogState extends State<ShareLinkListDialog> {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(rw(context, 12)),
         border: Border.all(color: Colors.grey.shade200),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.02),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+            blurRadius: rw(context, 10),
+            offset: Offset(0, rh(context, 4)),
           ),
         ],
       ),
@@ -272,20 +273,20 @@ class _ShareLinkListDialogState extends State<ShareLinkListDialog> {
         children: [
           // Header: No & Status
           Padding(
-            padding: const EdgeInsets.all(12),
+            padding: EdgeInsets.all(rw(context, 12)),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Container(
-                  padding: const EdgeInsets.fromLTRB(4, 4, 12, 4),
+                  padding: EdgeInsets.fromLTRB(rw(context, 4), rw(context, 4), rw(context, 12), rw(context, 4)),
                   decoration: BoxDecoration(
                     color: statusColor,
-                    borderRadius: BorderRadius.circular(20),
+                    borderRadius: BorderRadius.circular(rw(context, 20)),
                     boxShadow: [
                       BoxShadow(
                         color: statusColor.withValues(alpha: 0.2),
-                        blurRadius: 4,
-                        offset: const Offset(0, 2),
+                        blurRadius: rw(context, 4),
+                        offset: Offset(0, rh(context, 2)),
                       ),
                     ],
                   ),
@@ -293,8 +294,8 @@ class _ShareLinkListDialogState extends State<ShareLinkListDialog> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Container(
-                        width: 20,
-                        height: 20,
+                        width: rw(context, 20),
+                        height: rw(context, 20),
                         decoration: const BoxDecoration(
                           color: Colors.white,
                           shape: BoxShape.circle,
@@ -303,18 +304,18 @@ class _ShareLinkListDialogState extends State<ShareLinkListDialog> {
                           child: Text(
                             no.toString(),
                             style: TextStyle(
-                              fontSize: 10,
+                              fontSize: rfs(context, 10),
                               fontWeight: FontWeight.bold,
                               color: statusColor,
                             ),
                           ),
                         ),
                       ),
-                      const SizedBox(width: 8),
+                      hSpace(context, 8),
                       Text(
                         status.toUpperCase(),
-                        style: const TextStyle(
-                          fontSize: 10,
+                        style: TextStyle(
+                          fontSize: rfs(context, 10),
                           fontWeight: FontWeight.w900,
                           color: Colors.white,
                           letterSpacing: 0.8,
@@ -324,27 +325,27 @@ class _ShareLinkListDialogState extends State<ShareLinkListDialog> {
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
+                  padding: EdgeInsets.symmetric(
+                    horizontal: rw(context, 8),
+                    vertical: rh(context, 4),
                   ),
                   decoration: BoxDecoration(
                     color: Colors.grey.shade50,
-                    borderRadius: BorderRadius.circular(6),
+                    borderRadius: BorderRadius.circular(rw(context, 6)),
                     border: Border.all(color: Colors.grey.shade200),
                   ),
                   child: Row(
                     children: [
                       Icon(
                         Icons.timer_outlined,
-                        size: 14,
+                        size: rw(context, 14),
                         color: isExpired ? Colors.grey : Colors.orange,
                       ),
-                      const SizedBox(width: 4),
+                      hSpace(context, 4),
                       Text(
                         getRemainingTime(),
                         style: TextStyle(
-                          fontSize: 12,
+                          fontSize: rfs(context, 12),
                           fontWeight: FontWeight.bold,
                           fontFamily: 'monospace',
                           color: isExpired ? Colors.grey : Colors.black87,
@@ -359,29 +360,29 @@ class _ShareLinkListDialogState extends State<ShareLinkListDialog> {
           const Divider(height: 1),
           // Content
           Padding(
-            padding: const EdgeInsets.all(12),
+            padding: EdgeInsets.all(rw(context, 12)),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _buildInfoRow('Agenda', agenda, isBold: true),
-                const SizedBox(height: 8),
+                vSpace(context, 8),
                 _buildInfoRow(
                   'Usage',
                   item['is_single_use'] == true
                       ? '$currentUsage/$maxUsage (Single Use)'
                       : '$currentUsage/$maxUsage',
                 ),
-                const SizedBox(height: 8),
+                vSpace(context, 8),
                 _buildInfoRow(
                   'Period Start',
                   formatDate(item['visitor_period_start']),
                 ),
-                const SizedBox(height: 4),
+                vSpace(context, 4),
                 _buildInfoRow(
                   'Period End',
                   formatDate(item['visitor_period_end']),
                 ),
-                const SizedBox(height: 8),
+                vSpace(context, 8),
                 _buildInfoRow(
                   'Expired At',
                   item['expired_number'] == 0
@@ -395,7 +396,7 @@ class _ShareLinkListDialogState extends State<ShareLinkListDialog> {
           const Divider(height: 1),
           // Actions
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            padding: EdgeInsets.symmetric(horizontal: rw(context, 12), vertical: rh(context, 8)),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
@@ -423,7 +424,7 @@ class _ShareLinkListDialogState extends State<ShareLinkListDialog> {
                     );
                   },
                 ),
-                const SizedBox(width: 12),
+                hSpace(context, 12),
                 _buildActionButton(
                   icon: Icons.visibility,
                   color: Colors.grey,
@@ -431,7 +432,7 @@ class _ShareLinkListDialogState extends State<ShareLinkListDialog> {
                     // Show details logic
                   },
                 ),
-                const SizedBox(width: 12),
+                hSpace(context, 12),
                 _buildActionButton(
                   icon: Icons.delete,
                   color: Colors.red,
@@ -455,17 +456,17 @@ class _ShareLinkListDialogState extends State<ShareLinkListDialog> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         SizedBox(
-          width: 90,
+          width: rw(context, 90),
           child: Text(
             label,
-            style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+            style: TextStyle(fontSize: rfs(context, 12), color: Colors.grey.shade600),
           ),
         ),
         Expanded(
           child: Text(
             value,
             style: TextStyle(
-              fontSize: 12,
+              fontSize: rfs(context, 12),
               fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
               color: color ?? Colors.black87,
             ),
@@ -482,14 +483,14 @@ class _ShareLinkListDialogState extends State<ShareLinkListDialog> {
   }) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(8),
+      borderRadius: BorderRadius.circular(rw(context, 8)),
       child: Container(
-        padding: const EdgeInsets.all(8),
+        padding: EdgeInsets.all(rw(context, 8)),
         decoration: BoxDecoration(
           color: color.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(rw(context, 8)),
         ),
-        child: Icon(icon, size: 18, color: color),
+        child: Icon(icon, size: rw(context, 18), color: color),
       ),
     );
   }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../core/core.dart';
+import '../../../../core/helper/responsive_helper.dart';
 
 enum AlertStatus { done, ongoing }
 
@@ -43,10 +44,10 @@ class EvacuateAlertCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(rw(context, 16)),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(rw(context, 12)),
         border: Border.all(width: 1, color: AppColors.grey200),
       ),
       child: Column(
@@ -63,15 +64,17 @@ class EvacuateAlertCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Container(
-                      width: 40,
-                      height: 40,
+                      width: rw(context, 40),
+                      height: rw(context, 40),
                       decoration: BoxDecoration(
                         color: AppColors.primary500,
-                        borderRadius: BorderRadius.circular(20),
+                        borderRadius: BorderRadius.circular(rw(context, 20)),
                       ),
-                      child: Assets.icons.evacuationFire.image(height: 16),
+                      child: Center(
+                        child: Assets.icons.evacuationFire.image(height: rh(context, 16)),
+                      ),
                     ),
-                    const SizedBox(width: 12),
+                    hSpace(context, 12),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -89,7 +92,7 @@ class EvacuateAlertCard extends StatelessWidget {
                             ),
                             overflow: TextOverflow.ellipsis,
                           ),
-                          const SpaceHeight(10),
+                          vSpace(context, 10),
                           Text(
                             'Confirmed 23 Person',
                             style: TextStyles.bodyMedium.copyWith(
@@ -97,7 +100,7 @@ class EvacuateAlertCard extends StatelessWidget {
                             ),
                             overflow: TextOverflow.ellipsis,
                           ),
-                          const SpaceHeight(10),
+                          vSpace(context, 10),
 
                           Text(
                             alarmDescription,
@@ -112,7 +115,7 @@ class EvacuateAlertCard extends StatelessWidget {
                   ],
                 ),
               ),
-              const SizedBox(width: 16),
+              hSpace(context, 16),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
@@ -123,7 +126,7 @@ class EvacuateAlertCard extends StatelessWidget {
             ],
           ),
 
-          const SpaceHeight(12),
+          vSpace(context, 12),
 
           // Middle section
           Row(
@@ -136,12 +139,12 @@ class EvacuateAlertCard extends StatelessWidget {
                   ),
                 ),
               ),
-              const SizedBox(width: 16),
+              hSpace(context, 16),
               Row(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Text('Status', style: TextStyles.bodySmall500),
-                  const SpaceWidth(5),
+                  hSpace(context, 5),
                   Text(
                     _getStatusText(),
                     style: TextStyles.bodySmall.copyWith(

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../core.dart';
+import '../helper/responsive_helper.dart';
 
 class NotificationCard extends StatefulWidget {
   final String title;
@@ -47,16 +48,16 @@ class _NotificationCardState extends State<NotificationCard> {
     return GestureDetector(
       onTap: _toggleActions,
       child: Container(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.all(rw(context, 16)),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(rw(context, 10)),
           boxShadow: [
             BoxShadow(
-              offset: Offset(0, 6),
+              offset: Offset(0, rh(context, 6)),
               color: AppColors.primary900.withValues(alpha: 0.1),
-              blurRadius: 10,
-              spreadRadius: 1,
+              blurRadius: rw(context, 10),
+              spreadRadius: rw(context, 1),
             ),
           ],
         ),
@@ -64,14 +65,14 @@ class _NotificationCardState extends State<NotificationCard> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             CircleAvatar(
-              radius: 20,
+              radius: rw(context, 20),
               backgroundColor: widget.backgroundIconColor,
               child: Padding(
-                padding: const EdgeInsets.all(5),
+                padding: EdgeInsets.all(rw(context, 5)),
                 child: widget.iconData,
               ),
             ),
-            const SpaceWidth(10),
+            hSpace(context, 10),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -80,24 +81,24 @@ class _NotificationCardState extends State<NotificationCard> {
                     widget.title,
                     style: TextStyle(
                       color: widget.textColor,
-                      fontSize: 16,
+                      fontSize: rfs(context, 16),
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  vSpace(context, 8),
                   Text(
                     widget.description,
-                    style: TextStyles.caption.copyWith(fontSize: 14),
+                    style: TextStyles.caption.copyWith(fontSize: rfs(context, 14)),
                   ),
                   Text(
                     widget.date,
                     style: TextStyles.caption.copyWith(
-                      fontSize: 14,
+                      fontSize: rfs(context, 14),
                       color: AppColors.grey600,
                     ),
                   ),
                   if (_showActions) ...[
-                    const SizedBox(height: 16),
+                    vSpace(context, 16),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.end,
                       children: [
@@ -110,7 +111,7 @@ class _NotificationCardState extends State<NotificationCard> {
                             fontSize: 12,
                           ),
                         if (widget.secondaryActionLabel != null)
-                          const SizedBox(width: 8),
+                          hSpace(context, 8),
                         Button.filled(
                           onPressed: widget.onPrimaryAction ?? () {},
                           label: widget.primaryActionLabel,

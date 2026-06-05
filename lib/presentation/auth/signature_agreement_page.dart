@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../core/components/components.dart';
 import '../../core/constants/colors.dart';
 import 'package:signature/signature.dart';
+import '../../core/helper/responsive_helper.dart';
 
 class SignAgreementPage extends StatefulWidget {
   const SignAgreementPage({super.key});
@@ -34,37 +35,37 @@ class _SignAgreementPageState extends State<SignAgreementPage> {
         elevation: 0,
       ),
       body: Padding(
-        padding: const EdgeInsets.all(20.0),
+        padding: EdgeInsets.all(rw(context, 20.0)),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.all(16),
+              padding: EdgeInsets.all(rw(context, 16)),
               decoration: BoxDecoration(
                 border: Border.all(color: Colors.grey.shade300),
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(rw(context, 12)),
               ),
-              child: const Text(
+              child: Text(
                 'NON DISCLOSURE AGREEMENT\n\n'
                 'This NDA is made between ...\n\n'
                 'You can replace this with actual text or PDF viewer.',
-                style: TextStyle(fontSize: 14),
+                style: TextStyle(fontSize: rfs(context, 14)),
               ),
             ),
-            const SizedBox(height: 24),
-            const Text(
+            vSpace(context, 24),
+            Text(
               'Tanda tangan',
-              style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+              style: TextStyle(fontWeight: FontWeight.w600, fontSize: rfs(context, 14)),
             ),
-            const SizedBox(height: 12),
+            vSpace(context, 12),
             Container(
-              height: 160,
+              height: rh(context, 160),
               width: double.infinity,
-              padding: EdgeInsets.all(5),
+              padding: EdgeInsets.all(rw(context, 5)),
               decoration: BoxDecoration(
                 border: Border.all(color: AppColors.grey400),
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(rw(context, 10)),
               ),
               child: Signature(
                 controller: _signatureController,
@@ -89,7 +90,7 @@ class _SignAgreementPageState extends State<SignAgreementPage> {
                     },
                   ),
                 ),
-                const SizedBox(width: 12),
+                hSpace(context, 12),
                 Expanded(
                   child: Button.filled(
                     label: 'Selanjutnya',

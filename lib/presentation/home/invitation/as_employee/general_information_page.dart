@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../core/core.dart';
+import '../../../../core/helper/responsive_helper.dart';
 import '../../../../presentation/home/invitation/as_employee/invitation_list_page.dart';
 
 enum Gender { male, female }
@@ -123,7 +124,7 @@ class _GeneralInformationPageState extends State<GeneralInformationPage>
         return AlertDialog(
           backgroundColor: Colors.white,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(rw(context, 16)),
           ),
           title: const Text('Remove Visitor'),
           content: Text(
@@ -155,10 +156,10 @@ class _GeneralInformationPageState extends State<GeneralInformationPage>
 
   double _getStackHeight() {
     if (isCollapsed) {
-      return 80.0;
+      return rh(context, 80.0);
     } else {
       final maxHeight = MediaQuery.of(context).size.height * 0.4;
-      final calculatedHeight = 80 + (visitors.length - 1) * 30.0;
+      final calculatedHeight = rh(context, 80) + (visitors.length - 1) * rh(context, 30.0);
       return calculatedHeight > maxHeight ? maxHeight : calculatedHeight;
     }
   }
@@ -177,12 +178,12 @@ class _GeneralInformationPageState extends State<GeneralInformationPage>
         if (isSelected) {
           topOffset = 0;
         } else {
-          topOffset = index * 2.0;
+          topOffset = index * rh(context, 2.0);
           scaleOffset = 1.0 - (index * 0.02);
           opacityValue = index == 0 ? 0.8 : 0.0;
         }
       } else {
-        topOffset = index * 50.0;
+        topOffset = index * rh(context, 50.0);
       }
 
       return AnimatedPositioned(
@@ -198,26 +199,26 @@ class _GeneralInformationPageState extends State<GeneralInformationPage>
             scale: scaleOffset,
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 200),
-              height: 80,
+              height: rh(context, 80),
               decoration: BoxDecoration(
                 color: isSelected ? AppColors.primary500 : Colors.white,
                 border: Border.all(
                   color: isSelected ? AppColors.primary500 : Colors.grey[300]!,
                   width: isSelected ? 2 : 1,
                 ),
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(rw(context, 12)),
                 boxShadow: [
                   if (isSelected)
                     BoxShadow(
                       color: AppColors.primary500.withValues(alpha: 0.3),
-                      blurRadius: 8,
-                      offset: const Offset(0, 4),
+                      blurRadius: rw(context, 8),
+                      offset: Offset(0, rh(context, 4)),
                     )
                   else
                     BoxShadow(
                       color: Colors.grey.withValues(alpha: 0.15),
-                      blurRadius: 6,
-                      offset: const Offset(0, 3),
+                      blurRadius: rw(context, 6),
+                      offset: Offset(0, rh(context, 3)),
                     ),
                 ],
               ),
@@ -225,9 +226,9 @@ class _GeneralInformationPageState extends State<GeneralInformationPage>
                 color: Colors.transparent,
                 child: InkWell(
                   onTap: () => _selectVisitor(reverseIndex),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(rw(context, 12)),
                   child: Container(
-                    padding: const EdgeInsets.all(16),
+                    padding: EdgeInsets.all(rw(context, 16)),
                     child: Row(
                       children: [
                         Expanded(
@@ -244,14 +245,14 @@ class _GeneralInformationPageState extends State<GeneralInformationPage>
                                           ? Colors.white
                                           : Colors.black,
                                       fontWeight: FontWeight.w600,
-                                      fontSize: 16,
+                                      fontSize: rfs(context, 16),
                                     ),
                                   ),
                                   if (visitor.isValid) ...[
-                                    const SizedBox(width: 8),
+                                    hSpace(context, 8),
                                     Icon(
                                       Icons.check_circle,
-                                      size: 18,
+                                      size: rw(context, 18),
                                       color: isSelected
                                           ? Colors.white
                                           : Colors.green,
@@ -259,7 +260,7 @@ class _GeneralInformationPageState extends State<GeneralInformationPage>
                                   ],
                                 ],
                               ),
-                              const SizedBox(height: 4),
+                              vSpace(context, 4),
                               Text(
                                 visitor.email.isNotEmpty
                                     ? visitor.email
@@ -268,7 +269,7 @@ class _GeneralInformationPageState extends State<GeneralInformationPage>
                                   color: isSelected
                                       ? Colors.white.withValues(alpha: 0.8)
                                       : Colors.grey[600],
-                                  fontSize: 12,
+                                  fontSize: rfs(context, 12),
                                 ),
                                 overflow: TextOverflow.ellipsis,
                               ),
@@ -280,14 +281,14 @@ class _GeneralInformationPageState extends State<GeneralInformationPage>
                           GestureDetector(
                             onTap: () => _showRemoveConfirmation(reverseIndex),
                             child: Container(
-                              padding: const EdgeInsets.all(6),
+                              padding: EdgeInsets.all(rw(context, 6)),
                               decoration: BoxDecoration(
                                 color: Colors.white.withValues(alpha: 0.2),
-                                borderRadius: BorderRadius.circular(20),
+                                borderRadius: BorderRadius.circular(rw(context, 20)),
                               ),
-                              child: const Icon(
+                              child: Icon(
                                 Icons.close,
-                                size: 16,
+                                size: rw(context, 16),
                                 color: Colors.white,
                               ),
                             ),
@@ -306,7 +307,7 @@ class _GeneralInformationPageState extends State<GeneralInformationPage>
 
   Widget _buildVisitorStack() {
     final stackHeight = _getStackHeight();
-    final fullHeight = 80 + (visitors.length - 1) * 50.0;
+    final fullHeight = rh(context, 80) + (visitors.length - 1) * rh(context, 50.0);
     final needsScroll = fullHeight > stackHeight && !isCollapsed;
 
     if (!needsScroll) {
@@ -343,11 +344,11 @@ class _GeneralInformationPageState extends State<GeneralInformationPage>
           icon: const Icon(Icons.arrow_back_ios, color: Colors.black),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
+        title: Text(
           "General Information",
           style: TextStyle(
             color: Colors.black,
-            fontSize: 18,
+            fontSize: rfs(context, 18),
             fontWeight: FontWeight.w600,
           ),
         ),
@@ -356,16 +357,16 @@ class _GeneralInformationPageState extends State<GeneralInformationPage>
       body: Column(
         children: [
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+            padding: EdgeInsets.symmetric(horizontal: rw(context, 20), vertical: rh(context, 16)),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
                   children: [
-                    const Text(
+                    Text(
                       'Visitors',
                       style: TextStyle(
-                        fontSize: 16,
+                        fontSize: rfs(context, 16),
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -374,13 +375,13 @@ class _GeneralInformationPageState extends State<GeneralInformationPage>
                       GestureDetector(
                         onTap: _toggleCollapse,
                         child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 4,
+                          padding: EdgeInsets.symmetric(
+                            horizontal: rw(context, 8),
+                            vertical: rh(context, 4),
                           ),
                           decoration: BoxDecoration(
                             color: Colors.grey[100],
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(rw(context, 12)),
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
@@ -388,16 +389,16 @@ class _GeneralInformationPageState extends State<GeneralInformationPage>
                               Text(
                                 '${visitors.length} visitors',
                                 style: TextStyle(
-                                  fontSize: 12,
+                                  fontSize: rfs(context, 12),
                                   color: Colors.grey[600],
                                 ),
                               ),
-                              const SizedBox(width: 4),
+                              hSpace(context, 4),
                               Icon(
                                 isCollapsed
                                     ? Icons.expand_more
                                     : Icons.expand_less,
-                                size: 16,
+                                size: rw(context, 16),
                                 color: Colors.grey[600],
                               ),
                             ],
@@ -406,11 +407,11 @@ class _GeneralInformationPageState extends State<GeneralInformationPage>
                       ),
                   ],
                 ),
-                const SizedBox(height: 12),
+                vSpace(context, 12),
 
                 _buildVisitorStack(),
 
-                const SizedBox(height: 16),
+                vSpace(context, 16),
 
                 Container(
                   width: double.infinity,
@@ -419,30 +420,30 @@ class _GeneralInformationPageState extends State<GeneralInformationPage>
                       color: AppColors.primary500,
                       style: BorderStyle.solid,
                     ),
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(rw(context, 12)),
                   ),
                   child: Material(
                     color: Colors.transparent,
                     child: InkWell(
                       onTap: _addVisitor,
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(rw(context, 12)),
                       child: Container(
-                        padding: const EdgeInsets.all(16),
+                        padding: EdgeInsets.all(rw(context, 16)),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Icon(
                               Icons.add,
                               color: AppColors.primary500,
-                              size: 20,
+                              size: rw(context, 20),
                             ),
-                            const SizedBox(width: 8),
+                            hSpace(context, 8),
                             Text(
                               'Add Visitor',
                               style: TextStyle(
                                 color: AppColors.primary500,
                                 fontWeight: FontWeight.w600,
-                                fontSize: 14,
+                                fontSize: rfs(context, 14),
                               ),
                             ),
                           ],
@@ -454,32 +455,32 @@ class _GeneralInformationPageState extends State<GeneralInformationPage>
 
                 if (visitors.length > 1)
                   Padding(
-                    padding: const EdgeInsets.only(top: 8),
+                    padding: EdgeInsets.only(top: rh(context, 8)),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Icon(
                           Icons.info_outline,
-                          size: 16,
+                          size: rw(context, 16),
                           color: Colors.grey[400],
                         ),
-                        const SizedBox(width: 4),
+                        hSpace(context, 4),
                         Text(
                           'Klik icon ',
                           style: TextStyle(
-                            fontSize: 12,
+                            fontSize: rfs(context, 12),
                             color: Colors.grey[500],
                           ),
                         ),
                         Icon(
                           isCollapsed ? Icons.expand_more : Icons.expand_less,
-                          size: 14,
+                          size: rw(context, 14),
                           color: Colors.grey[500],
                         ),
                         Text(
                           isCollapsed ? ' untuk melihat semua' : ' untuk sembunyikan',
                           style: TextStyle(
-                            fontSize: 12,
+                            fontSize: rfs(context, 12),
                             color: Colors.grey[500],
                           ),
                         ),
@@ -492,30 +493,30 @@ class _GeneralInformationPageState extends State<GeneralInformationPage>
 
           Expanded(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
+              padding: EdgeInsets.symmetric(horizontal: rw(context, 20)),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 8,
+                    padding: EdgeInsets.symmetric(
+                      horizontal: rw(context, 12),
+                      vertical: rh(context, 8),
                     ),
                     decoration: BoxDecoration(
                       color: AppColors.primary500.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(rw(context, 8)),
                     ),
                     child: Text(
                       'Editing Visitor #${selectedVisitorIndex + 1}',
                       style: TextStyle(
                         color: AppColors.primary500,
                         fontWeight: FontWeight.w600,
-                        fontSize: 14,
+                        fontSize: rfs(context, 14),
                       ),
                     ),
                   ),
 
-                  const SizedBox(height: 20),
+                  vSpace(context, 20),
 
                   CustomTextField(
                     controller: emailController,
@@ -540,13 +541,13 @@ class _GeneralInformationPageState extends State<GeneralInformationPage>
                     onChanged: (value) => _saveCurrentVisitorData(),
                   ),
 
-                  const SpaceHeight(20),
+                  vSpace(context, 20),
 
-                  const Text(
+                  Text(
                     'Jenis Kelamin',
-                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                    style: TextStyle(fontSize: rfs(context, 14), fontWeight: FontWeight.w600),
                   ),
-                  const SpaceHeight(12),
+                  vSpace(context, 12),
 
                   Row(
                     children: [
@@ -559,21 +560,21 @@ class _GeneralInformationPageState extends State<GeneralInformationPage>
                             });
                           },
                           child: Container(
-                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            padding: EdgeInsets.symmetric(vertical: rh(context, 12)),
                             decoration: BoxDecoration(
                               color:
                                   visitors[selectedVisitorIndex].gender ==
-                                      Gender.male
-                                  ? AppColors.primary500
-                                  : Colors.white,
+                                          Gender.male
+                                      ? AppColors.primary500
+                                      : Colors.white,
                               border: Border.all(
                                 color:
                                     visitors[selectedVisitorIndex].gender ==
-                                        Gender.male
-                                    ? AppColors.primary500
-                                    : Colors.grey[300]!,
+                                            Gender.male
+                                        ? AppColors.primary500
+                                        : Colors.grey[300]!,
                               ),
-                              borderRadius: BorderRadius.circular(8),
+                              borderRadius: BorderRadius.circular(rw(context, 8)),
                             ),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.center,
@@ -582,20 +583,20 @@ class _GeneralInformationPageState extends State<GeneralInformationPage>
                                   Icons.male,
                                   color:
                                       visitors[selectedVisitorIndex].gender ==
-                                          Gender.male
-                                      ? Colors.white
-                                      : Colors.grey[600],
-                                  size: 20,
+                                              Gender.male
+                                          ? Colors.white
+                                          : Colors.grey[600],
+                                  size: rw(context, 20),
                                 ),
-                                const SizedBox(width: 8),
+                                hSpace(context, 8),
                                 Text(
                                   'Laki-laki',
                                   style: TextStyle(
                                     color:
                                         visitors[selectedVisitorIndex].gender ==
-                                            Gender.male
-                                        ? Colors.white
-                                        : Colors.grey[600],
+                                                Gender.male
+                                            ? Colors.white
+                                            : Colors.grey[600],
                                     fontWeight: FontWeight.w600,
                                   ),
                                 ),
@@ -604,7 +605,7 @@ class _GeneralInformationPageState extends State<GeneralInformationPage>
                           ),
                         ),
                       ),
-                      const SizedBox(width: 12),
+                      hSpace(context, 12),
                       Expanded(
                         child: GestureDetector(
                           onTap: () {
@@ -614,21 +615,21 @@ class _GeneralInformationPageState extends State<GeneralInformationPage>
                             });
                           },
                           child: Container(
-                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            padding: EdgeInsets.symmetric(vertical: rh(context, 12)),
                             decoration: BoxDecoration(
                               color:
                                   visitors[selectedVisitorIndex].gender ==
-                                      Gender.female
-                                  ? Colors.pink
-                                  : Colors.white,
+                                          Gender.female
+                                      ? Colors.pink
+                                      : Colors.white,
                               border: Border.all(
                                 color:
                                     visitors[selectedVisitorIndex].gender ==
-                                        Gender.female
-                                    ? Colors.pink
-                                    : Colors.grey[300]!,
+                                            Gender.female
+                                        ? Colors.pink
+                                        : Colors.grey[300]!,
                               ),
-                              borderRadius: BorderRadius.circular(8),
+                              borderRadius: BorderRadius.circular(rw(context, 8)),
                             ),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.center,
@@ -637,20 +638,20 @@ class _GeneralInformationPageState extends State<GeneralInformationPage>
                                   Icons.female,
                                   color:
                                       visitors[selectedVisitorIndex].gender ==
-                                          Gender.female
-                                      ? Colors.white
-                                      : Colors.grey[600],
-                                  size: 20,
+                                              Gender.female
+                                          ? Colors.white
+                                          : Colors.grey[600],
+                                  size: rw(context, 20),
                                 ),
-                                const SizedBox(width: 8),
+                                hSpace(context, 8),
                                 Text(
                                   'Perempuan',
                                   style: TextStyle(
                                     color:
                                         visitors[selectedVisitorIndex].gender ==
-                                            Gender.female
-                                        ? Colors.white
-                                        : Colors.grey[600],
+                                                Gender.female
+                                            ? Colors.white
+                                            : Colors.grey[600],
                                     fontWeight: FontWeight.w600,
                                   ),
                                 ),
@@ -670,22 +671,22 @@ class _GeneralInformationPageState extends State<GeneralInformationPage>
                     onChanged: (value) => _saveCurrentVisitorData(),
                   ),
 
-                  const SpaceHeight(40),
+                  vSpace(context, 40),
                 ],
               ),
             ),
           ),
 
           Container(
-            padding: const EdgeInsets.all(20),
+            padding: EdgeInsets.all(rw(context, 20)),
             decoration: BoxDecoration(
               color: Colors.white,
               boxShadow: [
                 BoxShadow(
                   color: Colors.grey.withValues(alpha: 0.1),
                   spreadRadius: 1,
-                  blurRadius: 3,
-                  offset: const Offset(0, -1),
+                  blurRadius: rw(context, 3),
+                  offset: Offset(0, rh(context, -1)),
                 ),
               ],
             ),
@@ -695,12 +696,12 @@ class _GeneralInformationPageState extends State<GeneralInformationPage>
                   child: Button.outlined(
                     onPressed: () => Navigator.pop(context),
                     label: 'Back',
-                    height: 50,
-                    borderRadius: 8,
+                    height: rh(context, 50),
+                    borderRadius: rw(context, 8),
                   ),
                 ),
 
-                const SizedBox(width: 16),
+                hSpace(context, 16),
 
                 Expanded(
                   child: Button.filled(
@@ -720,8 +721,8 @@ class _GeneralInformationPageState extends State<GeneralInformationPage>
                       }
                     },
                     label: 'Submit',
-                    height: 50,
-                    borderRadius: 8,
+                    height: rh(context, 50),
+                    borderRadius: rw(context, 8),
                   ),
                 ),
               ],
@@ -739,26 +740,26 @@ class _GeneralInformationPageState extends State<GeneralInformationPage>
         return AlertDialog(
           backgroundColor: Colors.white,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(rw(context, 16)),
           ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Assets.images.success.image(height: 50),
-              const SizedBox(height: 16),
+              Assets.images.success.image(height: rh(context, 50)),
+              vSpace(context, 16),
               Text(
                 'Invitation\nSuccessfully Sent!',
                 style: TextStyles.headline5,
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 8),
+              vSpace(context, 8),
               Text(
                 'Your guest has been added and will receive a confirmation email with a QR Access Pass for check-in.',
                 style: TextStyles.caption,
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 24),
+              vSpace(context, 24),
               Button.filled(
                 onPressed: () {
                   Navigator.pushReplacement(

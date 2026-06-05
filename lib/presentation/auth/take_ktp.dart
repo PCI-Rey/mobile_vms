@@ -4,6 +4,7 @@ import '../../presentation/term_of_service_page.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:camera/camera.dart';
+import '../../core/helper/responsive_helper.dart';
 import '../../core/core.dart';
 
 class TakeKtpPage extends StatefulWidget {
@@ -61,20 +62,20 @@ class _TakeKtpPageState extends State<TakeKtpPage> {
         leading: const BackButton(),
       ),
       body: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: EdgeInsets.all(rw(context, 20)),
         child: Column(
           children: [
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.all(40),
+              padding: EdgeInsets.all(rw(context, 40)),
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(rw(context, 16)),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withValues(alpha: 0.15),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
+                    blurRadius: rw(context, 10),
+                    offset: Offset(0, rh(context, 4)),
                   ),
                 ],
               ),
@@ -82,28 +83,28 @@ class _TakeKtpPageState extends State<TakeKtpPage> {
                 children: [
                   ktpImage != null
                       ? ClipRRect(
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(rw(context, 12)),
                           child: Image.file(
                             ktpImage!,
-                            width: 200,
-                            height: 120,
+                            width: rw(context, 200),
+                            height: rh(context, 120),
                             fit: BoxFit.cover,
                           ),
                         )
-                      : Assets.images.ktpImg.image(height: 142),
+                      : Assets.images.ktpImg.image(height: rh(context, 142)),
 
-                  const SizedBox(height: 16),
-                  const Text(
+                  vSpace(context, 16),
+                  Text(
                     'Foto KTP',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                    style: TextStyle(fontSize: rfs(context, 18), fontWeight: FontWeight.w600),
                   ),
-                  const SizedBox(height: 8),
-                  const Text(
+                  vSpace(context, 8),
+                  Text(
                     'Ambil KTP, SIM, atau foto paspor.\nPastikan foto jelas dan seluruh dokumen terlihat.',
-                    style: TextStyle(fontSize: 14, color: Colors.black54),
+                    style: TextStyle(fontSize: rfs(context, 14), color: Colors.black54),
                     textAlign: TextAlign.center,
                   ),
-                  const SizedBox(height: 20),
+                  vSpace(context, 20),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
@@ -143,10 +144,10 @@ class _TakeKtpPageState extends State<TakeKtpPage> {
                       Navigator.pop(context);
                     },
                     style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      padding: EdgeInsets.symmetric(vertical: rh(context, 16)),
                       side: BorderSide(color: AppColors.grey300),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(rw(context, 12)),
                       ),
                     ),
                     child: const Text(
@@ -155,15 +156,15 @@ class _TakeKtpPageState extends State<TakeKtpPage> {
                     ),
                   ),
                 ),
-                const SizedBox(width: 12),
+                hSpace(context, 12),
                 Expanded(
                   child: ElevatedButton(
                     onPressed: goToNextStep,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primary500,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      padding: EdgeInsets.symmetric(vertical: rh(context, 16)),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(rw(context, 12)),
                       ),
                     ),
                     child: const Text(
@@ -174,7 +175,7 @@ class _TakeKtpPageState extends State<TakeKtpPage> {
                 ),
               ],
             ),
-            const SizedBox(height: 20),
+            vSpace(context, 20),
           ],
         ),
       ),
@@ -281,26 +282,26 @@ class _KtpCameraPageState extends State<KtpCameraPage> {
           
           // Frame overlay
           CustomPaint(
-            painter: KtpFramePainter(),
+            painter: KtpFramePainter(context),
             child: Container(),
           ),
           
           // Instructions
           Positioned(
-            top: 80,
-            left: 20,
-            right: 20,
+            top: rh(context, 80),
+            left: rw(context, 20),
+            right: rw(context, 20),
             child: Container(
-              padding: const EdgeInsets.all(16),
+              padding: EdgeInsets.all(rw(context, 16)),
               decoration: BoxDecoration(
                 color: Colors.black54,
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(rw(context, 8)),
               ),
-              child: const Text(
+              child: Text(
                 'Posisikan KTP di dalam frame\nPastikan semua bagian terlihat jelas',
                 style: TextStyle(
                   color: Colors.white,
-                  fontSize: 16,
+                  fontSize: rfs(context, 16),
                   fontWeight: FontWeight.w500,
                 ),
                 textAlign: TextAlign.center,
@@ -310,15 +311,15 @@ class _KtpCameraPageState extends State<KtpCameraPage> {
           
           // Capture button
           Positioned(
-            bottom: 50,
+            bottom: rh(context, 50),
             left: 0,
             right: 0,
             child: Center(
               child: GestureDetector(
                 onTap: _isCapturing ? null : _takePicture,
                 child: Container(
-                  width: 80,
-                  height: 80,
+                  width: rw(context, 80),
+                  height: rw(context, 80),
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     color: _isCapturing ? Colors.grey : Colors.white,
@@ -333,9 +334,9 @@ class _KtpCameraPageState extends State<KtpCameraPage> {
                             color: Colors.black54,
                           ),
                         )
-                      : const Icon(
+                      : Icon(
                           Icons.camera_alt,
-                          size: 40,
+                          size: rw(context, 40),
                           color: Colors.black87,
                         ),
                 ),
@@ -349,6 +350,9 @@ class _KtpCameraPageState extends State<KtpCameraPage> {
 }
 
 class KtpFramePainter extends CustomPainter {
+  final BuildContext context;
+  KtpFramePainter(this.context);
+
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
@@ -382,12 +386,12 @@ class KtpFramePainter extends CustomPainter {
     // Draw frame border
     final frameRect = Rect.fromLTWH(frameLeft, frameTop, frameWidth, frameHeight);
     canvas.drawRRect(
-      RRect.fromRectAndRadius(frameRect, const Radius.circular(12)),
+      RRect.fromRectAndRadius(frameRect, Radius.circular(rw(context, 12))),
       framePaint,
     );
 
     // Draw corner guidelines
-    final cornerLength = 30.0;
+    final cornerLength = rw(context, 30.0);
     
     // Top-left corner
     canvas.drawLine(

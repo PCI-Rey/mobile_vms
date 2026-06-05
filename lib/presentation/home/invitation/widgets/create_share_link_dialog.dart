@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
+import '../../../../core/helper/responsive_helper.dart';
 import '../controller/invitation_controller.dart';
 
 class CreateShareLinkDialog extends StatefulWidget {
@@ -100,7 +101,7 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(rw(context, 16))),
         title: const Text(
           'Discard Progress?',
           style: TextStyle(fontWeight: FontWeight.bold),
@@ -140,11 +141,11 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
         }
       },
       child: Dialog(
-        insetPadding: const EdgeInsets.all(16),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        insetPadding: EdgeInsets.all(rw(context, 16)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(rw(context, 16))),
         child: Container(
           width: double.infinity,
-          padding: const EdgeInsets.all(20),
+          padding: EdgeInsets.all(rw(context, 20)),
           child: Form(
             key: _formKey,
             child: Column(
@@ -153,14 +154,14 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
               children: [
                 Row(
                   children: [
-                    const SizedBox(width: 40),
-                    const Expanded(
+                    hSpace(context, 40),
+                    Expanded(
                       child: Text(
                         'Create Share Link Registration',
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
-                          fontSize: 17,
+                          fontSize: rfs(context, 17),
                         ),
                       ),
                     ),
@@ -176,7 +177,7 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
                   ],
                 ),
                 const Divider(),
-                const SizedBox(height: 16),
+                vSpace(context, 16),
                 Flexible(
                   child: SingleChildScrollView(
                     child: Column(
@@ -209,7 +210,7 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
                               ),
                               if (isAgendaEnabled &&
                                   selectedAgendaOption == 'Other') ...[
-                                const SizedBox(height: 8),
+                                vSpace(context, 8),
                                 _buildTextField(
                                   hint: 'Ketik agenda lainnya...',
                                   controller: agendaCtrl,
@@ -251,7 +252,7 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
                                       : '',
                                 ),
                                 style: TextStyle(
-                                  fontSize: 13,
+                                  fontSize: rfs(context, 13),
                                   color: isHostEnabled
                                       ? Colors.black87
                                       : Colors.transparent,
@@ -261,9 +262,9 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
                                       enabled: isHostEnabled,
                                     ).copyWith(
                                       hintText: 'Select Host',
-                                      hintStyle: const TextStyle(
+                                      hintStyle: TextStyle(
                                         color: Colors.grey,
-                                        fontSize: 13,
+                                        fontSize: rfs(context, 13),
                                       ),
                                     ),
                               );
@@ -372,15 +373,15 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
                             ),
                           ],
                         ),
-                        const Padding(
-                          padding: EdgeInsets.only(left: 12),
+                        Padding(
+                          padding: EdgeInsets.only(left: rw(context, 12)),
                           child: Text(
                             'Enable this option to allow the link to be used only once.',
-                            style: TextStyle(fontSize: 10, color: Colors.grey),
+                            style: TextStyle(fontSize: rfs(context, 10), color: Colors.grey),
                           ),
                         ),
 
-                        const SizedBox(height: 24),
+                        vSpace(context, 24),
 
                         Row(
                           children: [
@@ -388,11 +389,11 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
                               child: ElevatedButton(
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: const Color(0xFF005596),
-                                  padding: const EdgeInsets.symmetric(
-                                    vertical: 14,
+                                  padding: EdgeInsets.symmetric(
+                                    vertical: rh(context, 14),
                                   ),
                                   shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(8),
+                                    borderRadius: BorderRadius.circular(rw(context, 8)),
                                   ),
                                 ),
                                 onPressed: () => _submit(false),
@@ -402,18 +403,18 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
                                 ),
                               ),
                             ),
-                            const SizedBox(width: 12),
+                            hSpace(context, 12),
                             Expanded(
                               child: OutlinedButton(
                                 style: OutlinedButton.styleFrom(
                                   side: const BorderSide(
                                     color: Color(0xFF005596),
                                   ),
-                                  padding: const EdgeInsets.symmetric(
-                                    vertical: 14,
+                                  padding: EdgeInsets.symmetric(
+                                    vertical: rh(context, 14),
                                   ),
                                   shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(8),
+                                    borderRadius: BorderRadius.circular(rw(context, 8)),
                                   ),
                                 ),
                                 onPressed: () => _submit(true),
@@ -444,7 +445,7 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
     required Widget input,
   }) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 16.0),
+      padding: EdgeInsets.only(bottom: rh(context, 16.0)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -453,9 +454,9 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
             children: [
               Text(
                 label,
-                style: const TextStyle(
+                style: TextStyle(
                   fontWeight: FontWeight.bold,
-                  fontSize: 13,
+                  fontSize: rfs(context, 13),
                 ),
               ),
               Transform.scale(
@@ -471,7 +472,7 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
               ),
             ],
           ),
-          const SizedBox(height: 4),
+          vSpace(context, 4),
           input,
         ],
       ),
@@ -483,7 +484,7 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
     required Widget input,
   }) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 16.0),
+      padding: EdgeInsets.only(bottom: rh(context, 16.0)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -491,22 +492,22 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
             children: [
               Text(
                 label,
-                style: const TextStyle(
+                style: TextStyle(
                   fontWeight: FontWeight.bold,
-                  fontSize: 13,
+                  fontSize: rfs(context, 13),
                 ),
               ),
-              const Text(
+              Text(
                 ' *',
                 style: TextStyle(
                   color: Colors.red,
                   fontWeight: FontWeight.bold,
-                  fontSize: 13,
+                  fontSize: rfs(context, 13),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 4),
+          vSpace(context, 4),
           input,
         ],
       ),
@@ -533,10 +534,10 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
       readOnly: true,
       enabled: enabled,
       controller: TextEditingController(text: selectedName),
-      style: const TextStyle(fontSize: 13),
+      style: TextStyle(fontSize: rfs(context, 13)),
       decoration: _inputDecoration(enabled: enabled).copyWith(
         hintText: hint,
-        hintStyle: const TextStyle(color: Colors.grey, fontSize: 13),
+        hintStyle: TextStyle(color: Colors.grey, fontSize: rfs(context, 13)),
         suffixIcon: const Icon(
           Icons.keyboard_arrow_down_rounded,
           color: Colors.grey,
@@ -557,29 +558,29 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(rw(context, 20))),
       ),
       builder: (context) {
         return Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const SizedBox(height: 12),
+            vSpace(context, 12),
             Container(
-              width: 40,
-              height: 4,
+              width: rw(context, 40),
+              height: rh(context, 4),
               decoration: BoxDecoration(
                 color: Colors.grey.shade300,
-                borderRadius: BorderRadius.circular(2),
+                borderRadius: BorderRadius.circular(rw(context, 2)),
               ),
             ),
             Padding(
-              padding: const EdgeInsets.all(16.0),
+              padding: EdgeInsets.all(rw(context, 16.0)),
               child: Text(
                 title.replaceAll('Select ', 'Pilih '),
-                style: const TextStyle(
+                style: TextStyle(
                   fontWeight: FontWeight.bold,
-                  fontSize: 16,
+                  fontSize: rfs(context, 16),
                 ),
               ),
             ),
@@ -614,7 +615,7 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
                 },
               ),
             ),
-            const SizedBox(height: 24),
+            vSpace(context, 24),
           ],
         );
       },
@@ -633,7 +634,7 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
       enabled: enabled,
       keyboardType: keyboardType,
       focusNode: focusNode,
-      style: const TextStyle(fontSize: 13),
+      style: TextStyle(fontSize: rfs(context, 13)),
       decoration: _inputDecoration(enabled: enabled).copyWith(hintText: hint),
     );
   }
@@ -652,14 +653,14 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
       controller: controller,
       readOnly: true,
       enabled: enabled,
-      style: const TextStyle(fontSize: 13),
+      style: TextStyle(fontSize: rfs(context, 13)),
       decoration: _inputDecoration(enabled: enabled).copyWith(
         hintText: 'Pilih Tanggal dan Waktu',
-        hintStyle: const TextStyle(color: Colors.grey, fontSize: 13),
-        suffixIcon: const Icon(
+        hintStyle: TextStyle(color: Colors.grey, fontSize: rfs(context, 13)),
+        suffixIcon: Icon(
           Icons.calendar_today_outlined,
           color: Colors.grey,
-          size: 18,
+          size: rw(context, 18),
         ),
       ),
       onTap: enabled ? onTap : null,
@@ -670,21 +671,21 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
     return InputDecoration(
       filled: true,
       fillColor: enabled ? Colors.white : Colors.grey.shade100,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+      contentPadding: EdgeInsets.symmetric(horizontal: rw(context, 12), vertical: rh(context, 12)),
       border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(rw(context, 10)),
         borderSide: const BorderSide(color: Color(0xFFDDDDDD)),
       ),
       enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(rw(context, 10)),
         borderSide: const BorderSide(color: Color(0xFFDDDDDD)),
       ),
       disabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(rw(context, 10)),
         borderSide: BorderSide(color: Colors.grey.shade200),
       ),
       focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(rw(context, 10)),
         borderSide: const BorderSide(color: Color(0xFF005596), width: 1.5),
       ),
     );
@@ -748,7 +749,7 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
         backgroundColor: Colors.red,
         colorText: Colors.white,
         snackPosition: SnackPosition.TOP,
-        margin: const EdgeInsets.all(12),
+        margin: EdgeInsets.all(rw(context, 12)),
       );
       return;
     }
@@ -765,7 +766,7 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
         backgroundColor: Colors.red,
         colorText: Colors.white,
         snackPosition: SnackPosition.TOP,
-        margin: const EdgeInsets.all(12),
+        margin: EdgeInsets.all(rw(context, 12)),
       );
       return;
     }
@@ -792,7 +793,7 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
         backgroundColor: Colors.red,
         colorText: Colors.white,
         snackPosition: SnackPosition.TOP,
-        margin: const EdgeInsets.all(12),
+        margin: EdgeInsets.all(rw(context, 12)),
         duration: const Duration(seconds: 3),
       );
       return;
@@ -866,7 +867,7 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
         backgroundColor: Colors.red,
         colorText: Colors.white,
         snackPosition: SnackPosition.TOP,
-        margin: const EdgeInsets.all(12),
+        margin: EdgeInsets.all(rw(context, 12)),
         duration: const Duration(seconds: 4),
       );
     }
@@ -878,21 +879,21 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        titlePadding: const EdgeInsets.fromLTRB(20, 16, 12, 0),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(rw(context, 16))),
+        titlePadding: EdgeInsets.fromLTRB(rw(context, 20), rh(context, 16), rw(context, 12), 0),
         title: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text(
+            Text(
               'Send Invitation Link',
               style: TextStyle(
                 fontWeight: FontWeight.bold,
-                fontSize: 18,
-                color: Color(0xFF2E3A59),
+                fontSize: rfs(context, 18),
+                color: const Color(0xFF2E3A59),
               ),
             ),
             IconButton(
-              icon: const Icon(Icons.close, color: Colors.grey, size: 24),
+              icon: Icon(Icons.close, color: Colors.grey, size: rw(context, 24)),
               onPressed: () => Navigator.pop(context),
             ),
           ],
@@ -901,44 +902,44 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
+            Text(
               'Send Via Email',
               style: TextStyle(
                 fontWeight: FontWeight.bold,
-                color: Color(0xFF005596),
-                fontSize: 14,
+                color: const Color(0xFF005596),
+                fontSize: rfs(context, 14),
               ),
             ),
-            const SizedBox(height: 4),
-            const Text(
+            vSpace(context, 4),
+            Text(
               'Please enter a valid email address of the recipient.',
-              style: TextStyle(fontSize: 12, color: Colors.grey),
+              style: TextStyle(fontSize: rfs(context, 12), color: Colors.grey),
             ),
-            const SizedBox(height: 20),
+            vSpace(context, 20),
             TextFormField(
               controller: tempEmailCtrl,
-              style: const TextStyle(fontSize: 14),
+              style: TextStyle(fontSize: rfs(context, 14)),
               decoration: InputDecoration(
                 hintText: 'Email',
                 filled: true,
                 fillColor: Colors.white,
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 14,
+                contentPadding: EdgeInsets.symmetric(
+                  horizontal: rw(context, 16),
+                  vertical: rh(context, 14),
                 ),
                 enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(rw(context, 8)),
                   borderSide: BorderSide(color: Colors.grey.shade200),
                 ),
                 focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(rw(context, 8)),
                   borderSide: const BorderSide(color: Color(0xFF005596)),
                 ),
               ),
             ),
           ],
         ),
-        actionsPadding: const EdgeInsets.fromLTRB(0, 0, 16, 16),
+        actionsPadding: EdgeInsets.fromLTRB(0, 0, rw(context, 16), rh(context, 16)),
         actions: [
           ElevatedButton.icon(
             onPressed: () {
@@ -953,7 +954,7 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
                 );
               }
             },
-            icon: const Icon(Icons.send, color: Colors.white, size: 18),
+            icon: Icon(Icons.send, color: Colors.white, size: rw(context, 18)),
             label: const Text(
               'Send',
               style: TextStyle(
@@ -963,9 +964,9 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
             ),
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF005596),
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              padding: EdgeInsets.symmetric(horizontal: rw(context, 20), vertical: rh(context, 12)),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(rw(context, 8)),
               ),
             ),
           ),

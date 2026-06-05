@@ -4,6 +4,7 @@ import 'package:flutter_onboarding_slider/flutter_onboarding_slider.dart';
 import '../../core/constants/colors.dart';
 import '../../core/extensions/extensions.dart';
 import '../../core/gen/assets.gen.dart';
+import '../../core/helper/responsive_helper.dart';
 import '../../presentation/auth/login_page.dart';
 
 class OnboardingPage extends StatelessWidget {
@@ -24,14 +25,14 @@ class OnboardingPage extends StatelessWidget {
       finishButtonStyle: FinishButtonStyle(
         backgroundColor: AppColors.primary500,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16), // buat rounded
+          borderRadius: BorderRadius.circular(rw(context, 16)), // buat rounded
         ),
         foregroundColor: Colors.white,
       ),
       skipTextButton: Text(
         'Lewati',
         style: TextStyle(
-          fontSize: 16,
+          fontSize: rfs(context, 16),
           color: Colors.grey,
           fontWeight: FontWeight.w600,
         ),
@@ -40,7 +41,7 @@ class OnboardingPage extends StatelessWidget {
       trailing: Text(
         'Login',
         style: TextStyle(
-          fontSize: 16,
+          fontSize: rfs(context, 16),
           color: kDarkBlueColor,
           fontWeight: FontWeight.w600,
         ),
@@ -60,30 +61,33 @@ class OnboardingPage extends StatelessWidget {
         SingleChildScrollView(
           child: Container(
             alignment: Alignment.center,
-            padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 40),
+            padding: EdgeInsets.symmetric(
+              horizontal: rw(context, 40),
+              vertical: rh(context, 40),
+            ),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.center,
               children: <Widget>[
-                Assets.images.onboarding1.image(height: 300),
-                const SizedBox(height: 40),
+                Assets.images.onboarding1.image(height: rh(context, 300)),
+                vSpace(context, 40),
                 Text(
                   'Registrasi Sekali,\nKunjungan Mudah',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     color: AppColors.grey800,
-                    fontSize: 22.0,
+                    fontSize: rfs(context, 22),
                     fontWeight: FontWeight.w700,
                     letterSpacing: 1.15,
                   ),
                 ),
-                const SizedBox(height: 16),
-                const Text(
+                vSpace(context, 16),
+                Text(
                   "Isi data diri dan unggah dokumen,\nsistem akan mengatur sisanya",
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     color: AppColors.grey600,
-                    fontSize: 16.0,
+                    fontSize: rfs(context, 16),
                     fontWeight: FontWeight.w400,
                   ),
                 ),
@@ -95,29 +99,32 @@ class OnboardingPage extends StatelessWidget {
         SingleChildScrollView(
           child: Container(
             alignment: Alignment.center,
-            padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 40),
+            padding: EdgeInsets.symmetric(
+              horizontal: rw(context, 40),
+              vertical: rh(context, 40),
+            ),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.center,
               children: <Widget>[
-                Assets.images.onboarding2.image(height: 300),
-                const SizedBox(height: 40),
+                Assets.images.onboarding2.image(height: rh(context, 300)),
+                vSpace(context, 40),
                 Text(
                   'Undangan Digital \n& QR Pass',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     color: AppColors.grey800,
-                    fontSize: 22.0,
+                    fontSize: rfs(context, 22),
                     fontWeight: FontWeight.w800,
                   ),
                 ),
-                const SizedBox(height: 16),
-                const Text(
+                vSpace(context, 16),
+                Text(
                   'Dapatkan undangan kunjungan dan akses masuk hanya dengan kode QR.',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     color: AppColors.grey600,
-                    fontSize: 16.0,
+                    fontSize: rfs(context, 16),
                     fontWeight: FontWeight.w400,
                   ),
                 ),
@@ -128,29 +135,32 @@ class OnboardingPage extends StatelessWidget {
         SingleChildScrollView(
           child: Container(
             alignment: Alignment.center,
-            padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 40),
+            padding: EdgeInsets.symmetric(
+              horizontal: rw(context, 40),
+              vertical: rh(context, 40),
+            ),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.center,
               children: <Widget>[
-                Assets.images.onboarding3.image(height: 300),
-                const SizedBox(height: 40),
+                Assets.images.onboarding3.image(height: rh(context, 300)),
+                vSpace(context, 40),
                 Text(
                   'Pantau \nKunjungan Anda',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     color: AppColors.grey800,
-                    fontSize: 22.0,
+                    fontSize: rfs(context, 22),
                     fontWeight: FontWeight.w700,
                   ),
                 ),
-                const SizedBox(height: 16),
-                const Text(
+                vSpace(context, 16),
+                Text(
                   'Lihat jadwal, status check-in/out, dan riwayat kunjungan Anda.',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     color: Colors.grey,
-                    fontSize: 16.0,
+                    fontSize: rfs(context, 16),
                     fontWeight: FontWeight.w400,
                   ),
                 ),
@@ -162,3 +172,4 @@ class OnboardingPage extends StatelessWidget {
     );
   }
 }
+

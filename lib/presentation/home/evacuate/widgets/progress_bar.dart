@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/helper/responsive_helper.dart';
 
 class ProgressSection extends StatelessWidget {
   final Map<String, dynamic>? groupData;
@@ -51,59 +52,59 @@ class ProgressSection extends StatelessWidget {
     double progressPercentage = overallProgress * 100;
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(rw(context, 16)),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(rw(context, 12)),
         boxShadow: [
           BoxShadow(
             color: Colors.grey.withValues(alpha: 0.1),
             spreadRadius: 1,
-            blurRadius: 4,
-            offset: const Offset(0, 2),
+            blurRadius: rw(context, 4),
+            offset: Offset(0, rh(context, 2)),
           ),
         ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'Progress',
             style: TextStyle(
-              fontSize: 18,
+              fontSize: rfs(context, 18),
               fontWeight: FontWeight.bold,
               color: Colors.black87,
             ),
           ),
-          const SizedBox(height: 16),
+          vSpace(context, 16),
 
           // Single overall progress bar
           ClipRRect(
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(rw(context, 8)),
             child: Stack(
               children: [
                 Container(
                   width: double.infinity,
-                  height: 24,
+                  height: rh(context, 24),
                   decoration: BoxDecoration(
                     color: Colors.grey.shade200,
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(rw(context, 8)),
                   ),
                 ),
                 FractionallySizedBox(
                   widthFactor: overallProgress.clamp(0.0, 1.0),
                   child: Container(
-                    height: 24,
+                    height: rh(context, 24),
                     decoration: BoxDecoration(
                       color: Colors.blue,
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(rw(context, 8)),
                     ),
                     child: Center(
                       child: Text(
                         '${progressPercentage.toStringAsFixed(0)}%',
-                        style: const TextStyle(
+                        style: TextStyle(
                           color: Colors.white,
-                          fontSize: 12,
+                          fontSize: rfs(context, 12),
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -113,7 +114,7 @@ class ProgressSection extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(height: 12),
+          vSpace(context, 12),
 
           // Progress details
           Row(
@@ -121,12 +122,12 @@ class ProgressSection extends StatelessWidget {
             children: [
               Text(
                 'Responses: $total of $expectedTotal',
-                style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
+                style: TextStyle(fontSize: rfs(context, 14), color: Colors.grey.shade600),
               ),
               Text(
                 '${progressPercentage.toStringAsFixed(1)}% Complete',
-                style: const TextStyle(
-                  fontSize: 14,
+                style: TextStyle(
+                  fontSize: rfs(context, 14),
                   fontWeight: FontWeight.w500,
                   color: Colors.blue,
                 ),

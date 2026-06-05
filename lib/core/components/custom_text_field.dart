@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../core.dart';
+import '../helper/responsive_helper.dart';
 
 class CustomTextField extends StatelessWidget {
   final TextEditingController controller;
@@ -47,13 +48,13 @@ class CustomTextField extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const SpaceHeight(10.0),
+        vSpace(context, 10.0),
         if (showLabel) ...[
           RichText(
             text: TextSpan(
               text: label,
-              style: const TextStyle(
-                  fontSize: 14,
+              style: TextStyle(
+                  fontSize: rfs(context, 14),
                   fontWeight: FontWeight.w600,
                   color: Colors.black),
               children: [
@@ -66,7 +67,7 @@ class CustomTextField extends StatelessWidget {
               ],
             ),
           ),
-          const SpaceHeight(10.0),
+          vSpace(context, 10.0),
         ],
         TextFormField(
           controller: controller,
@@ -86,7 +87,7 @@ class CustomTextField extends StatelessWidget {
                         child: Icon(
                           suffixIconData,
                           color: AppColors.grey550,
-                          size: 18,
+                          size: rw(context, 18),
                         ),
                       )
                     : null),
@@ -94,44 +95,44 @@ class CustomTextField extends StatelessWidget {
             hintText: hintText,
             filled: true,
             fillColor: AppColors.primary50,
-            contentPadding: const EdgeInsets.all(12.0),
+            contentPadding: EdgeInsets.all(rw(context, 12.0)),
 
             errorText: null,
             enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(rw(context, 8)),
               borderSide: BorderSide(
                 color: errorText != null ? Colors.red : AppColors.grey300,
                 width: 1.5,
               ),
             ),
             focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(rw(context, 8)),
               borderSide: BorderSide(
                 color: errorText != null ? Colors.red : AppColors.primary500,
                 width: 2,
               ),
             ),
             errorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(rw(context, 8)),
               borderSide: const BorderSide(color: Colors.red, width: 1.5),
             ),
             focusedErrorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(rw(context, 8)),
               borderSide: const BorderSide(color: Colors.red, width: 2),
             ),
           ),
         ),
         if (errorText != null) ...[
-          const SizedBox(height: 6),
+          vSpace(context, 6),
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Icon(Icons.error_outline, color: Colors.red, size: 18),
-              const SizedBox(width: 6),
+              Icon(Icons.error_outline, color: Colors.red, size: rw(context, 18)),
+              hSpace(context, 6),
               Expanded(
                 child: Text(
                   errorText!,
-                  style: const TextStyle(color: Colors.red, fontSize: 13),
+                  style: TextStyle(color: Colors.red, fontSize: rfs(context, 13)),
                 ),
               ),
             ],

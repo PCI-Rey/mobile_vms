@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../core/core.dart';
+import '../../../../core/helper/responsive_helper.dart';
 import '../../../../presentation/home/invitation/as_employee/purpose_information_page.dart';
 
 class SpecifyPurposePage extends StatefulWidget {
@@ -29,11 +30,11 @@ class _SpecifyPurposePageState extends State<SpecifyPurposePage> {
           icon: const Icon(Icons.arrow_back_ios, color: Colors.black),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
+        title: Text(
           "Specify Purpose",
           style: TextStyle(
             color: Colors.black,
-            fontSize: 18,
+            fontSize: rfs(context, 18),
             fontWeight: FontWeight.w600,
           ),
         ),
@@ -46,13 +47,13 @@ class _SpecifyPurposePageState extends State<SpecifyPurposePage> {
             flex: 2,
             child: Container(
               width: double.infinity,
-              padding: const EdgeInsets.all(20),
+              padding: EdgeInsets.all(rw(context, 20)),
               child: ClipRRect(
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(rw(context, 16)),
                 child: Container(
                   decoration: BoxDecoration(
                     color: Colors.grey[100],
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(rw(context, 16)),
                   ),
                   child: Assets.images.avaBuilding.image(
                     fit: BoxFit.cover,
@@ -67,7 +68,7 @@ class _SpecifyPurposePageState extends State<SpecifyPurposePage> {
           Expanded(
             flex: 3,
             child: Padding(
-              padding: const EdgeInsets.all(20),
+              padding: EdgeInsets.all(rw(context, 20)),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -78,25 +79,25 @@ class _SpecifyPurposePageState extends State<SpecifyPurposePage> {
                       color: Colors.black87,
                     ),
                   ),
-                  const SizedBox(height: 20),
+                  vSpace(context, 20),
 
                   // Radio Button Options
                   Expanded(
                     child: Column(
                       children: purposes.map((purpose) {
                         return Container(
-                          margin: const EdgeInsets.only(bottom: 12),
+                          margin: EdgeInsets.only(bottom: rh(context, 12)),
                           child: InkWell(
                             onTap: () {
                               setState(() {
                                 selectedPurpose = purpose['value'];
                               });
                             },
-                            borderRadius: BorderRadius.circular(8),
+                            borderRadius: BorderRadius.circular(rw(context, 8)),
                             child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                vertical: 16,
-                                horizontal: 12,
+                              padding: EdgeInsets.symmetric(
+                                vertical: rh(context, 16),
+                                horizontal: rw(context, 12),
                               ),
                               decoration: BoxDecoration(
                                 border: Border.all(
@@ -107,7 +108,7 @@ class _SpecifyPurposePageState extends State<SpecifyPurposePage> {
                                       ? 2
                                       : 1,
                                 ),
-                                borderRadius: BorderRadius.circular(8),
+                                borderRadius: BorderRadius.circular(rw(context, 8)),
                                 color: selectedPurpose == purpose['value']
                                     ? Theme.of(
                                         context,
@@ -117,8 +118,8 @@ class _SpecifyPurposePageState extends State<SpecifyPurposePage> {
                               child: Row(
                                 children: [
                                   Container(
-                                    width: 20,
-                                    height: 20,
+                                    width: rw(context, 20),
+                                    height: rw(context, 20),
                                     decoration: BoxDecoration(
                                       shape: BoxShape.circle,
                                       border: Border.all(
@@ -133,14 +134,14 @@ class _SpecifyPurposePageState extends State<SpecifyPurposePage> {
                                           : Colors.transparent,
                                     ),
                                     child: selectedPurpose == purpose['value']
-                                        ? const Icon(
+                                        ? Icon(
                                             Icons.circle,
-                                            size: 8,
+                                            size: rw(context, 8),
                                             color: Colors.white,
                                           )
                                         : null,
                                   ),
-                                  const SizedBox(width: 12),
+                                  hSpace(context, 12),
                                   Text(
                                     purpose['label']!,
                                     style: TextStyles.bodyMedium.copyWith(
@@ -162,7 +163,7 @@ class _SpecifyPurposePageState extends State<SpecifyPurposePage> {
                     ),
                   ),
 
-                  const SizedBox(height: 20),
+                  vSpace(context, 20),
 
                   // Next Button
                   SizedBox(
@@ -179,9 +180,9 @@ class _SpecifyPurposePageState extends State<SpecifyPurposePage> {
                             ? Colors.grey[300]
                             : Theme.of(context).primaryColor,
                         foregroundColor: Colors.white,
-                        minimumSize: const Size(double.infinity, 50),
+                        minimumSize: Size(double.infinity, rh(context, 50)),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(rw(context, 8)),
                         ),
                         elevation: 0,
                       ),
@@ -206,6 +207,6 @@ class _SpecifyPurposePageState extends State<SpecifyPurposePage> {
   }
 
   void _handleNext() {
-  context.push(PurposeInformationPage(selectedPurpose: selectedPurpose,));
+    context.push(PurposeInformationPage(selectedPurpose: selectedPurpose,));
   }
 }

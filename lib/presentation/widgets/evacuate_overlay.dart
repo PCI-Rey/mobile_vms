@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../core/core.dart';
+import '../../core/helper/responsive_helper.dart';
 
 class EvacuateOverlay extends StatefulWidget {
   final VoidCallback onCheckin;
@@ -62,58 +63,58 @@ class _EvacuateOverlayState extends State<EvacuateOverlay> {
       decoration: BoxDecoration(
         color: AppColors.blocked.withValues(alpha: 0.8),
         borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(10),
-          topRight: Radius.circular(10),
+          topLeft: Radius.circular(rw(context, 10)),
+          topRight: Radius.circular(rw(context, 10)),
         ),
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Text(
+          Text(
             "EVACUATE",
             style: TextStyle(
-              fontSize: 28,
+              fontSize: rfs(context, 28),
               fontWeight: FontWeight.bold,
               color: Colors.white,
               letterSpacing: 2,
             ),
           ),
-          const SizedBox(height: 4),
+          vSpace(context, 4),
           Text(
             _formatDuration(_duration),
             style: TextStyle(
-              fontSize: 20,
+              fontSize: rfs(context, 20),
               color: _duration.inSeconds <= 30 ? Colors.red : Colors.white,
               fontWeight: FontWeight.w600,
             ),
           ),
-          const SizedBox(height: 20),
+          vSpace(context, 20),
 
           Container(
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(rw(context, 10)),
             ),
-            padding: const EdgeInsets.all(5),
-            child: Assets.images.fakeQr.image(height: 300, width: 300),
+            padding: EdgeInsets.all(rw(context, 5)),
+            child: Assets.images.fakeQr.image(height: rw(context, 300), width: rw(context, 300)),
           ),
-          const SizedBox(height: 20),
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 24),
+          vSpace(context, 20),
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: rw(context, 24)),
             child: Text(
               "Immediately go to\n the assembly point",
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 16, color: Colors.white),
+              style: TextStyle(fontSize: rfs(context, 16), color: Colors.white),
             ),
           ),
-          const SizedBox(height: 24),
+          vSpace(context, 24),
           ElevatedButton(
             onPressed: widget.onCheckin,
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primary500,
-              padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 14),
+              padding: EdgeInsets.symmetric(horizontal: rw(context, 40), vertical: rh(context, 14)),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(rw(context, 8)),
               ),
             ),
             child: const Text(

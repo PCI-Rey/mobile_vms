@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import '../../../../core/core.dart';
+import '../../../../core/helper/responsive_helper.dart';
 import '../../../../data/models/agenda_model.dart';
 import 'package:get/get.dart';
 import 'package:shimmer/shimmer.dart';
@@ -79,26 +80,26 @@ class _AgendaSliderState extends State<AgendaSlider> {
                     width: MediaQuery.of(context).size.width,
                     padding: EdgeInsets.only(
                       bottom: isSmallScreen
-                          ? 2
+                          ? rh(context, 2)
                           : isMediumScreen
-                          ? 3
-                          : 4,
+                          ? rh(context, 3)
+                          : rh(context, 4),
                       right: isSmallScreen
-                          ? 6
+                          ? rw(context, 6)
                           : isMediumScreen
-                          ? 10
-                          : 12,
-                      left: isSmallScreen ? 2 : 4,
+                          ? rw(context, 10)
+                          : rw(context, 12),
+                      left: isSmallScreen ? rw(context, 2) : rw(context, 4),
                     ),
                     child: Card(
                       elevation: 4,
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(rw(context, 12)),
                       ),
                       child: Container(
                         decoration: BoxDecoration(
                           color: Colors.white,
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(rw(context, 12)),
                         ),
                       ),
                     ),
@@ -147,25 +148,23 @@ class _AgendaSliderState extends State<AgendaSlider> {
     final isMediumScreen = screenWidth >= 360 && screenWidth < 600;
     final isTablet = screenWidth >= 600;
     final isLargeTablet = screenWidth >= 800;
-    // final isUltraWide = screenWidth >= 1200; // Add ultra-wide detection
 
     final List<Widget> imageSliders = agendas
         .map(
           (agenda) => Container(
             width: MediaQuery.of(context).size.width,
             padding: EdgeInsets.only(
-              // REDUCED bottom padding to eliminate excessive spacing
               bottom: isSmallScreen
-                  ? 2
+                  ? rh(context, 2)
                   : isMediumScreen
-                  ? 3
-                  : 4, // Reduced significantly
+                  ? rh(context, 3)
+                  : rh(context, 4),
               right: isSmallScreen
-                  ? 6
+                  ? rw(context, 6)
                   : isMediumScreen
-                  ? 10
-                  : 12,
-              left: isSmallScreen ? 2 : 4,
+                  ? rw(context, 10)
+                  : rw(context, 12),
+              left: isSmallScreen ? rw(context, 2) : rw(context, 4),
             ),
             child: AgendaCard(
               title: agenda.destination,
@@ -175,10 +174,10 @@ class _AgendaSliderState extends State<AgendaSlider> {
               date: formatDate(agenda.visitStart),
               image: Assets.images.avaBuilding.image(
                 height: isSmallScreen
-                    ? 100
+                    ? rh(context, 100)
                     : isMediumScreen
-                    ? 120
-                    : 160,
+                    ? rh(context, 120)
+                    : rh(context, 160),
                 fit: BoxFit.cover,
               ),
               picName: agenda.picOrHost,
@@ -275,36 +274,36 @@ class _AgendaSliderState extends State<AgendaSlider> {
           children: [
             Icon(
               Icons.error_outline,
-              size: isSmallScreen ? 40 : 48,
+              size: rw(context, isSmallScreen ? 40 : 48),
               color: Colors.red,
             ),
-            const SizedBox(height: 16),
+            vSpace(context, 16),
             Text(
               'Gagal memuat agenda',
               style: TextStyle(
-                fontSize: isSmallScreen ? 14 : 16,
+                fontSize: rfs(context, isSmallScreen ? 14 : 16),
                 fontWeight: FontWeight.w500,
               ),
             ),
-            const SizedBox(height: 8),
+            vSpace(context, 8),
             Text(
               message,
               style: TextStyle(
-                fontSize: isSmallScreen ? 11 : 12,
+                fontSize: rfs(context, isSmallScreen ? 11 : 12),
                 color: Colors.grey,
               ),
               textAlign: TextAlign.center,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
             ),
-            const SizedBox(height: 16),
+            vSpace(context, 16),
             ElevatedButton(
               onPressed: () {
                 agendaController.loadAgendas();
               },
               child: Text(
                 'Coba Lagi',
-                style: TextStyle(fontSize: isSmallScreen ? 12 : 14),
+                style: TextStyle(fontSize: rfs(context, isSmallScreen ? 12 : 14)),
               ),
             ),
           ],
@@ -337,14 +336,14 @@ class _AgendaSliderState extends State<AgendaSlider> {
           children: [
             Icon(
               Icons.event_busy,
-              size: isSmallScreen ? 40 : 48,
+              size: rw(context, isSmallScreen ? 40 : 48),
               color: Colors.grey,
             ),
-            const SizedBox(height: 16),
+            vSpace(context, 16),
             Text(
               'Tidak ada agenda hari ini',
               style: TextStyle(
-                fontSize: isSmallScreen ? 14 : 16,
+                fontSize: rfs(context, isSmallScreen ? 14 : 16),
                 color: Colors.grey[600],
               ),
             ),
@@ -359,21 +358,21 @@ class _AgendaSliderState extends State<AgendaSlider> {
     bool isMediumScreen,
     bool isTablet,
   ) {
-    final inactiveSize = isSmallScreen
+    final inactiveSize = rw(context, isSmallScreen
         ? 6.0
         : isMediumScreen
         ? 8.0
-        : 10.0;
-    final horizontalMargin = isSmallScreen
+        : 10.0);
+    final horizontalMargin = rw(context, isSmallScreen
         ? 2.0
         : isMediumScreen
         ? 3.0
-        : 4.0;
-    final verticalPadding = isSmallScreen
+        : 4.0);
+    final verticalPadding = rh(context, isSmallScreen
         ? 2.0
         : isMediumScreen
         ? 3.0
-        : 4.0;
+        : 4.0);
 
     return Container(
       padding: EdgeInsets.symmetric(vertical: verticalPadding),
@@ -479,36 +478,35 @@ class _AgendaSliderState extends State<AgendaSlider> {
     bool isTablet,
   ) {
     // Dynamic sizing for indicators
-    final activeWidth = isSmallScreen
+    final activeWidth = rw(context, isSmallScreen
         ? 20.0
         : isMediumScreen
         ? 24.0
-        : 28.0;
-    final inactiveSize = isSmallScreen
+        : 28.0);
+    final inactiveSize = rw(context, isSmallScreen
         ? 6.0
         : isMediumScreen
         ? 8.0
-        : 10.0;
+        : 10.0);
     final indicatorHeight = inactiveSize;
-    final horizontalMargin = isSmallScreen
+    final horizontalMargin = rw(context, isSmallScreen
         ? 2.0
         : isMediumScreen
         ? 3.0
-        : 4.0;
+        : 4.0);
 
     // REDUCED vertical padding significantly
-    final verticalPadding = isSmallScreen
+    final verticalPadding = rh(context, isSmallScreen
         ? 2.0
         : isMediumScreen
         ? 3.0
-        : 4.0; // Reduced from 6-10
+        : 4.0); // Reduced from 6-10
 
     return Container(
       padding: EdgeInsets.symmetric(vertical: verticalPadding),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: agendas.asMap().entries.map((entry) {
-          // Use agendas instead of dummyAgendas
           final isActive = _current == entry.key;
           return GestureDetector(
             onTap: () => _controller.animateToPage(entry.key),
@@ -529,8 +527,8 @@ class _AgendaSliderState extends State<AgendaSlider> {
                           color: Theme.of(
                             context,
                           ).primaryColor.withValues(alpha: 0.3),
-                          blurRadius: 4,
-                          offset: const Offset(0, 2),
+                          blurRadius: rw(context, 4),
+                          offset: Offset(0, rh(context, 2)),
                         ),
                       ]
                     : null,
@@ -538,33 +536,6 @@ class _AgendaSliderState extends State<AgendaSlider> {
             ),
           );
         }).toList(),
-      ),
-    );
-  }
-}
-
-// ===== USAGE DI PARENT WIDGET =====
-
-// Di parent widget atau page, cukup panggil AgendaSlider.
-// Controller akan di-inject otomatis oleh Get.put() di dalam AgendaSlider
-// atau bisa di-inject via Binding jika menggunakan GetX Navigation.
-class HomePage extends StatelessWidget {
-  const HomePage({super.key});
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Visitor App')),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            // Header atau widget lain...
-
-            // Agenda Slider dengan GetX
-            const AgendaSlider(),
-
-            // Widget lain...
-          ],
-        ),
       ),
     );
   }

@@ -3,6 +3,7 @@ import '../../../../presentation/home/invitation/as_employee/specify_purpose_pag
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/components/custom_card.dart';
+import '../../../../core/helper/responsive_helper.dart';
 import '../../../../core/core.dart';
 import '../../../history/widgets/filter_bottom_sheet.dart';
 
@@ -14,7 +15,7 @@ class InvitationListPage extends StatefulWidget {
 }
 
 class _InvitationListPageState extends State<InvitationListPage> {
- DateTime? startDate;
+  DateTime? startDate;
   DateTime? endDate;
   String? selectedGedung;
 
@@ -24,9 +25,9 @@ class _InvitationListPageState extends State<InvitationListPage> {
       appBar: AppBar(
         backgroundColor: Colors.white,
         title: const Text("Invitation List"),
-        leading: BackButton(),
+        leading: const BackButton(),
         bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(1.0),
+          preferredSize: Size.fromHeight(rh(context, 1.0)),
           child: Container(color: AppColors.grey300, height: 1.0),
         ),
       ),
@@ -38,7 +39,7 @@ class _InvitationListPageState extends State<InvitationListPage> {
         child: const Icon(Icons.add, color: Colors.white),
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20.0),
+        padding: EdgeInsets.all(rw(context, 20.0)),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -52,9 +53,9 @@ class _InvitationListPageState extends State<InvitationListPage> {
                           enableDrag: true,
                           isDismissible: true,
                           isScrollControlled: true,
-                          shape: const RoundedRectangleBorder(
+                          shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.vertical(
-                              top: Radius.circular(16),
+                              top: Radius.circular(rw(context, 16)),
                             ),
                           ),
                           builder: (context) => const FilterBottomSheet(),
@@ -71,7 +72,7 @@ class _InvitationListPageState extends State<InvitationListPage> {
                   child: _buildFilterChip('Filter'),
                 ),
 
-                const SizedBox(width: 10),
+                hSpace(context, 10),
 
                 if (selectedGedung != null)
                   _buildFilterValueChip(
@@ -79,7 +80,7 @@ class _InvitationListPageState extends State<InvitationListPage> {
                     onClear: () => setState(() => selectedGedung = null),
                   ),
 
-                const SizedBox(width: 10),
+                hSpace(context, 10),
 
                 if (startDate != null || endDate != null)
                   _buildFilterValueChip(
@@ -93,8 +94,8 @@ class _InvitationListPageState extends State<InvitationListPage> {
             ),
 
             CustomCard(
-              image: Icon(Icons.check, color: Colors.white),
-              size: 26,
+              image: const Icon(Icons.check, color: Colors.white),
+              size: rw(context, 26),
               title: 'Kunjungan',
               subtitle: 'Gedung HQ',
               additional: 'Mon, 14 Jul 2025',
@@ -102,8 +103,8 @@ class _InvitationListPageState extends State<InvitationListPage> {
               backgroundIconColor: AppColors.success500,
             ),
             CustomCard(
-              image: Icon(Icons.close, color: Colors.white),
-              size: 26,
+              image: const Icon(Icons.close, color: Colors.white),
+              size: rw(context, 26),
               title: 'Kunjungan',
               subtitle: 'Gedung HQ',
               additional: 'Mon, 14 Jul 2025',
@@ -118,18 +119,18 @@ class _InvitationListPageState extends State<InvitationListPage> {
 
   Widget _buildFilterChip(String label) {
     return Container(
-      height: 38,
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      height: rh(context, 38),
+      padding: EdgeInsets.symmetric(horizontal: rw(context, 16)),
       decoration: BoxDecoration(
         color: Colors.white,
         border: Border.all(color: Colors.grey.shade400),
-        borderRadius: BorderRadius.circular(50),
+        borderRadius: BorderRadius.circular(rw(context, 50)),
       ),
       child: Row(
         children: [
           Text(label),
-          const SizedBox(width: 8),
-          const Icon(FontAwesomeIcons.chevronDown, size: 14),
+          hSpace(context, 8),
+          Icon(FontAwesomeIcons.chevronDown, size: rw(context, 14)),
         ],
       ),
     );
@@ -137,20 +138,20 @@ class _InvitationListPageState extends State<InvitationListPage> {
 
   Widget _buildFilterValueChip(String label, {required VoidCallback onClear}) {
     return Container(
-      height: 38,
-      padding: const EdgeInsets.symmetric(horizontal: 12),
+      height: rh(context, 38),
+      padding: EdgeInsets.symmetric(horizontal: rw(context, 12)),
       decoration: BoxDecoration(
         color: Colors.white,
         border: Border.all(color: Colors.grey.shade400),
-        borderRadius: BorderRadius.circular(50),
+        borderRadius: BorderRadius.circular(rw(context, 50)),
       ),
       child: Row(
         children: [
-          Text(label, style: const TextStyle(fontSize: 12)),
-          const SizedBox(width: 8),
+          Text(label, style: TextStyle(fontSize: rfs(context, 12))),
+          hSpace(context, 8),
           GestureDetector(
             onTap: onClear,
-            child: const Icon(Icons.close, size: 16),
+            child: Icon(Icons.close, size: rw(context, 16)),
           ),
         ],
       ),

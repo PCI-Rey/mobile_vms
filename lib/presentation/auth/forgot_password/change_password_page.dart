@@ -3,6 +3,7 @@ import '../../../presentation/auth/login_page.dart';
 // import '../../../presentation/auth/forgot_password/otp_confirmation_page.dart';
 // import '../../../presentation/auth/verification_code_page.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import '../../../../core/helper/responsive_helper.dart';
 import '../../../core/core.dart';
 
 class ChangePasswordPage extends StatefulWidget {
@@ -28,16 +29,18 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
         leading: BackButton(),
       ),
       body: Padding(
-        padding: const EdgeInsets.all(20.0),
+        padding: EdgeInsets.all(rw(context, 20.0)),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const SpaceHeight(20),
-            Text('Ubah Password', style: TextStyles.headline4),
+            vSpace(context, 20),
+            Text('Ubah Password', style: TextStyles.headline4.copyWith(
+              fontSize: rfs(context, 23),
+            )),
             const Text(
               'Masukkan kata sandi baru dan konfirmasi kata sandi baru Anda.',
             ),
-            const SpaceHeight(30),
+            vSpace(context, 30),
             CustomTextField(
               controller: passwordController,
               label: 'Kata sandi baru',
@@ -68,7 +71,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
               errorText: passwordError,
             ),
 
-            const SpaceHeight(30),
+            vSpace(context, 30),
             Button.filled(
               onPressed: () {
                 context.push(LoginPage());

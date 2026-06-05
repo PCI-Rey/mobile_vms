@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../data/models/agenda_model.dart';
+import '../../../core/helper/responsive_helper.dart';
 import '../../../core/core.dart';
 import 'widgets/selected_agenda_slider.dart';
 
@@ -26,12 +27,12 @@ class _AddInvitationPageState extends State<AddInvitationPage> {
         title: const Text("Add Invitation"),
         leading: const BackButton(),
         bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(1.0),
+          preferredSize: Size.fromHeight(rh(context, 1.0)),
           child: Container(color: AppColors.grey300, height: 1.0),
         ),
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20.0),
+        padding: EdgeInsets.all(rw(context, 20.0)),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -45,16 +46,16 @@ class _AddInvitationPageState extends State<AddInvitationPage> {
               },
             ),
 
-            const SizedBox(height: 24),
+            vSpace(context, 24),
 
             // Selected Agenda Info
             if (selectedAgenda != null)
               Container(
-                margin: const EdgeInsets.only(bottom: 20),
-                padding: const EdgeInsets.all(16),
+                margin: EdgeInsets.only(bottom: rh(context, 20)),
+                padding: EdgeInsets.all(rw(context, 16)),
                 decoration: BoxDecoration(
                   color: Theme.of(context).primaryColor.withValues(alpha: 0.05),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(rw(context, 12)),
                   border: Border.all(
                     color: Theme.of(context).primaryColor.withValues(alpha: 0.2),
                   ),
@@ -67,9 +68,9 @@ class _AddInvitationPageState extends State<AddInvitationPage> {
                         Icon(
                           Icons.check_circle,
                           color: Theme.of(context).primaryColor,
-                          size: 20,
+                          size: rw(context, 20),
                         ),
-                        const SizedBox(width: 8),
+                        hSpace(context, 8),
                         Text(
                           'Selected Agenda',
                           style: TextStyles.bodyMedium.copyWith(
@@ -78,19 +79,19 @@ class _AddInvitationPageState extends State<AddInvitationPage> {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 8),
+                    vSpace(context, 8),
                     Text(
                       selectedAgenda!.destination,
                       style: TextStyles.bodyMedium,
                     ),
-                    const SizedBox(height: 4),
+                    vSpace(context, 4),
                     Text(
                       selectedAgenda!.jenis,
                       style: TextStyles.bodySmall.copyWith(
                         color: Colors.grey[600],
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    vSpace(context, 4),
                     Text(
                       "${formatTime(selectedAgenda!.visitStart)} - ${formatTime(selectedAgenda!.visitEnd)}",
                       style: TextStyles.bodySmall.copyWith(
@@ -111,7 +112,7 @@ class _AddInvitationPageState extends State<AddInvitationPage> {
             ),
 
             Container(
-              margin: const EdgeInsets.symmetric(vertical: 50),
+              margin: EdgeInsets.symmetric(vertical: rh(context, 50)),
               width: double.infinity,
               child: ElevatedButton(
                 onPressed: selectedAgenda == null
@@ -120,9 +121,9 @@ class _AddInvitationPageState extends State<AddInvitationPage> {
                         _showSuccessDialog(context);
                       },
                 style: ElevatedButton.styleFrom(
-                  minimumSize: const Size(double.infinity, 50), // 🔹 tinggi 40
+                  minimumSize: Size(double.infinity, rh(context, 50)), // 🔹 tinggi 50
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(rw(context, 10)),
                   ),
                   backgroundColor: selectedAgenda == null
                       ? Colors.grey[300]
@@ -147,26 +148,26 @@ class _AddInvitationPageState extends State<AddInvitationPage> {
         return AlertDialog(
           backgroundColor: Colors.white,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(rw(context, 16)),
           ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Assets.images.success.image(height: 50),
-              const SizedBox(height: 16),
+              Assets.images.success.image(height: rh(context, 50)),
+              vSpace(context, 16),
               Text(
                 'Invitation\nSuccessfully Sent!',
                 style: TextStyles.headline5,
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 8),
+              vSpace(context, 8),
               Text(
                 'Your guest has been added to "${selectedAgenda?.destination}" and will receive a confirmation email with a QR Access Pass for check-in.',
                 style: TextStyles.caption,
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 24),
+              vSpace(context, 24),
               Button.filled(
                 onPressed: () {
                   Navigator.of(context).pop();

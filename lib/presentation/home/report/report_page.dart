@@ -5,6 +5,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/core.dart';
+import '../../../core/helper/responsive_helper.dart';
 import '../../history/widgets/filter_bottom_sheet.dart';
 import 'widgets/visitor_line_chart.dart';
 
@@ -27,8 +28,14 @@ class _VisitorReportPageState extends State<VisitorReportPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Visitor Report'),
-        leading: BackButton(),
+        title: Text(
+          'Visitor Report',
+          style: TextStyle(
+            fontSize: rfs(context, 20),
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        leading: const BackButton(),
         backgroundColor: Colors.white,
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1.0),
@@ -36,7 +43,7 @@ class _VisitorReportPageState extends State<VisitorReportPage> {
         ),
       ),
       body: Padding(
-        padding: const EdgeInsets.all(20.0),
+        padding: EdgeInsets.all(rw(context, 20.0)),
         child: SingleChildScrollView(
           child: Column(
             children: [
@@ -51,9 +58,9 @@ class _VisitorReportPageState extends State<VisitorReportPage> {
                             enableDrag: true,
                             isDismissible: true,
                             isScrollControlled: true,
-                            shape: const RoundedRectangleBorder(
+                            shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.vertical(
-                                top: Radius.circular(16),
+                                top: Radius.circular(rw(context, 16)),
                               ),
                             ),
                             builder: (context) => const FilterBottomSheet(),
@@ -70,7 +77,7 @@ class _VisitorReportPageState extends State<VisitorReportPage> {
                     child: _buildFilterChip('Filter'),
                   ),
 
-                  const SizedBox(width: 10),
+                  hSpace(context, 10),
 
                   if (selectedGedung != null)
                     _buildFilterValueChip(
@@ -78,7 +85,7 @@ class _VisitorReportPageState extends State<VisitorReportPage> {
                       onClear: () => setState(() => selectedGedung = null),
                     ),
 
-                  const SizedBox(width: 10),
+                  hSpace(context, 10),
 
                   if (startDate != null || endDate != null)
                     _buildFilterValueChip(
@@ -89,20 +96,20 @@ class _VisitorReportPageState extends State<VisitorReportPage> {
                       }),
                     ),
                   Container(
-                    height: 38,
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    height: rh(context, 38),
+                    padding: EdgeInsets.symmetric(horizontal: rw(context, 16)),
                     decoration: BoxDecoration(
                       color: Colors.white,
                       border: Border.all(color: Colors.grey.shade400),
-                      borderRadius: BorderRadius.circular(50),
+                      borderRadius: BorderRadius.circular(rw(context, 50)),
                     ),
                     child: DropdownButtonHideUnderline(
                       child: DropdownButton<String>(
                         value: selectedValue,
                         hint: const Text('Export'),
-                        icon: const Icon(
+                        icon: Icon(
                           FontAwesomeIcons.chevronDown,
-                          size: 16,
+                          size: rw(context, 16),
                         ),
                         isExpanded: false,
                         isDense: true,
@@ -116,7 +123,7 @@ class _VisitorReportPageState extends State<VisitorReportPage> {
                             value: item,
                             child: Text(
                               item,
-                              style: const TextStyle(fontSize: 14),
+                              style: TextStyle(fontSize: rfs(context, 14)),
                             ),
                           );
                         }).toList(),
@@ -126,16 +133,16 @@ class _VisitorReportPageState extends State<VisitorReportPage> {
                 ],
               ),
 
-              SpaceHeight(20),
+              vSpace(context, 20),
               LayoutBuilder(
                 builder: (context, constraints) {
                   // Batasi lebar maksimum container
-                  double maxWidth = constraints.maxWidth > 800
-                      ? 800
+                  double maxWidth = constraints.maxWidth > rw(context, 800)
+                      ? rw(context, 800)
                       : constraints.maxWidth;
                   double sideMargin = (constraints.maxWidth - maxWidth) / 2;
 
-                  final spacing = 16.0;
+                  final spacing = rw(context, 16.0);
                   final itemWidth =
                       ((maxWidth - spacing * 2) / 3).clamp(1.0, double.infinity);
 
@@ -144,21 +151,21 @@ class _VisitorReportPageState extends State<VisitorReportPage> {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        buildSquareStatCard('Total Visitor', '100', itemWidth),
-                        buildSquareStatCard('New Visitor', '30', itemWidth),
-                        buildSquareStatCard('Returning', '70', itemWidth),
+                        buildSquareStatCard(context, 'Total Visitor', '100', itemWidth),
+                        buildSquareStatCard(context, 'New Visitor', '30', itemWidth),
+                        buildSquareStatCard(context, 'Returning', '70', itemWidth),
                       ],
                     ),
                   );
                 },
               ),
 
-              SpaceHeight(20),
-              SizedBox(height: 300, child: VisitorLineChart()),
-              SpaceHeight(20),
+              vSpace(context, 20),
+              SizedBox(height: rh(context, 300), child: VisitorLineChart()),
+              vSpace(context, 20),
 
               VisitorTable(),
-              SpaceHeight(20),
+              vSpace(context, 20),
             ],
           ),
         ),
@@ -168,18 +175,18 @@ class _VisitorReportPageState extends State<VisitorReportPage> {
 
   Widget _buildFilterChip(String label) {
     return Container(
-      height: 38,
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      height: rh(context, 38),
+      padding: EdgeInsets.symmetric(horizontal: rw(context, 16)),
       decoration: BoxDecoration(
         color: Colors.white,
         border: Border.all(color: Colors.grey.shade400),
-        borderRadius: BorderRadius.circular(50),
+        borderRadius: BorderRadius.circular(rw(context, 50)),
       ),
       child: Row(
         children: [
           Text(label),
-          const SizedBox(width: 8),
-          const Icon(FontAwesomeIcons.chevronDown, size: 14),
+          hSpace(context, 8),
+          Icon(FontAwesomeIcons.chevronDown, size: rw(context, 14)),
         ],
       ),
     );
@@ -187,20 +194,20 @@ class _VisitorReportPageState extends State<VisitorReportPage> {
 
   Widget _buildFilterValueChip(String label, {required VoidCallback onClear}) {
     return Container(
-      height: 38,
-      padding: const EdgeInsets.symmetric(horizontal: 12),
+      height: rh(context, 38),
+      padding: EdgeInsets.symmetric(horizontal: rw(context, 12)),
       decoration: BoxDecoration(
         color: Colors.white,
         border: Border.all(color: Colors.grey.shade400),
-        borderRadius: BorderRadius.circular(50),
+        borderRadius: BorderRadius.circular(rw(context, 50)),
       ),
       child: Row(
         children: [
-          Text(label, style: const TextStyle(fontSize: 12)),
-          const SizedBox(width: 8),
+          Text(label, style: TextStyle(fontSize: rfs(context, 12))),
+          hSpace(context, 8),
           GestureDetector(
             onTap: onClear,
-            child: const Icon(Icons.close, size: 16),
+            child: Icon(Icons.close, size: rw(context, 16)),
           ),
         ],
       ),
@@ -219,3 +226,4 @@ class _VisitorReportPageState extends State<VisitorReportPage> {
     }
   }
 }
+

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../../core/components/custom_card.dart';
 import '../../../core/core.dart';
+import '../../../core/helper/responsive_helper.dart';
 
 class SearchResultParkingPage extends StatefulWidget {
   const SearchResultParkingPage({super.key});
@@ -24,14 +25,17 @@ class _SearchResultParkingPageState extends State<SearchResultParkingPage> {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.white,
-        title: Text('Search'),
+        title: Text(
+          'Search',
+          style: TextStyle(fontSize: rfs(context, 18)),
+        ),
         leading: IconButton(
-          icon: Icon(Icons.arrow_back),
+          icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.pop(context),
         ),
       ),
       body: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: EdgeInsets.all(rw(context, 16.0)),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -40,25 +44,25 @@ class _SearchResultParkingPageState extends State<SearchResultParkingPage> {
               controller: searchController,
               label: 'Search',
               hintText: 'Search',
-              suffixIcon: Icon(Icons.search),
+              suffixIcon: const Icon(Icons.search),
               showLabel: false,
             ),
-            const SpaceHeight(20),
-            Divider(height: 1, thickness: 0.3),
-            const SpaceHeight(20),
+            vSpace(context, 20),
+            const Divider(height: 1, thickness: 0.3),
+            vSpace(context, 20),
             Text(
               'Result',
-              style: TextStyle(fontSize: 18.0, fontWeight: FontWeight.bold),
+              style: TextStyle(fontSize: rfs(context, 18.0), fontWeight: FontWeight.bold),
             ),
-            const SpaceHeight(16.0),
+            vSpace(context, 16.0),
 
             // List of Search Results
             ListView.builder(
               shrinkWrap: true,
-              physics: NeverScrollableScrollPhysics(),
+              physics: const NeverScrollableScrollPhysics(),
               itemCount: 3,
               itemBuilder: (context, index) {
-                return CustomCard(
+                return const CustomCard(
                   image: Icon(Icons.directions_car, color: Colors.white),
                   size: 12,
                   title: 'B62819Y',

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../constants/colors.dart';
+import '../helper/responsive_helper.dart';
 
 enum ButtonStyleType { filled, outlined }
 
@@ -111,18 +112,22 @@ class Button extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isIconOnly = label.isEmpty && icon != null && suffixIcon == null;
+    final double resHeight = rh(context, height);
+    final double? resWidth = width != null ? (width == double.infinity ? double.infinity : rw(context, width!)) : null;
+    final double resBorderRadius = rw(context, borderRadius);
+    final double resFontSize = rfs(context, fontSize);
 
     if (isIconOnly) {
       return SizedBox(
-        height: height,
-        width: width,
+        height: resHeight,
+        width: resWidth,
         child: style == ButtonStyleType.filled
             ? ElevatedButton(
                 onPressed: disabled ? null : onPressed,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: color,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(borderRadius),
+                    borderRadius: BorderRadius.circular(resBorderRadius),
                   ),
                   padding: EdgeInsets.zero,
                 ),
@@ -134,7 +139,7 @@ class Button extends StatelessWidget {
                   backgroundColor: color,
                   side: BorderSide(color: borderColor),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(borderRadius),
+                    borderRadius: BorderRadius.circular(resBorderRadius),
                   ),
                   padding: EdgeInsets.zero,
                 ),
@@ -143,21 +148,21 @@ class Button extends StatelessWidget {
       );
     }
     return SizedBox(
-      height: height,
-      width: width,
+      height: resHeight,
+      width: resWidth,
       child: style == ButtonStyleType.filled
           ? ElevatedButton(
               onPressed: (disabled || isLoading) ? null : onPressed,
               style: ElevatedButton.styleFrom(
                 backgroundColor: color,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(borderRadius),
+                  borderRadius: BorderRadius.circular(resBorderRadius),
                 ),
               ),
               child: isLoading
                   ? SizedBox(
-                      height: 20,
-                      width: 20,
+                      height: rw(context, 20),
+                      width: rw(context, 20),
                       child: CircularProgressIndicator(
                         color: textColor,
                         strokeWidth: 2,
@@ -168,20 +173,20 @@ class Button extends StatelessWidget {
                       children: [
                         icon ?? const SizedBox.shrink(),
                         if (icon != null && label.isNotEmpty)
-                          const SizedBox(width: 10.0),
+                          SizedBox(width: rw(context, 10.0)),
                         Flexible(
                           child: Text(
                             label,
                             style: TextStyle(
                               color: textColor,
-                              fontSize: fontSize,
+                              fontSize: resFontSize,
                               fontWeight: FontWeight.w500,
                             ),
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
                         if (suffixIcon != null && label.isNotEmpty)
-                          const SizedBox(width: 10.0),
+                          SizedBox(width: rw(context, 10.0)),
                         suffixIcon ?? const SizedBox.shrink(),
                       ],
                     ),
@@ -192,7 +197,7 @@ class Button extends StatelessWidget {
                 backgroundColor: color,
                 side: BorderSide(color: borderColor),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(borderRadius),
+                  borderRadius: BorderRadius.circular(resBorderRadius),
                 ),
               ),
               child: Row(
@@ -200,20 +205,20 @@ class Button extends StatelessWidget {
                 children: [
                   icon ?? const SizedBox.shrink(),
                   if (icon != null && label.isNotEmpty)
-                    const SizedBox(width: 10.0),
+                    SizedBox(width: rw(context, 10.0)),
                   Flexible(
                     child: Text(
                       label,
                       style: TextStyle(
                         color: textColor,
-                        fontSize: fontSize,
+                        fontSize: resFontSize,
                         fontWeight: FontWeight.w500,
                       ),
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
                   if (suffixIcon != null && label.isNotEmpty)
-                    const SizedBox(width: 10.0),
+                    SizedBox(width: rw(context, 10.0)),
                   suffixIcon ?? const SizedBox.shrink(),
                 ],
               ),

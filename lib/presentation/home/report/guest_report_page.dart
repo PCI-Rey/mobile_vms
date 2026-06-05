@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/helper/responsive_helper.dart';
 
 class GuestReportPage extends StatelessWidget {
   const GuestReportPage({super.key});
@@ -7,11 +8,18 @@ class GuestReportPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Report'),
+        title: Text(
+          'Report',
+          style: TextStyle(fontSize: rfs(context, 20)),
+        ),
       ),
-      body: const Center(
-        child: Text('Coming soon'),
+      body: Center(
+        child: Text(
+          'Coming soon',
+          style: TextStyle(fontSize: rfs(context, 16)),
+        ),
       ),
     );
   }
 }
+

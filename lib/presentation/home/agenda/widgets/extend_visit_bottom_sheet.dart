@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-
 import '../../../../core/core.dart';
+import '../../../../core/helper/responsive_helper.dart';
 
 class ExtendVisitBottomSheet extends StatefulWidget {
   const ExtendVisitBottomSheet({super.key});
@@ -16,17 +16,17 @@ class _ExtendVisitBottomSheetState extends State<ExtendVisitBottomSheet> {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(rw(context, 20)),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
+              Text(
                 'Extend Visit',
                 style: TextStyle(
-                  fontSize: 18,
+                  fontSize: rfs(context, 18),
                   fontWeight: FontWeight.w600,
                   color: AppColors.grey900,
                 ),
@@ -40,7 +40,7 @@ class _ExtendVisitBottomSheetState extends State<ExtendVisitBottomSheet> {
 
           const Divider(color: AppColors.grey300, thickness: 1),
 
-          const SizedBox(height: 20),
+          vSpace(context, 20),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: List.generate(durations.length, (index) {
@@ -48,10 +48,10 @@ class _ExtendVisitBottomSheetState extends State<ExtendVisitBottomSheet> {
               return Expanded(
                 flex: isSelected ? 2 : 1,
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  padding: EdgeInsets.symmetric(horizontal: rw(context, 4)),
                   child: Button.filledRed(
-                    borderRadius: 20,
-                    height: 28,
+                    borderRadius: rw(context, 20),
+                    height: rh(context, 28),
                     label: durations[index],
                     onPressed: () {
                       setState(() {
@@ -60,20 +60,20 @@ class _ExtendVisitBottomSheetState extends State<ExtendVisitBottomSheet> {
                     },
                     color: isSelected ? AppColors.error500 : AppColors.error400,
                     textColor: Colors.white,
-                    fontSize: 12,
+                    fontSize: rfs(context, 12),
                   ),
                 ),
               );
             }),
           ),
 
-          const SizedBox(height: 20),
+          vSpace(context, 20),
           Button.filled(
             label: "Extend Visit",
             onPressed: () {},
-            height: 40,
-            fontSize: 14,
-            borderRadius: 10,
+            height: rh(context, 40),
+            fontSize: rfs(context, 14),
+            borderRadius: rw(context, 10),
           ),
         ],
       ),

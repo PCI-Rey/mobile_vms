@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../../../presentation/home/evacuate/evacuate_history_page.dart';
 import '../../../core/core.dart';
+import '../../../core/helper/responsive_helper.dart';
 import 'widgets/counter_box.dart';
 import 'widgets/progress_bar.dart';
 import 'widgets/reaction_group_card.dart';
@@ -25,9 +26,11 @@ class _EvacuatePageState extends State<EvacuatePage> {
 
     timer = Timer.periodic(const Duration(seconds: 1), (_) {
       if (duration.inSeconds > 0) {
-        setState(() {
-          duration = duration - const Duration(seconds: 1);
-        });
+        if (mounted) {
+          setState(() {
+            duration = duration - const Duration(seconds: 1);
+          });
+        }
       } else {
         timer?.cancel();
       }
@@ -80,22 +83,25 @@ class _EvacuatePageState extends State<EvacuatePage> {
           Scaffold(
             appBar: AppBar(
               backgroundColor: Colors.white,
-              title: const Text("Evacuate"),
-              leading: BackButton(),
+              title: Text(
+                "Evacuate",
+                style: TextStyle(fontSize: rfs(context, 18)),
+              ),
+              leading: const BackButton(),
               actions: [
                 Padding(
-                  padding: const EdgeInsets.only(right: 12),
+                  padding: EdgeInsets.only(right: rw(context, 12)),
                   child: SizedBox(
-                    width: 100,
-                    height: 40,
+                    width: rw(context, 100),
+                    height: rh(context, 40),
                     child: Button.filled(
                       onPressed: () {
                         context.push(EvacuateHistoryPage());
                       },
                       label: 'History',
                       color: AppColors.primary500,
-                      borderRadius: 12,
-                      fontSize: 13,
+                      borderRadius: rw(context, 12),
+                      fontSize: rfs(context, 13),
                     ),
                   ),
                 ),
@@ -108,7 +114,7 @@ class _EvacuatePageState extends State<EvacuatePage> {
             ),
 
             body: SingleChildScrollView(
-              padding: const EdgeInsets.all(20),
+              padding: EdgeInsets.all(rw(context, 20)),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -116,48 +122,48 @@ class _EvacuatePageState extends State<EvacuatePage> {
                     child: Text(
                       formatDuration(duration),
                       style: TextStyle(
-                        fontSize: 36,
+                        fontSize: rfs(context, 36),
                         fontWeight: FontWeight.bold,
                       ),
                     ),
                   ),
-                  const SizedBox(height: 16),
+                  vSpace(context, 16),
 
                   ReactionPieChartTotal(
                     allGroups: groups,
                     showLegend: true,
-                    radius: 70,
+                    radius: rw(context, 70),
                   ),
-                  const SizedBox(height: 16),
+                  vSpace(context, 16),
 
                   ProgressSection(allGroups: groups),
-                  const SizedBox(height: 16),
+                  vSpace(context, 16),
 
-                  const SizedBox(height: 16),
+                  vSpace(context, 16),
 
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: const [
                       CounterBox(title: "Visitor", count: 12),
                       CounterBox(title: "Employee", count: 9),
                       CounterBox(title: "Not Reaction", count: 2),
                     ],
                   ),
-                  const SizedBox(height: 18),
+                  vSpace(context, 18),
 
-                  const Text(
+                  Text(
                     "Reactions per group",
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    style: TextStyle(fontSize: rfs(context, 16), fontWeight: FontWeight.bold),
                   ),
 
-                  const SizedBox(height: 10),
+                  vSpace(context, 10),
 
                   LayoutBuilder(
                     builder: (context, constraints) {
                       final screenWidth = constraints.maxWidth;
 
                       int columnCount = screenWidth < 600 ? 2 : 3;
-                      double spacing = 10;
+                      double spacing = rw(context, 10);
                       double totalSpacing = spacing * (columnCount - 1);
                       double itemWidth =
                           (screenWidth - totalSpacing) / columnCount;
@@ -175,12 +181,12 @@ class _EvacuatePageState extends State<EvacuatePage> {
                     },
                   ),
 
-                  const SpaceHeight(18),
+                  vSpace(context, 18),
                   Button.filled(
                     onPressed: _handleStartEvacuate,
                     label: 'Start Evacuate',
                   ),
-                  const SpaceHeight(10),
+                  vSpace(context, 10),
                   Button.filledRed(onPressed: stopTimer, label: 'End Evacuate'),
                 ],
               ),

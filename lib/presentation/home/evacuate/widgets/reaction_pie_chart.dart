@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 
 import '../../../../core/core.dart';
+import '../../../../core/helper/responsive_helper.dart';
 
 class ReactionPieChart extends StatefulWidget {
   final Map<String, dynamic>? groupData;
@@ -25,24 +26,24 @@ class _ReactionPieChartState extends State<ReactionPieChart> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.only(bottom: 20, top: 50),
-      margin: const EdgeInsets.only(bottom: 20),
+      padding: EdgeInsets.only(bottom: rh(context, 20), top: rh(context, 50)),
+      margin: EdgeInsets.only(bottom: rh(context, 20)),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(rw(context, 10)),
         boxShadow: [
           BoxShadow(
-            offset: Offset(0, 6),
+            offset: Offset(0, rh(context, 6)),
             color: AppColors.primary900.withValues(alpha: 0.1),
-            blurRadius: 10,
-            spreadRadius: 1,
+            blurRadius: rw(context, 10),
+            spreadRadius: rw(context, 1),
           ),
         ],
       ),
       child: Column(
         children: [
           SizedBox(
-            height: widget.radius != null ? widget.radius! * 2 : 200,
+            height: widget.radius != null ? widget.radius! * 2 : rh(context, 200),
             child: PieChart(
               PieChartData(
                 pieTouchData: PieTouchData(
@@ -63,15 +64,15 @@ class _ReactionPieChartState extends State<ReactionPieChart> {
                 sectionsSpace: 2,
                 centerSpaceRadius: widget.radius != null
                     ? widget.radius! * 0.3
-                    : 30,
+                    : rw(context, 30),
                 sections: _buildPieChartSections(),
               ),
             ),
           ),
 
-          const SpaceHeight(20),
+          vSpace(context, 20),
           if (widget.showLegend) ...[
-            const SizedBox(height: 16),
+            vSpace(context, 16),
             _buildLegend(),
           ],
         ],
@@ -94,15 +95,17 @@ class _ReactionPieChartState extends State<ReactionPieChart> {
           color: Colors.grey.shade300,
           value: 1,
           title: 'No Data',
-          radius: widget.radius ?? 80,
-          titleStyle: const TextStyle(
-            fontSize: 12,
+          radius: widget.radius ?? rw(context, 80),
+          titleStyle: TextStyle(
+            fontSize: rfs(context, 12),
             fontWeight: FontWeight.bold,
             color: Colors.black54,
           ),
         ),
       ];
     }
+
+    final double baseRadius = widget.radius ?? rw(context, 80);
 
     return [
       // Confirmed section (Green)
@@ -113,10 +116,10 @@ class _ReactionPieChartState extends State<ReactionPieChart> {
             ? '$confirmed\n(${(confirmed / total * 100).toStringAsFixed(1)}%)'
             : '${(confirmed / total * 100).toStringAsFixed(1)}%',
         radius: touchedIndex == 0
-            ? (widget.radius ?? 80) + 10
-            : widget.radius ?? 80,
+            ? baseRadius + rw(context, 10)
+            : baseRadius,
         titleStyle: TextStyle(
-          fontSize: touchedIndex == 0 ? 14 : 12,
+          fontSize: touchedIndex == 0 ? rfs(context, 14) : rfs(context, 12),
           fontWeight: FontWeight.bold,
           color: Colors.white,
         ),
@@ -131,10 +134,10 @@ class _ReactionPieChartState extends State<ReactionPieChart> {
             ? '$noReaction\n(${(noReaction / total * 100).toStringAsFixed(1)}%)'
             : '${(noReaction / total * 100).toStringAsFixed(1)}%',
         radius: touchedIndex == 1
-            ? (widget.radius ?? 80) + 10
-            : widget.radius ?? 80,
+            ? baseRadius + rw(context, 10)
+            : baseRadius,
         titleStyle: TextStyle(
-          fontSize: touchedIndex == 1 ? 14 : 12,
+          fontSize: touchedIndex == 1 ? rfs(context, 14) : rfs(context, 12),
           fontWeight: FontWeight.bold,
           color: Colors.white,
         ),
@@ -149,10 +152,10 @@ class _ReactionPieChartState extends State<ReactionPieChart> {
             ? '$decline\n(${(decline / total * 100).toStringAsFixed(1)}%)'
             : '${(decline / total * 100).toStringAsFixed(1)}%',
         radius: touchedIndex == 2
-            ? (widget.radius ?? 80) + 10
-            : widget.radius ?? 80,
+            ? baseRadius + rw(context, 10)
+            : baseRadius,
         titleStyle: TextStyle(
-          fontSize: touchedIndex == 2 ? 14 : 12,
+          fontSize: touchedIndex == 2 ? rfs(context, 14) : rfs(context, 12),
           fontWeight: FontWeight.bold,
           color: Colors.white,
         ),
@@ -172,8 +175,8 @@ class _ReactionPieChartState extends State<ReactionPieChart> {
         if (constraints.maxWidth < 400) {
           return Wrap(
             alignment: WrapAlignment.spaceEvenly,
-            spacing: 12,
-            runSpacing: 8,
+            spacing: rw(context, 12),
+            runSpacing: rh(context, 8),
             children: [
               _buildLegendItem(
                 color: AppColors.info500,
@@ -245,29 +248,29 @@ class _ReactionPieChartState extends State<ReactionPieChart> {
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            width: 12,
-            height: 12,
+            width: rw(context, 12),
+            height: rw(context, 12),
             decoration: BoxDecoration(
               color: color,
               shape: BoxShape.circle,
             ),
           ),
-          const SizedBox(width: 6),
+          hSpace(context, 6),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
                 label,
-                style: const TextStyle(
-                  fontSize: 12,
+                style: TextStyle(
+                  fontSize: rfs(context, 12),
                   fontWeight: FontWeight.bold,
                 ),
               ),
               Text(
                 '$value',
-                style: const TextStyle(
-                  fontSize: 11,
+                style: TextStyle(
+                  fontSize: rfs(context, 11),
                   fontWeight: FontWeight.w500,
                   color: Colors.grey,
                 ),
@@ -284,14 +287,14 @@ class _ReactionPieChartState extends State<ReactionPieChart> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Container(
-              width: 16,
-              height: 16,
+              width: rw(context, 16),
+              height: rw(context, 16),
               decoration: BoxDecoration(
                 color: color,
                 shape: BoxShape.circle,
               ),
             ),
-            const SizedBox(width: 5),
+            hSpace(context, 5),
             Flexible(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -299,16 +302,16 @@ class _ReactionPieChartState extends State<ReactionPieChart> {
                 children: [
                   Text(
                     label,
-                    style: const TextStyle(
-                      fontSize: 14,
+                    style: TextStyle(
+                      fontSize: rfs(context, 14),
                       fontWeight: FontWeight.bold,
                     ),
                     overflow: TextOverflow.ellipsis,
                   ),
                   Text(
                     '$value Person',
-                    style: const TextStyle(
-                      fontSize: 12,
+                    style: TextStyle(
+                      fontSize: rfs(context, 12),
                       fontWeight: FontWeight.w500,
                     ),
                     overflow: TextOverflow.ellipsis,

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../../../core/core.dart';
+import '../../../../core/helper/responsive_helper.dart';
 import 'dart:async';
 
 class GuestParkingPage extends StatefulWidget {
@@ -29,9 +30,11 @@ class _GuestParkingPageState extends State<GuestParkingPage> {
   void _startTimer() {
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (_remainingTime.inSeconds > 0) {
-        setState(() {
-          _remainingTime = Duration(seconds: _remainingTime.inSeconds - 1);
-        });
+        if (mounted) {
+          setState(() {
+            _remainingTime = Duration(seconds: _remainingTime.inSeconds - 1);
+          });
+        }
       } else {
         _timer?.cancel();
         _showTimeExpiredDialog();
@@ -61,12 +64,6 @@ class _GuestParkingPageState extends State<GuestParkingPage> {
     return '${seconds.toString().padLeft(2, '0')}s';
   }
 
-/* 
-  String? _getSubText(Duration duration) {
-    return null; // Tidak ada sub text untuk timer detik
-  }
-*/
-
   Color _getTimerColor() {
     if (_remainingTime.inSeconds <= 10) {
       return Colors.red;
@@ -79,8 +76,8 @@ class _GuestParkingPageState extends State<GuestParkingPage> {
 
   Widget _buildTimerWidget() {
     return Container(
-      width: 45,
-      height: 45,
+      width: rw(context, 45),
+      height: rw(context, 45),
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         color: Colors.white,
@@ -92,7 +89,7 @@ class _GuestParkingPageState extends State<GuestParkingPage> {
           style: TextStyle(
             fontWeight: FontWeight.bold,
             color: _getTimerColor(),
-            fontSize: 12,
+            fontSize: rfs(context, 12),
           ),
         ),
       ),
@@ -102,7 +99,6 @@ class _GuestParkingPageState extends State<GuestParkingPage> {
   @override
   Widget build(BuildContext context) {
     final screenHeight = MediaQuery.of(context).size.height;
-    // final screenWidth = MediaQuery.of(context).size.width;
     
     return Scaffold(
       appBar: AppBar(
@@ -116,16 +112,16 @@ class _GuestParkingPageState extends State<GuestParkingPage> {
             // Konten yang bisa di-scroll
             Expanded(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                padding: EdgeInsets.fromLTRB(rw(context, 16), rh(context, 16), rw(context, 16), 0),
                 child: Column(
                   children: [
                     // Bagian 1: Parking Info
                     Container(
                       width: double.infinity,
-                      padding: const EdgeInsets.all(16),
+                      padding: EdgeInsets.all(rw(context, 16)),
                       decoration: BoxDecoration(
                         color: Colors.white,
-                        borderRadius: BorderRadius.circular(10),
+                        borderRadius: BorderRadius.circular(rw(context, 10)),
                         border: Border.all(color: Colors.grey.shade200),
                       ),
                       child: Column(
@@ -158,9 +154,9 @@ class _GuestParkingPageState extends State<GuestParkingPage> {
                               ),
                             ],
                           ),
-                          const SizedBox(height: 12),
+                          vSpace(context, 12),
                           ClipRRect(
-                            borderRadius: BorderRadius.circular(8),
+                            borderRadius: BorderRadius.circular(rw(context, 8)),
                             child: SizedBox(
                               width: double.infinity,
                               height: screenHeight * 0.15,
@@ -169,7 +165,7 @@ class _GuestParkingPageState extends State<GuestParkingPage> {
                               ),
                             ),
                           ),
-                          const SizedBox(height: 12),
+                          vSpace(context, 12),
                           Row(
                             children: [
                               Text('Slot A1', style: TextStyles.bodySmall600),
@@ -186,15 +182,15 @@ class _GuestParkingPageState extends State<GuestParkingPage> {
                       ),
                     ),
 
-                    const SizedBox(height: 20),
+                    vSpace(context, 20),
 
                     // Bagian 2: Denah Parkir
                     Container(
                       width: double.infinity,
-                      padding: const EdgeInsets.all(16),
+                      padding: EdgeInsets.all(rw(context, 16)),
                       decoration: BoxDecoration(
                         border: Border.all(color: Colors.grey.shade300),
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(rw(context, 8)),
                       ),
                       child: Column(
                         children: [
@@ -202,17 +198,17 @@ class _GuestParkingPageState extends State<GuestParkingPage> {
                           Row(
                             children: [
                               Expanded(child: _slotBox('A1', active: true)),
-                              const SizedBox(width: 8),
+                              hSpace(context, 8),
                               Expanded(child: _slotBox('A3')),
                             ],
                           ),
                           
                           // Jalan tengah dengan panah
                           SizedBox(
-                            height: 40,
+                            height: rh(context, 40),
                             child: Center(
                               child: Assets.images.arrowVector.image(
-                                height: 24,
+                                height: rh(context, 24),
                                 fit: BoxFit.contain,
                               ),
                             ),
@@ -222,7 +218,7 @@ class _GuestParkingPageState extends State<GuestParkingPage> {
                           Row(
                             children: [
                               Expanded(child: _slotBox('A2', active: false)),
-                              const SizedBox(width: 8),
+                              hSpace(context, 8),
                               Expanded(child: _slotBox('A4')),
                             ],
                           ),
@@ -231,7 +227,7 @@ class _GuestParkingPageState extends State<GuestParkingPage> {
                     ),
 
                     // Extra space untuk memberikan jarak ke bottom
-                    const SizedBox(height: 16),
+                    vSpace(context, 16),
                   ],
                 ),
               ),
@@ -239,14 +235,14 @@ class _GuestParkingPageState extends State<GuestParkingPage> {
 
             // Fixed Bottom Section
             Container(
-              padding: const EdgeInsets.all(16),
+              padding: EdgeInsets.all(rw(context, 16)),
               decoration: BoxDecoration(
                 color: Colors.white,
                 boxShadow: [
                   BoxShadow(
                     color: Colors.grey.shade200,
-                    offset: const Offset(0, -2),
-                    blurRadius: 8,
+                    offset: Offset(0, rh(context, -2)),
+                    blurRadius: rw(context, 8),
                   ),
                 ],
               ),
@@ -262,21 +258,21 @@ class _GuestParkingPageState extends State<GuestParkingPage> {
                     ),
                   ),
 
-                  const SizedBox(height: 12),
+                  vSpace(context, 12),
 
                   // Bagian 4: Control Gate
                   Container(
                     width: double.infinity,
-                    padding: const EdgeInsets.all(12),
+                    padding: EdgeInsets.all(rw(context, 12)),
                     decoration: BoxDecoration(
                       color: const Color(0xFFEFF4FB),
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(rw(context, 12)),
                     ),
                     child: Row(
                       children: [
                         Container(
-                          width: 40,
-                          height: 40,
+                          width: rw(context, 40),
+                          height: rw(context, 40),
                           decoration: const BoxDecoration(
                             color: AppColors.primary500,
                             shape: BoxShape.circle,
@@ -287,13 +283,13 @@ class _GuestParkingPageState extends State<GuestParkingPage> {
                             size: 16,
                           ),
                         ),
-                        const SizedBox(width: 12),
-                        const Expanded(
+                        hSpace(context, 12),
+                        Expanded(
                           child: Text(
                             'Control Gate',
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
-                              fontSize: 16,
+                              fontSize: rfs(context, 16),
                             ),
                           ),
                         ),
@@ -301,7 +297,7 @@ class _GuestParkingPageState extends State<GuestParkingPage> {
                       ],
                     ),
                   ),
-                  SizedBox(height: 10)
+                  vSpace(context, 10)
                 ],
               ),
             ),
@@ -322,18 +318,18 @@ class _GuestParkingPageState extends State<GuestParkingPage> {
     }
 
     return Container(
-      height: 45, // Fixed height yang lebih kecil
+      height: rh(context, 45), // Fixed height yang lebih kecil
       decoration: BoxDecoration(
         color: color,
         border: Border.all(color: Colors.grey.shade400),
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(rw(context, 8)),
       ),
       child: Center(
         child: Text(
           label,
-          style: const TextStyle(
+          style: TextStyle(
             fontWeight: FontWeight.bold,
-            fontSize: 14,
+            fontSize: rfs(context, 14),
           ),
         ),
       ),

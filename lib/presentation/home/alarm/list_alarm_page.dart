@@ -4,6 +4,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/core.dart';
+import '../../../core/helper/responsive_helper.dart';
 import '../../../data/models/alarm_model.dart';
 import '../../history/widgets/filter_bottom_sheet.dart';
 import 'controller/alarm_controller.dart';
@@ -38,14 +39,17 @@ class _AlarmListPageState extends State<AlarmListPage> {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.white,
-        title: const Text('Alarm Alert'),
+        title: Text(
+          'Alarm Alert',
+          style: TextStyle(fontSize: rfs(context, 18)),
+        ),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1.0),
           child: Container(color: AppColors.grey300, height: 1.0),
         ),
       ),
       body: Padding(
-        padding: const EdgeInsets.all(20.0),
+        padding: EdgeInsets.all(rw(context, 20.0)),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -62,9 +66,9 @@ class _AlarmListPageState extends State<AlarmListPage> {
                             enableDrag: true,
                             isDismissible: true,
                             isScrollControlled: true,
-                            shape: const RoundedRectangleBorder(
+                            shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.vertical(
-                                top: Radius.circular(16),
+                                top: Radius.circular(rw(context, 16)),
                               ),
                             ),
                             builder: (context) => const FilterBottomSheet(),
@@ -98,7 +102,7 @@ class _AlarmListPageState extends State<AlarmListPage> {
                     child: _buildFilterChip('Filter'),
                   ),
 
-                  const SizedBox(width: 10),
+                  hSpace(context, 10),
 
                   if (selectedGedung != null)
                     _buildFilterValueChip(
@@ -109,7 +113,7 @@ class _AlarmListPageState extends State<AlarmListPage> {
                       },
                     ),
 
-                  const SizedBox(width: 10),
+                  hSpace(context, 10),
 
                   if (startDate != null || endDate != null)
                     _buildFilterValueChip(
@@ -126,21 +130,21 @@ class _AlarmListPageState extends State<AlarmListPage> {
               ),
             ),
 
-            const SpaceHeight(20),
+            vSpace(context, 20),
 
             // Obx for Alarms List
             Expanded(
               child: Obx(() {
                 if (controller.isLoading.value) {
-                  return const Center(
+                  return Center(
                     child: Padding(
-                      padding: EdgeInsets.all(20.0),
+                      padding: EdgeInsets.all(rw(context, 20.0)),
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          CircularProgressIndicator(),
-                          SizedBox(height: 16),
-                          Text('Memuat alarm...'),
+                          const CircularProgressIndicator(),
+                          vSpace(context, 16),
+                          const Text('Memuat alarm...'),
                         ],
                       ),
                     ),
@@ -169,12 +173,16 @@ class _AlarmListPageState extends State<AlarmListPage> {
     if (alarms.isEmpty) {
       return Center(
         child: Padding(
-          padding: const EdgeInsets.all(20.0),
+          padding: EdgeInsets.all(rw(context, 20.0)),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.notifications_off, size: 64, color: Colors.grey[400]),
-              const SpaceHeight(16),
+              Icon(
+                Icons.notifications_off,
+                size: rw(context, 64),
+                color: Colors.grey[400],
+              ),
+              vSpace(context, 16),
               Text(
                 'Tidak ada alarm ditemukan',
                 style: TextStyles.bodyLarge.copyWith(
@@ -182,7 +190,7 @@ class _AlarmListPageState extends State<AlarmListPage> {
                   fontWeight: FontWeight.w500,
                 ),
               ),
-              const SpaceHeight(8),
+              vSpace(context, 8),
               Text(
                 selectedGedung != null || startDate != null || endDate != null
                     ? 'Coba ubah filter untuk melihat lebih banyak alarm'
@@ -193,7 +201,7 @@ class _AlarmListPageState extends State<AlarmListPage> {
               if (selectedGedung != null ||
                   startDate != null ||
                   endDate != null) ...[
-                const SpaceHeight(16),
+                vSpace(context, 16),
                 ElevatedButton.icon(
                   onPressed: () {
                     setState(() {
@@ -203,14 +211,14 @@ class _AlarmListPageState extends State<AlarmListPage> {
                     });
                     controller.loadAlarms();
                   },
-                  icon: const Icon(Icons.clear_all, size: 16),
+                  icon: Icon(Icons.clear_all, size: rw(context, 16)),
                   label: const Text('Hapus Semua Filter'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary500,
                     foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 8,
+                    padding: EdgeInsets.symmetric(
+                      horizontal: rw(context, 16),
+                      vertical: rh(context, 8),
                     ),
                     textStyle: TextStyles.bodySmall,
                   ),
@@ -228,7 +236,7 @@ class _AlarmListPageState extends State<AlarmListPage> {
       },
       child: ListView.separated(
         itemCount: alarms.length,
-        separatorBuilder: (context, index) => const SizedBox(height: 12),
+        separatorBuilder: (context, index) => vSpace(context, 12),
         itemBuilder: (context, index) {
           final alarm = alarms[index];
 
@@ -272,12 +280,16 @@ class _AlarmListPageState extends State<AlarmListPage> {
   Widget _buildErrorWidget(BuildContext context, String message) {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(20.0),
+        padding: EdgeInsets.all(rw(context, 20.0)),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.error_outline, size: 64, color: Colors.red[400]),
-            const SpaceHeight(16),
+            Icon(
+              Icons.error_outline,
+              size: rw(context, 64),
+              color: Colors.red[400],
+            ),
+            vSpace(context, 16),
             Text(
               'Terjadi Kesalahan',
               style: TextStyles.bodyLarge.copyWith(
@@ -285,25 +297,25 @@ class _AlarmListPageState extends State<AlarmListPage> {
                 fontWeight: FontWeight.w600,
               ),
             ),
-            const SpaceHeight(8),
+            vSpace(context, 8),
             Text(
               message,
               style: TextStyles.bodySmall.copyWith(color: Colors.grey[600]),
               textAlign: TextAlign.center,
             ),
-            const SpaceHeight(20),
+            vSpace(context, 20),
             ElevatedButton.icon(
               onPressed: () {
                 _reloadWithCurrentFilters();
               },
-              icon: const Icon(Icons.refresh, size: 16),
+              icon: Icon(Icons.refresh, size: rw(context, 16)),
               label: const Text('Coba Lagi'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary500,
                 foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 12,
+                padding: EdgeInsets.symmetric(
+                  horizontal: rw(context, 20),
+                  vertical: rh(context, 12),
                 ),
                 textStyle: TextStyles.bodyMedium,
               ),
@@ -375,18 +387,18 @@ class _AlarmListPageState extends State<AlarmListPage> {
 
   Widget _buildFilterChip(String label) {
     return Container(
-      height: 38,
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      height: rh(context, 38),
+      padding: EdgeInsets.symmetric(horizontal: rw(context, 16)),
       decoration: BoxDecoration(
         color: Colors.white,
         border: Border.all(color: Colors.grey.shade400),
-        borderRadius: BorderRadius.circular(50),
+        borderRadius: BorderRadius.circular(rw(context, 50)),
       ),
       child: Row(
         children: [
-          Text(label),
-          const SizedBox(width: 8),
-          const Icon(FontAwesomeIcons.chevronDown, size: 14),
+          Text(label, style: TextStyle(fontSize: rfs(context, 14))),
+          hSpace(context, 8),
+          Icon(FontAwesomeIcons.chevronDown, size: rw(context, 14)),
         ],
       ),
     );
@@ -394,20 +406,20 @@ class _AlarmListPageState extends State<AlarmListPage> {
 
   Widget _buildFilterValueChip(String label, {required VoidCallback onClear}) {
     return Container(
-      height: 38,
-      padding: const EdgeInsets.symmetric(horizontal: 12),
+      height: rh(context, 38),
+      padding: EdgeInsets.symmetric(horizontal: rw(context, 12)),
       decoration: BoxDecoration(
         color: Colors.white,
         border: Border.all(color: Colors.grey.shade400),
-        borderRadius: BorderRadius.circular(50),
+        borderRadius: BorderRadius.circular(rw(context, 50)),
       ),
       child: Row(
         children: [
-          Text(label, style: const TextStyle(fontSize: 12)),
-          const SizedBox(width: 8),
+          Text(label, style: TextStyle(fontSize: rfs(context, 12))),
+          hSpace(context, 8),
           GestureDetector(
             onTap: onClear,
-            child: const Icon(Icons.close, size: 16),
+            child: Icon(Icons.close, size: rw(context, 16)),
           ),
         ],
       ),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../core/core.dart';
+import '../../../core/helper/responsive_helper.dart';
 
 class CustomStatCard extends StatelessWidget {
   final String title;
@@ -20,16 +21,16 @@ class CustomStatCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final child = Container(
-      padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 12.0),
+      padding: EdgeInsets.symmetric(vertical: rh(context, 16.0), horizontal: rw(context, 12.0)),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(rw(context, 12)),
         border: Border.all(color: AppColors.grey200),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 6,
-            offset: const Offset(0, 3),
+            blurRadius: rw(context, 6),
+            offset: Offset(0, rh(context, 3)),
           ),
         ],
       ),
@@ -42,11 +43,11 @@ class CustomStatCard extends StatelessWidget {
                   title,
                   style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
-                const SizedBox(height: 8),
+                vSpace(context, 8),
                 Text(
                   value,
                   style: TextStyle(
-                    fontSize: 24,
+                    fontSize: rfs(context, 24),
                     fontWeight: FontWeight.bold,
                     color: valueColor,
                   ),
@@ -57,7 +58,7 @@ class CustomStatCard extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Icon(icon, color: AppColors.primary500),
-                const SizedBox(width: 8),
+                hSpace(context, 8),
                 Text(title, style: TextStyles.headline3),
               ],
             ),

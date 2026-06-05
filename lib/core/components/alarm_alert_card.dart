@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-// import '../../core/components/components.dart';
 import '../../core/core.dart';
+import '../helper/responsive_helper.dart';
 
 enum AlarmStatus { high, medium, low }
 
@@ -53,16 +53,16 @@ class AlarmAlertCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(rw(context, 16)),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(rw(context, 10)),
         boxShadow: [
           BoxShadow(
-            offset: Offset(0, 4),
+            offset: Offset(0, rh(context, 4)),
             color: AppColors.primary900.withValues(alpha: 0.07),
-            blurRadius: 5,
-            spreadRadius: 1,
+            blurRadius: rw(context, 5),
+            spreadRadius: rw(context, 1),
           ),
         ],
       ),
@@ -77,19 +77,19 @@ class AlarmAlertCard extends StatelessWidget {
                 child: Row(
                   children: [
                     Container(
-                      width: 40,
-                      height: 40,
+                      width: rw(context, 40),
+                      height: rw(context, 40),
                       decoration: BoxDecoration(
                         color: AppColors.primary500,
-                        borderRadius: BorderRadius.circular(20),
+                        borderRadius: BorderRadius.circular(rw(context, 20)),
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.notifications_active,
                         color: Colors.white,
-                        size: 20,
+                        size: rw(context, 20),
                       ),
                     ),
-                    const SizedBox(width: 12),
+                    hSpace(context, 12),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -114,7 +114,7 @@ class AlarmAlertCard extends StatelessWidget {
                   ],
                 ),
               ),
-              const SizedBox(width: 16),
+              hSpace(context, 16),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
@@ -125,7 +125,7 @@ class AlarmAlertCard extends StatelessWidget {
             ],
           ),
 
-          const SpaceHeight(12),
+          vSpace(context, 12),
 
           // Middle section
           Row(
@@ -133,7 +133,7 @@ class AlarmAlertCard extends StatelessWidget {
               Expanded(
                 child: Text(alarmDescription, style: TextStyles.bodySmall),
               ),
-              const SizedBox(width: 16),
+              hSpace(context, 16),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
@@ -155,9 +155,9 @@ class AlarmAlertCard extends StatelessWidget {
             ],
           ),
 
-          const SpaceHeight(8),
+          vSpace(context, 8),
 
-          const SpaceHeight(16),
+          vSpace(context, 16),
 
           // Location & Approve/Deny buttons
           Row(
@@ -174,39 +174,39 @@ class AlarmAlertCard extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
-              const SizedBox(width: 8),
+              hSpace(context, 8),
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Button.filledRed(
-                    onPressed: () {},
+                    onPressed: onDeny ?? () {},
                     label: 'Deny',
-                    height: 32,
-                    width: 100,
-                    fontSize: 12,
+                    height: rh(context, 32),
+                    width: rw(context, 100),
+                    fontSize: rfs(context, 12),
                   ),
-                  const SizedBox(width: 8),
+                  hSpace(context, 8),
                   Button.filled(
-                    onPressed: () {},
+                    onPressed: onApprove ?? () {},
                     label: 'Approve',
-                    height: 32,
-                    width: 100,
-                    fontSize: 12,
+                    height: rh(context, 32),
+                    width: rw(context, 100),
+                    fontSize: rfs(context, 12),
                   ),
                 ],
               ),
             ],
           ),
 
-          const SpaceHeight(8),
+          vSpace(context, 8),
 
           // Track Visitor button
           Button.filled(
-            onPressed: () {},
+            onPressed: onTrackVisitor ?? () {},
             label: 'Track Visitor',
-            height: 32,
+            height: rh(context, 32),
             width: double.infinity,
-            fontSize: 12,
+            fontSize: rfs(context, 12),
             color: AppColors.info500,
             textColor: AppColors.grey900,
           ),

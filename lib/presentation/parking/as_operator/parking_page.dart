@@ -5,6 +5,7 @@ import '../../../../presentation/parking/scan_ticket_page.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 import '../../../core/core.dart';
+import '../../../core/helper/responsive_helper.dart';
 import '../widgets/custom_action_card.dart' show CustomActionCard;
 import '../widgets/custom_stats_card.dart';
 
@@ -21,9 +22,9 @@ class _ParkingPageState extends State<ParkingPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(backgroundColor: Colors.white, title: Text('Parking')),
+      appBar: AppBar(backgroundColor: Colors.white, title: const Text('Parking')),
       body: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: EdgeInsets.all(rw(context, 16.0)),
         child: SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -42,39 +43,39 @@ class _ParkingPageState extends State<ParkingPage> {
                     controller: searchController,
                     label: 'Search',
                     hintText: 'Search',
-                    suffixIcon: Icon(Icons.search),
+                    suffixIcon: const Icon(Icons.search),
                     showLabel: false,
                     readOnly: true,
                   ),
                 ),
               ),
-              const SpaceHeight(20),
-              Divider(height: 1, thickness: 0.3),
-              const SpaceHeight(20),
+              vSpace(context, 20),
+              const Divider(height: 1, thickness: 0.3),
+              vSpace(context, 20),
 
               // Parking Area Card
               Container(
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(rw(context, 12)),
                   boxShadow: [
                     BoxShadow(
                       color: const Color(0xffE5E7EB).withValues(alpha: 0.8),
                       spreadRadius: 1,
-                      blurRadius: 8,
-                      offset: const Offset(0, 3),
+                      blurRadius: rw(context, 8),
+                      offset: Offset(0, rh(context, 3)),
                     ),
                   ],
                 ),
                 child: Padding(
-                  padding: const EdgeInsets.all(16.0),
+                  padding: EdgeInsets.all(rw(context, 16.0)),
                   child: Row(
                     children: [
                       CircleAvatar(
                         backgroundColor: AppColors.primary500,
-                        child: Icon(FontAwesomeIcons.p, color: Colors.white),
+                        child: const Icon(FontAwesomeIcons.p, color: Colors.white),
                       ),
-                      SizedBox(width: 16.0),
+                      hSpace(context, 16.0),
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -82,13 +83,13 @@ class _ParkingPageState extends State<ParkingPage> {
                             'Area Parking 1',
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
-                              fontSize: 16.0,
+                              fontSize: rfs(context, 16.0),
                             ),
                           ),
                           Text(
                             'Parking Khusus Mobil',
                             style: TextStyle(
-                              fontSize: 14.0,
+                              fontSize: rfs(context, 14.0),
                               color: Colors.grey,
                             ),
                           ),
@@ -98,17 +99,17 @@ class _ParkingPageState extends State<ParkingPage> {
                   ),
                 ),
               ),
-              SizedBox(height: 16.0),
+              vSpace(context, 16.0),
 
               // Available Slots and Parked Vehicles
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Expanded(
+                  const Expanded(
                     child: CustomStatCard(title: 'Available Slot', value: '20'),
                   ),
-                  SizedBox(width: 16.0),
-                  Expanded(
+                  hSpace(context, 16.0),
+                  const Expanded(
                     child: CustomStatCard(
                       title: 'Parked Vehicles',
                       value: '20',
@@ -116,7 +117,7 @@ class _ParkingPageState extends State<ParkingPage> {
                   ),
                 ],
               ),
-              SizedBox(height: 16.0),
+              vSpace(context, 16.0),
 
               // Scan Ticket and View Buttons
               Row(
@@ -124,38 +125,38 @@ class _ParkingPageState extends State<ParkingPage> {
                   Expanded(
                     child: CustomActionCard(
                       label: 'Scan Ticket',
-                      icon: Assets.icons.scan.image(height: 24),
+                      icon: Assets.icons.scan.image(height: rh(context, 24)),
                       onTap: () => context.push(ScanTicketPage()),
                     ),
                   ),
-                  const SizedBox(width: 16),
+                  hSpace(context, 16),
                   Expanded(
                     child: CustomActionCard(
                       label: 'View',
-                      icon: Assets.icons.view.image(height: 24),
+                      icon: Assets.icons.view.image(height: rh(context, 24)),
                       onTap: () {},
                     ),
                   ),
                 ],
               ),
-              const SpaceHeight(25),
-              Divider(height: 1, thickness: 0.3),
-              const SpaceHeight(20),
+              vSpace(context, 25),
+              const Divider(height: 1, thickness: 0.3),
+              vSpace(context, 20),
 
               // New Parking Section
               Text(
                 'New Parking',
-                style: TextStyle(fontSize: 18.0, fontWeight: FontWeight.bold),
+                style: TextStyle(fontSize: rfs(context, 18.0), fontWeight: FontWeight.bold),
               ),
-              SizedBox(height: 8.0),
+              vSpace(context, 8.0),
 
               // List of New Parking Cards
               ListView.builder(
                 shrinkWrap: true,
-                physics: NeverScrollableScrollPhysics(),
+                physics: const NeverScrollableScrollPhysics(),
                 itemCount: 3,
                 itemBuilder: (context, index) {
-                  return CustomCard(
+                  return const CustomCard(
                     image: Icon(Icons.directions_car, color: Colors.white),
                     size: 12,
                     title: 'B62819Y',

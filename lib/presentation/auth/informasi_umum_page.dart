@@ -6,6 +6,7 @@ import 'package:dropdown_button2/dropdown_button2.dart';
 import 'controller/informasi_umum_controller.dart';
 import 'controller/language_controller.dart';
 import '../../data/models/user_model.dart';
+import '../../core/helper/responsive_helper.dart';
 import '../../../core/core.dart';
 
 String _localTr(String key, String fallbackIndo, String fallbackEn) {
@@ -73,30 +74,30 @@ class _InformasiUmumPageState extends State<InformasiUmumPage> {
             final langCtrl = LanguageController.to;
             final isId = langCtrl.selectedLang.value == 'id';
             return Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+              padding: EdgeInsets.symmetric(vertical: rh(context, 8), horizontal: rw(context, 8)),
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10),
+                padding: EdgeInsets.symmetric(horizontal: rw(context, 10)),
                 decoration: BoxDecoration(
                   border: Border.all(color: AppColors.primary500, width: 1.5),
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(rw(context, 8)),
                   color: AppColors.primary50,
                 ),
                 child: DropdownButton<String>(
                   value: isId ? 'id' : 'en',
                   underline: const SizedBox.shrink(),
-                  icon: const Icon(
+                  icon: Icon(
                     Icons.arrow_drop_down,
-                    size: 18,
+                    size: rw(context, 18),
                     color: AppColors.primary500,
                   ),
                   isDense: true,
-                  items: const [
+                  items: [
                     DropdownMenuItem(
                       value: 'en',
                       child: Text(
                         '🇬🇧 ENG',
                         style: TextStyle(
-                          fontSize: 14,
+                          fontSize: rfs(context, 14),
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -106,7 +107,7 @@ class _InformasiUmumPageState extends State<InformasiUmumPage> {
                       child: Text(
                         '🇮🇩 ID',
                         style: TextStyle(
-                          fontSize: 14,
+                          fontSize: rfs(context, 14),
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -127,18 +128,18 @@ class _InformasiUmumPageState extends State<InformasiUmumPage> {
             // ── Header ──────────────────────────────────
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.symmetric(vertical: 16),
+              padding: EdgeInsets.symmetric(vertical: rh(context, 16)),
               color: const Color(
                 0xFF00529C,
               ), // Senada dengan warna background logo BI/VMS.png
               child: Column(
                 children: [
-                  Image.asset('assets/images/VMS.png', height: 64),
-                  const SizedBox(height: 6),
+                  Image.asset('assets/images/VMS.png', height: rh(context, 64)),
+                  vSpace(context, 6),
                   Text(
                     '${'invitation_code'.tr}: ${widget.invitationCode ?? "-"}',
-                    style: const TextStyle(
-                      fontSize: 14,
+                    style: TextStyle(
+                      fontSize: rfs(context, 14),
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
                     ),
@@ -146,7 +147,7 @@ class _InformasiUmumPageState extends State<InformasiUmumPage> {
                 ],
               ),
             ),
-            const SizedBox(height: 8),
+            vSpace(context, 8),
 
             // ── PageView ─────────────────────────────────
             Expanded(
@@ -175,12 +176,12 @@ class _InformasiUmumPageState extends State<InformasiUmumPage> {
                 color: Colors.white,
                 border: Border(top: BorderSide(color: Colors.grey.shade200)),
               ),
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              padding: EdgeInsets.symmetric(horizontal: rw(context, 20), vertical: rh(context, 12)),
               child: Row(
                 children: [
                   // Back button (fixed width)
                   SizedBox(
-                    width: 80,
+                    width: rw(context, 80),
                     child: Obx(
                       () => _ctrl.currentPage.value > 0
                           ? OutlinedButton(
@@ -193,7 +194,7 @@ class _InformasiUmumPageState extends State<InformasiUmumPage> {
                                 'back'.tr,
                                 style: TextStyle(
                                   color: AppColors.primary500,
-                                  fontSize: 13,
+                                  fontSize: rfs(context, 13),
                                 ),
                               ),
                             )
@@ -212,9 +213,9 @@ class _InformasiUmumPageState extends State<InformasiUmumPage> {
                         children: List.generate(
                           totalDots,
                           (i) => Container(
-                            margin: const EdgeInsets.symmetric(horizontal: 4),
-                            width: 8,
-                            height: 8,
+                            margin: EdgeInsets.symmetric(horizontal: rw(context, 4)),
+                            width: rw(context, 8),
+                            height: rw(context, 8),
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
                               color: _ctrl.currentPage.value == i
@@ -229,14 +230,14 @@ class _InformasiUmumPageState extends State<InformasiUmumPage> {
 
                   // Next / Submit button (fixed width)
                   SizedBox(
-                    width: 110,
+                    width: rw(context, 110),
                     child: Obx(() {
                       if (_ctrl.isLoading.value) {
-                        return const Center(
+                        return Center(
                           child: SizedBox(
-                            width: 24,
-                            height: 24,
-                            child: CircularProgressIndicator(strokeWidth: 2),
+                            width: rw(context, 24),
+                            height: rw(context, 24),
+                            child: const CircularProgressIndicator(strokeWidth: 2),
                           ),
                         );
                       }
@@ -258,7 +259,7 @@ class _InformasiUmumPageState extends State<InformasiUmumPage> {
                         ),
                         child: Text(
                           isLast ? 'submit'.tr : 'next'.tr,
-                          style: const TextStyle(fontSize: 13),
+                          style: TextStyle(fontSize: rfs(context, 13)),
                         ),
                       );
                     }),
@@ -281,13 +282,13 @@ class _Step1 extends StatelessWidget {
   final InformasiUmumController ctrl;
   const _Step1({required this.ctrl});
 
-  Widget _requiredLabel(String text) => Padding(
-    padding: const EdgeInsets.only(top: 10, bottom: 4),
+  Widget _requiredLabel(BuildContext context, String text) => Padding(
+    padding: EdgeInsets.only(top: rh(context, 10), bottom: rh(context, 4)),
     child: RichText(
       text: TextSpan(
         text: text,
-        style: const TextStyle(
-          fontSize: 14,
+        style: TextStyle(
+          fontSize: rfs(context, 14),
           fontWeight: FontWeight.w600,
           color: Colors.black87,
         ),
@@ -305,21 +306,22 @@ class _Step1 extends StatelessWidget {
   Widget build(BuildContext context) {
     return Obx(
       () => SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+        padding: EdgeInsets.symmetric(horizontal: rw(context, 20), vertical: rh(context, 8)),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Center(
               child: Text(
                 'visitor_information'.tr,
-                style: const TextStyle(
-                  fontSize: 18,
+                style: TextStyle(
+                  fontSize: rfs(context, 18),
                   fontWeight: FontWeight.bold,
                 ),
               ),
             ),
-            const SizedBox(height: 16),
+            vSpace(context, 16),
             _requiredLabel(
+              context,
               _localTr('visitor_role', 'Peran Pengunjung', 'Visitor Role'),
             ),
             DropdownButton2<String>(
@@ -337,27 +339,25 @@ class _Step1 extends StatelessWidget {
                 if (v != null) ctrl.selectedVisitorRole.value = v;
               },
               buttonStyleData: ButtonStyleData(
-                height: 50,
-                padding: const EdgeInsets.only(left: 0, right: 12),
+                height: rh(context, 50),
+                padding: EdgeInsets.only(left: 0, right: rw(context, 12)),
                 decoration: BoxDecoration(
                   color: AppColors.primary50,
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(rw(context, 8)),
                   border: Border.all(color: AppColors.grey300, width: 1.5),
                 ),
               ),
-              menuItemStyleData: const MenuItemStyleData(
-                padding: EdgeInsets.symmetric(horizontal: 12),
-              ),
+              menuItemStyleData: EdgeInsets.symmetric(horizontal: rw(context, 12)).toMapMenuItemStyleData(),
               dropdownStyleData: DropdownStyleData(
-                maxHeight: 250,
-                offset: const Offset(0, -10),
+                maxHeight: rh(context, 250),
+                offset: Offset(0, rh(context, -10)),
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(rw(context, 8)),
                 ),
               ),
               underline: const SizedBox.shrink(),
             ),
-            _requiredLabel('fullname'.tr),
+            _requiredLabel(context, 'fullname'.tr),
             CustomTextField(
               controller: ctrl.fullNameController,
               label: '',
@@ -367,7 +367,7 @@ class _Step1 extends StatelessWidget {
               onChanged: (v) =>
                   ctrl.validateField('fullname', v, 'fullname'.tr),
             ),
-            _requiredLabel('email'.tr),
+            _requiredLabel(context, 'email'.tr),
             CustomTextField(
               controller: ctrl.emailController,
               label: '',
@@ -377,7 +377,7 @@ class _Step1 extends StatelessWidget {
               errorText: ctrl.fieldErrors['email'],
               onChanged: (v) => ctrl.validateField('email', v, 'email'.tr),
             ),
-            _requiredLabel('phone'.tr),
+            _requiredLabel(context, 'phone'.tr),
             CustomTextField(
               controller: ctrl.phoneController,
               label: '',
@@ -387,7 +387,7 @@ class _Step1 extends StatelessWidget {
               errorText: ctrl.fieldErrors['phone'],
               onChanged: (v) => ctrl.validateField('phone', v, 'phone'.tr),
             ),
-            _requiredLabel('organization'.tr),
+            _requiredLabel(context, 'organization'.tr),
             CustomTextField(
               controller: ctrl.organizationController,
               label: '',
@@ -397,7 +397,7 @@ class _Step1 extends StatelessWidget {
               onChanged: (v) =>
                   ctrl.validateField('organization', v, 'organization'.tr),
             ),
-            _requiredLabel('identity_id'.tr),
+            _requiredLabel(context, 'identity_id'.tr),
             CustomTextField(
               controller: ctrl.identityIdController,
               label: '',
@@ -408,7 +408,7 @@ class _Step1 extends StatelessWidget {
               onChanged: (v) =>
                   ctrl.validateField('identityId', v, 'identity_id'.tr),
             ),
-            const SizedBox(height: 20),
+            vSpace(context, 20),
           ],
         ),
       ),
@@ -420,12 +420,12 @@ class _Step2 extends StatelessWidget {
   final InformasiUmumController ctrl;
   const _Step2({required this.ctrl});
 
-  Widget _label(String text) => Padding(
-    padding: const EdgeInsets.only(top: 10, bottom: 4),
+  Widget _label(BuildContext context, String text) => Padding(
+    padding: EdgeInsets.only(top: rh(context, 10), bottom: rh(context, 4)),
     child: Text(
       text,
-      style: const TextStyle(
-        fontSize: 14,
+      style: TextStyle(
+        fontSize: rfs(context, 14),
         fontWeight: FontWeight.w600,
         color: Colors.black87,
       ),
@@ -441,28 +441,28 @@ class _Step2 extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+      padding: EdgeInsets.symmetric(horizontal: rw(context, 20), vertical: rh(context, 8)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Center(
             child: Text(
               'purpose_visit'.tr,
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              style: TextStyle(fontSize: rfs(context, 18), fontWeight: FontWeight.bold),
             ),
           ),
-          const SizedBox(height: 16),
-          _label('pic_host'.tr),
+          vSpace(context, 16),
+          _label(context, 'pic_host'.tr),
           _readOnlyField(ctrl.picHostController),
-          _label('agenda'.tr),
+          _label(context, 'agenda'.tr),
           _readOnlyField(ctrl.agendaController),
-          _label('destination'.tr),
+          _label(context, 'destination'.tr),
           _readOnlyField(ctrl.destinationController),
-          _label('visit_start'.tr),
+          _label(context, 'visit_start'.tr),
           _readOnlyField(ctrl.visitStartController),
-          _label('visit_end'.tr),
+          _label(context, 'visit_end'.tr),
           _readOnlyField(ctrl.visitEndController),
-          const SizedBox(height: 20),
+          vSpace(context, 20),
         ],
       ),
     );
@@ -473,13 +473,13 @@ class _Step3 extends StatelessWidget {
   final InformasiUmumController ctrl;
   const _Step3({required this.ctrl});
 
-  Widget _requiredLabel(String text) => Padding(
-    padding: const EdgeInsets.only(top: 10, bottom: 4),
+  Widget _requiredLabel(BuildContext context, String text) => Padding(
+    padding: EdgeInsets.only(top: rh(context, 10), bottom: rh(context, 4)),
     child: RichText(
       text: TextSpan(
         text: text,
-        style: const TextStyle(
-          fontSize: 14,
+        style: TextStyle(
+          fontSize: rfs(context, 14),
           fontWeight: FontWeight.w600,
           color: Colors.black87,
         ),
@@ -497,26 +497,26 @@ class _Step3 extends StatelessWidget {
   Widget build(BuildContext context) {
     return Obx(
       () => SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+        padding: EdgeInsets.symmetric(horizontal: rw(context, 20), vertical: rh(context, 8)),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Center(
               child: Text(
                 'vehicle_information'.tr,
-                style: const TextStyle(
-                  fontSize: 18,
+                style: TextStyle(
+                  fontSize: rfs(context, 18),
                   fontWeight: FontWeight.bold,
                 ),
               ),
             ),
-            const SizedBox(height: 16),
+            vSpace(context, 16),
             // Are you driving?
             RichText(
               text: TextSpan(
                 text: 'are_you_driving'.tr,
-                style: const TextStyle(
-                  fontSize: 14,
+                style: TextStyle(
+                  fontSize: rfs(context, 14),
                   fontWeight: FontWeight.w600,
                   color: Colors.black87,
                 ),
@@ -531,7 +531,7 @@ class _Step3 extends StatelessWidget {
                 ],
               ),
             ),
-            const SizedBox(height: 4),
+            vSpace(context, 4),
             Row(
               children: [
                 Radio<bool>(
@@ -550,7 +550,7 @@ class _Step3 extends StatelessWidget {
                   },
                 ),
                 Text('yes'.tr),
-                const SizedBox(width: 16),
+                hSpace(context, 16),
                 Radio<bool>(
                   value: false,
                   groupValue: ctrl.isDriving.value,
@@ -565,7 +565,7 @@ class _Step3 extends StatelessWidget {
             ),
             // Conditionally show vehicle fields only if driving
             if (ctrl.isDriving.value) ...[
-              _requiredLabel('vehicle_type'.tr),
+              _requiredLabel(context, 'vehicle_type'.tr),
               () {
                 const labelMap = {
                   'vehicle_car': 'vehicle_car',
@@ -599,28 +599,26 @@ class _Step3 extends StatelessWidget {
                     if (v != null) ctrl.vehicleType.value = v;
                   },
                   buttonStyleData: ButtonStyleData(
-                    height: 50,
-                    padding: const EdgeInsets.only(left: 0, right: 12),
+                    height: rh(context, 50),
+                    padding: EdgeInsets.only(left: 0, right: rw(context, 12)),
                     decoration: BoxDecoration(
                       color: AppColors.primary50,
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(rw(context, 8)),
                       border: Border.all(color: AppColors.grey300, width: 1.5),
                     ),
                   ),
-                  menuItemStyleData: const MenuItemStyleData(
-                    padding: EdgeInsets.symmetric(horizontal: 12),
-                  ),
+                  menuItemStyleData: EdgeInsets.symmetric(horizontal: rw(context, 12)).toMapMenuItemStyleData(),
                   dropdownStyleData: DropdownStyleData(
-                    maxHeight: 250,
-                    offset: const Offset(0, -10),
+                    maxHeight: rh(context, 250),
+                    offset: Offset(0, rh(context, -10)),
                     decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(rw(context, 8)),
                     ),
                   ),
                   underline: const SizedBox.shrink(),
                 );
               }(),
-              _requiredLabel('vehicle_plate'.tr),
+              _requiredLabel(context, 'vehicle_plate'.tr),
               CustomTextField(
                 controller: ctrl.vehiclePlateController,
                 label: '',
@@ -631,7 +629,7 @@ class _Step3 extends StatelessWidget {
                     ctrl.validateField('vehiclePlate', v, 'vehicle_plate'.tr),
               ),
             ],
-            const SizedBox(height: 20),
+            vSpace(context, 20),
           ],
         ),
       ),
@@ -646,17 +644,17 @@ class _Step4 extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+      padding: EdgeInsets.symmetric(horizontal: rw(context, 20), vertical: rh(context, 8)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Center(
             child: Text(
               'face_photo_title'.tr,
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              style: TextStyle(fontSize: rfs(context, 18), fontWeight: FontWeight.bold),
             ),
           ),
-          const SizedBox(height: 16),
+          vSpace(context, 16),
           GestureDetector(
             onTap: () {
               Get.bottomSheet(
@@ -686,12 +684,12 @@ class _Step4 extends StatelessWidget {
               );
             },
             child: Container(
-              height: 220,
+              height: rh(context, 220),
               width: double.infinity,
               decoration: BoxDecoration(
                 color: AppColors.primary50,
                 border: Border.all(color: AppColors.grey300, width: 1.5),
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(rw(context, 8)),
               ),
               child: Obx(() {
                 if (ctrl.isUploadingSelfie.value) {
@@ -703,7 +701,7 @@ class _Step4 extends StatelessWidget {
                 }
                 if (ctrl.selfieImage.value != null) {
                   return ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(rw(context, 8)),
                     child: Image.file(
                       ctrl.selfieImage.value!,
                       fit: BoxFit.cover,
@@ -715,10 +713,10 @@ class _Step4 extends StatelessWidget {
                   children: [
                     Icon(
                       Icons.camera_alt,
-                      size: 50,
+                      size: rw(context, 50),
                       color: AppColors.primary500,
                     ),
-                    const SizedBox(height: 10),
+                    vSpace(context, 10),
                     Text(
                       'upload_file'.tr,
                       style: TextStyle(
@@ -726,18 +724,18 @@ class _Step4 extends StatelessWidget {
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    vSpace(context, 4),
                     Text(
                       'upload_file_support'.tr,
                       textAlign: TextAlign.center,
-                      style: const TextStyle(fontSize: 12, color: Colors.grey),
+                      style: TextStyle(fontSize: rfs(context, 12), color: Colors.grey),
                     ),
                   ],
                 );
               }),
             ),
           ),
-          const SizedBox(height: 20),
+          vSpace(context, 20),
         ],
       ),
     );
@@ -751,17 +749,17 @@ class _Step5 extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+      padding: EdgeInsets.symmetric(horizontal: rw(context, 20), vertical: rh(context, 8)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Center(
             child: Text(
               'upload_ktp'.tr,
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              style: TextStyle(fontSize: rfs(context, 18), fontWeight: FontWeight.bold),
             ),
           ),
-          const SizedBox(height: 16),
+          vSpace(context, 16),
           GestureDetector(
             onTap: () {
               Get.bottomSheet(
@@ -791,12 +789,12 @@ class _Step5 extends StatelessWidget {
               );
             },
             child: Container(
-              height: 220,
+              height: rh(context, 220),
               width: double.infinity,
               decoration: BoxDecoration(
                 color: AppColors.primary50,
                 border: Border.all(color: AppColors.grey300, width: 1.5),
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(rw(context, 8)),
               ),
               child: Obx(() {
                 if (ctrl.isUploadingIdentity.value) {
@@ -808,7 +806,7 @@ class _Step5 extends StatelessWidget {
                 }
                 if (ctrl.identityImage.value != null) {
                   return ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(rw(context, 8)),
                     child: Image.file(
                       ctrl.identityImage.value!,
                       fit: BoxFit.cover,
@@ -820,10 +818,10 @@ class _Step5 extends StatelessWidget {
                   children: [
                     Icon(
                       Icons.cloud_upload,
-                      size: 50,
+                      size: rw(context, 50),
                       color: AppColors.primary500,
                     ),
-                    const SizedBox(height: 10),
+                    vSpace(context, 10),
                     Text(
                       'upload_file'.tr,
                       style: TextStyle(
@@ -831,18 +829,18 @@ class _Step5 extends StatelessWidget {
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    vSpace(context, 4),
                     Text(
                       'upload_file_support'.tr,
                       textAlign: TextAlign.center,
-                      style: const TextStyle(fontSize: 12, color: Colors.grey),
+                      style: TextStyle(fontSize: rfs(context, 12), color: Colors.grey),
                     ),
                   ],
                 );
               }),
             ),
           ),
-          const SizedBox(height: 20),
+          vSpace(context, 20),
         ],
       ),
     );
@@ -860,11 +858,11 @@ class _WhoFillStep extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(24),
+      padding: EdgeInsets.all(rw(context, 24)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SizedBox(height: 20),
+          vSpace(context, 20),
           Center(
             child: Text(
               _localTr(
@@ -873,14 +871,14 @@ class _WhoFillStep extends StatelessWidget {
                 'WHO FILL THIS FORM?',
               ),
               style: TextStyle(
-                fontSize: 20,
+                fontSize: rfs(context, 20),
                 fontWeight: FontWeight.bold,
                 color: AppColors.grey900,
                 letterSpacing: 0.5,
               ),
             ),
           ),
-          const SizedBox(height: 8),
+          vSpace(context, 8),
           Center(
             child: Text(
               _localTr(
@@ -888,11 +886,11 @@ class _WhoFillStep extends StatelessWidget {
                 'Silakan pilih siapa yang mengisi formulir pendaftaran ini.',
                 'Please select who is completing this registration form.',
               ),
-              style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
+              style: TextStyle(fontSize: rfs(context, 14), color: Colors.grey.shade600),
               textAlign: TextAlign.center,
             ),
           ),
-          const SizedBox(height: 40),
+          vSpace(context, 40),
           Obx(() {
             final isSelf = ctrl.isSelfRegistered.value == true;
             final isOther = ctrl.isSelfRegistered.value == false;
@@ -905,12 +903,12 @@ class _WhoFillStep extends StatelessWidget {
                   },
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 250),
-                    padding: const EdgeInsets.all(20),
+                    padding: EdgeInsets.all(rw(context, 20)),
                     decoration: BoxDecoration(
                       color: isSelf
                           ? AppColors.primary50.withOpacity(0.5)
                           : Colors.white,
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(rw(context, 16)),
                       border: Border.all(
                         color: isSelf
                             ? AppColors.primary500
@@ -922,15 +920,15 @@ class _WhoFillStep extends StatelessWidget {
                           color: isSelf
                               ? AppColors.primary500.withOpacity(0.08)
                               : Colors.black.withOpacity(0.02),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
+                          blurRadius: rw(context, 10),
+                          offset: Offset(0, rh(context, 4)),
                         ),
                       ],
                     ),
                     child: Row(
                       children: [
                         Container(
-                          padding: const EdgeInsets.all(12),
+                          padding: EdgeInsets.all(rw(context, 12)),
                           decoration: BoxDecoration(
                             color: isSelf
                                 ? AppColors.primary500
@@ -940,10 +938,10 @@ class _WhoFillStep extends StatelessWidget {
                           child: Icon(
                             Icons.person,
                             color: isSelf ? Colors.white : Colors.grey.shade600,
-                            size: 28,
+                            size: rw(context, 28),
                           ),
                         ),
-                        const SizedBox(width: 16),
+                        hSpace(context, 16),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -955,14 +953,14 @@ class _WhoFillStep extends StatelessWidget {
                                   'YOURSELF',
                                 ),
                                 style: TextStyle(
-                                  fontSize: 16,
+                                  fontSize: rfs(context, 16),
                                   fontWeight: FontWeight.bold,
                                   color: isSelf
                                       ? AppColors.primary500
                                       : AppColors.grey900,
                                 ),
                               ),
-                              const SizedBox(height: 4),
+                              vSpace(context, 4),
                               Text(
                                 _localTr(
                                   'yourself_subtitle',
@@ -970,7 +968,7 @@ class _WhoFillStep extends StatelessWidget {
                                   'I am registering for myself.',
                                 ),
                                 style: TextStyle(
-                                  fontSize: 13,
+                                  fontSize: rfs(context, 13),
                                   color: Colors.grey.shade500,
                                 ),
                               ),
@@ -981,13 +979,13 @@ class _WhoFillStep extends StatelessWidget {
                           Icon(
                             Icons.check_circle,
                             color: AppColors.primary500,
-                            size: 26,
+                            size: rw(context, 26),
                           ),
                       ],
                     ),
                   ),
                 ),
-                const SizedBox(height: 20),
+                vSpace(context, 20),
                 // Other Option Card
                 GestureDetector(
                   onTap: () {
@@ -995,12 +993,12 @@ class _WhoFillStep extends StatelessWidget {
                   },
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 250),
-                    padding: const EdgeInsets.all(20),
+                    padding: EdgeInsets.all(rw(context, 20)),
                     decoration: BoxDecoration(
                       color: isOther
                           ? AppColors.primary50.withOpacity(0.5)
                           : Colors.white,
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(rw(context, 16)),
                       border: Border.all(
                         color: isOther
                             ? AppColors.primary500
@@ -1012,15 +1010,15 @@ class _WhoFillStep extends StatelessWidget {
                           color: isOther
                               ? AppColors.primary500.withOpacity(0.08)
                               : Colors.black.withOpacity(0.02),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
+                          blurRadius: rw(context, 10),
+                          offset: Offset(0, rh(context, 4)),
                         ),
                       ],
                     ),
                     child: Row(
                       children: [
                         Container(
-                          padding: const EdgeInsets.all(12),
+                          padding: EdgeInsets.all(rw(context, 12)),
                           decoration: BoxDecoration(
                             color: isOther
                                 ? AppColors.primary500
@@ -1032,10 +1030,10 @@ class _WhoFillStep extends StatelessWidget {
                             color: isOther
                                 ? Colors.white
                                 : Colors.grey.shade600,
-                            size: 28,
+                            size: rw(context, 28),
                           ),
                         ),
-                        const SizedBox(width: 16),
+                        hSpace(context, 16),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -1043,14 +1041,14 @@ class _WhoFillStep extends StatelessWidget {
                               Text(
                                 _localTr('other_title', 'ORANG LAIN', 'OTHER'),
                                 style: TextStyle(
-                                  fontSize: 16,
+                                  fontSize: rfs(context, 16),
                                   fontWeight: FontWeight.bold,
                                   color: isOther
                                       ? AppColors.primary500
                                       : AppColors.grey900,
                                 ),
                               ),
-                              const SizedBox(height: 4),
+                              vSpace(context, 4),
                               Text(
                                 _localTr(
                                   'other_subtitle',
@@ -1058,7 +1056,7 @@ class _WhoFillStep extends StatelessWidget {
                                   'I am registering on behalf of someone else.',
                                 ),
                                 style: TextStyle(
-                                  fontSize: 13,
+                                  fontSize: rfs(context, 13),
                                   color: Colors.grey.shade500,
                                 ),
                               ),
@@ -1069,7 +1067,7 @@ class _WhoFillStep extends StatelessWidget {
                           Icon(
                             Icons.check_circle,
                             color: AppColors.primary500,
-                            size: 26,
+                            size: rw(context, 26),
                           ),
                       ],
                     ),
@@ -1092,13 +1090,13 @@ class _StepOther extends StatelessWidget {
   final InformasiUmumController ctrl;
   const _StepOther({required this.ctrl});
 
-  Widget _requiredLabel(String text) => Padding(
-    padding: const EdgeInsets.only(top: 10, bottom: 4),
+  Widget _requiredLabel(BuildContext context, String text) => Padding(
+    padding: EdgeInsets.only(top: rh(context, 10), bottom: rh(context, 4)),
     child: RichText(
       text: TextSpan(
         text: text,
-        style: const TextStyle(
-          fontSize: 14,
+        style: TextStyle(
+          fontSize: rfs(context, 14),
           fontWeight: FontWeight.w600,
           color: Colors.black87,
         ),
@@ -1116,7 +1114,7 @@ class _StepOther extends StatelessWidget {
   Widget build(BuildContext context) {
     return Obx(
       () => SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+        padding: EdgeInsets.symmetric(horizontal: rw(context, 20), vertical: rh(context, 8)),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -1127,13 +1125,13 @@ class _StepOther extends StatelessWidget {
                   'INFORMASI PENGISI FORMULIR',
                   'FORM FILLER INFORMATION',
                 ),
-                style: const TextStyle(
-                  fontSize: 18,
+                style: TextStyle(
+                  fontSize: rfs(context, 18),
                   fontWeight: FontWeight.bold,
                 ),
               ),
             ),
-            const SizedBox(height: 6),
+            vSpace(context, 6),
             Center(
               child: Text(
                 _localTr(
@@ -1141,12 +1139,12 @@ class _StepOther extends StatelessWidget {
                   'Silakan isi detail data orang yang mengisi formulir pendaftaran ini.',
                   'Please fill in the details of the person completing this registration form.',
                 ),
-                style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
+                style: TextStyle(fontSize: rfs(context, 13), color: Colors.grey.shade600),
                 textAlign: TextAlign.center,
               ),
             ),
-            const SizedBox(height: 16),
-            _requiredLabel('fullname'.tr),
+            vSpace(context, 16),
+            _requiredLabel(context, 'fullname'.tr),
             CustomTextField(
               controller: ctrl.filledByNameController,
               label: '',
@@ -1160,7 +1158,7 @@ class _StepOther extends StatelessWidget {
               onChanged: (v) =>
                   ctrl.validateField('filledByName', v, 'fullname'.tr),
             ),
-            _requiredLabel('email'.tr),
+            _requiredLabel(context, 'email'.tr),
             CustomTextField(
               controller: ctrl.filledByEmailController,
               label: '',
@@ -1171,7 +1169,7 @@ class _StepOther extends StatelessWidget {
               onChanged: (v) =>
                   ctrl.validateField('filledByEmail', v, 'email'.tr),
             ),
-            _requiredLabel('phone'.tr),
+            _requiredLabel(context, 'phone'.tr),
             CustomTextField(
               controller: ctrl.filledByPhoneController,
               label: '',
@@ -1182,7 +1180,7 @@ class _StepOther extends StatelessWidget {
               onChanged: (v) =>
                   ctrl.validateField('filledByPhone', v, 'phone'.tr),
             ),
-            _requiredLabel('relationship'.tr),
+            _requiredLabel(context, 'relationship'.tr),
             DropdownButton2<String>(
               isExpanded: true,
               value: ctrl.filledByRelationship.value,
@@ -1192,7 +1190,7 @@ class _StepOther extends StatelessWidget {
                   'Pilih Hubungan',
                   'Select Relationship',
                 ),
-                style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
+                style: TextStyle(color: Colors.grey.shade600, fontSize: rfs(context, 14)),
               ),
               items: ctrl.relationshipOptions
                   .map(
@@ -1210,25 +1208,25 @@ class _StepOther extends StatelessWidget {
                 }
               },
               buttonStyleData: ButtonStyleData(
-                height: 50,
-                padding: const EdgeInsets.symmetric(horizontal: 12),
+                height: rh(context, 50),
+                padding: EdgeInsets.symmetric(horizontal: rw(context, 12)),
                 decoration: BoxDecoration(
                   color: AppColors.primary50,
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(rw(context, 8)),
                   border: Border.all(color: AppColors.grey300, width: 1.5),
                 ),
               ),
               dropdownStyleData: DropdownStyleData(
-                maxHeight: 250,
-                offset: const Offset(0, -10),
+                maxHeight: rh(context, 250),
+                offset: Offset(0, rh(context, -10)),
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(rw(context, 8)),
                 ),
               ),
               underline: const SizedBox.shrink(),
             ),
             if (ctrl.filledByRelationship.value == 'Other') ...[
-              const SizedBox(height: 10),
+              vSpace(context, 10),
               CustomTextField(
                 controller: ctrl.filledByRelationshipOtherController,
                 label: _localTr(
@@ -1253,10 +1251,16 @@ class _StepOther extends StatelessWidget {
                 ),
               ),
             ],
-            const SizedBox(height: 20),
+            vSpace(context, 20),
           ],
         ),
       ),
     );
+  }
+}
+
+extension DropdownButton2Responsive on EdgeInsets {
+  MenuItemStyleData toMapMenuItemStyleData() {
+    return MenuItemStyleData(padding: this);
   }
 }

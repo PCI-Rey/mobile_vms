@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../core/core.dart';
+import '../../../../core/helper/responsive_helper.dart';
 
 class VisitorList extends StatelessWidget {
   const VisitorList({super.key});
@@ -14,7 +15,7 @@ class VisitorList extends StatelessWidget {
         'destination': 'Gedung HQ',
         'date': 'Mon, 26 June 2025',
         'timeRange': '10:00 - 13:00',
-        'avatar': Assets.images.avaPerson1.image(height: 40),
+        'avatar': Assets.images.avaPerson1.image(height: rw(context, 40)),
       },
       {
         'name': 'Sarah',
@@ -22,7 +23,7 @@ class VisitorList extends StatelessWidget {
         'destination': 'Gedung Operasional',
         'date': 'Tue, 27 June 2025',
         'timeRange': '14:00 - 16:00',
-        'avatar': Assets.images.avaPerson2.image(height: 40),
+        'avatar': Assets.images.avaPerson2.image(height: rw(context, 40)),
       },
     ];
 
@@ -34,22 +35,28 @@ class VisitorList extends StatelessWidget {
           children: [
             Text(
               'Extended Request',
-              style: TextStyles.bodyLarge.copyWith(fontWeight: FontWeight.w600),
+              style: TextStyles.bodyLarge.copyWith(
+                fontWeight: FontWeight.w600,
+                fontSize: rfs(context, 16),
+              ),
             ),
             Text(
               '${visitorList.length} requests',
-              style: TextStyles.bodySmall.copyWith(color: Colors.grey[600]),
+              style: TextStyles.bodySmall.copyWith(
+                color: Colors.grey[600],
+                fontSize: rfs(context, 12),
+              ),
             ),
           ],
         ),
-        const SpaceHeight(10),
+        vSpace(context, 10),
 
         // List of visitor cards
         ListView.separated(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
           itemCount: visitorList.length,
-          separatorBuilder: (context, index) => const SizedBox(height: 12),
+          separatorBuilder: (context, index) => SizedBox(height: rh(context, 12)),
           itemBuilder: (context, index) {
             final visitor = visitorList[index];
             return VisitorCard(
@@ -72,3 +79,4 @@ class VisitorList extends StatelessWidget {
     );
   }
 }
+

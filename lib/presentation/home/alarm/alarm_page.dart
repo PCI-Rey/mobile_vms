@@ -1,6 +1,7 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import '../../../../core/core.dart';
+import '../../../../core/helper/responsive_helper.dart';
 import 'alarm_list.dart';
 
 class AlarmPage extends StatelessWidget {
@@ -11,7 +12,10 @@ class AlarmPage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.white,
-        title: const Text("Alarm Alert"),
+        title: Text(
+          "Alarm Alert",
+          style: TextStyle(fontSize: rfs(context, 18)),
+        ),
         leading: const BackButton(),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1.0),
@@ -19,48 +23,48 @@ class AlarmPage extends StatelessWidget {
         ),
       ),
       body: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.all(rw(context, 16)),
         child: SingleChildScrollView(
           child: Column(
             children: [
               Container(
-                padding: const EdgeInsets.all(10),
-                margin: const EdgeInsets.only(bottom: 20),
+                padding: EdgeInsets.all(rw(context, 10)),
+                margin: EdgeInsets.only(bottom: rh(context, 20)),
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(rw(context, 10)),
                   boxShadow: [
                     BoxShadow(
-                      offset: Offset(0, 6),
+                      offset: Offset(0, rh(context, 6)),
                       color: AppColors.primary900.withValues(
                         alpha: 0.2,
                       ), // hitam 8% opacity
-                      blurRadius: 12,
-                      spreadRadius: 2,
+                      blurRadius: rw(context, 12),
+                      spreadRadius: rw(context, 2),
                     ),
                   ],
                 ),
 
                 child: Padding(
-                  padding: const EdgeInsets.all(16),
+                  padding: EdgeInsets.all(rw(context, 16)),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
+                      Text(
                         'Alarm Count',
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
-                          fontSize: 16,
+                          fontSize: rfs(context, 16),
                         ),
                       ),
-                      const SizedBox(height: 16),
+                      vSpace(context, 16),
                       Row(
                         crossAxisAlignment: CrossAxisAlignment.center,
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           // PIE CHART (max width dibatasi)
                           ConstrainedBox(
-                            constraints: const BoxConstraints(maxWidth: 150),
+                            constraints: BoxConstraints(maxWidth: rw(context, 150)),
                             child: AspectRatio(
                               aspectRatio: 1,
                               child: LayoutBuilder(
@@ -99,26 +103,24 @@ class AlarmPage extends StatelessWidget {
                             ),
                           ),
 
-                          const SizedBox(
-                            width: 50,
-                          ), // jarak antar PieChart dan legend
+                          hSpace(context, 50), // jarak antar PieChart dan legend
                           // LEGEND
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
-                              children: const [
+                              children: [
                                 LegendItem(
                                   color: Colors.red,
                                   label: "High",
                                   count: 12,
                                 ),
-                                SizedBox(height: 8),
+                                vSpace(context, 8),
                                 LegendItem(
                                   color: Colors.orange,
                                   label: "Medium",
                                   count: 9,
                                 ),
-                                SizedBox(height: 8),
+                                vSpace(context, 8),
                                 LegendItem(
                                   color: Colors.green,
                                   label: "Low",
@@ -133,7 +135,7 @@ class AlarmPage extends StatelessWidget {
                   ),
                 ),
               ),
-              const SizedBox(height: 20),
+              vSpace(context, 20),
 
               // VALUE BOXES
               Row(
@@ -145,8 +147,8 @@ class AlarmPage extends StatelessWidget {
                 ],
               ),
 
-              SpaceHeight(20),
-              AlarmList(),
+              vSpace(context, 20),
+              const AlarmList(),
             ],
           ),
         ),
@@ -174,22 +176,24 @@ class LegendItem extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.start,
       children: [
         Container(
-          margin: EdgeInsets.all(5),
-          width: 10,
-          height: 10,
+          margin: EdgeInsets.all(rw(context, 5)),
+          width: rw(context, 10),
+          height: rw(context, 10),
           decoration: BoxDecoration(color: color, shape: BoxShape.circle),
         ),
-        const SizedBox(width: 8),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(label, style: const TextStyle(fontWeight: FontWeight.w500)),
-            const SizedBox(width: 8),
-            Text(
-              '$count Person',
-              style: const TextStyle(color: Colors.black54),
-            ),
-          ],
+        hSpace(context, 8),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(label, style: const TextStyle(fontWeight: FontWeight.w500)),
+              vSpace(context, 8),
+              Text(
+                '$count Person',
+                style: const TextStyle(color: Colors.black54),
+              ),
+            ],
+          ),
         ),
       ],
     );
@@ -206,31 +210,31 @@ class InfoBox extends StatelessWidget {
   Widget build(BuildContext context) {
     return Expanded(
       child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 4),
-        padding: const EdgeInsets.symmetric(vertical: 16),
+        margin: EdgeInsets.symmetric(horizontal: rw(context, 4)),
+        padding: EdgeInsets.symmetric(vertical: rh(context, 16)),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(rw(context, 10)),
           boxShadow: [
             BoxShadow(
-              offset: Offset(0, 5),
+              offset: Offset(0, rh(context, 5)),
               color: AppColors.primary900.withValues(
                 alpha: 0.1,
               ), // hitam 8% opacity
-              blurRadius: 8,
-              spreadRadius: 2,
+              blurRadius: rw(context, 8),
+              spreadRadius: rw(context, 2),
             ),
           ],
         ),
         child: Column(
           children: [
             Text(title, style: const TextStyle(fontWeight: FontWeight.w500)),
-            const SizedBox(height: 8),
+            vSpace(context, 8),
             Text(
               "$count",
-              style: const TextStyle(
+              style: TextStyle(
                 fontWeight: FontWeight.bold,
-                fontSize: 20,
+                fontSize: rfs(context, 20),
                 color: Colors.blue,
               ),
             ),

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-// import '../../core/components/components.dart';
 import '../../core/core.dart';
+import '../helper/responsive_helper.dart';
 
 enum VisitorStatus {
   pending,
@@ -60,7 +60,7 @@ class VisitorCard extends StatelessWidget {
     }
   }
 
-  Widget _buildStatusWidget() {
+  Widget _buildStatusWidget(BuildContext context) {
     switch (status) {
       case VisitorStatus.approved:
         return Container(
@@ -70,6 +70,7 @@ class VisitorCard extends StatelessWidget {
             style: TextStyles.bodyMedium.copyWith(
               color: Colors.grey[800],
               fontWeight: FontWeight.w600,
+              fontSize: rfs(context, 14),
             ),
           ),
         );
@@ -81,6 +82,7 @@ class VisitorCard extends StatelessWidget {
             style: TextStyles.bodyMedium.copyWith(
               color: Colors.red[700],
               fontWeight: FontWeight.w600,
+              fontSize: rfs(context, 14),
             ),
           ),
         );
@@ -97,21 +99,21 @@ class VisitorCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(rw(context, 12)),
       child: Container(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.all(rw(context, 16)),
         decoration: BoxDecoration(
           color: _getCardBackgroundColor(),
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(rw(context, 10)),
           border: status != VisitorStatus.pending 
               ? Border.all(color: _getCardBorderColor(), width: 1)
               : null,
           boxShadow: [
             BoxShadow(
-              offset: const Offset(0, 6),
+              offset: Offset(0, rh(context, 6)),
               color: AppColors.primary900.withValues(alpha: 0.1),
-              blurRadius: 10,
-              spreadRadius: 1,
+              blurRadius: rw(context, 10),
+              spreadRadius: rw(context, 1),
             ),
           ],
         ),
@@ -128,7 +130,7 @@ class VisitorCard extends StatelessWidget {
                       // Avatar
                       CustomCircleImage(image: avatar),
 
-                      const SizedBox(width: 12),
+                      hSpace(context, 12),
                       // User info
                       Expanded(
                         child: Column(
@@ -138,6 +140,7 @@ class VisitorCard extends StatelessWidget {
                               visitorName,
                               style: TextStyles.bodyMedium.copyWith(
                                 fontWeight: FontWeight.w600,
+                                fontSize: rfs(context, 14),
                               ),
                               overflow: TextOverflow.ellipsis,
                             ),
@@ -145,6 +148,7 @@ class VisitorCard extends StatelessWidget {
                               companyName,
                               style: TextStyles.bodySmall.copyWith(
                                 color: Colors.grey[600],
+                                fontSize: rfs(context, 12),
                               ),
                               overflow: TextOverflow.ellipsis,
                             ),
@@ -154,19 +158,19 @@ class VisitorCard extends StatelessWidget {
                     ],
                   ),
                 ),
-                const SizedBox(width: 16),
+                hSpace(context, 16),
                 // Date and time
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    Text(date, style: TextStyles.bodySmall),
-                    Text(timeRange, style: TextStyles.bodySmall),
+                    Text(date, style: TextStyles.bodySmall.copyWith(fontSize: rfs(context, 12))),
+                    Text(timeRange, style: TextStyles.bodySmall.copyWith(fontSize: rfs(context, 12))),
                   ],
                 ),
               ],
             ),
 
-            const SpaceHeight(12),
+            vSpace(context, 12),
 
             // Middle section - Destination and Status
             Row(
@@ -177,6 +181,7 @@ class VisitorCard extends StatelessWidget {
                     destination,
                     style: TextStyles.bodyLarge.copyWith(
                       fontWeight: FontWeight.w600,
+                      fontSize: rfs(context, 16),
                     ),
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -186,16 +191,17 @@ class VisitorCard extends StatelessWidget {
                     invitationCode!,
                     style: TextStyles.bodyLarge.copyWith(
                       fontWeight: FontWeight.w600,
+                      fontSize: rfs(context, 16),
                     ),
                   ),
               ],
             ),
 
-            const SpaceHeight(16),
+            vSpace(context, 16),
 
             // Status or Action buttons section
             if (status != VisitorStatus.pending)
-              _buildStatusWidget()
+              _buildStatusWidget(context)
             else if (_shouldShowActionButtons())
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
@@ -209,7 +215,7 @@ class VisitorCard extends StatelessWidget {
                       fontSize: 12,
                     ),
                   if (onDeny != null && onApprove != null)
-                    const SizedBox(width: 6),
+                    hSpace(context, 6),
                   if (onApprove != null)
                     Button.filled(
                       onPressed: onApprove!,
@@ -224,7 +230,7 @@ class VisitorCard extends StatelessWidget {
             // ID Visitor section (if exists)
             if (idVisitor != null)
               Padding(
-                padding: const EdgeInsets.only(top: 8),
+                padding: EdgeInsets.only(top: rh(context, 8)),
                 child: Text.rich(
                   TextSpan(
                     children: [
@@ -232,12 +238,14 @@ class VisitorCard extends StatelessWidget {
                         text: 'ID: ',
                         style: TextStyles.subtitle1.copyWith(
                           fontWeight: FontWeight.w500,
+                          fontSize: rfs(context, 16),
                         ),
                       ),
                       TextSpan(
                         text: idVisitor,
                         style: TextStyles.subtitle1.copyWith(
                           fontWeight: FontWeight.w500,
+                          fontSize: rfs(context, 16),
                         ),
                       ),
                     ],

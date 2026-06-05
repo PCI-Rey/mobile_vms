@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import '../../presentation/auth/controller/user_controller.dart';
 import '../../presentation/auth/login_page.dart';
 import '../../presentation/profile/profile_detail_page.dart';
+import '../../core/helper/responsive_helper.dart';
 import '../../core/core.dart';
 
 class ProfilePage extends StatelessWidget {
@@ -31,44 +32,44 @@ class ProfilePage extends StatelessWidget {
             // Header section
             Container(
               color: const Color(0xFFE3F3FB),
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+              padding: EdgeInsets.symmetric(horizontal: rw(context, 20), vertical: rh(context, 16)),
               child: Row(
                 children: [
                   CustomCircleImage(
                     image: Assets.images.avaPerson1.image(),
-                    size: 60,
+                    size: rw(context, 60),
                   ),
-                  const SizedBox(width: 16),
+                  hSpace(context, 16),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
                           user?.fullname ?? 'User',
-                          style: const TextStyle(
-                            fontSize: 18,
+                          style: TextStyle(
+                            fontSize: rfs(context, 18),
                             fontWeight: FontWeight.bold,
                           ),
                         ),
                         Text(
                           user?.email ?? 'mail@example.com',
-                          style: const TextStyle(fontSize: 14),
+                          style: TextStyle(fontSize: rfs(context, 14)),
                         ),
-                        const SizedBox(height: 4),
+                        vSpace(context, 4),
                         Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 2,
+                          padding: EdgeInsets.symmetric(
+                            horizontal: rw(context, 8),
+                            vertical: rh(context, 2),
                           ),
                           decoration: BoxDecoration(
                             color: const Color(0xffD6F0FF),
-                            borderRadius: BorderRadius.circular(30),
+                            borderRadius: BorderRadius.circular(rw(context, 30)),
                           ),
                           child: Text(
                             user?.roleAccess?.toUpperCase() ?? 'GUEST',
-                            style: const TextStyle(
-                              fontSize: 12,
-                              color: Color(0xff1976D2),
+                            style: TextStyle(
+                              fontSize: rfs(context, 12),
+                              color: const Color(0xff1976D2),
                               fontWeight: FontWeight.w500,
                             ),
                           ),
@@ -80,56 +81,56 @@ class ProfilePage extends StatelessWidget {
               ),
             ),
 
-            const SizedBox(height: 16),
+            vSpace(context, 16),
 
             // Menu section
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
+              padding: EdgeInsets.symmetric(horizontal: rw(context, 20)),
               child: Column(
                 children: [
                   TileMenu(
-                    icon: const Icon(
+                    icon: Icon(
                       Icons.person,
                       color: Colors.white,
-                      size: 25,
+                      size: rw(context, 25),
                     ),
                     label: 'account'.tr,
                     onTap: () {
                       context.push(DetailProfilePage());
                     },
                   ),
-                  const SizedBox(height: 12),
+                  vSpace(context, 12),
                   TileMenu(
-                    icon: const Icon(Icons.lock, color: Colors.white, size: 25),
+                    icon: Icon(Icons.lock, color: Colors.white, size: rw(context, 25)),
                     label: 'security'.tr,
                     onTap: () {},
                   ),
-                  const SizedBox(height: 12),
+                  vSpace(context, 12),
                   TileMenu(
-                    icon: const Icon(
+                    icon: Icon(
                       Icons.notifications_none,
                       color: Colors.white,
-                      size: 25,
+                      size: rw(context, 25),
                     ),
                     label: 'Pemberitahuan'.tr,
                     onTap: () {},
                   ),
-                  const SizedBox(height: 12),
+                  vSpace(context, 12),
                   TileMenu(
-                    icon: const Icon(
+                    icon: Icon(
                       Icons.help_outline,
                       color: Colors.white,
-                      size: 25,
+                      size: rw(context, 25),
                     ),
                     label: 'Help Center'.tr,
                     onTap: () {},
                   ),
-                  const SizedBox(height: 12),
+                  vSpace(context, 12),
                   TileMenu(
-                    icon: const Icon(
+                    icon: Icon(
                       Icons.qr_code_scanner,
                       color: Colors.white,
-                      size: 25,
+                      size: rw(context, 25),
                     ),
                     label: 'Barcode'.tr,
                     onTap: () {},
@@ -140,57 +141,57 @@ class ProfilePage extends StatelessWidget {
 
             const Spacer(),
 
-            const Text(
+            Text(
               'Versi 1.0.0',
-              style: TextStyle(color: Colors.grey, fontSize: 12),
+              style: TextStyle(color: Colors.grey, fontSize: rfs(context, 12)),
             ),
-            const SizedBox(height: 8),
+            vSpace(context, 8),
 
             // Logout button
             Container(
               width: double.infinity,
-              height: 41,
-              margin: const EdgeInsets.all(20),
+              height: rh(context, 41),
+              margin: EdgeInsets.all(rw(context, 20)),
               child: Obx(() {
                 final isLoading = UserController.to.isLoggingOut.value;
                 return ElevatedButton(
                   onPressed: isLoading
                       ? null
                       : () async {
-                          if (Get.isDialogOpen == true) return;
+                           if (Get.isDialogOpen == true) return;
 
-                          final confirm = await Get.dialog<bool>(
-                            AlertDialog(
-                              title: Text('confirm_exit'.tr),
-                              content: Text('confirm_logout'.tr),
-                              actions: [
-                                TextButton(
-                                  onPressed: () => Get.back(result: false),
-                                  child: Text('cancel'.tr),
-                                ),
-                                ElevatedButton(
-                                  onPressed: () => Get.back(result: true),
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.red,
-                                    elevation: 0,
-                                  ),
-                                  child: Text(
-                                    'logout'.tr,
-                                    style: const TextStyle(color: Colors.white),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          );
-                          if (confirm == true) {
-                            await UserController.to.clearUser();
-                            Get.offAll(() => LoginPage());
-                          }
-                        },
+                           final confirm = await Get.dialog<bool>(
+                             AlertDialog(
+                               title: Text('confirm_exit'.tr),
+                               content: Text('confirm_logout'.tr),
+                               actions: [
+                                 TextButton(
+                                   onPressed: () => Get.back(result: false),
+                                   child: Text('cancel'.tr),
+                                 ),
+                                 ElevatedButton(
+                                   onPressed: () => Get.back(result: true),
+                                   style: ElevatedButton.styleFrom(
+                                     backgroundColor: Colors.red,
+                                     elevation: 0,
+                                   ),
+                                   child: Text(
+                                     'logout'.tr,
+                                     style: const TextStyle(color: Colors.white),
+                                   ),
+                                 ),
+                               ],
+                             ),
+                           );
+                           if (confirm == true) {
+                             await UserController.to.clearUser();
+                             Get.offAll(() => LoginPage());
+                           }
+                         },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.error200,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
+                      borderRadius: BorderRadius.circular(rw(context, 10)),
                       side: const BorderSide(
                         color: AppColors.error500,
                         width: 1,
@@ -199,10 +200,10 @@ class ProfilePage extends StatelessWidget {
                     padding: EdgeInsets.zero,
                   ),
                   child: isLoading
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
+                      ? SizedBox(
+                          width: rw(context, 20),
+                          height: rw(context, 20),
+                          child: const CircularProgressIndicator(
                             strokeWidth: 2,
                             color: AppColors.error500,
                           ),

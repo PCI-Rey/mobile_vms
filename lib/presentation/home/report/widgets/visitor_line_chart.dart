@@ -1,5 +1,6 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import '../../../../core/helper/responsive_helper.dart';
 
 class VisitorLineChart extends StatelessWidget {
   VisitorLineChart({super.key});
@@ -7,22 +8,25 @@ class VisitorLineChart extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 500, // Set tinggi tetap di sini
+      height: rh(context, 500), // Set tinggi tetap di sini
       child: Card(
         elevation: 0,
         color: Colors.white,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(rw(context, 16)),
           side: BorderSide(width: 1, color: Colors.grey.shade300),
         ),
         child: Padding(
-          padding: const EdgeInsets.all(30),
+          padding: EdgeInsets.all(rw(context, 30)),
           child: LineChart(
             LineChartData(
               backgroundColor: Colors.white,
               titlesData: FlTitlesData(
                 bottomTitles: AxisTitles(
-                  axisNameWidget: const Text('Hari'),
+                  axisNameWidget: Text(
+                    'Hari',
+                    style: TextStyle(fontSize: rfs(context, 12)),
+                  ),
                   sideTitles: SideTitles(
                     showTitles: true,
                     interval: 1,
@@ -37,24 +41,39 @@ class VisitorLineChart extends StatelessWidget {
                         'Min',
                       ];
                       if (value.toInt() >= 0 && value.toInt() < days.length) {
-                        return Text(days[value.toInt()]);
+                        return Text(
+                          days[value.toInt()],
+                          style: TextStyle(fontSize: rfs(context, 10)),
+                        );
                       }
-                      return const Text('');
+                      return Text('', style: TextStyle(fontSize: rfs(context, 10)));
                     },
                   ),
                 ),
                 leftTitles: AxisTitles(
-                  axisNameWidget: const Text('Jumlah'),                
-                  sideTitles: SideTitles(showTitles: true, interval: 20),
+                  axisNameWidget: Text(
+                    'Jumlah',
+                    style: TextStyle(fontSize: rfs(context, 12)),
+                  ),
+                  sideTitles: SideTitles(
+                    showTitles: true,
+                    interval: 20,
+                    getTitlesWidget: (value, meta) {
+                      return Text(
+                        value.toInt().toString(),
+                        style: TextStyle(fontSize: rfs(context, 10)),
+                      );
+                    },
+                  ),
                 ),
-                topTitles: AxisTitles(
+                topTitles: const AxisTitles(
                   sideTitles: SideTitles(showTitles: false),
                 ),
-                rightTitles: AxisTitles(
+                rightTitles: const AxisTitles(
                   sideTitles: SideTitles(showTitles: false),
                 ),
               ),
-              gridData: FlGridData(show: true, drawVerticalLine: false),
+              gridData: const FlGridData(show: true, drawVerticalLine: false),
               borderData: FlBorderData(show: true),
 
               minX: 0,
@@ -79,7 +98,7 @@ class VisitorLineChart extends StatelessWidget {
                             : spot.bar.color == Colors.orange
                             ? "Check-Out"
                             : "Visitor"}: ${spot.y.toInt()}',
-                        const TextStyle(color: Colors.white),
+                        TextStyle(color: Colors.white, fontSize: rfs(context, 12)),
                       );
                     }).toList();
                   },
@@ -97,7 +116,7 @@ class VisitorLineChart extends StatelessWidget {
       spots: List.generate(data.length, (i) => FlSpot(i.toDouble(), data[i])),
       isCurved: true,
       barWidth: 3,
-      dotData: FlDotData(show: true),
+      dotData: const FlDotData(show: true),
       belowBarData: BarAreaData(show: true, color: color.withValues(alpha: 0.1)),
       color: color,
     );
@@ -109,3 +128,4 @@ class VisitorLineChart extends StatelessWidget {
   final List<double> checkOutData = [30, 40, 25, 60, 65, 20, 10];
   final List<double> denyData = [5, 7, 4, 6, 8, 3, 2];
 }
+

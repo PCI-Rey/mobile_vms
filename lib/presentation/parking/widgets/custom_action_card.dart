@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../core/core.dart';
+import '../../../core/helper/responsive_helper.dart';
 
 class CustomActionCard extends StatelessWidget {
   final String label;
@@ -19,13 +20,13 @@ class CustomActionCard extends StatelessWidget {
       height: MediaQuery.of(context).size.height * 0.08,
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(rw(context, 12)),
         border: Border.all(color: AppColors.grey200),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 6,
-            offset: const Offset(0, 3),
+            blurRadius: rw(context, 6),
+            offset: Offset(0, rh(context, 3)),
           ),
         ],
       ),
@@ -33,12 +34,12 @@ class CustomActionCard extends StatelessWidget {
         onPressed: onTap,
         label: label,
         icon: icon,
-        borderRadius: 8.0,
+        borderRadius: rw(context, 8.0),
         textColor: AppColors.grey800,
-        fontSize: 16.0,
+        fontSize: rfs(context, 16.0),
         borderColor: Colors.transparent,
         color: Colors.transparent,
-        height: 40,
+        height: rh(context, 40),
       ),
     );
   }

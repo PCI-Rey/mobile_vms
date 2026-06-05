@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../../core/components/components.dart';
 import '../../../../core/extensions/extensions.dart';
+import '../../../../core/helper/responsive_helper.dart';
 import '../../../../presentation/home/visitor/search_result_visitor_page.dart';
 
 class SearchVisitorPage extends StatefulWidget {
@@ -19,14 +20,14 @@ class _SearchVisitorPageState extends State<SearchVisitorPage> {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.white,
-        title: Text('Search'),
+        title: const Text('Search'),
         leading: IconButton(
-          icon: Icon(Icons.arrow_back),
+          icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.pop(context),
         ),
       ),
       body: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: EdgeInsets.all(rw(context, 16.0)),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -36,7 +37,7 @@ class _SearchVisitorPageState extends State<SearchVisitorPage> {
               label: 'Invitation Code',
               hintText: 'Invitation Code',
             ),
-            SpaceHeight(10),
+            vSpace(context, 10),
 
             // Group Code
             CustomTextField(
@@ -44,7 +45,7 @@ class _SearchVisitorPageState extends State<SearchVisitorPage> {
               label: 'Group Code',
               hintText: 'Group Code',
             ),
-            SpaceHeight(10),
+            vSpace(context, 10),
 
             // Visit in Time
             CustomTextField(
@@ -52,7 +53,7 @@ class _SearchVisitorPageState extends State<SearchVisitorPage> {
               label: 'Visit in Time',
               hintText: 'Visit in Time',
             ),
-            SpaceHeight(20),
+            vSpace(context, 20),
 
             // Search Button
             Button.filled(

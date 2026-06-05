@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import '../../core/helper/responsive_helper.dart';
 import '../../core/core.dart';
 import 'controller/detail_profile_controller.dart';
 
@@ -26,7 +27,7 @@ class DetailProfilePage extends StatelessWidget {
               }
               return SingleChildScrollView(
                 keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-                padding: const EdgeInsets.all(20),
+                padding: EdgeInsets.all(rw(context, 20)),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -34,7 +35,7 @@ class DetailProfilePage extends StatelessWidget {
                       child: Column(
                         children: [
                           Container(
-                            padding: const EdgeInsets.all(4),
+                            padding: EdgeInsets.all(rw(context, 4)),
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
                               border: Border.all(
@@ -44,14 +45,14 @@ class DetailProfilePage extends StatelessWidget {
                             ),
                             child: CustomCircleImage(
                               image: Assets.images.avaPerson1.image(),
-                              size: 100,
+                              size: rw(context, 100),
                             ),
                           ),
-                          const SpaceHeight(16),
+                          vSpace(context, 16),
                           Obx(() => Text(
                                 controller.namaHeader.value,
-                                style: const TextStyle(
-                                  fontSize: 20,
+                                style: TextStyle(
+                                  fontSize: rfs(context, 20),
                                   fontWeight: FontWeight.bold,
                                 ),
                               )),
@@ -59,19 +60,19 @@ class DetailProfilePage extends StatelessWidget {
                               ? const SizedBox.shrink()
                               : Column(
                                   children: [
-                                    const SpaceHeight(4),
+                                    vSpace(context, 4),
                                     Container(
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 12, vertical: 4),
+                                      padding: EdgeInsets.symmetric(
+                                          horizontal: rw(context, 12), vertical: rh(context, 4)),
                                       decoration: BoxDecoration(
                                         color: context.theme.primaryColor
                                             .withValues(alpha: 0.1),
-                                        borderRadius: BorderRadius.circular(20),
+                                        borderRadius: BorderRadius.circular(rw(context, 20)),
                                       ),
                                       child: Text(
                                         controller.roleLabel.value.toUpperCase(),
                                         style: TextStyle(
-                                          fontSize: 12,
+                                          fontSize: rfs(context, 12),
                                           fontWeight: FontWeight.w600,
                                           color: context.theme.primaryColor,
                                         ),
@@ -82,7 +83,7 @@ class DetailProfilePage extends StatelessWidget {
                         ],
                       ),
                     ),
-                    const SpaceHeight(32),
+                    vSpace(context, 32),
                     CustomTextField(
                       controller: controller.namaController,
                       label: 'Nama',
@@ -127,19 +128,19 @@ class DetailProfilePage extends StatelessWidget {
                       readOnly: true,
                       hintText: 'IT Support',
                     ),
-                    const SpaceHeight(16),
-                    const Text(
+                    vSpace(context, 16),
+                    Text(
                       'Jenis Kelamin',
-                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                      style: TextStyle(fontSize: rfs(context, 14), fontWeight: FontWeight.w600),
                     ),
-                    const SpaceHeight(12),
+                    vSpace(context, 12),
                     Obx(() => IgnorePointer(
                       child: GenderToggleButton(
                         selectedGender: controller.selectedGender.value,
                         onChanged: (gender) {},
                       ),
                     )),
-                    const SpaceHeight(20),
+                    vSpace(context, 20),
                   ],
                 ),
               );
@@ -148,7 +149,7 @@ class DetailProfilePage extends StatelessWidget {
           
           // Sticky Bottom Button
           Padding(
-            padding: const EdgeInsets.all(20),
+            padding: EdgeInsets.all(rw(context, 20)),
             child: Button.filled(
               label: 'Kembali',
               onPressed: () {
@@ -161,4 +162,3 @@ class DetailProfilePage extends StatelessWidget {
     );
   }
 }
-

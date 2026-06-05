@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../core/core.dart';
+import '../../../core/helper/responsive_helper.dart';
 import 'controller/alarm_controller.dart';
 import 'list_alarm_page.dart';
 
@@ -38,15 +39,15 @@ class AlarmList extends StatelessWidget {
           ],
         ),
 
-        const SpaceHeight(10),
+        vSpace(context, 10),
 
         // Obx for reactive UI
         Obx(() {
           if (controller.isLoading.value) {
-            return const Center(
+            return Center(
               child: Padding(
-                padding: EdgeInsets.all(20.0),
-                child: CircularProgressIndicator(),
+                padding: EdgeInsets.all(rw(context, 20.0)),
+                child: const CircularProgressIndicator(),
               ),
             );
           }
@@ -77,11 +78,11 @@ class AlarmList extends StatelessWidget {
     if (displayAlarms.isEmpty) {
       return Center(
         child: Padding(
-          padding: const EdgeInsets.all(20.0),
+          padding: EdgeInsets.all(rw(context, 20.0)),
           child: Column(
             children: [
-              Icon(Icons.notifications_off, size: 48, color: Colors.grey[400]),
-              const SpaceHeight(8),
+              Icon(Icons.notifications_off, size: rw(context, 48), color: Colors.grey[400]),
+              vSpace(context, 8),
               Text(
                 'Tidak ada alarm saat ini',
                 style: TextStyles.bodySmall.copyWith(color: Colors.grey),
@@ -96,11 +97,9 @@ class AlarmList extends StatelessWidget {
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       itemCount: displayAlarms.length,
-      separatorBuilder: (context, index) => const SizedBox(height: 12),
+      separatorBuilder: (context, index) => vSpace(context, 12),
       itemBuilder: (context, index) {
         final alarm = displayAlarms[index];
-        // Note: isActionLoading logic might need adjustment if handled per item in controller
-        // For simplicity reusing strict boolean for now, or could check controller state
 
         return AlarmAlertCard(
           visitorName: alarm.visitorName,
@@ -145,11 +144,11 @@ class AlarmList extends StatelessWidget {
   ) {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(20.0),
+        padding: EdgeInsets.all(rw(context, 20.0)),
         child: Column(
           children: [
-            Icon(Icons.error_outline, size: 48, color: Colors.red[400]),
-            const SpaceHeight(8),
+            Icon(Icons.error_outline, size: rw(context, 48), color: Colors.red[400]),
+            vSpace(context, 8),
             Text(
               'Terjadi Kesalahan',
               style: TextStyles.bodyMedium.copyWith(
@@ -157,25 +156,25 @@ class AlarmList extends StatelessWidget {
                 fontWeight: FontWeight.w600,
               ),
             ),
-            const SpaceHeight(4),
+            vSpace(context, 4),
             Text(
               message,
               style: TextStyles.bodySmall.copyWith(color: Colors.grey[600]),
               textAlign: TextAlign.center,
             ),
-            const SpaceHeight(12),
+            vSpace(context, 12),
             ElevatedButton.icon(
               onPressed: () {
                 controller.loadAlarms();
               },
-              icon: const Icon(Icons.refresh, size: 16),
+              icon: Icon(Icons.refresh, size: rw(context, 16)),
               label: const Text('Coba Lagi'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary500,
                 foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 8,
+                padding: EdgeInsets.symmetric(
+                  horizontal: rw(context, 16),
+                  vertical: rh(context, 8),
                 ),
                 textStyle: TextStyles.bodySmall,
               ),

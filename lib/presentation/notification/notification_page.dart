@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import '../../core/helper/responsive_helper.dart';
 import '../../core/core.dart';
+
 class NotificationDialog extends StatefulWidget {
   const NotificationDialog({super.key});
 
@@ -65,7 +67,7 @@ class _NotificationDialogState extends State<NotificationDialog> {
     });
   }
 
-  String selectedType = 'all'; 
+  String selectedType = 'all';
 
   List<Map<String, dynamic>> get filteredNotifications {
     if (selectedType == 'all') return notifications;
@@ -78,17 +80,18 @@ class _NotificationDialogState extends State<NotificationDialog> {
   Widget build(BuildContext context) {
     return Dialog(
       backgroundColor: Colors.transparent,
-      insetPadding: const EdgeInsets.all(20),
+      insetPadding: EdgeInsets.all(rw(context, 20)),
       child: Container(
         width: double.infinity,
-        height: MediaQuery.of(context).size.height * 0.8, // 80% of screen height
-        constraints: const BoxConstraints(
-          maxWidth: 500,
-          maxHeight: 600,
+        height:
+            MediaQuery.of(context).size.height * 0.8, // 80% of screen height
+        constraints: BoxConstraints(
+          maxWidth: rw(context, 500),
+          maxHeight: rh(context, 600),
         ),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(rw(context, 20)),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -96,21 +99,23 @@ class _NotificationDialogState extends State<NotificationDialog> {
             // Header
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.symmetric(
-                vertical: 20,
-                horizontal: 24,
+              padding: EdgeInsets.symmetric(
+                vertical: rh(context, 20),
+                horizontal: rw(context, 24),
               ),
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+                borderRadius: BorderRadius.vertical(
+                  top: Radius.circular(rw(context, 20)),
+                ),
               ),
               child: Row(
                 children: [
-                  const Expanded(
+                  Expanded(
                     child: Text(
                       'Notifications',
                       style: TextStyle(
-                        fontSize: 20,
+                        fontSize: rfs(context, 20),
                         fontWeight: FontWeight.w600,
                         color: Colors.black,
                       ),
@@ -120,15 +125,15 @@ class _NotificationDialogState extends State<NotificationDialog> {
                   GestureDetector(
                     onTap: () => Navigator.of(context).pop(),
                     child: Container(
-                      width: 32,
-                      height: 32,
+                      width: rw(context, 32),
+                      height: rw(context, 32),
                       decoration: BoxDecoration(
                         color: Colors.grey.withValues(alpha: 0.1),
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.close,
-                        size: 18,
+                        size: rw(context, 18),
                         color: Colors.grey,
                       ),
                     ),
@@ -139,7 +144,7 @@ class _NotificationDialogState extends State<NotificationDialog> {
 
             // Filter tabs
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
+              padding: EdgeInsets.symmetric(horizontal: rw(context, 24)),
               child: Row(
                 children: [
                   Expanded(
@@ -150,16 +155,19 @@ class _NotificationDialogState extends State<NotificationDialog> {
                         });
                       },
                       child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 8,
+                        padding: EdgeInsets.symmetric(
+                          horizontal: rw(context, 10),
+                          vertical: rh(context, 8),
                         ),
                         decoration: BoxDecoration(
                           color: selectedType == 'all'
                               ? AppColors.primary500
                               : Colors.white,
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(width: 1, color: AppColors.grey400),
+                          borderRadius: BorderRadius.circular(rw(context, 20)),
+                          border: Border.all(
+                            width: 1,
+                            color: AppColors.grey400,
+                          ),
                         ),
                         alignment: Alignment.center,
                         child: Text(
@@ -169,13 +177,13 @@ class _NotificationDialogState extends State<NotificationDialog> {
                                 ? Colors.white
                                 : Colors.black,
                             fontWeight: FontWeight.w500,
-                            fontSize: 14,
+                            fontSize: rfs(context, 14),
                           ),
                         ),
                       ),
                     ),
                   ),
-                  const SizedBox(width: 10),
+                  hSpace(context, 10),
 
                   Expanded(
                     child: GestureDetector(
@@ -185,16 +193,19 @@ class _NotificationDialogState extends State<NotificationDialog> {
                         });
                       },
                       child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 8,
+                        padding: EdgeInsets.symmetric(
+                          horizontal: rw(context, 10),
+                          vertical: rh(context, 8),
                         ),
                         decoration: BoxDecoration(
                           color: selectedType == 'general'
                               ? AppColors.primary500
                               : Colors.white,
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(width: 1, color: AppColors.grey400),
+                          borderRadius: BorderRadius.circular(rw(context, 20)),
+                          border: Border.all(
+                            width: 1,
+                            color: AppColors.grey400,
+                          ),
                         ),
                         alignment: Alignment.center,
                         child: Text(
@@ -204,13 +215,13 @@ class _NotificationDialogState extends State<NotificationDialog> {
                                 ? Colors.white
                                 : Colors.black,
                             fontWeight: FontWeight.w500,
-                            fontSize: 14,
+                            fontSize: rfs(context, 14),
                           ),
                         ),
                       ),
                     ),
                   ),
-                  const SizedBox(width: 10),
+                  hSpace(context, 10),
 
                   Expanded(
                     child: GestureDetector(
@@ -220,16 +231,19 @@ class _NotificationDialogState extends State<NotificationDialog> {
                         });
                       },
                       child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 8,
+                        padding: EdgeInsets.symmetric(
+                          horizontal: rw(context, 10),
+                          vertical: rh(context, 8),
                         ),
                         decoration: BoxDecoration(
                           color: selectedType == 'alarm'
                               ? AppColors.primary500
                               : Colors.white,
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(width: 1, color: AppColors.grey400),
+                          borderRadius: BorderRadius.circular(rw(context, 20)),
+                          border: Border.all(
+                            width: 1,
+                            color: AppColors.grey400,
+                          ),
                         ),
                         alignment: Alignment.center,
                         child: Text(
@@ -239,7 +253,7 @@ class _NotificationDialogState extends State<NotificationDialog> {
                                 ? Colors.white
                                 : Colors.black,
                             fontWeight: FontWeight.w500,
-                            fontSize: 14,
+                            fontSize: rfs(context, 14),
                           ),
                         ),
                       ),
@@ -249,7 +263,7 @@ class _NotificationDialogState extends State<NotificationDialog> {
               ),
             ),
 
-            const SizedBox(height: 16),
+            vSpace(context, 16),
 
             // Notification list
             Expanded(
@@ -260,14 +274,14 @@ class _NotificationDialogState extends State<NotificationDialog> {
                         children: [
                           Icon(
                             Icons.notifications_none,
-                            size: 64,
+                            size: rw(context, 64),
                             color: Colors.grey.withValues(alpha: 0.5),
                           ),
-                          const SizedBox(height: 16),
+                          vSpace(context, 16),
                           Text(
                             'No notifications',
                             style: TextStyle(
-                              fontSize: 16,
+                              fontSize: rfs(context, 16),
                               color: Colors.grey.withValues(alpha: 0.7),
                               fontWeight: FontWeight.w500,
                             ),
@@ -276,12 +290,14 @@ class _NotificationDialogState extends State<NotificationDialog> {
                       ),
                     )
                   : ListView.builder(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: rw(context, 16),
+                      ),
                       itemCount: filteredNotifications.length,
                       itemBuilder: (context, index) {
                         final notif = filteredNotifications[index];
                         return Padding(
-                          padding: const EdgeInsets.only(bottom: 12),
+                          padding: EdgeInsets.only(bottom: rh(context, 12)),
                           child: NotificationCard(
                             title: notif['title'],
                             date: notif['date'],
@@ -301,7 +317,7 @@ class _NotificationDialogState extends State<NotificationDialog> {
             ),
 
             // Bottom padding
-            const SizedBox(height: 20),
+            vSpace(context, 20),
           ],
         ),
       ),
@@ -326,9 +342,11 @@ void showNotificationBottomSheet(BuildContext context) {
     backgroundColor: Colors.transparent,
     builder: (context) => Container(
       height: MediaQuery.of(context).size.height * 0.85,
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(rw(context, 20)),
+        ),
       ),
       child: const NotificationDialog(),
     ),

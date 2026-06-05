@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
-import '/../../../core/components/custom_card.dart';
-import '/../../../core/core.dart';
-import '../agenda/widgets/extend_visit_bottom_sheet.dart';
-import '../agenda/widgets/profile_dialog.dart';
+import '../../../../core/components/custom_card.dart';
+import '../../../../core/core.dart';
+import '../../../../core/helper/responsive_helper.dart';
+import 'widgets/extend_visit_bottom_sheet.dart';
+import 'widgets/profile_dialog.dart';
 
 import 'dart:typed_data';
 import 'dart:ui' as ui;
-// import 'dart:io';
 
 import 'package:gal/gal.dart';
 
@@ -29,40 +29,45 @@ class _AgendaDetailPageState extends State<AgendaDetailPage> {
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Detail', style: TextStyles.subtitle1),
-            Text('Agenda Kedatangan', style: TextStyles.caption),
+            Text('Detail', style: TextStyle(fontSize: rfs(context, 16), fontWeight: FontWeight.bold, color: Colors.black)),
+            Text('Agenda Kedatangan', style: TextStyle(fontSize: rfs(context, 12), color: Colors.grey)),
           ],
         ),
         actions: [
           Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Text('Meeting', style: TextStyles.subtitle1),
+            padding: EdgeInsets.all(rw(context, 8.0)),
+            child: Center(
+              child: Text(
+                'Meeting',
+                style: TextStyle(fontSize: rfs(context, 16), fontWeight: FontWeight.bold, color: Colors.black),
+              ),
+            ),
           ),
         ],
         elevation: 0,
-        leading: BackButton(),
+        leading: const BackButton(),
       ),
 
       body: SingleChildScrollView(
         child: Container(
-          margin: EdgeInsets.all(20),
+          margin: EdgeInsets.all(rw(context, 20)),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
                 width: double.infinity,
-                padding: EdgeInsets.all(16),
+                padding: EdgeInsets.all(rw(context, 16)),
                 decoration: BoxDecoration(
                   color: Colors.white,
                   boxShadow: [
                     BoxShadow(
-                      color: Color(0xFFEEEFEF),
-                      offset: Offset(0, 4),
-                      blurRadius: 12,
+                      color: const Color(0xFFEEEFEF),
+                      offset: Offset(0, rh(context, 4)),
+                      blurRadius: rw(context, 12),
                       spreadRadius: 0,
                     ),
                   ],
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(rw(context, 12)),
                 ),
 
                 child: Column(
@@ -71,11 +76,11 @@ class _AgendaDetailPageState extends State<AgendaDetailPage> {
                     Button.filled(
                       onPressed: () {},
                       label: 'Track Visitor',
-                      fontSize: 12,
+                      fontSize: rfs(context, 12),
                       textColor: AppColors.grey900,
                       color: AppColors.info500,
                     ),
-                    SpaceHeight(15),
+                    vSpace(context, 15),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -84,15 +89,15 @@ class _AgendaDetailPageState extends State<AgendaDetailPage> {
                             onPressed: () {},
                             label: 'Decline',
                             color: AppColors.error500,
-                            fontSize: 12,
+                            fontSize: rfs(context, 12),
                           ),
                         ),
-                        SpaceWidth(10),
+                        hSpace(context, 10),
                         Expanded(
                           child: Button.filled(
                             onPressed: () {},
                             label: 'Accept',
-                            fontSize: 12,
+                            fontSize: rfs(context, 12),
                           ),
                         ),
                       ],
@@ -101,30 +106,30 @@ class _AgendaDetailPageState extends State<AgendaDetailPage> {
                 ),
               ),
 
-              const SpaceHeight(20),
+              vSpace(context, 20),
               CustomCard(
-                image: Assets.icons.calendar.image(height: 18),
+                image: Assets.icons.calendar.image(height: rh(context, 18)),
                 size: 12,
                 title: 'Mon, 26 June 2025',
                 subtitle: '10.00 - 13.00',
                 backgroundIconColor: AppColors.primary500,
               ),
               CustomCard(
-                image: Assets.icons.building.image(height: 18),
+                image: Assets.icons.building.image(height: rh(context, 18)),
                 size: 12,
                 title: 'Gedung HQ',
                 subtitle: 'Tap to see maps',
                 backgroundIconColor: AppColors.primary500,
               ),
               CustomCard(
-                image: Assets.icons.lucideGroup.image(height: 18),
+                image: Assets.icons.lucideGroup.image(height: rh(context, 18)),
                 size: 12,
                 title: '4567892',
                 subtitle: 'Group code',
                 backgroundIconColor: AppColors.primary500,
               ),
               CustomCard(
-                image: Assets.icons.mingcuteCarFill.image(height: 18),
+                image: Assets.icons.mingcuteCarFill.image(height: rh(context, 18)),
                 size: 12,
                 title: 'Slot A1',
                 subtitle: 'Parking slot',
@@ -133,37 +138,39 @@ class _AgendaDetailPageState extends State<AgendaDetailPage> {
                 backgroundIconColor: AppColors.primary500,
               ),
               CustomCard(
-                image: Assets.icons.person.image(height: 18),
+                image: Assets.icons.person.image(height: rh(context, 18)),
                 size: 12,
                 title: 'PIC Jhon',
                 subtitle: 'Host',
                 backgroundIconColor: AppColors.primary500,
               ),
 
-              const SpaceHeight(20),
+              vSpace(context, 20),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
                     'Pengunjunga lain',
-                    style: TextStyles.bodyLarge.copyWith(
+                    style: TextStyle(
+                      fontSize: rfs(context, 16),
                       fontWeight: FontWeight.w600,
                     ),
                   ),
                   Text(
                     'More',
-                    style: TextStyles.subtitle1.copyWith(
+                    style: TextStyle(
+                      fontSize: rfs(context, 14),
                       color: AppColors.primary500,
                     ),
                   ),
                 ],
               ),
-              const SpaceHeight(20),
+              vSpace(context, 20),
 
               Row(
                 children: List.generate(6, (index) {
                   return Container(
-                    margin: const EdgeInsets.all(5),
+                    margin: EdgeInsets.all(rw(context, 5)),
                     child: GestureDetector(
                       onTap: () {
                         showDialog(
@@ -177,49 +184,50 @@ class _AgendaDetailPageState extends State<AgendaDetailPage> {
                         );
                       },
                       child: CustomCircleImage(
-                        size: 45,
-                        image: Assets.images.avaPerson1.image(height: 40),
+                        size: rw(context, 45),
+                        image: Assets.images.avaPerson1.image(height: rw(context, 40)),
                       ),
                     ),
                   );
                 }),
               ),
-              SpaceHeight(20),
+              vSpace(context, 20),
               Divider(height: 1, color: AppColors.grey300),
-              const SpaceHeight(20),
+              vSpace(context, 20),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   Text(
                     'Access Pass',
-                    style: TextStyles.bodyLarge.copyWith(
+                    style: TextStyle(
+                      fontSize: rfs(context, 16),
                       fontWeight: FontWeight.w600,
                     ),
                   ),
                   GestureDetector(
                     onTap: _downloadAccessPass,
                     child: Container(
-                      width: 40,
-                      padding: EdgeInsets.all(5),
+                      width: rw(context, 40),
+                      padding: EdgeInsets.all(rw(context, 5)),
                       decoration: BoxDecoration(
                         shape: BoxShape.rectangle,
-                        borderRadius: BorderRadius.circular(15),
+                        borderRadius: BorderRadius.circular(rw(context, 15)),
                         color: AppColors.primary500,
                       ),
-                      child: Assets.icons.download.image(height: 20),
+                      child: Assets.icons.download.image(height: rh(context, 20)),
                     ),
                   ),
                 ],
               ),
-              const SpaceHeight(20),
+              vSpace(context, 20),
 
               RepaintBoundary(
                 key: _accessPassKey,
                 child: Container(
-                  color: Color(0xffFAFCFF),
+                  color: const Color(0xffFAFCFF),
                   width: double.infinity,
-                  padding: const EdgeInsets.all(20),
+                  padding: EdgeInsets.all(rw(context, 20)),
 
                   child: Column(
                     children: [
@@ -231,13 +239,14 @@ class _AgendaDetailPageState extends State<AgendaDetailPage> {
                             children: [
                               Text(
                                 '727093',
-                                style: TextStyles.bodyLarge.copyWith(
+                                style: TextStyle(
+                                  fontSize: rfs(context, 16),
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
                               Text(
                                 'Invitation code',
-                                style: TextStyles.caption,
+                                style: TextStyle(fontSize: rfs(context, 12), color: Colors.grey),
                               ),
                             ],
                           ),
@@ -246,30 +255,34 @@ class _AgendaDetailPageState extends State<AgendaDetailPage> {
                             children: [
                               Text(
                                 '6237181930',
-                                style: TextStyles.bodyLarge.copyWith(
+                                style: TextStyle(
+                                  fontSize: rfs(context, 16),
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
-                              Text('Card', style: TextStyles.caption),
+                              Text(
+                                'Card',
+                                style: TextStyle(fontSize: rfs(context, 12), color: Colors.grey),
+                              ),
                             ],
                           ),
                         ],
                       ),
-                      const SpaceHeight(20),
+                      vSpace(context, 20),
                       SizedBox(
-                        width: MediaQuery.of(context).size.width * 0.4,
+                        width: rw(context, 172),
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Container(
                               decoration: BoxDecoration(
                                 color: Colors.white,
-                                borderRadius: BorderRadius.circular(12),
+                                borderRadius: BorderRadius.circular(rw(context, 12)),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: Color(0xFFEEEFEF),
-                                    offset: Offset(0, 4),
-                                    blurRadius: 12,
+                                    color: const Color(0xFFEEEFEF),
+                                    offset: Offset(0, rh(context, 4)),
+                                    blurRadius: rw(context, 12),
                                   ),
                                 ],
                               ),
@@ -277,7 +290,7 @@ class _AgendaDetailPageState extends State<AgendaDetailPage> {
                                 child: Assets.images.fakeQr.image(),
                               ),
                             ),
-                            const SizedBox(height: 8),
+                            vSpace(context, 8),
 
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -302,21 +315,21 @@ class _AgendaDetailPageState extends State<AgendaDetailPage> {
                         ),
                       ),
 
-                      const SizedBox(height: 16),
+                      vSpace(context, 16),
 
                       Text(
                         'Show this while visiting',
                         style: TextStyle(
-                          fontSize: 12,
+                          fontSize: rfs(context, 12),
                           color: AppColors.grey500,
                         ),
                       ),
-                      const SizedBox(height: 4),
+                      vSpace(context, 4),
                       Text(
                         'ID : 7E20A56D62B',
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
-                          fontSize: 16,
+                          fontSize: rfs(context, 16),
                           color: AppColors.grey900,
                         ),
                       ),
@@ -325,7 +338,7 @@ class _AgendaDetailPageState extends State<AgendaDetailPage> {
                 ),
               ),
 
-              const SpaceHeight(20),
+              vSpace(context, 20),
 
               SizedBox(
                 width: double.infinity,
@@ -337,9 +350,9 @@ class _AgendaDetailPageState extends State<AgendaDetailPage> {
                           enableDrag: true,
                           isDismissible: true,
                           context: context,
-                          shape: const RoundedRectangleBorder(
+                          shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.vertical(
-                              top: Radius.circular(20),
+                              top: Radius.circular(rw(context, 20)),
                             ),
                           ),
                           isScrollControlled: true,
@@ -349,9 +362,9 @@ class _AgendaDetailPageState extends State<AgendaDetailPage> {
                       label: 'Extend',
                       color: Colors.greenAccent,
                       textColor: Colors.black,
-                      fontSize: 13,
+                      fontSize: rfs(context, 13),
                     ),
-                    const SizedBox(height: 10),
+                    vSpace(context, 10),
 
                     Row(
                       children: [
@@ -360,16 +373,16 @@ class _AgendaDetailPageState extends State<AgendaDetailPage> {
                             onPressed: () {},
                             label: 'Deny',
                             color: Colors.redAccent,
-                            fontSize: 13,
+                            fontSize: rfs(context, 13),
                           ),
                         ),
-                        const SizedBox(width: 10),
+                        hSpace(context, 10),
                         Expanded(
                           child: Button.filled(
                             onPressed: () {},
                             label: 'Approve',
                             color: Colors.blueAccent,
-                            fontSize: 13,
+                            fontSize: rfs(context, 13),
                           ),
                         ),
                       ],
@@ -409,22 +422,22 @@ class _AgendaDetailPageState extends State<AgendaDetailPage> {
       // Show loading indicator
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          SnackBar(
             content: Row(
               children: [
                 SizedBox(
-                  width: 16,
-                  height: 16,
-                  child: CircularProgressIndicator(
+                  width: rw(context, 16),
+                  height: rw(context, 16),
+                  child: const CircularProgressIndicator(
                     strokeWidth: 2,
                     valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                   ),
                 ),
-                SizedBox(width: 16),
-                Text("Menyimpan Access Pass..."),
+                hSpace(context, 16),
+                const Text("Menyimpan Access Pass..."),
               ],
             ),
-            duration: Duration(seconds: 2),
+            duration: const Duration(seconds: 2),
           ),
         );
       }
@@ -448,12 +461,12 @@ class _AgendaDetailPageState extends State<AgendaDetailPage> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          SnackBar(
             content: Row(
               children: [
-                Icon(Icons.check_circle, color: Colors.white),
-                SizedBox(width: 16),
-                Text("Access Pass berhasil disimpan ke galeri"),
+                const Icon(Icons.check_circle, color: Colors.white),
+                hSpace(context, 16),
+                const Text("Access Pass berhasil disimpan ke galeri"),
               ],
             ),
             backgroundColor: Colors.green,
@@ -488,8 +501,8 @@ class _AgendaDetailPageState extends State<AgendaDetailPage> {
           SnackBar(
             content: Row(
               children: [
-                Icon(Icons.error, color: Colors.white),
-                SizedBox(width: 16),
+                const Icon(Icons.error, color: Colors.white),
+                hSpace(context, 16),
                 Expanded(child: Text(errorMessage)),
               ],
             ),
@@ -502,12 +515,12 @@ class _AgendaDetailPageState extends State<AgendaDetailPage> {
       debugPrint("Unexpected error while saving access pass: $e");
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          SnackBar(
             content: Row(
               children: [
-                Icon(Icons.error, color: Colors.white),
-                SizedBox(width: 16),
-                Text("Gagal menyimpan Access Pass ke galeri"),
+                const Icon(Icons.error, color: Colors.white),
+                hSpace(context, 16),
+                const Text("Gagal menyimpan Access Pass ke galeri"),
               ],
             ),
             backgroundColor: Colors.red,

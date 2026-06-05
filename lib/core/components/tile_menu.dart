@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/core.dart';
+import '../helper/responsive_helper.dart';
 
 class TileMenu extends StatelessWidget {
   final Widget icon;
@@ -17,12 +18,12 @@ class TileMenu extends StatelessWidget {
   Widget build(BuildContext context) {
     return Material(
       color: Colors.white,
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(rw(context, 12)),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(rw(context, 12)),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+          padding: EdgeInsets.symmetric(horizontal: rw(context, 12), vertical: rh(context, 16)),
           child: Row(
             children: [
               Container(
@@ -30,15 +31,15 @@ class TileMenu extends StatelessWidget {
                   shape: BoxShape.circle,
                   color: AppColors.primary500,
                 ),
-                padding: EdgeInsets.all(10),
+                padding: EdgeInsets.all(rw(context, 10)),
                 child: icon,
               ),
-              const SizedBox(width: 12),
+              hSpace(context, 12),
               Expanded(
                 child: Text(
                   label,
-                  style: const TextStyle(
-                    fontSize: 16,
+                  style: TextStyle(
+                    fontSize: rfs(context, 16),
                     fontWeight: FontWeight.w500,
                   ),
                 ),
