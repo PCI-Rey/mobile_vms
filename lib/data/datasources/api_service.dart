@@ -530,6 +530,25 @@ class ApiService {
     }
   }
 
+  Future<Response> sendEmailForExistingShareLink(
+    String token,
+    String id,
+    Map<String, dynamic> body,
+  ) async {
+    try {
+      final response = await _dio.post(
+        '/$pathApi/visitor-share-link/send-email/$id',
+        data: body,
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+      return response;
+    } on DioException catch (e) {
+      debugPrint('Dio Error sendEmailForExistingShareLink: ${e.message}');
+      if (e.response != null) return e.response!;
+      rethrow;
+    }
+  }
+
   Future<Response> deleteShareLink(String token, String id) async {
     try {
       final response = await _dio.delete(

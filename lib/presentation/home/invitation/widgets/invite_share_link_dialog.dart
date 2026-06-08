@@ -83,28 +83,13 @@ class _InviteShareLinkDialogState extends State<InviteShareLinkDialog>
     setState(() => _isLoading = true);
 
     try {
-      // Build body exactly as requested by user
-      final Map<String, dynamic> body = {
-        'host': widget.item['host'],
-        'agenda': widget.item['agenda'],
-        'visitor_type_id': widget.item['visitor_type_id'],
-        'site_id': widget.item['site_id'],
-        'visitor_period_start': widget.item['visitor_period_start'],
-        'visitor_period_end': widget.item['visitor_period_end'],
-        'link_active_at': widget.item['active_at'],
-        'expired_number': widget.item['expired_number'],
-        'max_usage': widget.item['max_usage'],
-        'is_single_use': widget.item['is_single_use'] ?? false,
-        'tz': widget.item['tz'] ?? 'Asia/Jakarta',
-        'emails': [_emailController.text.trim()],
-      };
-
-      final success = await controller.createShareLinkAction(
-        body,
-        sendEmail: true,
+      final String id = widget.item['id']?.toString() ?? '';
+      final success = await controller.sendEmailForExistingShareLinkAction(
+        id,
+        [_emailController.text.trim()],
       );
 
-      if (success != null) {
+      if (success) {
         Get.snackbar(
           'Success',
           'Invitation sent to ${_emailController.text}',
@@ -120,6 +105,13 @@ class _InviteShareLinkDialogState extends State<InviteShareLinkDialog>
           colorText: Colors.white,
         );
       }
+    } catch (e) {
+      Get.snackbar(
+        'Error',
+        e.toString(),
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }

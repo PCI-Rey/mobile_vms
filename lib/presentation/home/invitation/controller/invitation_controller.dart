@@ -337,6 +337,39 @@ class InvitationController extends GetxController {
     }
   }
 
+  Future<bool> sendEmailForExistingShareLinkAction(
+    String id,
+    List<String> emails,
+  ) async {
+    final user = _hive.getUser();
+    final token = user?.token;
+    if (token == null) return false;
+
+    try {
+      final response = await _api.sendEmailForExistingShareLink(
+        token,
+        id,
+        {'emails': emails},
+      );
+      if (response.data['status'] == 'success' ||
+          response.data['status_code'] == 200) {
+        return true;
+      }
+      return false;
+    } catch (e) {
+      if (e is DioException && e.response != null) {
+        debugPrint(
+          'sendEmailForExistingShareLinkAction error response: ${e.response?.data}',
+        );
+        throw e.response?.data['message'] ??
+            e.response?.data.toString() ??
+            'Failed to send email';
+      }
+      debugPrint('sendEmailForExistingShareLinkAction error: $e');
+      throw 'Failed to send email';
+    }
+  }
+
   Future<bool> deleteShareLinkAction(String id) async {
     final user = _hive.getUser();
     final token = user?.token;

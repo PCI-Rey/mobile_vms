@@ -834,7 +834,7 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
         'expired_number': int.tryParse(selectedExpiredMinutes ?? '0') ?? 0,
       'max_usage': isSingleUse ? 1 : (int.tryParse(quotaCtrl.text.trim()) ?? 1),
       'is_single_use': isSingleUse,
-      if (email != null) 'email': email,
+      if (email != null) 'emails': [email],
       'tz': 'Asia/Jakarta',
     };
 
