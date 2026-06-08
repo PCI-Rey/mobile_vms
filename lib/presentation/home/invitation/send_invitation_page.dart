@@ -15,6 +15,7 @@ import '../../../../data/datasources/hive_service.dart';
 import 'widgets/create_share_link_dialog.dart';
 import 'widgets/share_link_card.dart';
 import 'widgets/share_link_detail_modal.dart';
+import 'widgets/create_quick_access_dialog.dart';
 
 class SendInvitationPage extends StatefulWidget {
   final int initialTab;
@@ -37,7 +38,7 @@ class _SendInvitationPageState extends State<SendInvitationPage>
   void initState() {
     super.initState();
     _tabController = TabController(
-      length: 2,
+      length: 3,
       vsync: this,
       initialIndex: widget.initialTab,
     );
@@ -122,6 +123,33 @@ class _SendInvitationPageState extends State<SendInvitationPage>
                 ),
               ),
             ),
+          // Tombol Add Quick Access hanya muncul di tab Quick Access
+          if (_tabController.index == 2)
+            IconButton(
+              onPressed: () {
+                showDialog(
+                  context: context,
+                  barrierDismissible: false,
+                  builder: (context) => const CreateQuickAccessDialog(),
+                ).then((result) {
+                  if (result == true) {
+                    controller.fetchOngoingInvitations(clearFilters: true);
+                  }
+                });
+              },
+              icon: Container(
+                padding: EdgeInsets.all(rw(context, 6)),
+                decoration: BoxDecoration(
+                  color: AppColors.primary500,
+                  borderRadius: BorderRadius.circular(rw(context, 8)),
+                ),
+                child: Icon(
+                  Icons.add,
+                  color: Colors.white,
+                  size: rw(context, 20),
+                ),
+              ),
+            ),
           hSpace(context, 8),
         ],
         bottom: PreferredSize(
@@ -151,6 +179,7 @@ class _SendInvitationPageState extends State<SendInvitationPage>
               tabs: const [
                 Tab(text: 'Invitation'),
                 Tab(text: 'Share Link'),
+                Tab(text: 'Quick Access'),
               ],
             ),
           ),
@@ -159,12 +188,17 @@ class _SendInvitationPageState extends State<SendInvitationPage>
           Expanded(
             child: TabBarView(
               controller: _tabController,
-              children: [_buildInvitationTab(), _buildShareLinkTab()],
+              children: [_buildInvitationTab(), _buildShareLinkTab(), _buildQuickAccessTab()],
             ),
           ),
         ],
       ),
     );
+  }
+
+  bool _isQuickAccessItem(AccessPassModel item) {
+    final str = '${item.visitorStatus} ${item.visitorTypeName} ${item.visitorRole} ${item.agenda}'.toLowerCase();
+    return str.contains('quick') && (str.contains('access') || str.contains('acess') || str.contains('acesss'));
   }
 
   Widget _buildInvitationTab() {
@@ -299,9 +333,12 @@ class _SendInvitationPageState extends State<SendInvitationPage>
                     final inviteCtrl = Get.isRegistered<InvitationController>()
                         ? Get.find<InvitationController>()
                         : Get.put(InvitationController());
+                    
+                    final listToShow = inviteCtrl.ongoingInvitations
+                        .where((item) => !_isQuickAccessItem(item))
+                        .toList();
 
-                    if (inviteCtrl.isLoading.value &&
-                        inviteCtrl.ongoingInvitations.isEmpty) {
+                    if (inviteCtrl.isLoading.value && listToShow.isEmpty) {
                       return Center(
                         child: Padding(
                           padding: EdgeInsets.all(rw(context, 40.0)),
@@ -310,14 +347,14 @@ class _SendInvitationPageState extends State<SendInvitationPage>
                       );
                     }
 
-                    if (inviteCtrl.ongoingInvitations.isEmpty) {
+                    if (listToShow.isEmpty) {
                       return Center(
                         child: Padding(
                           padding: EdgeInsets.all(rw(context, 40.0)),
                           child: Column(
                             children: [
                               Icon(
-                                Icons.inventory_2_outlined,
+                                Icons.inbox_outlined,
                                 size: rw(context, 48),
                                 color: Colors.grey[400],
                               ),
@@ -326,8 +363,8 @@ class _SendInvitationPageState extends State<SendInvitationPage>
                                 'No Invitation Found',
                                 style: TextStyle(
                                   color: Colors.grey[600],
+                                  fontSize: rfs(context, 16),
                                   fontWeight: FontWeight.w500,
-                                  fontSize: rfs(context, 14),
                                 ),
                               ),
                             ],
@@ -621,6 +658,290 @@ class _SendInvitationPageState extends State<SendInvitationPage>
 
   Widget _buildShareLinkTab() {
     return const ShareLinkListInline();
+  }
+
+  Widget _buildQuickAccessTab() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(
+          child: RefreshIndicator(
+            onRefresh: () async {
+              final inviteCtrl = Get.find<InvitationController>();
+              await inviteCtrl.fetchOngoingInvitations();
+            },
+            child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: EdgeInsets.all(rw(context, 20.0)),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Obx(() {
+                    final inviteCtrl = Get.isRegistered<InvitationController>()
+                        ? Get.find<InvitationController>()
+                        : null;
+                    if (inviteCtrl != null &&
+                        inviteCtrl.isLoading.value &&
+                        inviteCtrl.ongoingInvitations.isNotEmpty) {
+                      return Padding(
+                        padding: EdgeInsets.only(bottom: rh(context, 12)),
+                        child: LinearProgressIndicator(
+                          minHeight: rh(context, 2),
+                          backgroundColor: Colors.transparent,
+                          valueColor: const AlwaysStoppedAnimation<Color>(
+                            AppColors.primary500,
+                          ),
+                        ),
+                      );
+                    }
+                    return const SizedBox.shrink();
+                  }),
+                  Obx(() {
+                    final inviteCtrl = Get.isRegistered<InvitationController>()
+                        ? Get.find<InvitationController>()
+                        : Get.put(InvitationController());
+                    
+                    final listToShow = inviteCtrl.ongoingInvitations
+                        .where((item) => _isQuickAccessItem(item))
+                        .toList();
+
+                    if (inviteCtrl.isLoading.value && listToShow.isEmpty) {
+                      return Center(
+                        child: Padding(
+                          padding: EdgeInsets.all(rw(context, 40.0)),
+                          child: const CircularProgressIndicator(),
+                        ),
+                      );
+                    }
+
+                    if (listToShow.isEmpty) {
+                      return Center(
+                        child: Padding(
+                          padding: EdgeInsets.all(rw(context, 40.0)),
+                          child: Column(
+                            children: [
+                              Icon(
+                                Icons.flash_on_rounded,
+                                size: rw(context, 48),
+                                color: Colors.grey[400],
+                              ),
+                              vSpace(context, 16),
+                              Text(
+                                'No Quick Access Visit Found',
+                                style: TextStyle(
+                                  color: Colors.grey[600],
+                                  fontSize: rfs(context, 16),
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    }
+
+                    return ListView.builder(
+                      itemCount: listToShow.length,
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemBuilder: (context, index) {
+                        final item = listToShow[index];
+                        final isExpired =
+                            DateTime.now().isAfter(item.visitorPeriodEnd);
+
+                        return GestureDetector(
+                          onTap: () {},
+                          child: Container(
+                            margin: EdgeInsets.only(bottom: rh(context, 16)),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(rw(context, 12)),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.04),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
+                              border: Border.all(color: Colors.grey.shade100),
+                            ),
+                            child: Column(
+                              children: [
+                                // TOP ROW
+                                Container(
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: rw(context, 16),
+                                    vertical: rh(context, 12),
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: isExpired
+                                        ? Colors.red.shade50
+                                        : AppColors.primary50,
+                                    borderRadius: BorderRadius.vertical(
+                                      top: Radius.circular(rw(context, 12)),
+                                    ),
+                                  ),
+                                  child: Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          Container(
+                                            padding: EdgeInsets.all(rw(context, 6)),
+                                            decoration: BoxDecoration(
+                                              color: isExpired
+                                                  ? Colors.red.shade100
+                                                  : AppColors.primary100,
+                                              shape: BoxShape.circle,
+                                            ),
+                                            child: Icon(
+                                              Icons.flash_on,
+                                              size: rw(context, 16),
+                                              color: isExpired
+                                                  ? Colors.red.shade700
+                                                  : AppColors.primary700,
+                                            ),
+                                          ),
+                                          hSpace(context, 10),
+                                          Text(
+                                            'Quick Access',
+                                            style: TextStyle(
+                                              fontSize: rfs(context, 14),
+                                              fontWeight: FontWeight.w600,
+                                              color: isExpired
+                                                  ? Colors.red.shade900
+                                                  : AppColors.primary900,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      Container(
+                                        padding: EdgeInsets.symmetric(
+                                          horizontal: rw(context, 10),
+                                          vertical: rh(context, 4),
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: isExpired
+                                              ? Colors.red.withValues(alpha: 0.1)
+                                              : Colors.green.withValues(alpha: 0.1),
+                                          borderRadius: BorderRadius.circular(rw(context, 20)),
+                                          border: Border.all(
+                                            color: isExpired
+                                                ? Colors.red.withValues(alpha: 0.4)
+                                                : Colors.green.withValues(alpha: 0.4),
+                                          ),
+                                        ),
+                                        child: Text(
+                                          isExpired ? 'Expired' : 'Active',
+                                          style: TextStyle(
+                                            fontSize: rfs(context, 10),
+                                            fontWeight: FontWeight.w600,
+                                            color: isExpired ? Colors.red.shade700 : Colors.green.shade700,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                // DETAILS
+                                Padding(
+                                  padding: EdgeInsets.all(rw(context, 16)),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      // Row 1: Visitor Name + Org
+                                      Row(
+                                        children: [
+                                          Expanded(
+                                            child: _buildCardField(
+                                              context,
+                                              Icons.badge_outlined,
+                                              'Visitor Name',
+                                              item.visitorName,
+                                            ),
+                                          ),
+                                          hSpace(context, 8),
+                                          Expanded(
+                                            child: _buildCardField(
+                                              context,
+                                              Icons.business_outlined,
+                                              'Organization',
+                                              item.visitorOrganizationName.isEmpty
+                                                  ? '-'
+                                                  : item.visitorOrganizationName,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      vSpace(context, 8),
+                                      // Row 2: Location + Host
+                                      Row(
+                                        children: [
+                                          Expanded(
+                                            child: _buildCardField(
+                                              context,
+                                              Icons.location_on_outlined,
+                                              'Location',
+                                              item.sitePlaceName.isEmpty
+                                                  ? '-'
+                                                  : item.sitePlaceName,
+                                            ),
+                                          ),
+                                          hSpace(context, 8),
+                                          Expanded(
+                                            child: _buildCardField(
+                                              context,
+                                              Icons.assignment_ind_outlined,
+                                              'Host',
+                                              item.hostName.isEmpty ? '-' : item.hostName,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      vSpace(context, 8),
+                                      // Row 3: Period Start + Period End
+                                      Row(
+                                        children: [
+                                          Expanded(
+                                            child: _buildCardField(
+                                              context,
+                                              Icons.login_outlined,
+                                              'Period Start',
+                                              DateFormat('dd MMM yy HH:mm')
+                                                  .format(item.visitorPeriodStart),
+                                            ),
+                                          ),
+                                          hSpace(context, 8),
+                                          Expanded(
+                                            child: _buildCardField(
+                                              context,
+                                              Icons.logout_outlined,
+                                              'Period End',
+                                              DateFormat('dd MMM yy HH:mm')
+                                                  .format(item.visitorPeriodEnd),
+                                              color: isExpired ? Colors.red.shade600 : null,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    );
+                  }),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
   }
 
   /// Helper: compact 2-line info field inside card

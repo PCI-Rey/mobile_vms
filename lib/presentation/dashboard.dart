@@ -225,8 +225,13 @@ class _DashboardState extends State<Dashboard> with SingleTickerProviderStateMix
             'icon': Icons.flash_on_rounded,
             'bgColor': const Color(0xFFFFF4E5),
             'iconColor': const Color(0xFFFF9800),
-            'isClickable': false,
-            'onTap': () {},
+            'isClickable': true,
+            'onTap': () {
+              if (!Get.isRegistered<InvitationController>()) {
+                Get.put(InvitationController());
+              }
+              context.push(const SendInvitationPage(initialTab: 2));
+            },
             'offsetMultiplier': 2.0,
           },
           {

@@ -151,6 +151,8 @@ class InvitationController extends GetxController {
   final RxList<Map<String, dynamic>> sites = <Map<String, dynamic>>[].obs;
   final RxList<Map<String, dynamic>> visitorTypes =
       <Map<String, dynamic>>[].obs;
+  final RxList<Map<String, dynamic>> visitorProviders =
+      <Map<String, dynamic>>[].obs;
   final RxBool isLoadingMasters = false.obs;
 
   Future<void> fetchMasterData() async {
@@ -164,6 +166,7 @@ class InvitationController extends GetxController {
         _fetchHosts(token),
         _fetchSites(token),
         _fetchVisitorTypes(token),
+        _fetchVisitorProviders(token),
       ]);
     } finally {
       isLoadingMasters.value = false;
@@ -206,6 +209,19 @@ class InvitationController extends GetxController {
       }
     } catch (e) {
       debugPrint('fetchVisitorTypes error: $e');
+    }
+  }
+
+  Future<void> _fetchVisitorProviders(String token) async {
+    try {
+      final response = await _api.getVisitorProviders(token);
+      if (response.data['status'] == 'success' || response.data['status_code'] == 200) {
+        visitorProviders.assignAll(
+          List<Map<String, dynamic>>.from(response.data['collection']),
+        );
+      }
+    } catch (e) {
+      debugPrint('fetchVisitorProviders error: $e');
     }
   }
 
@@ -402,6 +418,32 @@ class InvitationController extends GetxController {
     } catch (e) {
       debugPrint('deleteShareLinkAction error: $e');
       return false;
+    }
+  }
+
+  Future<bool> createQuickAccessAction(Map<String, dynamic> body) async {
+    final user = _hive.getUser();
+    final token = user?.token;
+    if (token == null) return false;
+
+    try {
+      final response = await _api.createQuickAccessVisit(token, body);
+      if (response.data['status'] == 'success' ||
+          response.data['status_code'] == 200) {
+        await fetchOngoingInvitations(clearFilters: true);
+        return true;
+      }
+      return false;
+    } catch (e) {
+      if (e is DioException && e.response != null) {
+        debugPrint('createQuickAccessAction error response: ${e.response?.data}');
+        throw e.response?.data['message'] ??
+            e.response?.data['msg'] ??
+            e.response?.data.toString() ??
+            'Failed to create quick access visit';
+      }
+      debugPrint('createQuickAccessAction error: $e');
+      throw 'Failed to create quick access visit';
     }
   }
 

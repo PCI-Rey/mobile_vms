@@ -321,13 +321,15 @@ class AccessPassModal {
                                             Icons.directions_car_outlined,
                                             'Vehicle Type',
                                             (() {
-                                              if (!item.isDriving)
+                                              if (!item.isDriving) {
                                                 return 'Not Driving';
+                                              }
                                               final type = item.vehicleType;
                                               if (type.isEmpty ||
                                                   type.toLowerCase() ==
-                                                      'not available')
+                                                      'not available') {
                                                 return 'Not available';
+                                              }
                                               final cleaned = type
                                                   .replaceAll('vehicle_', '')
                                                   .replaceAll('_', ' ');

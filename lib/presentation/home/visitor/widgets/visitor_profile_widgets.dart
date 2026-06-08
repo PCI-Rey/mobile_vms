@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:get/get.dart';
 import '../../../../core/helper/responsive_helper.dart';
 import '../../../../data/models/visitor_model.dart';
 
@@ -88,7 +86,7 @@ class VisitorProfileCard extends StatelessWidget {
                 ],
               ),
             ),
-            
+
             // Bottom section: Detail Grid
             Container(
               margin: EdgeInsets.fromLTRB(
@@ -115,7 +113,9 @@ class VisitorProfileCard extends StatelessWidget {
                           context,
                           Icons.business_outlined,
                           'Organization',
-                          visitor.organization.isEmpty ? '-' : visitor.organization,
+                          visitor.organization.isEmpty
+                              ? '-'
+                              : visitor.organization,
                         ),
                       ),
                       hSpace(context, 8),
@@ -160,7 +160,12 @@ class VisitorProfileCard extends StatelessWidget {
     );
   }
 
-  Widget _buildField(BuildContext context, IconData icon, String label, String val) {
+  Widget _buildField(
+    BuildContext context,
+    IconData icon,
+    String label,
+    String val,
+  ) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -276,11 +281,31 @@ class VisitorProfileDetailSheet extends StatelessWidget {
                 children: [
                   _section(context, 'Visitor Information'),
                   _grid(context, [
-                    _SheetField('Name', visitor.name.isEmpty ? '-' : visitor.name, Icons.person_outline),
-                    _SheetField('Email', visitor.email.isEmpty ? '-' : visitor.email, Icons.email_outlined),
-                    _SheetField('Phone', visitor.phone.isEmpty ? '-' : visitor.phone, Icons.phone_outlined),
-                    _SheetField('Organization', visitor.organization.isEmpty ? '-' : visitor.organization, Icons.business_outlined),
-                    _SheetField('Identity ID', visitor.identityId.isEmpty ? '-' : visitor.identityId, Icons.credit_card_outlined),
+                    _SheetField(
+                      'Name',
+                      visitor.name.isEmpty ? '-' : visitor.name,
+                      Icons.person_outline,
+                    ),
+                    _SheetField(
+                      'Email',
+                      visitor.email.isEmpty ? '-' : visitor.email,
+                      Icons.email_outlined,
+                    ),
+                    _SheetField(
+                      'Phone',
+                      visitor.phone.isEmpty ? '-' : visitor.phone,
+                      Icons.phone_outlined,
+                    ),
+                    _SheetField(
+                      'Organization',
+                      visitor.organization.isEmpty ? '-' : visitor.organization,
+                      Icons.business_outlined,
+                    ),
+                    _SheetField(
+                      'Identity ID',
+                      visitor.identityId.isEmpty ? '-' : visitor.identityId,
+                      Icons.credit_card_outlined,
+                    ),
                     if (visitor.gender != null && visitor.gender!.isNotEmpty)
                       _SheetField('Gender', visitor.gender!, Icons.wc_outlined),
                   ]),
@@ -344,7 +369,11 @@ class VisitorProfileDetailSheet extends StatelessWidget {
               children: [
                 Padding(
                   padding: EdgeInsets.only(top: rh(context, 2)),
-                  child: Icon(f.icon, size: rw(context, 16), color: Colors.grey[500]),
+                  child: Icon(
+                    f.icon,
+                    size: rw(context, 16),
+                    color: Colors.grey[500],
+                  ),
                 ),
                 hSpace(context, 10),
                 Expanded(

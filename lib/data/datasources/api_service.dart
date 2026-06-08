@@ -449,6 +449,41 @@ class ApiService {
     }
   }
 
+  /// GET /api/visitor-provider
+  Future<Response> getVisitorProviders(String token) async {
+    try {
+      final response = await _dio.get(
+        '/$pathApi/visitor-provider',
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+      return response;
+    } on DioException catch (e) {
+      debugPrint('Dio Error getVisitorProviders: ${e.message}');
+      if (e.response != null) return e.response!;
+      rethrow;
+    }
+  }
+
+  /// POST /api/visitor/quick/new-visit
+  Future<Response> createQuickAccessVisit(
+    String token,
+    Map<String, dynamic> body,
+  ) async {
+    try {
+      final response = await _dio.post(
+        '/$pathApi/visitor/quick/new-visit',
+        data: body,
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+      return response;
+    } on DioException catch (e) {
+      debugPrint('Dio Error createQuickAccessVisit: ${e.message}');
+      if (e.response != null) return e.response!;
+      rethrow;
+    }
+  }
+
+
   /// GET /api/visitor/{id}
   /// Get full detail of a single visitor transaction by its row ID.
   Future<Response> getVisitorDetail(String token, String id) async {
