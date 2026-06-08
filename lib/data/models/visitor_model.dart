@@ -217,3 +217,46 @@ class VisitorListModel {
   }
 }
 
+class InvitationVisitorModel {
+  final String id;
+  final String name;
+  final String email;
+  final String phone;
+  final String organization;
+  final String identityId;
+  final String? gender;
+
+  InvitationVisitorModel({
+    required this.id,
+    required this.name,
+    required this.email,
+    required this.phone,
+    required this.organization,
+    required this.identityId,
+    this.gender,
+  });
+
+  factory InvitationVisitorModel.fromJson(Map<String, dynamic> json) {
+    return InvitationVisitorModel(
+      id: json['id']?.toString() ?? '',
+      name: json['name']?.toString() ?? '',
+      email: json['email']?.toString() ?? '',
+      phone: json['phone']?.toString() ?? '',
+      organization: (json['organization'] ?? json['organisation'])?.toString() ?? '',
+      identityId: (json['identity_id'] ?? json['nik'])?.toString() ?? '',
+      gender: json['gender']?.toString(),
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'name': name,
+        'email': email,
+        'phone': phone,
+        'organization': organization,
+        'identity_id': identityId,
+        if (gender != null) 'gender': gender,
+      };
+}
+
+

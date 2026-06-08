@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../presentation/home/visitor/visitor_page.dart';
+import '../../presentation/home/visitor/search_visitor_page.dart';
 import '../../presentation/parking/as_operator/parking_page.dart';
 import '../../splashscreen.dart';
 import '../../presentation/home/invitation/add_invitation_page.dart';
@@ -67,7 +67,7 @@ class Routes {
 
   // Routes for Employee role
   static final Map<String, WidgetBuilder> employeeRoutes = {
-    visitorPage: (_) => VisitorPage(),
+    visitorPage: (_) => const SearchVisitorPage(),
     addInvitation: (_) => const AddInvitationPage(),
     sendInvitation: (_) => const SendInvitationPage(),
     reportPage: (_) => VisitorReportPage(),

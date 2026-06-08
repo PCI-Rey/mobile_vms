@@ -14,7 +14,7 @@ import '../../presentation/home/invitation/send_invitation_page.dart';
 import '../../presentation/auth/controller/language_controller.dart';
 import '../../presentation/auth/controller/user_controller.dart';
 import '../../presentation/parking/as_guest/guest_parking_page.dart';
-import '../../presentation/home/visitor/visitor_page.dart';
+import '../../presentation/home/visitor/search_visitor_page.dart';
 import 'agenda/widgets/itenerary_list.dart';
 
 import '../../core/core.dart';
@@ -347,7 +347,7 @@ class _HomePageState extends State<HomePage> {
           'icon': Icons.person_search_outlined,
           'bgColor': const Color(0xFFE1F5EE),
           'iconColor': const Color(0xFF0F6E56),
-          'onTap': () => context.push(const VisitorPage()),
+          'onTap': () => context.push(const SearchVisitorPage()),
         },
         {
           'label': 'alarm'.tr,

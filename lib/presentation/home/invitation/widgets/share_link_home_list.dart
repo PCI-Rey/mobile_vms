@@ -151,7 +151,7 @@ class _ShareLinkHomeListState extends State<ShareLinkHomeList> {
 
           // Carousel
           SizedBox(
-            height: rh(context, 175), // Height for the card and shadow
+            height: rh(context, 205), // Height for the card and shadow
             child: PageView.builder(
               controller: _pageController,
               onPageChanged: (int index) {

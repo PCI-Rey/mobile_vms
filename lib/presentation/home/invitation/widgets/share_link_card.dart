@@ -93,6 +93,43 @@ class ShareLinkCard extends StatelessWidget {
     );
   }
 
+  Widget _buildCardField(
+    BuildContext context,
+    IconData icon,
+    String label,
+    String value, {
+    Color? color,
+  }) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Icon(icon, size: rw(context, 14), color: Colors.grey.shade500),
+        hSpace(context, 6),
+        Text(
+          '$label: ',
+          style: TextStyle(
+            fontSize: rfs(context, 11),
+            fontWeight: FontWeight.w500,
+            color: Colors.grey.shade500,
+            height: 1.2,
+          ),
+        ),
+        Expanded(
+          child: Text(
+            value,
+            style: TextStyle(
+              fontSize: rfs(context, 11),
+              fontWeight: FontWeight.w600,
+              color: color ?? Colors.black87,
+              height: 1.2,
+            ),
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final String agenda = item['agenda'] ?? '-';
@@ -119,9 +156,6 @@ class ShareLinkCard extends StatelessWidget {
       isExpired = true;
     }
 
-    final Color statusColor = isExpired
-        ? const Color(0xFFE53935)
-        : const Color(0xFF43A047);
     final String status = isExpired ? 'Expired' : 'Active';
 
     final String shortenUrl = (item['shorten_url'] ?? '').toString().trim();
@@ -137,162 +171,249 @@ class ShareLinkCard extends StatelessWidget {
           normalized = '${normalized.replaceFirst(' ', 'T')}Z';
         }
         final date = DateTime.parse(normalized).toLocal();
-        return DateFormat('dd MMM yyyy, HH:mm').format(date);
+        return DateFormat('dd MMM yy HH:mm').format(date);
       } catch (e) {
         return dateStr;
+      }
+    }
+
+    String formatPeriod(String? startStr, String? endStr) {
+      if (startStr == null || endStr == null) return '-';
+      try {
+        String normStart = startStr;
+        if (!normStart.endsWith('Z') && !normStart.contains('+')) {
+          normStart = '${normStart.replaceFirst(' ', 'T')}Z';
+        }
+        String normEnd = endStr;
+        if (!normEnd.endsWith('Z') && !normEnd.contains('+')) {
+          normEnd = '${normEnd.replaceFirst(' ', 'T')}Z';
+        }
+        final start = DateTime.parse(normStart).toLocal();
+        final end = DateTime.parse(normEnd).toLocal();
+
+        final dateFmt = DateFormat('dd MMM yy');
+        final timeFmt = DateFormat('HH:mm');
+
+        if (start.year == end.year && start.month == end.month && start.day == end.day) {
+          return '${dateFmt.format(start)} ${timeFmt.format(start)} - ${timeFmt.format(end)}';
+        } else {
+          return '${dateFmt.format(start)} ${timeFmt.format(start)} - ${dateFmt.format(end)} ${timeFmt.format(end)}';
+        }
+      } catch (e) {
+        return '-';
       }
     }
 
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: EdgeInsets.all(rw(context, 16)),
         decoration: BoxDecoration(
-          color: isExpired ? Colors.grey.shade100 : Colors.white,
-          borderRadius: BorderRadius.circular(rw(context, 16)),
-          border: Border.all(color: isExpired ? Colors.grey.shade300 : Colors.grey.withValues(alpha: 0.15)),
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(rw(context, 12)),
           boxShadow: [
-            if (!isExpired)
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.03),
-                blurRadius: rw(context, 10),
-                offset: Offset(0, rh(context, 4)),
-              ),
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.06),
+              blurRadius: rw(context, 10),
+              offset: Offset(0, rh(context, 3)),
+            ),
           ],
         ),
-        child: Row(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+            // ── Top bar: No + badges ──────────────────
+            Container(
+              margin: EdgeInsets.fromLTRB(
+                rw(context, 14),
+                rh(context, 8),
+                rw(context, 14),
+                0,
+              ),
+              padding: EdgeInsets.symmetric(
+                horizontal: rw(context, 12),
+                vertical: rh(context, 8),
+              ),
+              decoration: BoxDecoration(
+                color: const Color(0xFF005596).withValues(alpha: 0.04),
+                borderRadius: BorderRadius.circular(rw(context, 10)),
+                border: Border.all(
+                  color: const Color(0xFF005596).withValues(alpha: 0.18),
+                ),
+              ),
+              child: Row(
                 children: [
-                  Row(
-                    children: [
-                      Container(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: rw(context, 8),
-                          vertical: rh(context, 4),
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppColors.primary50,
-                          borderRadius: BorderRadius.circular(rw(context, 20)),
-                        ),
-                        child: Text(
-                          'No. $no',
-                          style: TextStyle(
-                            color: AppColors.primary500,
-                            fontSize: rfs(context, 10),
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
+                  // No circle
+                  Container(
+                    width: rw(context, 26),
+                    height: rw(context, 26),
+                    alignment: Alignment.center,
+                    decoration: const BoxDecoration(
+                      color: Color(0xFF005596),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Text(
+                      '$no',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: rfs(context, 11),
+                        fontWeight: FontWeight.bold,
                       ),
-                      hSpace(context, 8),
-                      Container(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: rw(context, 8),
-                          vertical: rh(context, 4),
-                        ),
-                        decoration: BoxDecoration(
-                          color: isExpired
-                              ? Colors.grey.shade100
-                              : Colors.orange.shade50,
-                          borderRadius: BorderRadius.circular(rw(context, 20)),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.timer_outlined,
-                              size: rw(context, 12),
-                              color: isExpired
-                                  ? Colors.grey
-                                  : Colors.orange.shade800,
-                            ),
-                            hSpace(context, 4),
-                            Text(
-                              _getRemainingTime(expiredAt),
-                              style: TextStyle(
-                                fontSize: rfs(context, 10),
-                                fontWeight: FontWeight.bold,
-                                fontFamily: 'monospace',
-                                color: isExpired
-                                    ? Colors.grey
-                                    : Colors.orange.shade900,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                  vSpace(context, 10),
-                  Text(
-                    agenda,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: Colors.black87,
-                      fontSize: rfs(context, 15),
-                      fontWeight: FontWeight.w700,
                     ),
                   ),
-                  vSpace(context, 6),
-                  Row(
-                    children: [
-                      Container(
-                        width: rw(context, 7),
-                        height: rw(context, 7),
-                        decoration: BoxDecoration(
-                          color: statusColor,
-                          shape: BoxShape.circle,
-                        ),
+                  hSpace(context, 10),
+                  Expanded(
+                    child: Text(
+                      agenda,
+                      style: TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: rfs(context, 14),
+                        color: Colors.black87,
                       ),
-                      hSpace(context, 6),
-                      Expanded(
-                        child: Text(
-                          '$status · ${formatDate(item['visitor_period_start'])}',
-                          style: TextStyle(
-                            color: Colors.grey.shade600,
-                            fontSize: rfs(context, 11),
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ],
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
-                  vSpace(context, 12),
-                  SizedBox(
-                    height: rh(context, 32),
-                    child: ElevatedButton.icon(
-                      onPressed: isExpired
-                          ? null
-                          : () {
-                              showDialog(
-                                context: context,
-                                builder: (context) => InviteShareLinkDialog(item: item),
-                              );
-                            },
-                      icon: Icon(
-                        isExpired ? Icons.link_off : Icons.share,
-                        size: rw(context, 14),
-                        color: isExpired ? Colors.grey.shade600 : Colors.white,
+                  hSpace(context, 6),
+                  // Timer Badge
+                  Container(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: rw(context, 7),
+                      vertical: rh(context, 3),
+                    ),
+                    decoration: BoxDecoration(
+                      color: isExpired
+                          ? Colors.grey.withValues(alpha: 0.1)
+                          : Colors.orange.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(rw(context, 20)),
+                      border: Border.all(
+                        color: isExpired
+                            ? Colors.grey.withValues(alpha: 0.4)
+                            : Colors.orange.withValues(alpha: 0.4),
                       ),
-                      label: Text(
-                        isExpired ? 'Link Expired' : 'Share Link',
-                        style: TextStyle(
-                          fontSize: rfs(context, 12),
-                          fontWeight: FontWeight.w600,
-                          color: isExpired ? Colors.grey.shade600 : Colors.white,
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.timer_outlined,
+                          size: rw(context, 12),
+                          color: isExpired ? Colors.grey : Colors.orange.shade800,
                         ),
+                        hSpace(context, 4),
+                        Text(
+                          _getRemainingTime(expiredAt),
+                          style: TextStyle(
+                            fontSize: rfs(context, 10),
+                            fontWeight: FontWeight.w600,
+                            color: isExpired ? Colors.grey : Colors.orange.shade800,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  hSpace(context, 6),
+                  // Status Badge
+                  Container(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: rw(context, 7),
+                      vertical: rh(context, 3),
+                    ),
+                    decoration: BoxDecoration(
+                      color: isExpired
+                          ? Colors.red.withValues(alpha: 0.1)
+                          : Colors.green.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(rw(context, 20)),
+                      border: Border.all(
+                        color: isExpired
+                            ? Colors.red.withValues(alpha: 0.4)
+                            : Colors.green.withValues(alpha: 0.4),
                       ),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: isExpired ? Colors.grey.shade200 : AppColors.primary500,
-                        disabledBackgroundColor: Colors.grey.shade200,
-                        elevation: 0,
-                        padding: EdgeInsets.symmetric(horizontal: rw(context, 12)),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(rw(context, 6)),
+                    ),
+                    child: Text(
+                      status,
+                      style: TextStyle(
+                        fontSize: rfs(context, 10),
+                        fontWeight: FontWeight.w600,
+                        color: isExpired ? Colors.red.shade700 : Colors.green.shade700,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            // ── Body: info rows & QR Code ───────────────────────
+            Container(
+              margin: EdgeInsets.fromLTRB(
+                rw(context, 14),
+                rh(context, 6),
+                rw(context, 14),
+                rh(context, 8),
+              ),
+              padding: EdgeInsets.symmetric(
+                horizontal: rw(context, 12),
+                vertical: rh(context, 8),
+              ),
+              decoration: BoxDecoration(
+                color: Colors.grey.shade50,
+                borderRadius: BorderRadius.circular(rw(context, 10)),
+                border: Border.all(color: Colors.grey.shade200),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildCardField(
+                          context,
+                          Icons.group_outlined,
+                          'Usage',
+                          isSingleUse ? '$currentUsage/$maxUsage (Single)' : '$currentUsage/$maxUsage',
+                        ),
+                        vSpace(context, 6),
+                        _buildCardField(
+                          context,
+                          Icons.date_range_outlined,
+                          'Period',
+                          formatPeriod(item['visitor_period_start'], item['visitor_period_end']),
+                        ),
+                        vSpace(context, 6),
+                        _buildCardField(
+                          context,
+                          Icons.timer_off_outlined,
+                          'Expired At',
+                          item['expired_number'] == 0 ? 'Never' : formatDate(item['expired_at']),
+                          color: isExpired ? Colors.red.shade600 : null,
+                        ),
+                      ],
+                    ),
+                  ),
+                  hSpace(context, 16),
+                  GestureDetector(
+                    onTap: () {
+                      if (url.isNotEmpty) {
+                        _showBarcodeDialog(context, url);
+                      }
+                    },
+                    child: Container(
+                      width: rw(context, 64),
+                      height: rw(context, 64),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(rw(context, 12)),
+                        border: Border.all(color: Colors.grey.shade200),
+                      ),
+                      padding: const EdgeInsets.all(4),
+                      child: QrImageView(
+                        data: url.isNotEmpty ? url : 'no-url',
+                        version: QrVersions.auto,
+                        eyeStyle: const QrEyeStyle(
+                          eyeShape: QrEyeShape.square,
+                          color: Colors.black87,
+                        ),
+                        dataModuleStyle: const QrDataModuleStyle(
+                          dataModuleShape: QrDataModuleShape.square,
+                          color: Colors.black87,
                         ),
                       ),
                     ),
@@ -300,32 +421,47 @@ class ShareLinkCard extends StatelessWidget {
                 ],
               ),
             ),
-            hSpace(context, 16),
-            GestureDetector(
-              onTap: () {
-                if (url.isNotEmpty) {
-                  _showBarcodeDialog(context, url);
-                }
-              },
-              child: Container(
-                width: rw(context, 64),
-                height: rw(context, 64),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(rw(context, 12)),
-                  border: Border.all(color: Colors.grey.shade200),
-                ),
-                padding: const EdgeInsets.all(4),
-                child: QrImageView(
-                  data: url.isNotEmpty ? url : 'no-url',
-                  version: QrVersions.auto,
-                  eyeStyle: const QrEyeStyle(
-                    eyeShape: QrEyeShape.square,
-                    color: Colors.black87,
+
+            // ── Action Button: Share Link ───────────────────────
+            Padding(
+              padding: EdgeInsets.fromLTRB(
+                rw(context, 14),
+                0,
+                rw(context, 14),
+                rh(context, 8),
+              ),
+              child: SizedBox(
+                width: double.infinity,
+                height: rh(context, 36),
+                child: ElevatedButton.icon(
+                  onPressed: isExpired
+                      ? null
+                      : () {
+                          showDialog(
+                            context: context,
+                            builder: (context) => InviteShareLinkDialog(item: item),
+                          );
+                        },
+                  icon: Icon(
+                    isExpired ? Icons.link_off : Icons.share,
+                    size: rw(context, 14),
+                    color: isExpired ? Colors.grey.shade600 : Colors.white,
                   ),
-                  dataModuleStyle: const QrDataModuleStyle(
-                    dataModuleShape: QrDataModuleShape.square,
-                    color: Colors.black87,
+                  label: Text(
+                    isExpired ? 'Link Expired' : 'Share Link',
+                    style: TextStyle(
+                      fontSize: rfs(context, 12),
+                      fontWeight: FontWeight.w600,
+                      color: isExpired ? Colors.grey.shade600 : Colors.white,
+                    ),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: isExpired ? Colors.grey.shade200 : AppColors.primary500,
+                    disabledBackgroundColor: Colors.grey.shade200,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(rw(context, 8)),
+                    ),
                   ),
                 ),
               ),

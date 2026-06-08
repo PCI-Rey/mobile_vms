@@ -14,6 +14,7 @@ class CreateShareLinkDialog extends StatefulWidget {
 class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
   final InvitationController controller = Get.find<InvitationController>();
   final _formKey = GlobalKey<FormState>();
+  bool _success = false;
 
   // Form States & Toggles
   bool isHostEnabled = false;
@@ -131,9 +132,13 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
   @override
   Widget build(BuildContext context) {
     return PopScope(
-      canPop: false,
+      canPop: _success,
       onPopInvokedWithResult: (didPop, result) async {
         if (didPop) return;
+        if (_success && mounted) {
+          Navigator.of(context).pop();
+          return;
+        }
         final navigator = Navigator.of(context);
         final shouldExit = await _showExitConfirmation();
         if (shouldExit && mounted) {
@@ -847,6 +852,9 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
       Get.back(); // Close loading
 
       if (newItem != null) {
+        setState(() {
+          _success = true;
+        });
         Get.snackbar(
           'Success',
           'Share link created successfully',

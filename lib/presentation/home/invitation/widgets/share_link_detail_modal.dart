@@ -321,7 +321,7 @@ class ShareLinkDetailModal {
     Color? valueColor,
   }) {
     return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Container(
           padding: EdgeInsets.all(rw(context, 8)),
