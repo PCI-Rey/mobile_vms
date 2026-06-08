@@ -203,96 +203,94 @@ class VisitorProfileDetailSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return DraggableScrollableSheet(
-      initialChildSize: 0.6,
-      minChildSize: 0.4,
-      maxChildSize: 0.85,
-      expand: false,
-      builder: (context, scrollController) {
-        return Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.only(
-              topLeft: Radius.circular(rw(context, 20)),
-              topRight: Radius.circular(rw(context, 20)),
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(rw(context, 20)),
+          topRight: Radius.circular(rw(context, 20)),
+        ),
+      ),
+      child: SafeArea(
+        top: false,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Drag handle
+            Padding(
+              padding: EdgeInsets.only(top: rh(context, 12)),
+              child: Container(
+                width: rw(context, 40),
+                height: rh(context, 4),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(rw(context, 2)),
+                ),
+              ),
             ),
-          ),
-          child: Column(
-            children: [
-              // Drag handle
-              Padding(
-                padding: EdgeInsets.only(top: rh(context, 12)),
-                child: Container(
-                  width: rw(context, 40),
-                  height: rh(context, 4),
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade300,
-                    borderRadius: BorderRadius.circular(rw(context, 2)),
-                  ),
-                ),
-              ),
 
-              // Header
-              Padding(
-                padding: EdgeInsets.symmetric(
-                  horizontal: rw(context, 20),
-                  vertical: rh(context, 14),
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      padding: EdgeInsets.all(rw(context, 10)),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF005596).withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(rw(context, 10)),
-                      ),
-                      child: const Icon(
-                        Icons.person_pin_circle_outlined,
-                        color: Color(0xFF005596),
+            // Header
+            Padding(
+              padding: EdgeInsets.symmetric(
+                horizontal: rw(context, 20),
+                vertical: rh(context, 14),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    padding: EdgeInsets.all(rw(context, 10)),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF005596).withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(rw(context, 10)),
+                    ),
+                    child: const Icon(
+                      Icons.person_pin_circle_outlined,
+                      color: Color(0xFF005596),
+                    ),
+                  ),
+                  hSpace(context, 12),
+                  Expanded(
+                    child: Text(
+                      visitor.name,
+                      style: TextStyle(
+                        fontWeight: FontWeight.w800,
+                        fontSize: rfs(context, 16),
+                        color: Colors.black87,
                       ),
                     ),
-                    hSpace(context, 12),
-                    Expanded(
-                      child: Text(
-                        visitor.name,
-                        style: TextStyle(
-                          fontWeight: FontWeight.w800,
-                          fontSize: rfs(context, 16),
-                          color: Colors.black87,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Container(height: 1, color: Colors.grey.shade100),
-
-              // Scrollable body
-              Expanded(
-                child: ListView(
-                  controller: scrollController,
-                  padding: EdgeInsets.symmetric(
-                    horizontal: rw(context, 20),
-                    vertical: rh(context, 16),
                   ),
-                  children: [
-                    _section(context, 'Visitor Information'),
-                    _grid(context, [
-                      _SheetField('Name', visitor.name.isEmpty ? '-' : visitor.name, Icons.person_outline),
-                      _SheetField('Email', visitor.email.isEmpty ? '-' : visitor.email, Icons.email_outlined, canCopy: true),
-                      _SheetField('Phone', visitor.phone.isEmpty ? '-' : visitor.phone, Icons.phone_outlined, canCopy: true),
-                      _SheetField('Organization', visitor.organization.isEmpty ? '-' : visitor.organization, Icons.business_outlined),
-                      _SheetField('Identity ID', visitor.identityId.isEmpty ? '-' : visitor.identityId, Icons.credit_card_outlined, canCopy: true),
-                      if (visitor.gender != null && visitor.gender!.isNotEmpty)
-                        _SheetField('Gender', visitor.gender!, Icons.wc_outlined),
-                    ]),
-                  ],
-                ),
+                ],
               ),
-            ],
-          ),
-        );
-      },
+            ),
+            Container(height: 1, color: Colors.grey.shade100),
+
+            // Body
+            Padding(
+              padding: EdgeInsets.symmetric(
+                horizontal: rw(context, 20),
+                vertical: rh(context, 16),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _section(context, 'Visitor Information'),
+                  _grid(context, [
+                    _SheetField('Name', visitor.name.isEmpty ? '-' : visitor.name, Icons.person_outline),
+                    _SheetField('Email', visitor.email.isEmpty ? '-' : visitor.email, Icons.email_outlined),
+                    _SheetField('Phone', visitor.phone.isEmpty ? '-' : visitor.phone, Icons.phone_outlined),
+                    _SheetField('Organization', visitor.organization.isEmpty ? '-' : visitor.organization, Icons.business_outlined),
+                    _SheetField('Identity ID', visitor.identityId.isEmpty ? '-' : visitor.identityId, Icons.credit_card_outlined),
+                    if (visitor.gender != null && visitor.gender!.isNotEmpty)
+                      _SheetField('Gender', visitor.gender!, Icons.wc_outlined),
+                  ]),
+                ],
+              ),
+            ),
+            vSpace(context, 8),
+          ],
+        ),
+      ),
     );
   }
 
@@ -330,80 +328,55 @@ class VisitorProfileDetailSheet extends StatelessWidget {
         border: Border.all(color: Colors.grey.shade200),
         borderRadius: BorderRadius.circular(rw(context, 12)),
       ),
-      padding: EdgeInsets.all(rw(context, 12)),
-      child: GridView.builder(
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
-        itemCount: fields.length,
-        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
-          crossAxisSpacing: rw(context, 10),
-          mainAxisSpacing: rh(context, 12),
-          childAspectRatio: 2.3,
-        ),
-        itemBuilder: (context, i) {
-          final f = fields[i];
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Icon(f.icon, size: rw(context, 14), color: Colors.grey[500]),
-                  hSpace(context, 6),
-                  Expanded(
-                    child: Text(
-                      f.label,
-                      style: TextStyle(
-                        fontSize: rfs(context, 10),
-                        color: Colors.grey[500],
-                        fontWeight: FontWeight.w600,
+      padding: EdgeInsets.symmetric(
+        horizontal: rw(context, 16),
+        vertical: rh(context, 16),
+      ),
+      child: Column(
+        children: List.generate(fields.length, (index) {
+          final f = fields[index];
+          return Padding(
+            padding: EdgeInsets.only(
+              bottom: index == fields.length - 1 ? 0 : rh(context, 14),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: EdgeInsets.only(top: rh(context, 2)),
+                  child: Icon(f.icon, size: rw(context, 16), color: Colors.grey[500]),
+                ),
+                hSpace(context, 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        f.label,
+                        style: TextStyle(
+                          fontSize: rfs(context, 10),
+                          color: Colors.grey[500],
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
-                      overflow: TextOverflow.ellipsis,
-                    ),
+                      vSpace(context, 3),
+                      Text(
+                        f.value,
+                        style: TextStyle(
+                          fontSize: rfs(context, 13),
+                          color: Colors.black87,
+                          fontWeight: FontWeight.w700,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
                   ),
-                ],
-              ),
-              vSpace(context, 3),
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      f.value,
-                      style: TextStyle(
-                        fontSize: rfs(context, 12),
-                        color: Colors.black87,
-                        fontWeight: FontWeight.w700,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  if (f.canCopy && f.value != '-') ...[
-                    hSpace(context, 6),
-                    GestureDetector(
-                      onTap: () {
-                        Clipboard.setData(ClipboardData(text: f.value));
-                        Get.snackbar(
-                          'Copied',
-                          '${f.label} copied to clipboard',
-                          snackPosition: SnackPosition.TOP,
-                          backgroundColor: Colors.green,
-                          colorText: Colors.white,
-                          duration: const Duration(seconds: 1),
-                        );
-                      },
-                      child: Icon(
-                        Icons.copy,
-                        size: rw(context, 14),
-                        color: const Color(0xFF005596),
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ],
+                ),
+              ],
+            ),
           );
-        },
+        }),
       ),
     );
   }
@@ -413,7 +386,6 @@ class _SheetField {
   final String label;
   final String value;
   final IconData icon;
-  final bool canCopy;
 
-  _SheetField(this.label, this.value, this.icon, {this.canCopy = false});
+  _SheetField(this.label, this.value, this.icon);
 }
