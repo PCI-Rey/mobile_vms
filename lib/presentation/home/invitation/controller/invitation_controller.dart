@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -21,9 +20,6 @@ class InvitationController extends GetxController {
       <ApprovalTicketModel>[].obs;
   final RxBool isApprovalLoading = false.obs;
 
-  Timer? _cleanupTimer;
-
-  // Filter states
   final Rx<DateTime?> startDate = Rx<DateTime?>(null);
   final Rx<DateTime?> endDate = Rx<DateTime?>(null);
   final RxString selectedSiteId = ''.obs;
@@ -33,18 +29,8 @@ class InvitationController extends GetxController {
   void onInit() {
     super.onInit();
     fetchOngoingInvitations();
-    fetchApprovalTickets(); // Load approval tickets immediately
-    fetchMasterData(); // Fetch master data (sites, visitor types, etc) for lookups
-    // Re-filter every 60 seconds to remove expired invitations in real-time
-    _cleanupTimer = Timer.periodic(const Duration(seconds: 60), (_) {
-      _applyFilters();
-    });
-  }
-
-  @override
-  void onClose() {
-    _cleanupTimer?.cancel();
-    super.onClose();
+    fetchApprovalTickets();
+    fetchMasterData();
   }
 
   void setFilters({
@@ -66,20 +52,7 @@ class InvitationController extends GetxController {
   }
 
   void _applyFilters() {
-    final now = DateTime.now();
     List<AccessPassModel> filtered = List.from(allInvitations);
-
-    // 0. Auto-remove invitations that are expired (end time is in the past)
-    // or have statuses that indicate they are no longer active
-    filtered = filtered.where((item) {
-      final isExpired = item.visitorPeriodEnd.isBefore(now);
-      final isInactiveStatus =
-          item.visitorStatus.toLowerCase() == 'expired' ||
-          item.visitorStatus.toLowerCase() == 'completed' ||
-          item.visitorStatus.toLowerCase() == 'cancelled' ||
-          item.visitorStatus.toLowerCase() == 'rejected';
-      return !isExpired && !isInactiveStatus;
-    }).toList();
 
     // 1. Filter Berdasarkan Tanggal (Lokal)
     if (startDate.value != null) {
@@ -111,7 +84,6 @@ class InvitationController extends GetxController {
     // 2. Filter Berdasarkan Gedung (Lokal)
     if (selectedSiteId.value.isNotEmpty || selectedSiteName.value.isNotEmpty) {
       filtered = filtered.where((item) {
-        // Cek ID cocok ATAU Nama Gedung cocok
         return (selectedSiteId.value.isNotEmpty &&
                 item.siteId == selectedSiteId.value) ||
             (selectedSiteName.value.isNotEmpty &&
@@ -150,8 +122,15 @@ class InvitationController extends GetxController {
 
     if (!isSilent) isLoading.value = true;
     try {
-      final response = await _api.getOngoingInvitation(token);
-      if (response.data['status'] == 'success') {
+      final response = await _api.getVisitorDt(
+        token,
+        draw: 1,
+        start: 0,
+        length: 500,
+        search: '',
+      );
+      if (response.data['status'] == 'success' ||
+          response.data['status_code'] == 200) {
         final collection = response.data['collection'] as List<dynamic>? ?? [];
         final newPasses = collection
             .map((e) => AccessPassModel.fromJson(e as Map<String, dynamic>))

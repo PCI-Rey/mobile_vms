@@ -25,6 +25,15 @@ class AccessPassModel {
   final String visitorName;
   final bool isPraregisterDone;
   final String visitorRole;
+  // Fields from /visitor/dt
+  final String approvalStatus;
+  final String visitorTypeName;
+  final String transactionVisitorId;
+  final String invitedByName;
+  final String visitorOrganizationName;
+  final String visitorPhone;
+  final String visitorEmail;
+  final String visitorIdentityId;
 
 
   AccessPassModel({
@@ -52,6 +61,14 @@ class AccessPassModel {
     required this.visitorName,
     required this.isPraregisterDone,
     required this.visitorRole,
+    this.approvalStatus = '',
+    this.visitorTypeName = '',
+    this.transactionVisitorId = '',
+    this.invitedByName = '',
+    this.visitorOrganizationName = '',
+    this.visitorPhone = '',
+    this.visitorEmail = '',
+    this.visitorIdentityId = '',
   });
 
   factory AccessPassModel.fromRawJson(String str) =>
@@ -107,8 +124,19 @@ class AccessPassModel {
       tz: json['tz']?.toString() ?? '',
       siteId: json['site_id']?.toString() ?? '',
       visitorName: json['visitor_name']?.toString() ?? '',
-      isPraregisterDone: json['is_praregister_done'] == true,
+      isPraregisterDone: json['is_complete_preregister'] == true ||
+          json['is_praregister_done'] == true,
       visitorRole: json['visitor_role']?.toString() ?? '',
+      approvalStatus: json['approval_status']?.toString() ?? '',
+      visitorTypeName: json['visitor_type_name']?.toString() ?? '',
+      transactionVisitorId:
+          json['transaction_visitor_id']?.toString() ?? '',
+      invitedByName: json['invited_by_name']?.toString() ?? '',
+      visitorOrganizationName:
+          json['visitor_organization_name']?.toString() ?? '',
+      visitorPhone: json['visitor_phone']?.toString() ?? '',
+      visitorEmail: json['visitor_email']?.toString() ?? '',
+      visitorIdentityId: json['visitor_identity_id']?.toString() ?? '',
     );
   }
 
@@ -135,8 +163,16 @@ class AccessPassModel {
     'tz': tz,
     'site_id': siteId,
     'visitor_name': visitorName,
-    'is_praregister_done': isPraregisterDone,
+    'is_complete_preregister': isPraregisterDone,
     'visitor_role': visitorRole,
+    'approval_status': approvalStatus,
+    'visitor_type_name': visitorTypeName,
+    'transaction_visitor_id': transactionVisitorId,
+    'invited_by_name': invitedByName,
+    'visitor_organization_name': visitorOrganizationName,
+    'visitor_phone': visitorPhone,
+    'visitor_email': visitorEmail,
+    'visitor_identity_id': visitorIdentityId,
   };
 
   /// Parse a datetime string from the API as UTC and convert to device local time.

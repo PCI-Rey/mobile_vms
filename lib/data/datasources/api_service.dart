@@ -421,6 +421,50 @@ class ApiService {
     }
   }
 
+  /// GET /api/visitor/dt
+  /// Datatable endpoint — returns all visitor transactions (including history).
+  Future<Response> getVisitorDt(
+    String token, {
+    int draw = 1,
+    int start = 0,
+    int length = 500,
+    String search = '',
+  }) async {
+    try {
+      final response = await _dio.get(
+        '/$pathApi/visitor/dt',
+        queryParameters: {
+          'draw': draw,
+          'start': start,
+          'length': length,
+          'search[value]': search,
+        },
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+      return response;
+    } on DioException catch (e) {
+      debugPrint('Dio Error getVisitorDt: ${e.message}');
+      if (e.response != null) return e.response!;
+      rethrow;
+    }
+  }
+
+  /// GET /api/visitor/{id}
+  /// Get full detail of a single visitor transaction by its row ID.
+  Future<Response> getVisitorDetail(String token, String id) async {
+    try {
+      final response = await _dio.get(
+        '/$pathApi/visitor/$id',
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+      return response;
+    } on DioException catch (e) {
+      debugPrint('Dio Error getVisitorDetail: ${e.message}');
+      if (e.response != null) return e.response!;
+      rethrow;
+    }
+  }
+
   // ─── Share Link ──────────────────────────────────────────────────────────
 
   Future<Response> getShareLinkDt(

@@ -6,11 +6,12 @@ import 'controller/invitation_controller.dart';
 import '../../../../presentation/home/visitor_request/add_pra_registration_dialog.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
-import '../../../core/components/custom_card.dart';
 import '../../../core/core.dart';
 import '../../../core/helper/responsive_helper.dart';
 import '../../history/widgets/filter_bottom_sheet.dart';
 import '../../../../data/models/access_pass_model.dart';
+import '../../../../data/datasources/api_service.dart';
+import '../../../../data/datasources/hive_service.dart';
 import 'widgets/create_share_link_dialog.dart';
 import 'widgets/share_link_card.dart';
 import 'widgets/share_link_detail_modal.dart';
@@ -339,87 +340,267 @@ class _SendInvitationPageState extends State<SendInvitationPage>
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
                       itemCount: inviteCtrl.ongoingInvitations.length,
-                      separatorBuilder: (context, index) => vSpace(context, 12),
+                      separatorBuilder: (context, index) => vSpace(context, 10),
                       itemBuilder: (context, index) {
                         final item = inviteCtrl.ongoingInvitations[index];
-                        final isCheckout = item.visitorStatus
-                            .toLowerCase()
-                            .contains('checkout');
-                        final isCheckin = item.visitorStatus
-                            .toLowerCase()
-                            .contains('checkin');
-                        final isPreregis = item.visitorStatus
-                            .toLowerCase()
-                            .contains('preregis');
-                        final isDone = item.isPraregisterDone;
+                        final now = DateTime.now();
+                        final isExpired = item.visitorPeriodEnd.isBefore(now);
+                        final isPraregis = item.isPraregisterDone;
+                        final jenis = isPraregis ? 'Praregis' : 'Invitation';
+                        final jenisColor = isPraregis
 
-                        IconData statusIcon;
-                        Color statusColor;
-
-                        if (isCheckout) {
-                          statusIcon = Icons.cancel;
-                          statusColor = AppColors.success500;
-                        } else if (isCheckin) {
-                          statusIcon = Icons.check_circle;
-                          statusColor = AppColors.success500;
-                        } else if (isPreregis && isDone) {
-                          statusIcon = Icons.fact_check;
-                          statusColor = Colors.grey;
-                        } else {
-                          statusIcon = Icons.assignment_late;
-                          statusColor = Colors.grey;
-                        }
+                            ? const Color(0xFF005596)
+                            : const Color(0xFF6D4C41);
 
                         return GestureDetector(
-                          onTap: () =>
-                              _showInvitationDetailDialog(item, statusColor),
-                          child: CustomCard(
-                            image: Icon(
-                              statusIcon,
+                          onTap: () => _showInvitationDetailSheet(item),
+                          child: Container(
+                            decoration: BoxDecoration(
                               color: Colors.white,
-                              size: rw(context, 20),
-                            ),
-                            size: rw(context, 26),
-                            title: item.visitorName,
-                            subtitle: item.sitePlaceName.isNotEmpty
-                                ? item.sitePlaceName
-                                : item.groupName,
-                            additional: DateFormat(
-                              'EEE, dd MMM yyyy',
-                            ).format(item.visitorPeriodStart),
-                            additionalDesc:
-                                '${DateFormat('HH:mm').format(item.visitorPeriodStart)} - ${DateFormat('HH:mm').format(item.visitorPeriodEnd)}',
-                            backgroundIconColor: statusColor,
-                            trailing: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              crossAxisAlignment: CrossAxisAlignment.end,
-                              children: [
-                                Text(
-                                  item.invitationCode,
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: rfs(context, 12),
-                                  ),
+                              borderRadius: BorderRadius.circular(rw(context, 12)),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.06),
+                                  blurRadius: rw(context, 10),
+                                  offset: Offset(0, rh(context, 3)),
                                 ),
-                                vSpace(context, 4),
+                              ],
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                // ── Top bar: No + badges ──────────────────
                                 Container(
+                                  margin: EdgeInsets.fromLTRB(
+                                    rw(context, 14),
+                                    rh(context, 10),
+                                    rw(context, 14),
+                                    0,
+                                  ),
                                   padding: EdgeInsets.symmetric(
-                                    horizontal: rw(context, 8),
-                                    vertical: rh(context, 2),
+                                    horizontal: rw(context, 12),
+                                    vertical: rh(context, 10),
                                   ),
                                   decoration: BoxDecoration(
-                                    color: statusColor,
-                                    borderRadius: BorderRadius.circular(
-                                      rw(context, 4),
+                                    color: const Color(0xFF005596).withValues(alpha: 0.04),
+                                    borderRadius: BorderRadius.circular(rw(context, 10)),
+                                    border: Border.all(
+                                      color: const Color(0xFF005596).withValues(alpha: 0.18),
                                     ),
                                   ),
-                                  child: Text(
-                                    item.visitorStatus,
-                                    style: TextStyle(
-                                      fontSize: rfs(context, 10),
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.white,
-                                    ),
+                                  child: Row(
+                                    children: [
+                                      // No
+                                      Container(
+                                        width: rw(context, 26),
+                                        height: rw(context, 26),
+                                        alignment: Alignment.center,
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFF005596),
+                                          shape: BoxShape.circle,
+                                        ),
+                                        child: Text(
+                                          '${index + 1}',
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontSize: rfs(context, 11),
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ),
+                                      hSpace(context, 10),
+                                      Expanded(
+                                        child: Text(
+                                          item.visitorName,
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.w700,
+                                            fontSize: rfs(context, 14),
+                                            color: Colors.black87,
+                                          ),
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                      hSpace(context, 6),
+                                      // Jenis badge
+                                      Container(
+                                        padding: EdgeInsets.symmetric(
+                                          horizontal: rw(context, 7),
+                                          vertical: rh(context, 3),
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: jenisColor.withValues(alpha: 0.12),
+                                          borderRadius: BorderRadius.circular(rw(context, 20)),
+                                          border: Border.all(color: jenisColor.withValues(alpha: 0.4)),
+                                        ),
+                                        child: Text(
+                                          jenis,
+                                          style: TextStyle(
+                                            fontSize: rfs(context, 10),
+                                            fontWeight: FontWeight.w600,
+                                            color: jenisColor,
+                                          ),
+                                        ),
+                                      ),
+                                      hSpace(context, 6),
+                                      // Expired badge
+                                      Container(
+                                        padding: EdgeInsets.symmetric(
+                                          horizontal: rw(context, 7),
+                                          vertical: rh(context, 3),
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: isExpired
+                                              ? Colors.red.withValues(alpha: 0.1)
+                                              : Colors.green.withValues(alpha: 0.1),
+                                          borderRadius: BorderRadius.circular(rw(context, 20)),
+                                          border: Border.all(
+                                            color: isExpired
+                                                ? Colors.red.withValues(alpha: 0.4)
+                                                : Colors.green.withValues(alpha: 0.4),
+                                          ),
+                                        ),
+                                        child: Text(
+                                          isExpired ? 'Expired' : 'Active',
+                                          style: TextStyle(
+                                            fontSize: rfs(context, 10),
+                                            fontWeight: FontWeight.w600,
+                                            color: isExpired ? Colors.red.shade700 : Colors.green.shade700,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+
+                                // ── Body: info rows ───────────────────────
+                                Container(
+                                  margin: EdgeInsets.fromLTRB(
+                                    rw(context, 14),
+                                    rh(context, 8),
+                                    rw(context, 14),
+                                    rh(context, 12),
+                                  ),
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: rw(context, 12),
+                                    vertical: rh(context, 10),
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey.shade50,
+                                    borderRadius: BorderRadius.circular(rw(context, 10)),
+                                    border: Border.all(color: Colors.grey.shade200),
+                                  ),
+                                  child: Column(
+                                    children: [
+                                      // Row 1: Visitor Type + Invitation Code
+                                      Row(
+                                        children: [
+                                          Expanded(
+                                            child: _buildCardField(
+                                              context,
+                                              Icons.badge_outlined,
+                                              'Visitor Type',
+                                              item.visitorTypeName.isEmpty
+                                                  ? '-'
+                                                  : item.visitorTypeName,
+                                            ),
+                                          ),
+                                          hSpace(context, 8),
+                                          Expanded(
+                                            child: _buildCardField(
+                                              context,
+                                              Icons.confirmation_number_outlined,
+                                              'Invitation Code',
+                                              item.invitationCode.isEmpty ? '-' : item.invitationCode,
+                                              color: const Color(0xFF005596),
+                                              trailing: GestureDetector(
+                                                onTap: () {
+                                                  if (isExpired) {
+                                                    Get.snackbar(
+                                                      'Info',
+                                                      'Invitation has expired, code cannot be copied.',
+                                                      snackPosition: SnackPosition.TOP,
+                                                      backgroundColor: Colors.red.shade600,
+                                                      colorText: Colors.white,
+                                                    );
+                                                    return;
+                                                  }
+                                                  if (item.invitationCode.isNotEmpty) {
+                                                    Clipboard.setData(ClipboardData(
+                                                        text: item.invitationCode));
+                                                    Get.snackbar(
+                                                      'Copied',
+                                                      'Invitation Code copied to clipboard',
+                                                      snackPosition: SnackPosition.TOP,
+                                                      backgroundColor: Colors.green,
+                                                      colorText: Colors.white,
+                                                      duration: const Duration(seconds: 1),
+                                                    );
+                                                  }
+                                                },
+                                                child: Icon(
+                                                  Icons.copy,
+                                                  size: rw(context, 14),
+                                                  color: isExpired
+                                                      ? Colors.grey.shade400
+                                                      : const Color(0xFF005596),
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      vSpace(context, 8),
+                                      // Row 2: Organization + Host
+                                      Row(
+                                        children: [
+                                          Expanded(
+                                            child: _buildCardField(
+                                              context,
+                                              Icons.business_outlined,
+                                              'Organization',
+                                              item.visitorOrganizationName.isEmpty
+                                                  ? '-'
+                                                  : item.visitorOrganizationName,
+                                            ),
+                                          ),
+                                          hSpace(context, 8),
+                                          Expanded(
+                                            child: _buildCardField(
+                                              context,
+                                              Icons.person_outline,
+                                              'Host',
+                                              item.hostName.isEmpty ? '-' : item.hostName,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      vSpace(context, 8),
+                                      // Row 3: Period Start + Period End
+                                      Row(
+                                        children: [
+                                          Expanded(
+                                            child: _buildCardField(
+                                              context,
+                                              Icons.login_outlined,
+                                              'Period Start',
+                                              DateFormat('dd MMM yy HH:mm')
+                                                  .format(item.visitorPeriodStart),
+                                            ),
+                                          ),
+                                          hSpace(context, 8),
+                                          Expanded(
+                                            child: _buildCardField(
+                                              context,
+                                              Icons.logout_outlined,
+                                              'Period End',
+                                              DateFormat('dd MMM yy HH:mm')
+                                                  .format(item.visitorPeriodEnd),
+                                              color: isExpired ? Colors.red.shade600 : null,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
                                   ),
                                 ),
                               ],
@@ -442,179 +623,67 @@ class _SendInvitationPageState extends State<SendInvitationPage>
     return const ShareLinkListInline();
   }
 
-  void _showInvitationDetailDialog(AccessPassModel item, Color statusColor) {
-    showDialog(
-      context: context,
-      builder: (context) => Dialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(rw(context, 20)),
-        ),
-        child: Container(
-          padding: EdgeInsets.all(rw(context, 24)),
+  /// Helper: compact 2-line info field inside card
+  Widget _buildCardField(
+    BuildContext context,
+    IconData icon,
+    String label,
+    String value, {
+    Color? color,
+    Widget? trailing,
+  }) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, size: rw(context, 13), color: Colors.grey.shade400),
+        hSpace(context, 5),
+        Expanded(
           child: Column(
-            mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Center(
-                child: Text(
-                  'Invitation Details',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: rfs(context, 20),
-                  ),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: rfs(context, 10),
+                  color: Colors.grey.shade500,
                 ),
               ),
-              vSpace(context, 12),
-              const Divider(),
-              vSpace(context, 16),
-              _buildDetailRow(
-                context,
-                'Visitor Name',
-                item.visitorName,
-                isBold: true,
-              ),
-              _buildDetailRow(
-                context,
-                'Invitation Code',
-                item.invitationCode,
-                color: const Color(0xFF005596),
-              ),
-              _buildDetailRow(
-                context,
-                'Status',
-                item.visitorStatus,
-                badgeColor: statusColor,
-              ),
-              if (item.visitorRole.isNotEmpty)
-                _buildDetailRow(context, 'Visitor Role', item.visitorRole),
-              _buildDetailRow(context, 'Host', item.hostName),
-              _buildDetailRow(context, 'Location', item.sitePlaceName),
-              _buildDetailRow(context, 'Agenda', item.agenda),
-              _buildDetailRow(
-                context,
-                'Visit Period',
-                '${DateFormat('dd MMM yyyy').format(item.visitorPeriodStart)}\n${DateFormat('HH:mm').format(item.visitorPeriodStart)} - ${DateFormat('HH:mm').format(item.visitorPeriodEnd)}',
-              ),
-              if (item.parkingArea.isNotEmpty || item.parkingSlot.isNotEmpty)
-                _buildDetailRow(
-                  context,
-                  'Parking',
-                  '${item.parkingArea} - ${item.parkingSlot}',
-                ),
-              if (item.vehiclePlateNumber.isNotEmpty)
-                _buildDetailRow(
-                  context,
-                  'Vehicle Plate',
-                  item.vehiclePlateNumber,
-                ),
-              vSpace(context, 16),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF005596),
-                    padding: EdgeInsets.symmetric(vertical: rh(context, 14)),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(rw(context, 12)),
+              Row(
+                children: [
+                  Flexible(
+                    child: Text(
+                      value,
+                      style: TextStyle(
+                        fontSize: rfs(context, 12),
+                        fontWeight: FontWeight.w600,
+                        color: color ?? Colors.black87,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 2,
                     ),
                   ),
-                  onPressed: () => Navigator.pop(context),
-                  child: Text(
-                    'Close',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: rfs(context, 14),
-                    ),
-                  ),
-                ),
+                  if (trailing != null) ...[
+                    hSpace(context, 4),
+                    trailing,
+                  ],
+                ],
               ),
             ],
           ),
         ),
-      ),
+      ],
     );
   }
 
-  Widget _buildDetailRow(
-    BuildContext context,
-    String label,
-    String value, {
-    bool isBold = false,
-    Color? color,
-    Color? badgeColor,
-  }) {
-    return Padding(
-      padding: EdgeInsets.only(bottom: rh(context, 12)),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label,
-            style: TextStyle(
-              color: Colors.grey[600],
-              fontSize: rfs(context, 12),
-            ),
-          ),
-          vSpace(context, 4),
-          if (badgeColor != null)
-            Container(
-              padding: EdgeInsets.symmetric(
-                horizontal: rw(context, 8),
-                vertical: rh(context, 2),
-              ),
-              decoration: BoxDecoration(
-                color: badgeColor,
-                borderRadius: BorderRadius.circular(rw(context, 4)),
-              ),
-              child: Text(
-                value,
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: rfs(context, 12),
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            )
-          else
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    value.isEmpty ? '-' : value,
-                    style: TextStyle(
-                      fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
-                      color: color ?? Colors.black87,
-                      fontSize: rfs(context, 14),
-                    ),
-                  ),
-                ),
-                if (label == 'Invitation Code' && value.isNotEmpty)
-                  GestureDetector(
-                    onTap: () {
-                      Clipboard.setData(ClipboardData(text: value));
-                      Get.snackbar(
-                        'Copied',
-                        'Invitation Code copied to clipboard',
-                        snackPosition: SnackPosition.TOP,
-                        backgroundColor: Colors.green,
-                        colorText: Colors.white,
-                        duration: const Duration(seconds: 1),
-                        margin: EdgeInsets.all(rw(context, 10)),
-                      );
-                    },
-                    child: Icon(
-                      Icons.content_copy,
-                      size: rw(context, 16),
-                      color: Colors.grey[400],
-                    ),
-                  ),
-              ],
-            ),
-        ],
-      ),
+  void _showInvitationDetailSheet(AccessPassModel item) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => _InvitationDetailSheet(item: item),
     );
   }
+
 
   Widget _buildFilterChip(BuildContext context, String label) {
     return Container(
@@ -690,6 +759,572 @@ class _SendInvitationPageState extends State<SendInvitationPage>
       return 'Sampai ${format.format(end!)}';
     }
   }
+}
+
+// ─── _SheetField model ────────────────────────────────────────────────────────
+// ─── _InvitationDetailSheet ─────────────────────────────────────────────────
+class _InvitationDetailSheet extends StatefulWidget {
+  final AccessPassModel item;
+  const _InvitationDetailSheet({required this.item});
+
+  @override
+  State<_InvitationDetailSheet> createState() => _InvitationDetailSheetState();
+}
+
+class _InvitationDetailSheetState extends State<_InvitationDetailSheet> {
+  String _sitePlaceName = '';
+  bool _loadingSite = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchSiteDetail();
+  }
+
+  Future<void> _fetchSiteDetail() async {
+    try {
+      final api = ApiService();
+      final hive = HiveService();
+      final token = hive.getUser()?.token ?? '';
+      final id = widget.item.id;
+      if (token.isEmpty || id.isEmpty) {
+        if (mounted) setState(() => _loadingSite = false);
+        return;
+      }
+      final response = await api.getVisitorDetail(token, id);
+      if (response.data != null &&
+          (response.data['status'] == 'success' ||
+              response.data['status_code'] == 200)) {
+        final col = response.data['collection'];
+        if (col != null) {
+          setState(() {
+            _sitePlaceName = col['site_place_name']?.toString() ?? '';
+            _loadingSite = false;
+          });
+          return;
+        }
+      }
+    } catch (e) {
+      debugPrint('fetchSiteDetail error: $e');
+    }
+    if (mounted) setState(() => _loadingSite = false);
+  }
+
+  Color _statusColor(String status) {
+    switch (status.toLowerCase()) {
+      case 'checkin':    return const Color(0xFF00897B);
+      case 'checkout':   return const Color(0xFF3949AB);
+      case 'available':  return const Color(0xFF43A047);
+      case 'waiting':    return const Color(0xFFFB8C00);
+      case 'denied':     return const Color(0xFFE53935);
+      case 'quickaccess':return const Color(0xFF8E24AA);
+      default:           return const Color(0xFF546E7A);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final item = widget.item;
+    final isExpired = item.visitorPeriodEnd.isBefore(DateTime.now());
+    final statusColor = _statusColor(item.visitorStatus);
+
+    return DraggableScrollableSheet(
+      initialChildSize: 0.9,
+      minChildSize: 0.5,
+      maxChildSize: 0.97,
+      expand: false,
+      builder: (context, scrollController) {
+        return Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(rw(context, 20)),
+              topRight: Radius.circular(rw(context, 20)),
+            ),
+          ),
+          child: Column(
+            children: [
+              // ── Drag handle ────────────────────────────────────────────
+              Padding(
+                padding: EdgeInsets.only(top: rh(context, 12)),
+                child: Container(
+                  width: rw(context, 40),
+                  height: rh(context, 4),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade300,
+                    borderRadius: BorderRadius.circular(rw(context, 2)),
+                  ),
+                ),
+              ),
+
+              // ── Header ─────────────────────────────────────────────────
+              Padding(
+                padding: EdgeInsets.symmetric(
+                  horizontal: rw(context, 20),
+                  vertical: rh(context, 14),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: EdgeInsets.all(rw(context, 10)),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF005596).withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(rw(context, 10)),
+                      ),
+                      child: const Icon(
+                        Icons.person_pin_circle_outlined,
+                        color: Color(0xFF005596),
+                      ),
+                    ),
+                    hSpace(context, 12),
+                    Expanded(
+                      child: Text(
+                        item.visitorName,
+                        style: TextStyle(
+                          fontWeight: FontWeight.w800,
+                          fontSize: rfs(context, 16),
+                          color: Colors.black87,
+                        ),
+                      ),
+                    ),
+                    Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: rw(context, 10),
+                        vertical: rh(context, 5),
+                      ),
+                      decoration: BoxDecoration(
+                        color: isExpired
+                            ? Colors.red.withValues(alpha: 0.1)
+                            : Colors.green.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(rw(context, 20)),
+                        border: Border.all(
+                          color: isExpired
+                              ? Colors.red.withValues(alpha: 0.5)
+                              : Colors.green.withValues(alpha: 0.5),
+                        ),
+                      ),
+                      child: Text(
+                        isExpired ? 'Expired' : 'Active',
+                        style: TextStyle(
+                          fontSize: rfs(context, 11),
+                          fontWeight: FontWeight.w700,
+                          color: isExpired
+                              ? Colors.red.shade700
+                              : Colors.green.shade700,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Container(height: 1, color: Colors.grey.shade100),
+
+              // ── Scrollable body ────────────────────────────────────────
+              Expanded(
+                child: ListView(
+                  controller: scrollController,
+                  padding: EdgeInsets.symmetric(
+                    horizontal: rw(context, 20),
+                    vertical: rh(context, 16),
+                  ),
+                  children: [
+                    // 1. Visitor Information
+                    _section(context, 'Visitor Information'),
+                    _grid(context, statusColor, [
+                      _SheetField('Visitor Type',
+                          item.visitorTypeName.isEmpty ? '-' : item.visitorTypeName,
+                          Icons.badge_outlined),
+                      _SheetField('Visitor Role',
+                          item.visitorRole.isEmpty ? '-' : item.visitorRole,
+                          Icons.work_outline),
+                      _SheetField('Name',
+                          item.visitorName.isEmpty ? '-' : item.visitorName,
+                          Icons.person_outline),
+                      _SheetField('Email',
+                          item.visitorEmail.isEmpty ? '-' : item.visitorEmail,
+                          Icons.email_outlined),
+                      _SheetField('Phone',
+                          item.visitorPhone.isEmpty ? '-' : item.visitorPhone,
+                          Icons.phone_outlined),
+                      _SheetField('Organization',
+                          item.visitorOrganizationName.isEmpty ? '-' : item.visitorOrganizationName,
+                          Icons.business_outlined),
+                      _SheetField('Identity ID',
+                          item.visitorIdentityId.isEmpty ? '-' : item.visitorIdentityId,
+                          Icons.credit_card_outlined),
+                    ], isExpired: isExpired),
+
+                    vSpace(context, 16),
+
+                    // 2. Invitation Information (tanpa "Type")
+                    _section(context, 'Invitation Information'),
+                    _grid(context, statusColor, [
+                      _SheetField('Invitation Code',
+                          item.invitationCode.isEmpty ? '-' : item.invitationCode,
+                          Icons.confirmation_number_outlined,
+                          isCode: true),
+                      _SheetField('Visitor Code',
+                          item.visitorCode.isEmpty ? '-' : item.visitorCode,
+                          Icons.pin_outlined),
+                      _SheetField('Group Name',
+                          item.groupName.isEmpty ? '-' : item.groupName,
+                          Icons.group_outlined),
+                      _SheetField('Visitor Status',
+                          item.visitorStatus.isEmpty ? '-' : item.visitorStatus,
+                          Icons.info_outline,
+                          badgeColor: statusColor),
+                      _SheetField('Agenda',
+                          item.agenda.isEmpty ? '-' : item.agenda,
+                          Icons.event_note_outlined),
+                      _SheetField('Host',
+                          item.hostName.isEmpty ? '-' : item.hostName,
+                          Icons.person_outline),
+                      _SheetField('Vehicle Type',
+                          item.vehicleType.isEmpty ? '-' : item.vehicleType,
+                          Icons.directions_car_outlined),
+                      _SheetField('Vehicle Plate',
+                          item.vehiclePlateNumber.isEmpty ? '-' : item.vehiclePlateNumber,
+                          Icons.subtitles_outlined),
+                    ], isExpired: isExpired),
+
+                    vSpace(context, 16),
+
+                    // 3. Visit Period
+                    _section(context, 'Visit Period'),
+
+                    // Registered Site (async)
+                    _SheetFieldRow(
+                      context: context,
+                      icon: Icons.location_on_outlined,
+                      label: 'Registered Site',
+                      value: _loadingSite ? '...' : (_sitePlaceName.isEmpty ? '-' : _sitePlaceName),
+                    ),
+                    vSpace(context, 8),
+
+                    // Start / End
+                    Container(
+                      padding: EdgeInsets.all(rw(context, 14)),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade50,
+                        borderRadius: BorderRadius.circular(rw(context, 10)),
+                        border: Border.all(color: Colors.grey.shade200),
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(children: [
+                                  Icon(Icons.login_outlined,
+                                      size: rw(context, 14),
+                                      color: Colors.green.shade600),
+                                  hSpace(context, 4),
+                                  Text('Start',
+                                      style: TextStyle(
+                                          fontSize: rfs(context, 11),
+                                          color: Colors.grey.shade500)),
+                                ]),
+                                vSpace(context, 4),
+                                Text(
+                                  DateFormat('dd MMM yyyy').format(item.visitorPeriodStart),
+                                  style: TextStyle(
+                                      fontSize: rfs(context, 13),
+                                      fontWeight: FontWeight.w700,
+                                      color: Colors.black87),
+                                ),
+                                Text(
+                                  DateFormat('HH:mm').format(item.visitorPeriodStart),
+                                  style: TextStyle(
+                                      fontSize: rfs(context, 12),
+                                      color: Colors.grey.shade600),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Container(width: 1, height: rh(context, 50), color: Colors.grey.shade300),
+                          Expanded(
+                            child: Padding(
+                              padding: EdgeInsets.only(left: rw(context, 12)),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(children: [
+                                    Icon(Icons.logout_outlined,
+                                        size: rw(context, 14),
+                                        color: isExpired ? Colors.red.shade600 : Colors.grey.shade500),
+                                    hSpace(context, 4),
+                                    Text('End',
+                                        style: TextStyle(
+                                            fontSize: rfs(context, 11),
+                                            color: Colors.grey.shade500)),
+                                  ]),
+                                  vSpace(context, 4),
+                                  Text(
+                                    DateFormat('dd MMM yyyy').format(item.visitorPeriodEnd),
+                                    style: TextStyle(
+                                        fontSize: rfs(context, 13),
+                                        fontWeight: FontWeight.w700,
+                                        color: isExpired ? Colors.red.shade600 : Colors.black87),
+                                  ),
+                                  Text(
+                                    DateFormat('HH:mm').format(item.visitorPeriodEnd),
+                                    style: TextStyle(
+                                        fontSize: rfs(context, 12),
+                                        color: isExpired ? Colors.red.shade400 : Colors.grey.shade600),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    vSpace(context, 24),
+                  ],
+                ),
+              ),
+
+              // ── Close button ───────────────────────────────────────────
+              Padding(
+                padding: EdgeInsets.fromLTRB(
+                    rw(context, 20), 0, rw(context, 20), rh(context, 24)),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF005596),
+                      padding: EdgeInsets.symmetric(vertical: rh(context, 14)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(rw(context, 12)),
+                      ),
+                    ),
+                    onPressed: () => Navigator.pop(context),
+                    child: Text(
+                      'Close',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: rfs(context, 14),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _section(BuildContext context, String title) {
+    return Padding(
+      padding: EdgeInsets.only(bottom: rh(context, 10)),
+      child: Row(
+        children: [
+          Container(
+            width: rw(context, 3),
+            height: rh(context, 14),
+            decoration: BoxDecoration(
+              color: const Color(0xFF005596),
+              borderRadius: BorderRadius.circular(rw(context, 2)),
+            ),
+          ),
+          hSpace(context, 8),
+          Text(title,
+              style: TextStyle(
+                  fontWeight: FontWeight.w700,
+                  fontSize: rfs(context, 13),
+                  color: Colors.black87)),
+        ],
+      ),
+    );
+  }
+
+  Widget _grid(BuildContext context, Color statusColor, List<_SheetField> fields, {bool isExpired = false}) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.grey.shade50,
+        borderRadius: BorderRadius.circular(rw(context, 10)),
+        border: Border.all(color: Colors.grey.shade200),
+      ),
+      child: Column(
+        children: List.generate(fields.length, (i) {
+          final f = fields[i];
+          final isLast = i == fields.length - 1;
+          return Column(
+            children: [
+              Padding(
+                padding: EdgeInsets.symmetric(
+                    horizontal: rw(context, 14), vertical: rh(context, 10)),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Icon(f.icon, size: rw(context, 16), color: Colors.grey.shade400),
+                    hSpace(context, 10),
+                    SizedBox(
+                      width: rw(context, 100),
+                      child: Text(f.label,
+                          style: TextStyle(
+                              fontSize: rfs(context, 12),
+                              color: Colors.grey.shade500)),
+                    ),
+                    Expanded(
+                      child: f.badgeColor != null
+                          ? Row(
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              children: [
+                                Container(
+                                  padding: EdgeInsets.symmetric(
+                                      horizontal: rw(context, 8),
+                                      vertical: rh(context, 3)),
+                                  decoration: BoxDecoration(
+                                    color: f.badgeColor,
+                                    borderRadius: BorderRadius.circular(rw(context, 4)),
+                                  ),
+                                  child: Text(f.value,
+                                      style: TextStyle(
+                                          fontSize: rfs(context, 11),
+                                          fontWeight: FontWeight.w600,
+                                          color: Colors.white)),
+                                ),
+                              ],
+                            )
+                          : Row(
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              children: [
+                                Flexible(
+                                  child: Text(f.value,
+                                      style: TextStyle(
+                                          fontSize: rfs(context, 13),
+                                          fontWeight: FontWeight.w600,
+                                          color: f.isCode
+                                              ? const Color(0xFF005596)
+                                              : Colors.black87),
+                                      textAlign: TextAlign.end,
+                                      overflow: TextOverflow.ellipsis,
+                                      maxLines: 2),
+                                ),
+                                if (f.isCode) ...[
+                                  hSpace(context, 6),
+                                  GestureDetector(
+                                    onTap: () {
+                                      if (isExpired) {
+                                        Get.snackbar(
+                                          'Info',
+                                          'Invitation has expired, code cannot be copied.',
+                                          snackPosition: SnackPosition.TOP,
+                                          backgroundColor: Colors.red.shade600,
+                                          colorText: Colors.white,
+                                          duration: const Duration(seconds: 1),
+                                          margin: EdgeInsets.all(rw(context, 10)),
+                                        );
+                                        return;
+                                      }
+                                      Clipboard.setData(
+                                          ClipboardData(text: f.value));
+                                      Get.snackbar('Copied',
+                                          'Copied to clipboard',
+                                          snackPosition: SnackPosition.TOP,
+                                          backgroundColor: Colors.green,
+                                          colorText: Colors.white,
+                                          duration: const Duration(seconds: 1),
+                                          margin: EdgeInsets.all(rw(context, 10)));
+                                    },
+                                    child: Icon(Icons.copy,
+                                        size: rw(context, 14),
+                                        color: isExpired ? Colors.grey.shade300 : Colors.grey.shade400),
+                                  ),
+                                ],
+                              ],
+                            ),
+                    ),
+                  ],
+                ),
+              ),
+              if (!isLast)
+                Divider(
+                    height: 1,
+                    thickness: 1,
+                    color: Colors.grey.shade200,
+                    indent: rw(context, 14),
+                    endIndent: rw(context, 14)),
+            ],
+          );
+        }),
+      ),
+    );
+  }
+}
+
+/// Single-row field for Registered Site with full-width bordered container
+class _SheetFieldRow extends StatelessWidget {
+  final BuildContext context;
+  final IconData icon;
+  final String label;
+  final String value;
+
+  const _SheetFieldRow({
+    required this.context,
+    required this.icon,
+    required this.label,
+    required this.value,
+  });
+
+  @override
+  Widget build(BuildContext ctx) {
+    return Container(
+      padding: EdgeInsets.symmetric(
+          horizontal: rw(ctx, 14), vertical: rh(ctx, 12)),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade50,
+        borderRadius: BorderRadius.circular(rw(ctx, 10)),
+        border: Border.all(color: Colors.grey.shade200),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, size: rw(ctx, 16), color: Colors.grey.shade400),
+          hSpace(ctx, 10),
+          SizedBox(
+            width: rw(ctx, 100),
+            child: Text(label,
+                style: TextStyle(
+                    fontSize: rfs(ctx, 12), color: Colors.grey.shade500)),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              textAlign: TextAlign.end,
+              style: TextStyle(
+                  fontSize: rfs(ctx, 13),
+                  fontWeight: FontWeight.w600,
+                  color: Colors.black87),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── _SheetField model ────────────────────────────────────────────────────────
+class _SheetField {
+  final String label;
+  final String value;
+  final IconData icon;
+  final bool isCode;
+  final Color? badgeColor;
+
+  const _SheetField(
+    this.label,
+    this.value,
+    this.icon, {
+    this.isCode = false,
+    this.badgeColor,
+  });
 }
 
 // ─── Inline Share Link List (displayed inside SendInvitationPage) ────────────
