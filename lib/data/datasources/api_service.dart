@@ -516,8 +516,6 @@ class ApiService {
           'start': start,
           'length': length,
           'draw': 1,
-          if (sortColumn != null) 'sort_column': sortColumn,
-          if (sortDir != null) 'sort_dir': sortDir,
         },
         options: Options(headers: {'Authorization': 'Bearer $token'}),
       );

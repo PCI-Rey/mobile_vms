@@ -215,7 +215,8 @@ class InvitationController extends GetxController {
   Future<void> _fetchVisitorProviders(String token) async {
     try {
       final response = await _api.getVisitorProviders(token);
-      if (response.data['status'] == 'success' || response.data['status_code'] == 200) {
+      if (response.data['status'] == 'success' ||
+          response.data['status_code'] == 200) {
         visitorProviders.assignAll(
           List<Map<String, dynamic>>.from(response.data['collection']),
         );
@@ -250,7 +251,7 @@ class InvitationController extends GetxController {
           response.data['collection'] as List<dynamic>? ?? [],
         );
       } else if (response.data['status'] == 'not_found' ||
-                 response.data['status_code'] == 404) {
+          response.data['status_code'] == 404) {
         dashboardShareLinks.clear();
       }
     } catch (e) {
@@ -292,7 +293,7 @@ class InvitationController extends GetxController {
             response.data['RecordsTotal'] ??
             0;
       } else if (response.data['status'] == 'not_found' ||
-                 response.data['status_code'] == 404) {
+          response.data['status_code'] == 404) {
         shareLinks.clear();
         shareLinkTotalRecords.value = 0;
       }
@@ -369,11 +370,9 @@ class InvitationController extends GetxController {
     if (token == null) return false;
 
     try {
-      final response = await _api.sendEmailForExistingShareLink(
-        token,
-        id,
-        {'emails': emails},
-      );
+      final response = await _api.sendEmailForExistingShareLink(token, id, {
+        'emails': emails,
+      });
       if (response.data['status'] == 'success' ||
           response.data['status_code'] == 200) {
         return true;
@@ -436,7 +435,9 @@ class InvitationController extends GetxController {
       return false;
     } catch (e) {
       if (e is DioException && e.response != null) {
-        debugPrint('createQuickAccessAction error response: ${e.response?.data}');
+        debugPrint(
+          'createQuickAccessAction error response: ${e.response?.data}',
+        );
         throw e.response?.data['message'] ??
             e.response?.data['msg'] ??
             e.response?.data.toString() ??
