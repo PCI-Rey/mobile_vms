@@ -209,9 +209,7 @@ class ShareLinkDetailModal {
                           ],
                         ),
                       ),
-
                       const Divider(height: 1),
-
                       Padding(
                         padding: EdgeInsets.symmetric(
                           horizontal: rw(ctx, 20),
@@ -248,16 +246,6 @@ class ShareLinkDetailModal {
                                   builder: (context) =>
                                       InviteShareLinkDialog(item: item),
                                 );
-                              },
-                            ),
-                            hSpace(ctx, 16),
-                            _buildActionButton(
-                              ctx,
-                              label: 'View',
-                              icon: Icons.visibility,
-                              color: Colors.blue.shade600,
-                              onTap: () {
-                                // Logic to show details if needed
                               },
                             ),
                             hSpace(ctx, 16),
