@@ -70,7 +70,7 @@ class _SearchVisitorPageState extends State<SearchVisitorPage> {
             CustomTextField(
               controller: _searchCtrl,
               label: 'Search',
-              hintText: 'Type name, email, phone, organization, or NIK...',
+              hintText: 'Type name or email',
               suffixIcon: const Icon(Icons.search),
               showLabel: false,
               onChanged: (val) {
@@ -137,7 +137,8 @@ class _SearchVisitorPageState extends State<SearchVisitorPage> {
                           context: context,
                           isScrollControlled: true,
                           backgroundColor: Colors.transparent,
-                          builder: (ctx) => VisitorProfileDetailSheet(visitor: visitor),
+                          builder: (ctx) =>
+                              VisitorProfileDetailSheet(visitor: visitor),
                         );
                       },
                     );

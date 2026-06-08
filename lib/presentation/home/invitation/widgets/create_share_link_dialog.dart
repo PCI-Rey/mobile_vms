@@ -863,7 +863,11 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
           snackPosition: SnackPosition.TOP,
         );
         if (mounted) {
-          Navigator.pop(context); // Close Create dialog
+          Future.delayed(const Duration(milliseconds: 100), () {
+            if (mounted) {
+              Navigator.of(context).pop(); // Close Create dialog
+            }
+          });
         }
       }
     } catch (e) {

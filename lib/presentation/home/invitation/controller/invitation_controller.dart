@@ -233,6 +233,9 @@ class InvitationController extends GetxController {
         dashboardShareLinks.assignAll(
           response.data['collection'] as List<dynamic>? ?? [],
         );
+      } else if (response.data['status'] == 'not_found' ||
+                 response.data['status_code'] == 404) {
+        dashboardShareLinks.clear();
       }
     } catch (e) {
       debugPrint('fetchDashboardShareLinks error: $e');
@@ -272,6 +275,10 @@ class InvitationController extends GetxController {
             response.data['RecordsFiltered'] ??
             response.data['RecordsTotal'] ??
             0;
+      } else if (response.data['status'] == 'not_found' ||
+                 response.data['status_code'] == 404) {
+        shareLinks.clear();
+        shareLinkTotalRecords.value = 0;
       }
     } catch (e) {
       debugPrint('fetchShareLinks error: $e');
@@ -379,8 +386,16 @@ class InvitationController extends GetxController {
       final response = await _api.deleteShareLink(token, id);
       if (response.data['status'] == 'success' ||
           response.data['status_code'] == 200) {
-        fetchShareLinks(resetPage: true); // Refresh list
-        fetchDashboardShareLinks(); // Refresh dashboard list
+        // Remove locally from lists immediately to ensure UI is updated instantly
+        shareLinks.removeWhere((item) => item['id']?.toString() == id);
+        dashboardShareLinks.removeWhere((item) => item['id']?.toString() == id);
+
+        // Refetch after a small delay to ensure backend has completed the transaction
+        Future.delayed(const Duration(milliseconds: 500), () {
+          fetchShareLinks(resetPage: true);
+          fetchDashboardShareLinks();
+        });
+
         return true;
       }
       return false;
