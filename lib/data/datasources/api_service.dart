@@ -526,7 +526,13 @@ class ApiService {
     try {
       final response = await _dio.get(
         '/$pathApi/visitor-share-link/dt',
-        queryParameters: {'start': start, 'length': length, 'draw': 1},
+        queryParameters: {
+          'start': start,
+          'length': length,
+          'draw': 1,
+          if (sortColumn != null) 'sort_column': sortColumn,
+          if (sortDir != null) 'sort_dir': sortDir,
+        },
         options: Options(headers: {'Authorization': 'Bearer $token'}),
       );
       return response;

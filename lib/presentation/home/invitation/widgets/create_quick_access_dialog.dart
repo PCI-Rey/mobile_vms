@@ -131,13 +131,13 @@ class _CreateQuickAccessDialogState extends State<CreateQuickAccessDialog> {
         "tz": "Asia/Jakarta",
         "is_receiver_self": isSelf,
         "duration": selectedDuration,
-        "host_id": hostId,
         "site_id": selectedSiteId,
-        "vehicle_plate_number": showVehiclePlate ? vehiclePlateCtrl.text.trim() : "",
+        "host_id": hostId,
         "visitor_name": courierNameCtrl.text.trim(),
         "visitor_email": courierEmailCtrl.text.trim().isEmpty
             ? "courier-no@required.com"
             : courierEmailCtrl.text.trim(),
+        "vehicle_plate_number": showVehiclePlate ? vehiclePlateCtrl.text.trim() : "",
       };
 
       if (isSelf) {
@@ -146,7 +146,7 @@ class _CreateQuickAccessDialogState extends State<CreateQuickAccessDialog> {
         body["receiver_name"] = receiverNameCtrl.text.trim();
         body["receiver_phone"] = receiverPhoneCtrl.text.trim();
         body["receiver_email"] = receiverEmailCtrl.text.trim();
-        body["visitor_Phone"] = courierPhoneCtrl.text.trim();
+        body["visitor_phone"] = courierPhoneCtrl.text.trim();
       }
 
       final bool success = await controller.createQuickAccessAction(body);

@@ -222,23 +222,12 @@ class ShareLinkCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // ── Top bar: No + badges ──────────────────
-            Container(
-              margin: EdgeInsets.fromLTRB(
-                rw(context, 14),
-                rh(context, 8),
-                rw(context, 14),
-                0,
-              ),
-              padding: EdgeInsets.symmetric(
-                horizontal: rw(context, 12),
-                vertical: rh(context, 8),
-              ),
-              decoration: BoxDecoration(
-                color: const Color(0xFF005596).withValues(alpha: 0.04),
-                borderRadius: BorderRadius.circular(rw(context, 10)),
-                border: Border.all(
-                  color: const Color(0xFF005596).withValues(alpha: 0.18),
-                ),
+            Padding(
+              padding: EdgeInsets.only(
+                left: rw(context, 16),
+                right: rw(context, 16),
+                top: rh(context, 16),
+                bottom: rh(context, 12),
               ),
               child: Row(
                 children: [
@@ -314,26 +303,21 @@ class ShareLinkCard extends StatelessWidget {
                   // Status Badge
                   Container(
                     padding: EdgeInsets.symmetric(
-                      horizontal: rw(context, 7),
-                      vertical: rh(context, 3),
+                      horizontal: rw(context, 8),
+                      vertical: rh(context, 4),
                     ),
                     decoration: BoxDecoration(
                       color: isExpired
-                          ? Colors.red.withValues(alpha: 0.1)
-                          : Colors.green.withValues(alpha: 0.1),
+                          ? const Color(0xFFE53935)
+                          : const Color(0xFF43A047),
                       borderRadius: BorderRadius.circular(rw(context, 20)),
-                      border: Border.all(
-                        color: isExpired
-                            ? Colors.red.withValues(alpha: 0.4)
-                            : Colors.green.withValues(alpha: 0.4),
-                      ),
                     ),
                     child: Text(
                       status,
                       style: TextStyle(
                         fontSize: rfs(context, 10),
                         fontWeight: FontWeight.w600,
-                        color: isExpired ? Colors.red.shade700 : Colors.green.shade700,
+                        color: Colors.white,
                       ),
                     ),
                   ),
@@ -341,22 +325,18 @@ class ShareLinkCard extends StatelessWidget {
               ),
             ),
 
+            Divider(
+              height: 1,
+              thickness: 1,
+              color: Colors.grey.shade100,
+            ),
             // ── Body: info rows & QR Code ───────────────────────
-            Container(
-              margin: EdgeInsets.fromLTRB(
-                rw(context, 14),
-                rh(context, 6),
-                rw(context, 14),
-                rh(context, 8),
-              ),
-              padding: EdgeInsets.symmetric(
-                horizontal: rw(context, 12),
-                vertical: rh(context, 8),
-              ),
-              decoration: BoxDecoration(
-                color: Colors.grey.shade50,
-                borderRadius: BorderRadius.circular(rw(context, 10)),
-                border: Border.all(color: Colors.grey.shade200),
+            Padding(
+              padding: EdgeInsets.only(
+                left: rw(context, 16),
+                right: rw(context, 16),
+                top: rh(context, 12),
+                bottom: rh(context, 16),
               ),
               child: Row(
                 children: [
@@ -383,7 +363,7 @@ class ShareLinkCard extends StatelessWidget {
                           Icons.timer_off_outlined,
                           'Expired At',
                           item['expired_number'] == 0 ? 'Never' : formatDate(item['expired_at']),
-                          color: isExpired ? Colors.red.shade600 : null,
+                          color: Colors.red.shade600,
                         ),
                       ],
                     ),
@@ -425,10 +405,10 @@ class ShareLinkCard extends StatelessWidget {
             // ── Action Button: Share Link ───────────────────────
             Padding(
               padding: EdgeInsets.fromLTRB(
-                rw(context, 14),
+                rw(context, 16),
                 0,
-                rw(context, 14),
-                rh(context, 8),
+                rw(context, 16),
+                rh(context, 16),
               ),
               child: SizedBox(
                 width: double.infinity,

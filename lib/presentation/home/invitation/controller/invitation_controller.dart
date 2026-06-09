@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -12,7 +13,8 @@ class InvitationController extends GetxController {
 
   final RxList<AccessPassModel> allInvitations = <AccessPassModel>[].obs;
   final RxList<AccessPassModel> ongoingInvitations = <AccessPassModel>[].obs;
-  final RxList<AccessPassModel> quickAccessInvitations = <AccessPassModel>[].obs;
+  final RxList<AccessPassModel> quickAccessInvitations =
+      <AccessPassModel>[].obs;
   final RxBool isLoading = false.obs;
   final RxBool isNewestFirst = true.obs; // Default: Terbaru di atas
 
@@ -56,8 +58,12 @@ class InvitationController extends GetxController {
   }
 
   void _applyFilters() {
-    List<AccessPassModel> filtered = List.from(allInvitations.where((item) => item.visitorStatus != 'QuickAccess'));
-    List<AccessPassModel> quickAccess = List.from(allInvitations.where((item) => item.visitorStatus == 'QuickAccess'));
+    List<AccessPassModel> filtered = List.from(
+      allInvitations.where((item) => item.visitorStatus != 'QuickAccess'),
+    );
+    List<AccessPassModel> quickAccess = List.from(
+      allInvitations.where((item) => item.visitorStatus == 'QuickAccess'),
+    );
 
     // 1. Filter Berdasarkan Tanggal (Lokal)
     if (startDate.value != null) {
@@ -90,15 +96,23 @@ class InvitationController extends GetxController {
     if (selectedSiteId.value.isNotEmpty || selectedSiteName.value.isNotEmpty) {
       filtered = filtered.where((item) {
         return (selectedSiteId.value.isNotEmpty &&
-                item.siteId.toLowerCase() == selectedSiteId.value.toLowerCase()) ||
+                item.siteId.toLowerCase() ==
+                    selectedSiteId.value.toLowerCase()) ||
             (selectedSiteName.value.isNotEmpty &&
-                item.sitePlaceName.toLowerCase() == selectedSiteName.value.toLowerCase());
+                item.sitePlaceName.toLowerCase() ==
+                    selectedSiteName.value.toLowerCase());
       }).toList();
     }
 
     // Filter Berdasarkan Status (Lokal)
     if (selectedStatus.value.isNotEmpty) {
-      filtered = filtered.where((item) => item.visitorStatus.toLowerCase() == selectedStatus.value.toLowerCase()).toList();
+      filtered = filtered
+          .where(
+            (item) =>
+                item.visitorStatus.toLowerCase() ==
+                selectedStatus.value.toLowerCase(),
+          )
+          .toList();
     }
 
     // 3. Sorting
@@ -260,7 +274,7 @@ class InvitationController extends GetxController {
         token,
         start: 0,
         length: 3,
-        sortColumn: 'id',
+        sortColumn: 'created_at',
         sortDir: 'desc',
       );
       if (response.data['status'] == 'success' ||
@@ -296,7 +310,7 @@ class InvitationController extends GetxController {
         token,
         start: start,
         length: shareLinkPageSize.value,
-        sortColumn: 'id',
+        sortColumn: 'created_at',
         sortDir: 'desc',
       );
 
@@ -443,14 +457,28 @@ class InvitationController extends GetxController {
     final token = user?.token;
     if (token == null) return false;
 
+    debugPrint('createQuickAccessAction payload: ${jsonEncode(body)}');
+
     try {
       final response = await _api.createQuickAccessVisit(token, body);
-      if (response.data['status'] == 'success' ||
-          response.data['status_code'] == 200) {
+      debugPrint('createQuickAccessAction status code: ${response.statusCode}');
+      debugPrint('createQuickAccessAction response data: ${response.data}');
+
+      if (response.data is Map &&
+          (response.data['status'] == 'success' ||
+              response.data['status_code'] == 200)) {
         await fetchOngoingInvitations(clearFilters: true);
         return true;
       }
-      return false;
+
+      // If not successful, check if response has an error message
+      if (response.data is Map) {
+        throw response.data['message'] ??
+            response.data['msg'] ??
+            'Failed to create quick access visit: ${response.data}';
+      } else {
+        throw 'Failed to create quick access visit: Status ${response.statusCode}';
+      }
     } catch (e) {
       if (e is DioException && e.response != null) {
         debugPrint(
@@ -462,7 +490,8 @@ class InvitationController extends GetxController {
             'Failed to create quick access visit';
       }
       debugPrint('createQuickAccessAction error: $e');
-      throw 'Failed to create quick access visit';
+      if (e is String) throw e;
+      throw e.toString();
     }
   }
 

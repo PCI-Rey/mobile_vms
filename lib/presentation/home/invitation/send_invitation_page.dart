@@ -404,11 +404,45 @@ class _SendInvitationPageState extends State<SendInvitationPage>
                         final item = inviteCtrl.ongoingInvitations[index];
                         final now = DateTime.now();
                         final isExpired = item.visitorPeriodEnd.isBefore(now);
-                        final isPraregis = item.isPraregisterDone;
-                        final jenis = isPraregis ? 'Praregis' : 'Invitation';
-                        final jenisColor = isPraregis
-                            ? const Color(0xFF005596)
-                            : const Color(0xFF6D4C41);
+                        final String jenis;
+                        final Color jenisColor;
+
+                        if (item.visitorStatus.isEmpty) {
+                          jenis = item.isPraregisterDone ? 'Praregis' : 'Invitation';
+                          jenisColor = item.isPraregisterDone
+                              ? const Color(0xFF00B0FF)
+                              : const Color(0xFF6D4C41);
+                        } else {
+                          final lowerStatus = item.visitorStatus.toLowerCase();
+                          if (lowerStatus.contains('preregis') || lowerStatus.contains('praregis')) {
+                            jenis = 'Praregis';
+                            jenisColor = const Color(0xFF00B0FF);
+                          } else if (lowerStatus == 'available') {
+                            jenis = 'Available';
+                            jenisColor = const Color(0xFF8E24AA);
+                          } else if (lowerStatus == 'checkin') {
+                            jenis = 'Checkin';
+                            jenisColor = const Color(0xFF00897B);
+                          } else if (lowerStatus == 'checkout') {
+                            jenis = 'Checkout';
+                            jenisColor = const Color(0xFF3949AB);
+                          } else if (lowerStatus == 'waiting') {
+                            jenis = 'Waiting';
+                            jenisColor = const Color(0xFFFB8C00);
+                          } else if (lowerStatus == 'denied') {
+                            jenis = 'Denied';
+                            jenisColor = const Color(0xFFE53935);
+                          } else if (lowerStatus == 'quickaccess') {
+                            jenis = 'Quick Access';
+                            jenisColor = const Color(0xFFD81B60);
+                          } else if (lowerStatus == 'invitation') {
+                            jenis = 'Invitation';
+                            jenisColor = const Color(0xFF6D4C41);
+                          } else {
+                            jenis = item.visitorStatus[0].toUpperCase() + item.visitorStatus.substring(1);
+                            jenisColor = const Color(0xFF546E7A);
+                          }
+                        }
 
                         return GestureDetector(
                           onTap: () => _showInvitationDetailSheet(item),
@@ -473,8 +507,8 @@ class _SendInvitationPageState extends State<SendInvitationPage>
                                       // Jenis badge
                                       Container(
                                         padding: EdgeInsets.symmetric(
-                                          horizontal: rw(context, 7),
-                                          vertical: rh(context, 3),
+                                          horizontal: rw(context, 8),
+                                          vertical: rh(context, 4),
                                         ),
                                         decoration: BoxDecoration(
                                           color: jenisColor.withValues(
@@ -502,28 +536,15 @@ class _SendInvitationPageState extends State<SendInvitationPage>
                                       // Expired badge
                                       Container(
                                         padding: EdgeInsets.symmetric(
-                                          horizontal: rw(context, 7),
-                                          vertical: rh(context, 3),
+                                          horizontal: rw(context, 8),
+                                          vertical: rh(context, 4),
                                         ),
                                         decoration: BoxDecoration(
                                           color: isExpired
-                                              ? Colors.red.withValues(
-                                                  alpha: 0.1,
-                                                )
-                                              : Colors.green.withValues(
-                                                  alpha: 0.1,
-                                                ),
+                                              ? const Color(0xFFE53935)
+                                              : const Color(0xFF43A047),
                                           borderRadius: BorderRadius.circular(
                                             rw(context, 20),
-                                          ),
-                                          border: Border.all(
-                                            color: isExpired
-                                                ? Colors.red.withValues(
-                                                    alpha: 0.4,
-                                                  )
-                                                : Colors.green.withValues(
-                                                    alpha: 0.4,
-                                                  ),
                                           ),
                                         ),
                                         child: Text(
@@ -531,9 +552,7 @@ class _SendInvitationPageState extends State<SendInvitationPage>
                                           style: TextStyle(
                                             fontSize: rfs(context, 10),
                                             fontWeight: FontWeight.w600,
-                                            color: isExpired
-                                                ? Colors.red.shade700
-                                                : Colors.green.shade700,
+                                            color: Colors.white,
                                           ),
                                         ),
                                       ),
@@ -821,80 +840,56 @@ class _SendInvitationPageState extends State<SendInvitationPage>
                             child: Column(
                               children: [
                                 // TOP ROW
-                                Container(
-                                  padding: EdgeInsets.symmetric(
-                                    horizontal: rw(context, 16),
-                                    vertical: rh(context, 12),
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: isExpired
-                                        ? Colors.red.shade50
-                                        : AppColors.primary50,
-                                    borderRadius: BorderRadius.vertical(
-                                      top: Radius.circular(rw(context, 12)),
-                                    ),
+                                Padding(
+                                  padding: EdgeInsets.only(
+                                    left: rw(context, 16),
+                                    right: rw(context, 16),
+                                    top: rh(context, 16),
+                                    bottom: rh(context, 12),
                                   ),
                                   child: Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceBetween,
                                     children: [
-                                      Row(
-                                        children: [
-                                          Container(
-                                            padding: EdgeInsets.all(
-                                              rw(context, 6),
-                                            ),
-                                            decoration: BoxDecoration(
-                                              color: isExpired
-                                                  ? Colors.red.shade100
-                                                  : AppColors.primary100,
-                                              shape: BoxShape.circle,
-                                            ),
-                                            child: Icon(
-                                              Icons.flash_on,
-                                              size: rw(context, 16),
-                                              color: isExpired
-                                                  ? Colors.red.shade700
-                                                  : AppColors.primary700,
-                                            ),
+                                      Container(
+                                        width: rw(context, 26),
+                                        height: rw(context, 26),
+                                        alignment: Alignment.center,
+                                        decoration: const BoxDecoration(
+                                          color: Color(0xFF005596),
+                                          shape: BoxShape.circle,
+                                        ),
+                                        child: Text(
+                                          '${index + 1}',
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontSize: rfs(context, 11),
+                                            fontWeight: FontWeight.bold,
                                           ),
-                                          hSpace(context, 10),
-                                          Text(
-                                            'Quick Access',
-                                            style: TextStyle(
-                                              fontSize: rfs(context, 14),
-                                              fontWeight: FontWeight.w600,
-                                              color: isExpired
-                                                  ? Colors.red.shade900
-                                                  : AppColors.primary900,
-                                            ),
-                                          ),
-                                        ],
+                                        ),
                                       ),
+                                      hSpace(context, 10),
+                                      Expanded(
+                                        child: Text(
+                                          item.visitorName,
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.w700,
+                                            fontSize: rfs(context, 14),
+                                            color: Colors.black87,
+                                          ),
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                      hSpace(context, 6),
                                       Container(
                                         padding: EdgeInsets.symmetric(
-                                          horizontal: rw(context, 10),
+                                          horizontal: rw(context, 8),
                                           vertical: rh(context, 4),
                                         ),
                                         decoration: BoxDecoration(
                                           color: isExpired
-                                              ? Colors.red.withValues(
-                                                  alpha: 0.1,
-                                                )
-                                              : Colors.green.withValues(
-                                                  alpha: 0.1,
-                                                ),
+                                              ? const Color(0xFFE53935)
+                                              : const Color(0xFF43A047),
                                           borderRadius: BorderRadius.circular(
                                             rw(context, 20),
-                                          ),
-                                          border: Border.all(
-                                            color: isExpired
-                                                ? Colors.red.withValues(
-                                                    alpha: 0.4,
-                                                  )
-                                                : Colors.green.withValues(
-                                                    alpha: 0.4,
-                                                  ),
                                           ),
                                         ),
                                         child: Text(
@@ -902,18 +897,26 @@ class _SendInvitationPageState extends State<SendInvitationPage>
                                           style: TextStyle(
                                             fontSize: rfs(context, 10),
                                             fontWeight: FontWeight.w600,
-                                            color: isExpired
-                                                ? Colors.red.shade700
-                                                : Colors.green.shade700,
+                                            color: Colors.white,
                                           ),
                                         ),
                                       ),
                                     ],
                                   ),
                                 ),
+                                Divider(
+                                  height: 1,
+                                  thickness: 1,
+                                  color: Colors.grey.shade100,
+                                ),
                                 // DETAILS
                                 Padding(
-                                  padding: EdgeInsets.all(rw(context, 16)),
+                                  padding: EdgeInsets.only(
+                                    left: rw(context, 16),
+                                    right: rw(context, 16),
+                                    top: rh(context, 12),
+                                    bottom: rh(context, 16),
+                                  ),
                                   child: Column(
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
@@ -925,7 +928,7 @@ class _SendInvitationPageState extends State<SendInvitationPage>
                                             child: _buildCardField(
                                               context,
                                               Icons.badge_outlined,
-                                              'Visitor Name',
+                                              'Recipient',
                                               item.visitorName,
                                             ),
                                           ),
@@ -945,34 +948,7 @@ class _SendInvitationPageState extends State<SendInvitationPage>
                                         ],
                                       ),
                                       vSpace(context, 8),
-                                      // Row 2: Location + Host
-                                      Row(
-                                        children: [
-                                          Expanded(
-                                            child: _buildCardField(
-                                              context,
-                                              Icons.location_on_outlined,
-                                              'Location',
-                                              item.sitePlaceName.isEmpty
-                                                  ? '-'
-                                                  : item.sitePlaceName,
-                                            ),
-                                          ),
-                                          hSpace(context, 8),
-                                          Expanded(
-                                            child: _buildCardField(
-                                              context,
-                                              Icons.assignment_ind_outlined,
-                                              'Host',
-                                              item.hostName.isEmpty
-                                                  ? '-'
-                                                  : item.hostName,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                      vSpace(context, 8),
-                                      // Row 3: Period Start + Period End
+                                      // Row 2: Period Start + Period End
                                       Row(
                                         children: [
                                           Expanded(
@@ -1210,13 +1186,16 @@ class _InvitationDetailSheetState extends State<_InvitationDetailSheet> {
       case 'checkout':
         return const Color(0xFF3949AB);
       case 'available':
-        return const Color(0xFF43A047);
+        return const Color(0xFF8E24AA);
       case 'waiting':
         return const Color(0xFFFB8C00);
       case 'denied':
         return const Color(0xFFE53935);
       case 'quickaccess':
-        return const Color(0xFF8E24AA);
+        return const Color(0xFFD81B60);
+      case 'preregis':
+      case 'praregis':
+        return const Color(0xFF00B0FF);
       default:
         return const Color(0xFF546E7A);
     }
@@ -1294,23 +1273,16 @@ class _InvitationDetailSheetState extends State<_InvitationDetailSheet> {
                       ),
                       decoration: BoxDecoration(
                         color: isExpired
-                            ? Colors.red.withValues(alpha: 0.1)
-                            : Colors.green.withValues(alpha: 0.1),
+                            ? const Color(0xFFE53935)
+                            : const Color(0xFF43A047),
                         borderRadius: BorderRadius.circular(rw(context, 20)),
-                        border: Border.all(
-                          color: isExpired
-                              ? Colors.red.withValues(alpha: 0.5)
-                              : Colors.green.withValues(alpha: 0.5),
-                        ),
                       ),
                       child: Text(
                         isExpired ? 'Expired' : 'Active',
                         style: TextStyle(
                           fontSize: rfs(context, 11),
                           fontWeight: FontWeight.w700,
-                          color: isExpired
-                              ? Colors.red.shade700
-                              : Colors.green.shade700,
+                          color: Colors.white,
                         ),
                       ),
                     ),

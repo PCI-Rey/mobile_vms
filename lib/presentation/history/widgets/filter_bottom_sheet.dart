@@ -31,7 +31,7 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
   DateTime? endDate;
   String? selectedGedung;
   String? selectedStatus;
-  final List<String> statusList = ['Preregis', 'Checkin', 'Checkout'];
+  final List<String> statusList = ['Praregis', 'Checkin', 'Checkout'];
   final List<Map<String, String>> gedungList = [];
   bool isLoadingGedung = false;
 
@@ -83,7 +83,9 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
     showModalBottomSheet(
       context: context,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(rw(context, 20))),
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(rw(context, 20)),
+        ),
       ),
       builder: (context) {
         return Container(
@@ -93,7 +95,10 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
             children: [
               Text(
                 'Pilih Gedung',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: rfs(context, 18)),
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: rfs(context, 18),
+                ),
               ),
               vSpace(context, 16),
               Expanded(
@@ -125,7 +130,9 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
     showModalBottomSheet(
       context: context,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(rw(context, 20))),
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(rw(context, 20)),
+        ),
       ),
       builder: (context) {
         return Container(
@@ -135,7 +142,10 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
             children: [
               Text(
                 'Pilih Status',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: rfs(context, 18)),
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: rfs(context, 18),
+                ),
               ),
               vSpace(context, 16),
               Flexible(
@@ -175,7 +185,9 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
         padding: EdgeInsets.all(rw(context, 20)),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(rw(context, 20))),
+          borderRadius: BorderRadius.vertical(
+            top: Radius.circular(rw(context, 20)),
+          ),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -186,7 +198,10 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
               children: [
                 Text(
                   'Filter',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: rfs(context, 18)),
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: rfs(context, 18),
+                  ),
                 ),
                 GestureDetector(
                   onTap: () => Navigator.pop(context),
@@ -222,6 +237,7 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                               'id_ID',
                             ).format(startDate!)
                           : "Pilih tanggal",
+                      isPlaceholder: startDate == null,
                     ),
                   ),
                 ),
@@ -251,6 +267,7 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                                 'id_ID',
                               ).format(endDate!)
                             : "Pilih tanggal",
+                        isPlaceholder: endDate == null,
                       ),
                     ),
                   ),
@@ -287,7 +304,8 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                                     )?['name'] ??
                                     'Pilih Gedung',
                                 style: TextStyle(
-                                  color: selectedGedung == null
+                                  color: selectedGedung == null ||
+                                          selectedGedung!.isEmpty
                                       ? Colors.grey
                                       : Colors.black,
                                   fontSize: rfs(context, 14),
@@ -330,7 +348,9 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                                 ? selectedStatus!
                                 : 'Pilih Status',
                             style: TextStyle(
-                              color: selectedStatus == null || selectedStatus!.isEmpty
+                              color:
+                                  selectedStatus == null ||
+                                      selectedStatus!.isEmpty
                                   ? Colors.grey
                                   : Colors.black,
                               fontSize: rfs(context, 14),
@@ -415,12 +435,14 @@ class FilterDateBox extends StatelessWidget {
   final String title;
   final String value;
   final bool isRequired;
+  final bool isPlaceholder;
 
   const FilterDateBox({
     super.key,
     required this.title,
     required this.value,
     this.isRequired = false,
+    this.isPlaceholder = false,
   });
 
   @override
@@ -448,14 +470,20 @@ class FilterDateBox extends StatelessWidget {
         vSpace(context, 6),
         Container(
           width: double.infinity,
-          padding: EdgeInsets.symmetric(horizontal: rw(context, 12), vertical: rh(context, 14)),
+          padding: EdgeInsets.symmetric(
+            horizontal: rw(context, 12),
+            vertical: rh(context, 14),
+          ),
           decoration: BoxDecoration(
             color: const Color(0xffF2F8FD),
             borderRadius: BorderRadius.circular(rw(context, 8)),
           ),
           child: Text(
             value,
-            style: TextStyle(fontSize: rfs(context, 14), color: Colors.black),
+            style: TextStyle(
+              fontSize: rfs(context, 14),
+              color: isPlaceholder ? Colors.grey : Colors.black,
+            ),
           ),
         ),
       ],
