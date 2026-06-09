@@ -820,7 +820,7 @@ class _SendInvitationPageState extends State<SendInvitationPage>
                         );
 
                         return GestureDetector(
-                          onTap: () {},
+                          onTap: () => _showInvitationDetailSheet(item),
                           child: Container(
                             margin: EdgeInsets.only(bottom: rh(context, 16)),
                             decoration: BoxDecoration(
@@ -928,8 +928,10 @@ class _SendInvitationPageState extends State<SendInvitationPage>
                                             child: _buildCardField(
                                               context,
                                               Icons.badge_outlined,
-                                              'Recipient',
-                                              item.visitorName,
+                                              'Visitor Type',
+                                              item.visitorTypeName.isEmpty
+                                                  ? '-'
+                                                  : item.visitorTypeName,
                                             ),
                                           ),
                                           hSpace(context, 8),
@@ -1337,13 +1339,14 @@ class _InvitationDetailSheetState extends State<_InvitationDetailSheet> {
                             : item.visitorOrganizationName,
                         Icons.business_outlined,
                       ),
-                      _SheetField(
-                        'Identity ID',
-                        item.visitorIdentityId.isEmpty
-                            ? '-'
-                            : item.visitorIdentityId,
-                        Icons.credit_card_outlined,
-                      ),
+                      if (item.visitorStatus.toLowerCase() != 'quickaccess')
+                        _SheetField(
+                          'Identity ID',
+                          item.visitorIdentityId.isEmpty
+                              ? '-'
+                              : item.visitorIdentityId,
+                          Icons.credit_card_outlined,
+                        ),
                     ], isExpired: isExpired),
 
                     vSpace(context, 16),
@@ -1369,7 +1372,11 @@ class _InvitationDetailSheetState extends State<_InvitationDetailSheet> {
                       ),
                       _SheetField(
                         'Visitor Status',
-                        item.visitorStatus.isEmpty ? '-' : item.visitorStatus,
+                        item.visitorStatus.isEmpty
+                            ? '-'
+                            : (item.visitorStatus.toLowerCase() == 'quickaccess'
+                                ? 'Quick Access'
+                                : item.visitorStatus),
                         Icons.info_outline,
                         badgeColor: statusColor,
                       ),
@@ -1378,11 +1385,12 @@ class _InvitationDetailSheetState extends State<_InvitationDetailSheet> {
                         item.agenda.isEmpty ? '-' : item.agenda,
                         Icons.event_note_outlined,
                       ),
-                      _SheetField(
-                        'Host',
-                        item.hostName.isEmpty ? '-' : item.hostName,
-                        Icons.person_outline,
-                      ),
+                      if (item.visitorStatus.toLowerCase() != 'quickaccess')
+                        _SheetField(
+                          'Host',
+                          item.hostName.isEmpty ? '-' : item.hostName,
+                          Icons.person_outline,
+                        ),
                       _SheetField(
                         'Vehicle Type',
                         item.vehicleType.isEmpty ? '-' : item.vehicleType,
@@ -1395,6 +1403,23 @@ class _InvitationDetailSheetState extends State<_InvitationDetailSheet> {
                             : item.vehiclePlateNumber,
                         Icons.subtitles_outlined,
                       ),
+                      if (item.visitorStatus.toLowerCase() == 'quickaccess') ...[
+                        _SheetField(
+                          'Receiver Name',
+                          item.receiverName.isEmpty ? '-' : item.receiverName,
+                          Icons.person_outline,
+                        ),
+                        _SheetField(
+                          'Receiver Phone',
+                          item.receiverPhone.isEmpty ? '-' : item.receiverPhone,
+                          Icons.phone_outlined,
+                        ),
+                        _SheetField(
+                          'Receiver Email',
+                          item.receiverEmail.isEmpty ? '-' : item.receiverEmail,
+                          Icons.email_outlined,
+                        ),
+                      ],
                     ], isExpired: isExpired),
 
                     vSpace(context, 16),

@@ -34,6 +34,9 @@ class AccessPassModel {
   final String visitorPhone;
   final String visitorEmail;
   final String visitorIdentityId;
+  final String receiverName;
+  final String receiverEmail;
+  final String receiverPhone;
 
 
   AccessPassModel({
@@ -69,6 +72,9 @@ class AccessPassModel {
     this.visitorPhone = '',
     this.visitorEmail = '',
     this.visitorIdentityId = '',
+    this.receiverName = '',
+    this.receiverEmail = '',
+    this.receiverPhone = '',
   });
 
   factory AccessPassModel.fromRawJson(String str) =>
@@ -137,6 +143,9 @@ class AccessPassModel {
       visitorPhone: json['visitor_phone']?.toString() ?? '',
       visitorEmail: json['visitor_email']?.toString() ?? '',
       visitorIdentityId: json['visitor_identity_id']?.toString() ?? '',
+      receiverName: json['receiver_name']?.toString() ?? '',
+      receiverEmail: json['receiver_email']?.toString() ?? '',
+      receiverPhone: json['receiver_phone']?.toString() ?? '',
     );
   }
 
@@ -173,6 +182,9 @@ class AccessPassModel {
     'visitor_phone': visitorPhone,
     'visitor_email': visitorEmail,
     'visitor_identity_id': visitorIdentityId,
+    'receiver_name': receiverName,
+    'receiver_email': receiverEmail,
+    'receiver_phone': receiverPhone,
   };
 
   /// Parse a datetime string from the API as UTC and convert to device local time.
