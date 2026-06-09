@@ -505,6 +505,7 @@ class _PendingTabView extends StatelessWidget {
                         padding: EdgeInsets.only(bottom: rh(context, 12)),
                         child: _ApprovalCard(
                           ticket: tickets[index],
+                          index: index,
                           onConfirmAction: onConfirmAction,
                           controller: controller,
                         ),
@@ -622,6 +623,7 @@ class _ApprovedTabView extends StatelessWidget {
                         padding: EdgeInsets.only(bottom: rh(context, 12)),
                         child: _ApprovalCard(
                           ticket: tickets[index],
+                          index: index,
                           onConfirmAction: onConfirmAction,
                           controller: controller,
                         ),
@@ -730,7 +732,10 @@ class _RejectedTabView extends StatelessWidget {
                       itemCount: tickets.length,
                       itemBuilder: (context, index) => Padding(
                         padding: EdgeInsets.only(bottom: rh(context, 12)),
-                        child: _RejectedCard(ticket: tickets[index]),
+                        child: _RejectedCard(
+                          ticket: tickets[index],
+                          index: index,
+                        ),
                       ),
                     ),
                   ),
@@ -921,14 +926,69 @@ class _FilterValueChip extends StatelessWidget {
 // APPROVAL CARD
 // ═══════════════════════════════════════════════════════════════════════════
 
+// ─── _buildCardField helper ──────────────────────────────────────────────────
+Widget _buildCardField(
+  BuildContext context,
+  IconData icon,
+  String label,
+  String value, {
+  Color? color,
+  Widget? trailing,
+}) {
+  return Row(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Icon(icon, size: rw(context, 13), color: Colors.grey.shade400),
+      hSpace(context, 5),
+      Expanded(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: rfs(context, 10),
+                color: Colors.grey.shade500,
+              ),
+            ),
+            Row(
+              children: [
+                Flexible(
+                  child: Text(
+                    value,
+                    style: TextStyle(
+                      fontSize: rfs(context, 12),
+                      fontWeight: FontWeight.w600,
+                      color: color ?? Colors.black87,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 2,
+                  ),
+                ),
+                if (trailing != null) ...[hSpace(context, 4), trailing],
+              ],
+            ),
+          ],
+        ),
+      ),
+    ],
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// APPROVAL CARD
+// ═══════════════════════════════════════════════════════════════════════════
+
 class _ApprovalCard extends StatelessWidget {
   const _ApprovalCard({
     required this.ticket,
+    required this.index,
     required this.onConfirmAction,
     required this.controller,
   });
 
   final ApprovalTicketModel ticket;
+  final int index;
   final InvitationController controller;
   final void Function(
     BuildContext, {
@@ -960,11 +1020,11 @@ class _ApprovalCard extends StatelessWidget {
 
     final start = ticket.visitorPeriodStart;
     final end = ticket.visitorPeriodEnd;
-    final fmt = DateFormat('EEE, dd MMM yyyy');
-    final timeFmt = DateFormat('HH:mm');
-    final dateStr = start != null ? fmt.format(start) : '-';
-    final timeStr = (start != null && end != null)
-        ? '${timeFmt.format(start)} - ${timeFmt.format(end)}'
+    final startStr = start != null
+        ? DateFormat('dd MMM yy HH:mm').format(start)
+        : '-';
+    final endStr = end != null
+        ? DateFormat('dd MMM yy HH:mm').format(end)
         : '-';
 
     return GestureDetector(
@@ -972,10 +1032,10 @@ class _ApprovalCard extends StatelessWidget {
       child: Container(
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(rw(context, 14)),
+          borderRadius: BorderRadius.circular(rw(context, 12)),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
+              color: Colors.black.withValues(alpha: 0.06),
               blurRadius: rw(context, 10),
               offset: Offset(0, rh(context, 3)),
             ),
@@ -984,118 +1044,156 @@ class _ApprovalCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ── Main content ───────────────────────────────────────────
+            // Header: Number circle + Agenda (title) + Status badge
             Padding(
-              padding: EdgeInsets.fromLTRB(
-                rw(context, 16),
-                rh(context, 14),
-                rw(context, 16),
-                rh(context, 14),
+              padding: EdgeInsets.only(
+                left: rw(context, 16),
+                right: rw(context, 16),
+                top: rh(context, 16),
+                bottom: rh(context, 12),
               ),
               child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Left: agenda + meta info
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Visitor type label
-                        if (ticket.visitorTypeName != null)
-                          Text(
-                            ticket.visitorTypeName!,
-                            style: TextStyle(
-                              fontSize: rfs(context, 11),
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.primary600,
-                            ),
-                          ),
-                        if (ticket.visitorTypeName != null) vSpace(context, 4),
-
-                        // Agenda (title)
-                        Text(
-                          ticket.agenda ?? '-',
-                          style: TextStyle(
-                            fontSize: rfs(context, 15),
-                            fontWeight: FontWeight.w700,
-                            color: Colors.black87,
-                          ),
-                        ),
-
-                        vSpace(context, 6),
-
-                        // Host
-                        Text(
-                          '${ticket.hostName ?? '-'} · ${ticket.hostOrganizationName ?? '-'}',
-                          style: TextStyle(
-                            fontSize: rfs(context, 12),
-                            color: Colors.grey.shade600,
-                          ),
-                        ),
-
-                        if (ticket.flow != null) ...[
-                          vSpace(context, 3),
-                          Text(
-                            ticket.flow!,
-                            style: TextStyle(
-                              fontSize: rfs(context, 12),
-                              color: Colors.grey.shade500,
-                            ),
-                          ),
-                        ],
-                      ],
+                  Container(
+                    width: rw(context, 26),
+                    height: rw(context, 26),
+                    alignment: Alignment.center,
+                    decoration: const BoxDecoration(
+                      color: Color(0xFF005596),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Text(
+                      '${index + 1}',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: rfs(context, 11),
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
-
-                  hSpace(context, 12),
-
-                  // Right: status badge + date/time
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
+                  hSpace(context, 10),
+                  Expanded(
+                    child: Text(
+                      ticket.agenda ?? '-',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: rfs(context, 14),
+                        color: Colors.black87,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  hSpace(context, 6),
+                  Container(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: rw(context, 8),
+                      vertical: rh(context, 4),
+                    ),
+                    decoration: BoxDecoration(
+                      color: statusBg,
+                      borderRadius: BorderRadius.circular(rw(context, 20)),
+                      border: Border.all(
+                        color: statusFg.withValues(alpha: 0.4),
+                      ),
+                    ),
+                    child: Text(
+                      ticket.approvalActorStatus ?? '-',
+                      style: TextStyle(
+                        fontSize: rfs(context, 10),
+                        fontWeight: FontWeight.w600,
+                        color: statusFg,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Divider(
+              height: 1,
+              thickness: 1,
+              color: Colors.grey.shade100,
+            ),
+            
+            // Body: Info grid fields
+            Padding(
+              padding: EdgeInsets.only(
+                left: rw(context, 16),
+                right: rw(context, 16),
+                top: rh(context, 12),
+                bottom: rh(context, 16),
+              ),
+              child: Column(
+                children: [
+                  Row(
                     children: [
-                      // Status badge
-                      Container(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: rw(context, 9),
-                          vertical: rh(context, 3),
-                        ),
-                        decoration: BoxDecoration(
-                          color: statusBg,
-                          borderRadius: BorderRadius.circular(rw(context, 20)),
-                        ),
-                        child: Text(
-                          ticket.approvalActorStatus ?? '-',
-                          style: TextStyle(
-                            fontSize: rfs(context, 11),
-                            fontWeight: FontWeight.w700,
-                            color: statusFg,
-                          ),
+                      Expanded(
+                        child: _buildCardField(
+                          context,
+                          Icons.badge_outlined,
+                          'Visitor Type',
+                          ticket.visitorTypeName == null || ticket.visitorTypeName!.isEmpty
+                              ? '-'
+                              : ticket.visitorTypeName!,
                         ),
                       ),
-
-                      vSpace(context, 8),
-
-                      // Date
-                      Text(
-                        dateStr,
-                        style: TextStyle(
-                          fontSize: rfs(context, 11),
-                          fontWeight: FontWeight.w600,
-                          color: Colors.black87,
+                      hSpace(context, 8),
+                      Expanded(
+                        child: _buildCardField(
+                          context,
+                          Icons.person_outline,
+                          'Host',
+                          ticket.hostName == null || ticket.hostName!.isEmpty
+                              ? '-'
+                              : ticket.hostName!,
                         ),
-                        textAlign: TextAlign.end,
                       ),
-
-                      vSpace(context, 2),
-
-                      // Time range
-                      Text(
-                        timeStr,
-                        style: TextStyle(
-                          fontSize: rfs(context, 11),
-                          color: Colors.grey.shade500,
+                    ],
+                  ),
+                  vSpace(context, 8),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _buildCardField(
+                          context,
+                          Icons.business_outlined,
+                          'Organization',
+                          ticket.hostOrganizationName == null || ticket.hostOrganizationName!.isEmpty
+                              ? '-'
+                              : ticket.hostOrganizationName!,
                         ),
-                        textAlign: TextAlign.end,
+                      ),
+                      hSpace(context, 8),
+                      Expanded(
+                        child: _buildCardField(
+                          context,
+                          Icons.timeline,
+                          'Flow',
+                          ticket.flow == null || ticket.flow!.isEmpty
+                              ? '-'
+                              : ticket.flow!,
+                        ),
+                      ),
+                    ],
+                  ),
+                  vSpace(context, 8),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _buildCardField(
+                          context,
+                          Icons.login_outlined,
+                          'Period Start',
+                          startStr,
+                        ),
+                      ),
+                      hSpace(context, 8),
+                      Expanded(
+                        child: _buildCardField(
+                          context,
+                          Icons.logout_outlined,
+                          'Period End',
+                          endStr,
+                        ),
                       ),
                     ],
                   ),
@@ -1103,7 +1201,7 @@ class _ApprovalCard extends StatelessWidget {
               ),
             ),
 
-            // ── Footer ─────────────────────────────────────────────────
+            // Footer action buttons
             if (isPending) ...[
               Container(height: 1, color: const Color(0xFFF0F0F0)),
               Padding(
@@ -1113,7 +1211,6 @@ class _ApprovalCard extends StatelessWidget {
                 ),
                 child: Row(
                   children: [
-                    // Tolak
                     Expanded(
                       child: OutlinedButton(
                         onPressed: () => onConfirmAction(
@@ -1148,10 +1245,7 @@ class _ApprovalCard extends StatelessWidget {
                         ),
                       ),
                     ),
-
                     hSpace(context, 10),
-
-                    // Setujui
                     Expanded(
                       child: ElevatedButton(
                         onPressed: () => _VisitorApprovalDialog.show(
@@ -1202,28 +1296,33 @@ class _ApprovalCard extends StatelessWidget {
             ],
           ],
         ),
-      ), // end Container
-    ); // end GestureDetector
+      ),
+    );
   }
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// REJECTED CARD  (read-only, no action buttons)
+// REJECTED CARD
 // ═══════════════════════════════════════════════════════════════════════════
 
 class _RejectedCard extends StatelessWidget {
-  const _RejectedCard({required this.ticket});
+  const _RejectedCard({
+    required this.ticket,
+    required this.index,
+  });
+
   final ApprovalTicketModel ticket;
+  final int index;
 
   @override
   Widget build(BuildContext context) {
     final start = ticket.visitorPeriodStart;
     final end = ticket.visitorPeriodEnd;
-    final fmt = DateFormat('EEE, dd MMM yyyy');
-    final timeFmt = DateFormat('HH:mm');
-    final dateStr = start != null ? fmt.format(start) : '-';
-    final timeStr = (start != null && end != null)
-        ? '${timeFmt.format(start)} - ${timeFmt.format(end)}'
+    final startStr = start != null
+        ? DateFormat('dd MMM yy HH:mm').format(start)
+        : '-';
+    final endStr = end != null
+        ? DateFormat('dd MMM yy HH:mm').format(end)
         : '-';
 
     return GestureDetector(
@@ -1231,7 +1330,7 @@ class _RejectedCard extends StatelessWidget {
       child: Container(
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(rw(context, 14)),
+          borderRadius: BorderRadius.circular(rw(context, 12)),
           border: Border.all(color: const Color(0xFFFFCDD2), width: 1),
           boxShadow: [
             BoxShadow(
@@ -1244,110 +1343,163 @@ class _RejectedCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Header: Number circle + Agenda (title) + Status badge
             Padding(
-              padding: EdgeInsets.fromLTRB(
-                rw(context, 16),
-                rh(context, 14),
-                rw(context, 16),
-                rh(context, 14),
+              padding: EdgeInsets.only(
+                left: rw(context, 16),
+                right: rw(context, 16),
+                top: rh(context, 16),
+                bottom: rh(context, 12),
               ),
               child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Left: info
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        if (ticket.visitorTypeName != null) ...[
-                          Text(
-                            ticket.visitorTypeName!,
-                            style: TextStyle(
-                              fontSize: rfs(context, 11),
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.primary600,
-                            ),
-                          ),
-                          vSpace(context, 4),
-                        ],
-                        Text(
-                          ticket.agenda ?? '-',
-                          style: TextStyle(
-                            fontSize: rfs(context, 15),
-                            fontWeight: FontWeight.w700,
-                            color: Colors.black87,
-                          ),
-                        ),
-                        vSpace(context, 6),
-                        Text(
-                          '${ticket.hostName ?? '-'} · ${ticket.hostOrganizationName ?? '-'}',
-                          style: TextStyle(
-                            fontSize: rfs(context, 12),
-                            color: Colors.grey.shade600,
-                          ),
-                        ),
-                        if (ticket.flow != null) ...[
-                          vSpace(context, 3),
-                          Text(
-                            ticket.flow!,
-                            style: TextStyle(
-                              fontSize: rfs(context, 12),
-                              color: Colors.grey.shade500,
-                            ),
-                          ),
-                        ],
-                      ],
+                  Container(
+                    width: rw(context, 26),
+                    height: rw(context, 26),
+                    alignment: Alignment.center,
+                    decoration: const BoxDecoration(
+                      color: Color(0xFF005596),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Text(
+                      '${index + 1}',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: rfs(context, 11),
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
-
-                  hSpace(context, 12),
-
-                  // Right: status + date/time
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
+                  hSpace(context, 10),
+                  Expanded(
+                    child: Text(
+                      ticket.agenda ?? '-',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: rfs(context, 14),
+                        color: Colors.black87,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  hSpace(context, 6),
+                  Container(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: rw(context, 8),
+                      vertical: rh(context, 4),
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFEBEE),
+                      borderRadius: BorderRadius.circular(rw(context, 20)),
+                      border: Border.all(
+                        color: const Color(0xFFC62828).withValues(alpha: 0.4),
+                      ),
+                    ),
+                    child: Text(
+                      ticket.approvalActorStatus ?? 'Rejected',
+                      style: TextStyle(
+                        fontSize: rfs(context, 10),
+                        fontWeight: FontWeight.w600,
+                        color: const Color(0xFFC62828),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Divider(
+              height: 1,
+              thickness: 1,
+              color: Colors.grey.shade100,
+            ),
+            
+            // Body: Info grid fields
+            Padding(
+              padding: EdgeInsets.only(
+                left: rw(context, 16),
+                right: rw(context, 16),
+                top: rh(context, 12),
+                bottom: rh(context, 16),
+              ),
+              child: Column(
+                children: [
+                  Row(
                     children: [
-                      Container(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: rw(context, 9),
-                          vertical: rh(context, 3),
-                        ),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFFFEBEE),
-                          borderRadius: BorderRadius.circular(rw(context, 20)),
-                        ),
-                        child: Text(
-                          ticket.approvalActorStatus ?? 'Rejected',
-                          style: TextStyle(
-                            fontSize: rfs(context, 11),
-                            fontWeight: FontWeight.w700,
-                            color: const Color(0xFFC62828),
-                          ),
+                      Expanded(
+                        child: _buildCardField(
+                          context,
+                          Icons.badge_outlined,
+                          'Visitor Type',
+                          ticket.visitorTypeName == null || ticket.visitorTypeName!.isEmpty
+                              ? '-'
+                              : ticket.visitorTypeName!,
                         ),
                       ),
-                      vSpace(context, 8),
-                      Text(
-                        dateStr,
-                        style: TextStyle(
-                          fontSize: rfs(context, 11),
-                          fontWeight: FontWeight.w600,
-                          color: Colors.black87,
+                      hSpace(context, 8),
+                      Expanded(
+                        child: _buildCardField(
+                          context,
+                          Icons.person_outline,
+                          'Host',
+                          ticket.hostName == null || ticket.hostName!.isEmpty
+                              ? '-'
+                              : ticket.hostName!,
                         ),
-                        textAlign: TextAlign.end,
                       ),
-                      vSpace(context, 2),
-                      Text(
-                        timeStr,
-                        style: TextStyle(
-                          fontSize: rfs(context, 11),
-                          color: Colors.grey.shade500,
+                    ],
+                  ),
+                  vSpace(context, 8),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _buildCardField(
+                          context,
+                          Icons.business_outlined,
+                          'Organization',
+                          ticket.hostOrganizationName == null || ticket.hostOrganizationName!.isEmpty
+                              ? '-'
+                              : ticket.hostOrganizationName!,
                         ),
-                        textAlign: TextAlign.end,
+                      ),
+                      hSpace(context, 8),
+                      Expanded(
+                        child: _buildCardField(
+                          context,
+                          Icons.timeline,
+                          'Flow',
+                          ticket.flow == null || ticket.flow!.isEmpty
+                              ? '-'
+                              : ticket.flow!,
+                        ),
+                      ),
+                    ],
+                  ),
+                  vSpace(context, 8),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _buildCardField(
+                          context,
+                          Icons.login_outlined,
+                          'Period Start',
+                          startStr,
+                        ),
+                      ),
+                      hSpace(context, 8),
+                      Expanded(
+                        child: _buildCardField(
+                          context,
+                          Icons.logout_outlined,
+                          'Period End',
+                          endStr,
+                        ),
                       ),
                     ],
                   ),
                 ],
               ),
             ),
+
             if (ticket.approvedAt != null) ...[
               Container(height: 1, color: const Color(0xFFF0F0F0)),
               Padding(
