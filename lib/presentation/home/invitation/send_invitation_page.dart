@@ -31,6 +31,7 @@ class _SendInvitationPageState extends State<SendInvitationPage>
   DateTime? startDate;
   DateTime? endDate;
   String? selectedGedung;
+  String? selectedStatus;
 
   late TabController _tabController;
 
@@ -63,7 +64,7 @@ class _SendInvitationPageState extends State<SendInvitationPage>
       appBar: AppBar(
         backgroundColor: Colors.white,
         title: Text(
-          "Create Invitation",
+          "Invitation",
           style: TextStyle(
             fontSize: rfs(context, 20),
             fontWeight: FontWeight.w700,
@@ -188,17 +189,16 @@ class _SendInvitationPageState extends State<SendInvitationPage>
           Expanded(
             child: TabBarView(
               controller: _tabController,
-              children: [_buildInvitationTab(), _buildShareLinkTab(), _buildQuickAccessTab()],
+              children: [
+                _buildInvitationTab(),
+                _buildShareLinkTab(),
+                _buildQuickAccessTab(),
+              ],
             ),
           ),
         ],
       ),
     );
-  }
-
-  bool _isQuickAccessItem(AccessPassModel item) {
-    final str = '${item.visitorStatus} ${item.visitorTypeName} ${item.visitorRole} ${item.agenda}'.toLowerCase();
-    return str.contains('quick') && (str.contains('access') || str.contains('acess') || str.contains('acesss'));
   }
 
   Widget _buildInvitationTab() {
@@ -233,6 +233,8 @@ class _SendInvitationPageState extends State<SendInvitationPage>
                             initialStartDate: startDate,
                             initialEndDate: endDate,
                             initialSiteId: inviteCtrl.selectedSiteId.value,
+                            initialStatus: selectedStatus,
+                            showStatusFilter: true,
                           ),
                         );
 
@@ -241,12 +243,14 @@ class _SendInvitationPageState extends State<SendInvitationPage>
                         startDate = result['startDate'];
                         endDate = result['endDate'];
                         selectedGedung = result['siteName'];
+                        selectedStatus = result['status'];
                       });
                       inviteCtrl.setFilters(
                         start: startDate,
                         end: endDate,
                         siteId: result['siteId'],
                         siteName: result['siteName'],
+                        status: result['status'],
                       );
                     }
                   },
@@ -265,6 +269,7 @@ class _SendInvitationPageState extends State<SendInvitationPage>
                         end: endDate,
                         siteId: null,
                         siteName: null,
+                        status: selectedStatus,
                       );
                     },
                   ),
@@ -285,6 +290,25 @@ class _SendInvitationPageState extends State<SendInvitationPage>
                         end: null,
                         siteId: inviteCtrl.selectedSiteId.value,
                         siteName: inviteCtrl.selectedSiteName.value,
+                        status: selectedStatus,
+                      );
+                    },
+                  ),
+                ],
+                if (selectedStatus != null && selectedStatus!.isNotEmpty) ...[
+                  hSpace(context, 8),
+                  _buildFilterValueChip(
+                    context,
+                    'Status: $selectedStatus',
+                    onClear: () {
+                      final inviteCtrl = Get.find<InvitationController>();
+                      setState(() => selectedStatus = null);
+                      inviteCtrl.setFilters(
+                        start: startDate,
+                        end: endDate,
+                        siteId: inviteCtrl.selectedSiteId.value,
+                        siteName: inviteCtrl.selectedSiteName.value,
+                        status: null,
                       );
                     },
                   ),
@@ -333,10 +357,8 @@ class _SendInvitationPageState extends State<SendInvitationPage>
                     final inviteCtrl = Get.isRegistered<InvitationController>()
                         ? Get.find<InvitationController>()
                         : Get.put(InvitationController());
-                    
-                    final listToShow = inviteCtrl.ongoingInvitations
-                        .where((item) => !_isQuickAccessItem(item))
-                        .toList();
+
+                    final listToShow = inviteCtrl.ongoingInvitations.toList();
 
                     if (inviteCtrl.isLoading.value && listToShow.isEmpty) {
                       return Center(
@@ -385,7 +407,6 @@ class _SendInvitationPageState extends State<SendInvitationPage>
                         final isPraregis = item.isPraregisterDone;
                         final jenis = isPraregis ? 'Praregis' : 'Invitation';
                         final jenisColor = isPraregis
-
                             ? const Color(0xFF005596)
                             : const Color(0xFF6D4C41);
 
@@ -394,7 +415,9 @@ class _SendInvitationPageState extends State<SendInvitationPage>
                           child: Container(
                             decoration: BoxDecoration(
                               color: Colors.white,
-                              borderRadius: BorderRadius.circular(rw(context, 12)),
+                              borderRadius: BorderRadius.circular(
+                                rw(context, 12),
+                              ),
                               boxShadow: [
                                 BoxShadow(
                                   color: Colors.black.withValues(alpha: 0.06),
@@ -407,23 +430,12 @@ class _SendInvitationPageState extends State<SendInvitationPage>
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 // ── Top bar: No + badges ──────────────────
-                                Container(
-                                  margin: EdgeInsets.fromLTRB(
-                                    rw(context, 14),
-                                    rh(context, 10),
-                                    rw(context, 14),
-                                    0,
-                                  ),
-                                  padding: EdgeInsets.symmetric(
-                                    horizontal: rw(context, 12),
-                                    vertical: rh(context, 10),
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFF005596).withValues(alpha: 0.04),
-                                    borderRadius: BorderRadius.circular(rw(context, 10)),
-                                    border: Border.all(
-                                      color: const Color(0xFF005596).withValues(alpha: 0.18),
-                                    ),
+                                Padding(
+                                  padding: EdgeInsets.only(
+                                    left: rw(context, 16),
+                                    right: rw(context, 16),
+                                    top: rh(context, 16),
+                                    bottom: rh(context, 12),
                                   ),
                                   child: Row(
                                     children: [
@@ -465,9 +477,17 @@ class _SendInvitationPageState extends State<SendInvitationPage>
                                           vertical: rh(context, 3),
                                         ),
                                         decoration: BoxDecoration(
-                                          color: jenisColor.withValues(alpha: 0.12),
-                                          borderRadius: BorderRadius.circular(rw(context, 20)),
-                                          border: Border.all(color: jenisColor.withValues(alpha: 0.4)),
+                                          color: jenisColor.withValues(
+                                            alpha: 0.12,
+                                          ),
+                                          borderRadius: BorderRadius.circular(
+                                            rw(context, 20),
+                                          ),
+                                          border: Border.all(
+                                            color: jenisColor.withValues(
+                                              alpha: 0.4,
+                                            ),
+                                          ),
                                         ),
                                         child: Text(
                                           jenis,
@@ -487,13 +507,23 @@ class _SendInvitationPageState extends State<SendInvitationPage>
                                         ),
                                         decoration: BoxDecoration(
                                           color: isExpired
-                                              ? Colors.red.withValues(alpha: 0.1)
-                                              : Colors.green.withValues(alpha: 0.1),
-                                          borderRadius: BorderRadius.circular(rw(context, 20)),
+                                              ? Colors.red.withValues(
+                                                  alpha: 0.1,
+                                                )
+                                              : Colors.green.withValues(
+                                                  alpha: 0.1,
+                                                ),
+                                          borderRadius: BorderRadius.circular(
+                                            rw(context, 20),
+                                          ),
                                           border: Border.all(
                                             color: isExpired
-                                                ? Colors.red.withValues(alpha: 0.4)
-                                                : Colors.green.withValues(alpha: 0.4),
+                                                ? Colors.red.withValues(
+                                                    alpha: 0.4,
+                                                  )
+                                                : Colors.green.withValues(
+                                                    alpha: 0.4,
+                                                  ),
                                           ),
                                         ),
                                         child: Text(
@@ -501,7 +531,9 @@ class _SendInvitationPageState extends State<SendInvitationPage>
                                           style: TextStyle(
                                             fontSize: rfs(context, 10),
                                             fontWeight: FontWeight.w600,
-                                            color: isExpired ? Colors.red.shade700 : Colors.green.shade700,
+                                            color: isExpired
+                                                ? Colors.red.shade700
+                                                : Colors.green.shade700,
                                           ),
                                         ),
                                       ),
@@ -509,22 +541,19 @@ class _SendInvitationPageState extends State<SendInvitationPage>
                                   ),
                                 ),
 
+                                Divider(
+                                  height: 1,
+                                  thickness: 1,
+                                  color: Colors.grey.shade100,
+                                ),
+
                                 // ── Body: info rows ───────────────────────
-                                Container(
-                                  margin: EdgeInsets.fromLTRB(
-                                    rw(context, 14),
-                                    rh(context, 8),
-                                    rw(context, 14),
-                                    rh(context, 12),
-                                  ),
-                                  padding: EdgeInsets.symmetric(
-                                    horizontal: rw(context, 12),
-                                    vertical: rh(context, 10),
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: Colors.grey.shade50,
-                                    borderRadius: BorderRadius.circular(rw(context, 10)),
-                                    border: Border.all(color: Colors.grey.shade200),
+                                Padding(
+                                  padding: EdgeInsets.only(
+                                    left: rw(context, 16),
+                                    right: rw(context, 16),
+                                    top: rh(context, 12),
+                                    bottom: rh(context, 16),
                                   ),
                                   child: Column(
                                     children: [
@@ -545,9 +574,12 @@ class _SendInvitationPageState extends State<SendInvitationPage>
                                           Expanded(
                                             child: _buildCardField(
                                               context,
-                                              Icons.confirmation_number_outlined,
+                                              Icons
+                                                  .confirmation_number_outlined,
                                               'Invitation Code',
-                                              item.invitationCode.isEmpty ? '-' : item.invitationCode,
+                                              item.invitationCode.isEmpty
+                                                  ? '-'
+                                                  : item.invitationCode,
                                               color: const Color(0xFF005596),
                                               trailing: GestureDetector(
                                                 onTap: () {
@@ -555,22 +587,34 @@ class _SendInvitationPageState extends State<SendInvitationPage>
                                                     Get.snackbar(
                                                       'Info',
                                                       'Invitation has expired, code cannot be copied.',
-                                                      snackPosition: SnackPosition.TOP,
-                                                      backgroundColor: Colors.red.shade600,
+                                                      snackPosition:
+                                                          SnackPosition.TOP,
+                                                      backgroundColor:
+                                                          Colors.red.shade600,
                                                       colorText: Colors.white,
                                                     );
                                                     return;
                                                   }
-                                                  if (item.invitationCode.isNotEmpty) {
-                                                    Clipboard.setData(ClipboardData(
-                                                        text: item.invitationCode));
+                                                  if (item
+                                                      .invitationCode
+                                                      .isNotEmpty) {
+                                                    Clipboard.setData(
+                                                      ClipboardData(
+                                                        text:
+                                                            item.invitationCode,
+                                                      ),
+                                                    );
                                                     Get.snackbar(
                                                       'Copied',
                                                       'Invitation Code copied to clipboard',
-                                                      snackPosition: SnackPosition.TOP,
-                                                      backgroundColor: Colors.green,
+                                                      snackPosition:
+                                                          SnackPosition.TOP,
+                                                      backgroundColor:
+                                                          Colors.green,
                                                       colorText: Colors.white,
-                                                      duration: const Duration(seconds: 1),
+                                                      duration: const Duration(
+                                                        seconds: 1,
+                                                      ),
                                                     );
                                                   }
                                                 },
@@ -595,7 +639,9 @@ class _SendInvitationPageState extends State<SendInvitationPage>
                                               context,
                                               Icons.business_outlined,
                                               'Organization',
-                                              item.visitorOrganizationName.isEmpty
+                                              item
+                                                      .visitorOrganizationName
+                                                      .isEmpty
                                                   ? '-'
                                                   : item.visitorOrganizationName,
                                             ),
@@ -606,7 +652,9 @@ class _SendInvitationPageState extends State<SendInvitationPage>
                                               context,
                                               Icons.person_outline,
                                               'Host',
-                                              item.hostName.isEmpty ? '-' : item.hostName,
+                                              item.hostName.isEmpty
+                                                  ? '-'
+                                                  : item.hostName,
                                             ),
                                           ),
                                         ],
@@ -620,8 +668,9 @@ class _SendInvitationPageState extends State<SendInvitationPage>
                                               context,
                                               Icons.login_outlined,
                                               'Period Start',
-                                              DateFormat('dd MMM yy HH:mm')
-                                                  .format(item.visitorPeriodStart),
+                                              DateFormat(
+                                                'dd MMM yy HH:mm',
+                                              ).format(item.visitorPeriodStart),
                                             ),
                                           ),
                                           hSpace(context, 8),
@@ -630,9 +679,12 @@ class _SendInvitationPageState extends State<SendInvitationPage>
                                               context,
                                               Icons.logout_outlined,
                                               'Period End',
-                                              DateFormat('dd MMM yy HH:mm')
-                                                  .format(item.visitorPeriodEnd),
-                                              color: isExpired ? Colors.red.shade600 : null,
+                                              DateFormat(
+                                                'dd MMM yy HH:mm',
+                                              ).format(item.visitorPeriodEnd),
+                                              color: isExpired
+                                                  ? Colors.red.shade600
+                                                  : null,
                                             ),
                                           ),
                                         ],
@@ -700,10 +752,8 @@ class _SendInvitationPageState extends State<SendInvitationPage>
                     final inviteCtrl = Get.isRegistered<InvitationController>()
                         ? Get.find<InvitationController>()
                         : Get.put(InvitationController());
-                    
-                    final listToShow = inviteCtrl.ongoingInvitations
-                        .where((item) => _isQuickAccessItem(item))
-                        .toList();
+
+                    final listToShow = inviteCtrl.quickAccessInvitations.toList();
 
                     if (inviteCtrl.isLoading.value && listToShow.isEmpty) {
                       return Center(
@@ -746,8 +796,9 @@ class _SendInvitationPageState extends State<SendInvitationPage>
                       physics: const NeverScrollableScrollPhysics(),
                       itemBuilder: (context, index) {
                         final item = listToShow[index];
-                        final isExpired =
-                            DateTime.now().isAfter(item.visitorPeriodEnd);
+                        final isExpired = DateTime.now().isAfter(
+                          item.visitorPeriodEnd,
+                        );
 
                         return GestureDetector(
                           onTap: () {},
@@ -755,7 +806,9 @@ class _SendInvitationPageState extends State<SendInvitationPage>
                             margin: EdgeInsets.only(bottom: rh(context, 16)),
                             decoration: BoxDecoration(
                               color: Colors.white,
-                              borderRadius: BorderRadius.circular(rw(context, 12)),
+                              borderRadius: BorderRadius.circular(
+                                rw(context, 12),
+                              ),
                               boxShadow: [
                                 BoxShadow(
                                   color: Colors.black.withValues(alpha: 0.04),
@@ -788,7 +841,9 @@ class _SendInvitationPageState extends State<SendInvitationPage>
                                       Row(
                                         children: [
                                           Container(
-                                            padding: EdgeInsets.all(rw(context, 6)),
+                                            padding: EdgeInsets.all(
+                                              rw(context, 6),
+                                            ),
                                             decoration: BoxDecoration(
                                               color: isExpired
                                                   ? Colors.red.shade100
@@ -823,13 +878,23 @@ class _SendInvitationPageState extends State<SendInvitationPage>
                                         ),
                                         decoration: BoxDecoration(
                                           color: isExpired
-                                              ? Colors.red.withValues(alpha: 0.1)
-                                              : Colors.green.withValues(alpha: 0.1),
-                                          borderRadius: BorderRadius.circular(rw(context, 20)),
+                                              ? Colors.red.withValues(
+                                                  alpha: 0.1,
+                                                )
+                                              : Colors.green.withValues(
+                                                  alpha: 0.1,
+                                                ),
+                                          borderRadius: BorderRadius.circular(
+                                            rw(context, 20),
+                                          ),
                                           border: Border.all(
                                             color: isExpired
-                                                ? Colors.red.withValues(alpha: 0.4)
-                                                : Colors.green.withValues(alpha: 0.4),
+                                                ? Colors.red.withValues(
+                                                    alpha: 0.4,
+                                                  )
+                                                : Colors.green.withValues(
+                                                    alpha: 0.4,
+                                                  ),
                                           ),
                                         ),
                                         child: Text(
@@ -837,7 +902,9 @@ class _SendInvitationPageState extends State<SendInvitationPage>
                                           style: TextStyle(
                                             fontSize: rfs(context, 10),
                                             fontWeight: FontWeight.w600,
-                                            color: isExpired ? Colors.red.shade700 : Colors.green.shade700,
+                                            color: isExpired
+                                                ? Colors.red.shade700
+                                                : Colors.green.shade700,
                                           ),
                                         ),
                                       ),
@@ -848,7 +915,8 @@ class _SendInvitationPageState extends State<SendInvitationPage>
                                 Padding(
                                   padding: EdgeInsets.all(rw(context, 16)),
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       // Row 1: Visitor Name + Org
                                       Row(
@@ -867,7 +935,9 @@ class _SendInvitationPageState extends State<SendInvitationPage>
                                               context,
                                               Icons.business_outlined,
                                               'Organization',
-                                              item.visitorOrganizationName.isEmpty
+                                              item
+                                                      .visitorOrganizationName
+                                                      .isEmpty
                                                   ? '-'
                                                   : item.visitorOrganizationName,
                                             ),
@@ -894,7 +964,9 @@ class _SendInvitationPageState extends State<SendInvitationPage>
                                               context,
                                               Icons.assignment_ind_outlined,
                                               'Host',
-                                              item.hostName.isEmpty ? '-' : item.hostName,
+                                              item.hostName.isEmpty
+                                                  ? '-'
+                                                  : item.hostName,
                                             ),
                                           ),
                                         ],
@@ -908,8 +980,9 @@ class _SendInvitationPageState extends State<SendInvitationPage>
                                               context,
                                               Icons.login_outlined,
                                               'Period Start',
-                                              DateFormat('dd MMM yy HH:mm')
-                                                  .format(item.visitorPeriodStart),
+                                              DateFormat(
+                                                'dd MMM yy HH:mm',
+                                              ).format(item.visitorPeriodStart),
                                             ),
                                           ),
                                           hSpace(context, 8),
@@ -918,9 +991,12 @@ class _SendInvitationPageState extends State<SendInvitationPage>
                                               context,
                                               Icons.logout_outlined,
                                               'Period End',
-                                              DateFormat('dd MMM yy HH:mm')
-                                                  .format(item.visitorPeriodEnd),
-                                              color: isExpired ? Colors.red.shade600 : null,
+                                              DateFormat(
+                                                'dd MMM yy HH:mm',
+                                              ).format(item.visitorPeriodEnd),
+                                              color: isExpired
+                                                  ? Colors.red.shade600
+                                                  : null,
                                             ),
                                           ),
                                         ],
@@ -983,10 +1059,7 @@ class _SendInvitationPageState extends State<SendInvitationPage>
                       maxLines: 2,
                     ),
                   ),
-                  if (trailing != null) ...[
-                    hSpace(context, 4),
-                    trailing,
-                  ],
+                  if (trailing != null) ...[hSpace(context, 4), trailing],
                 ],
               ),
             ],
@@ -1004,7 +1077,6 @@ class _SendInvitationPageState extends State<SendInvitationPage>
       builder: (ctx) => _InvitationDetailSheet(item: item),
     );
   }
-
 
   Widget _buildFilterChip(BuildContext context, String label) {
     return Container(
@@ -1133,13 +1205,20 @@ class _InvitationDetailSheetState extends State<_InvitationDetailSheet> {
 
   Color _statusColor(String status) {
     switch (status.toLowerCase()) {
-      case 'checkin':    return const Color(0xFF00897B);
-      case 'checkout':   return const Color(0xFF3949AB);
-      case 'available':  return const Color(0xFF43A047);
-      case 'waiting':    return const Color(0xFFFB8C00);
-      case 'denied':     return const Color(0xFFE53935);
-      case 'quickaccess':return const Color(0xFF8E24AA);
-      default:           return const Color(0xFF546E7A);
+      case 'checkin':
+        return const Color(0xFF00897B);
+      case 'checkout':
+        return const Color(0xFF3949AB);
+      case 'available':
+        return const Color(0xFF43A047);
+      case 'waiting':
+        return const Color(0xFFFB8C00);
+      case 'denied':
+        return const Color(0xFFE53935);
+      case 'quickaccess':
+        return const Color(0xFF8E24AA);
+      default:
+        return const Color(0xFF546E7A);
     }
   }
 
@@ -1252,27 +1331,47 @@ class _InvitationDetailSheetState extends State<_InvitationDetailSheet> {
                     // 1. Visitor Information
                     _section(context, 'Visitor Information'),
                     _grid(context, statusColor, [
-                      _SheetField('Visitor Type',
-                          item.visitorTypeName.isEmpty ? '-' : item.visitorTypeName,
-                          Icons.badge_outlined),
-                      _SheetField('Visitor Role',
-                          item.visitorRole.isEmpty ? '-' : item.visitorRole,
-                          Icons.work_outline),
-                      _SheetField('Name',
-                          item.visitorName.isEmpty ? '-' : item.visitorName,
-                          Icons.person_outline),
-                      _SheetField('Email',
-                          item.visitorEmail.isEmpty ? '-' : item.visitorEmail,
-                          Icons.email_outlined),
-                      _SheetField('Phone',
-                          item.visitorPhone.isEmpty ? '-' : item.visitorPhone,
-                          Icons.phone_outlined),
-                      _SheetField('Organization',
-                          item.visitorOrganizationName.isEmpty ? '-' : item.visitorOrganizationName,
-                          Icons.business_outlined),
-                      _SheetField('Identity ID',
-                          item.visitorIdentityId.isEmpty ? '-' : item.visitorIdentityId,
-                          Icons.credit_card_outlined),
+                      _SheetField(
+                        'Visitor Type',
+                        item.visitorTypeName.isEmpty
+                            ? '-'
+                            : item.visitorTypeName,
+                        Icons.badge_outlined,
+                      ),
+                      _SheetField(
+                        'Visitor Role',
+                        item.visitorRole.isEmpty ? '-' : item.visitorRole,
+                        Icons.work_outline,
+                      ),
+                      _SheetField(
+                        'Name',
+                        item.visitorName.isEmpty ? '-' : item.visitorName,
+                        Icons.person_outline,
+                      ),
+                      _SheetField(
+                        'Email',
+                        item.visitorEmail.isEmpty ? '-' : item.visitorEmail,
+                        Icons.email_outlined,
+                      ),
+                      _SheetField(
+                        'Phone',
+                        item.visitorPhone.isEmpty ? '-' : item.visitorPhone,
+                        Icons.phone_outlined,
+                      ),
+                      _SheetField(
+                        'Organization',
+                        item.visitorOrganizationName.isEmpty
+                            ? '-'
+                            : item.visitorOrganizationName,
+                        Icons.business_outlined,
+                      ),
+                      _SheetField(
+                        'Identity ID',
+                        item.visitorIdentityId.isEmpty
+                            ? '-'
+                            : item.visitorIdentityId,
+                        Icons.credit_card_outlined,
+                      ),
                     ], isExpired: isExpired),
 
                     vSpace(context, 16),
@@ -1280,32 +1379,50 @@ class _InvitationDetailSheetState extends State<_InvitationDetailSheet> {
                     // 2. Invitation Information (tanpa "Type")
                     _section(context, 'Invitation Information'),
                     _grid(context, statusColor, [
-                      _SheetField('Invitation Code',
-                          item.invitationCode.isEmpty ? '-' : item.invitationCode,
-                          Icons.confirmation_number_outlined,
-                          isCode: true),
-                      _SheetField('Visitor Code',
-                          item.visitorCode.isEmpty ? '-' : item.visitorCode,
-                          Icons.pin_outlined),
-                      _SheetField('Group Name',
-                          item.groupName.isEmpty ? '-' : item.groupName,
-                          Icons.group_outlined),
-                      _SheetField('Visitor Status',
-                          item.visitorStatus.isEmpty ? '-' : item.visitorStatus,
-                          Icons.info_outline,
-                          badgeColor: statusColor),
-                      _SheetField('Agenda',
-                          item.agenda.isEmpty ? '-' : item.agenda,
-                          Icons.event_note_outlined),
-                      _SheetField('Host',
-                          item.hostName.isEmpty ? '-' : item.hostName,
-                          Icons.person_outline),
-                      _SheetField('Vehicle Type',
-                          item.vehicleType.isEmpty ? '-' : item.vehicleType,
-                          Icons.directions_car_outlined),
-                      _SheetField('Vehicle Plate',
-                          item.vehiclePlateNumber.isEmpty ? '-' : item.vehiclePlateNumber,
-                          Icons.subtitles_outlined),
+                      _SheetField(
+                        'Invitation Code',
+                        item.invitationCode.isEmpty ? '-' : item.invitationCode,
+                        Icons.confirmation_number_outlined,
+                        isCode: true,
+                      ),
+                      _SheetField(
+                        'Visitor Code',
+                        item.visitorCode.isEmpty ? '-' : item.visitorCode,
+                        Icons.pin_outlined,
+                      ),
+                      _SheetField(
+                        'Group Name',
+                        item.groupName.isEmpty ? '-' : item.groupName,
+                        Icons.group_outlined,
+                      ),
+                      _SheetField(
+                        'Visitor Status',
+                        item.visitorStatus.isEmpty ? '-' : item.visitorStatus,
+                        Icons.info_outline,
+                        badgeColor: statusColor,
+                      ),
+                      _SheetField(
+                        'Agenda',
+                        item.agenda.isEmpty ? '-' : item.agenda,
+                        Icons.event_note_outlined,
+                      ),
+                      _SheetField(
+                        'Host',
+                        item.hostName.isEmpty ? '-' : item.hostName,
+                        Icons.person_outline,
+                      ),
+                      _SheetField(
+                        'Vehicle Type',
+                        item.vehicleType.isEmpty ? '-' : item.vehicleType,
+                        Icons.directions_car_outlined,
+                      ),
+                      _SheetField(
+                        'Vehicle Plate',
+                        item.vehiclePlateNumber.isEmpty
+                            ? '-'
+                            : item.vehiclePlateNumber,
+                        Icons.subtitles_outlined,
+                      ),
                     ], isExpired: isExpired),
 
                     vSpace(context, 16),
@@ -1318,7 +1435,9 @@ class _InvitationDetailSheetState extends State<_InvitationDetailSheet> {
                       context: context,
                       icon: Icons.location_on_outlined,
                       label: 'Registered Site',
-                      value: _loadingSite ? '...' : (_sitePlaceName.isEmpty ? '-' : _sitePlaceName),
+                      value: _loadingSite
+                          ? '...'
+                          : (_sitePlaceName.isEmpty ? '-' : _sitePlaceName),
                     ),
                     vSpace(context, 8),
 
@@ -1336,63 +1455,99 @@ class _InvitationDetailSheetState extends State<_InvitationDetailSheet> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Row(children: [
-                                  Icon(Icons.login_outlined,
+                                Row(
+                                  children: [
+                                    Icon(
+                                      Icons.login_outlined,
                                       size: rw(context, 14),
-                                      color: Colors.green.shade600),
-                                  hSpace(context, 4),
-                                  Text('Start',
+                                      color: Colors.green.shade600,
+                                    ),
+                                    hSpace(context, 4),
+                                    Text(
+                                      'Start',
                                       style: TextStyle(
-                                          fontSize: rfs(context, 11),
-                                          color: Colors.grey.shade500)),
-                                ]),
+                                        fontSize: rfs(context, 11),
+                                        color: Colors.grey.shade500,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                                 vSpace(context, 4),
                                 Text(
-                                  DateFormat('dd MMM yyyy').format(item.visitorPeriodStart),
+                                  DateFormat(
+                                    'dd MMM yyyy',
+                                  ).format(item.visitorPeriodStart),
                                   style: TextStyle(
-                                      fontSize: rfs(context, 13),
-                                      fontWeight: FontWeight.w700,
-                                      color: Colors.black87),
+                                    fontSize: rfs(context, 13),
+                                    fontWeight: FontWeight.w700,
+                                    color: Colors.black87,
+                                  ),
                                 ),
                                 Text(
-                                  DateFormat('HH:mm').format(item.visitorPeriodStart),
+                                  DateFormat(
+                                    'HH:mm',
+                                  ).format(item.visitorPeriodStart),
                                   style: TextStyle(
-                                      fontSize: rfs(context, 12),
-                                      color: Colors.grey.shade600),
+                                    fontSize: rfs(context, 12),
+                                    color: Colors.grey.shade600,
+                                  ),
                                 ),
                               ],
                             ),
                           ),
-                          Container(width: 1, height: rh(context, 50), color: Colors.grey.shade300),
+                          Container(
+                            width: 1,
+                            height: rh(context, 50),
+                            color: Colors.grey.shade300,
+                          ),
                           Expanded(
                             child: Padding(
                               padding: EdgeInsets.only(left: rw(context, 12)),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Row(children: [
-                                    Icon(Icons.logout_outlined,
+                                  Row(
+                                    children: [
+                                      Icon(
+                                        Icons.logout_outlined,
                                         size: rw(context, 14),
-                                        color: isExpired ? Colors.red.shade600 : Colors.grey.shade500),
-                                    hSpace(context, 4),
-                                    Text('End',
+                                        color: isExpired
+                                            ? Colors.red.shade600
+                                            : Colors.grey.shade500,
+                                      ),
+                                      hSpace(context, 4),
+                                      Text(
+                                        'End',
                                         style: TextStyle(
-                                            fontSize: rfs(context, 11),
-                                            color: Colors.grey.shade500)),
-                                  ]),
+                                          fontSize: rfs(context, 11),
+                                          color: Colors.grey.shade500,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                   vSpace(context, 4),
                                   Text(
-                                    DateFormat('dd MMM yyyy').format(item.visitorPeriodEnd),
+                                    DateFormat(
+                                      'dd MMM yyyy',
+                                    ).format(item.visitorPeriodEnd),
                                     style: TextStyle(
-                                        fontSize: rfs(context, 13),
-                                        fontWeight: FontWeight.w700,
-                                        color: isExpired ? Colors.red.shade600 : Colors.black87),
+                                      fontSize: rfs(context, 13),
+                                      fontWeight: FontWeight.w700,
+                                      color: isExpired
+                                          ? Colors.red.shade600
+                                          : Colors.black87,
+                                    ),
                                   ),
                                   Text(
-                                    DateFormat('HH:mm').format(item.visitorPeriodEnd),
+                                    DateFormat(
+                                      'HH:mm',
+                                    ).format(item.visitorPeriodEnd),
                                     style: TextStyle(
-                                        fontSize: rfs(context, 12),
-                                        color: isExpired ? Colors.red.shade400 : Colors.grey.shade600),
+                                      fontSize: rfs(context, 12),
+                                      color: isExpired
+                                          ? Colors.red.shade400
+                                          : Colors.grey.shade600,
+                                    ),
                                   ),
                                 ],
                               ),
@@ -1410,7 +1565,11 @@ class _InvitationDetailSheetState extends State<_InvitationDetailSheet> {
               // ── Close button ───────────────────────────────────────────
               Padding(
                 padding: EdgeInsets.fromLTRB(
-                    rw(context, 20), 0, rw(context, 20), rh(context, 24)),
+                  rw(context, 20),
+                  0,
+                  rw(context, 20),
+                  rh(context, 24),
+                ),
                 child: SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
@@ -1454,17 +1613,25 @@ class _InvitationDetailSheetState extends State<_InvitationDetailSheet> {
             ),
           ),
           hSpace(context, 8),
-          Text(title,
-              style: TextStyle(
-                  fontWeight: FontWeight.w700,
-                  fontSize: rfs(context, 13),
-                  color: Colors.black87)),
+          Text(
+            title,
+            style: TextStyle(
+              fontWeight: FontWeight.w700,
+              fontSize: rfs(context, 13),
+              color: Colors.black87,
+            ),
+          ),
         ],
       ),
     );
   }
 
-  Widget _grid(BuildContext context, Color statusColor, List<_SheetField> fields, {bool isExpired = false}) {
+  Widget _grid(
+    BuildContext context,
+    Color statusColor,
+    List<_SheetField> fields, {
+    bool isExpired = false,
+  }) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.grey.shade50,
@@ -1479,18 +1646,27 @@ class _InvitationDetailSheetState extends State<_InvitationDetailSheet> {
             children: [
               Padding(
                 padding: EdgeInsets.symmetric(
-                    horizontal: rw(context, 14), vertical: rh(context, 10)),
+                  horizontal: rw(context, 14),
+                  vertical: rh(context, 10),
+                ),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    Icon(f.icon, size: rw(context, 16), color: Colors.grey.shade400),
+                    Icon(
+                      f.icon,
+                      size: rw(context, 16),
+                      color: Colors.grey.shade400,
+                    ),
                     hSpace(context, 10),
                     SizedBox(
                       width: rw(context, 100),
-                      child: Text(f.label,
-                          style: TextStyle(
-                              fontSize: rfs(context, 12),
-                              color: Colors.grey.shade500)),
+                      child: Text(
+                        f.label,
+                        style: TextStyle(
+                          fontSize: rfs(context, 12),
+                          color: Colors.grey.shade500,
+                        ),
+                      ),
                     ),
                     Expanded(
                       child: f.badgeColor != null
@@ -1499,17 +1675,23 @@ class _InvitationDetailSheetState extends State<_InvitationDetailSheet> {
                               children: [
                                 Container(
                                   padding: EdgeInsets.symmetric(
-                                      horizontal: rw(context, 8),
-                                      vertical: rh(context, 3)),
+                                    horizontal: rw(context, 8),
+                                    vertical: rh(context, 3),
+                                  ),
                                   decoration: BoxDecoration(
                                     color: f.badgeColor,
-                                    borderRadius: BorderRadius.circular(rw(context, 4)),
+                                    borderRadius: BorderRadius.circular(
+                                      rw(context, 4),
+                                    ),
                                   ),
-                                  child: Text(f.value,
-                                      style: TextStyle(
-                                          fontSize: rfs(context, 11),
-                                          fontWeight: FontWeight.w600,
-                                          color: Colors.white)),
+                                  child: Text(
+                                    f.value,
+                                    style: TextStyle(
+                                      fontSize: rfs(context, 11),
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.white,
+                                    ),
+                                  ),
                                 ),
                               ],
                             )
@@ -1517,16 +1699,19 @@ class _InvitationDetailSheetState extends State<_InvitationDetailSheet> {
                               mainAxisAlignment: MainAxisAlignment.end,
                               children: [
                                 Flexible(
-                                  child: Text(f.value,
-                                      style: TextStyle(
-                                          fontSize: rfs(context, 13),
-                                          fontWeight: FontWeight.w600,
-                                          color: f.isCode
-                                              ? const Color(0xFF005596)
-                                              : Colors.black87),
-                                      textAlign: TextAlign.end,
-                                      overflow: TextOverflow.ellipsis,
-                                      maxLines: 2),
+                                  child: Text(
+                                    f.value,
+                                    style: TextStyle(
+                                      fontSize: rfs(context, 13),
+                                      fontWeight: FontWeight.w600,
+                                      color: f.isCode
+                                          ? const Color(0xFF005596)
+                                          : Colors.black87,
+                                    ),
+                                    textAlign: TextAlign.end,
+                                    overflow: TextOverflow.ellipsis,
+                                    maxLines: 2,
+                                  ),
                                 ),
                                 if (f.isCode) ...[
                                   hSpace(context, 6),
@@ -1540,23 +1725,32 @@ class _InvitationDetailSheetState extends State<_InvitationDetailSheet> {
                                           backgroundColor: Colors.red.shade600,
                                           colorText: Colors.white,
                                           duration: const Duration(seconds: 1),
-                                          margin: EdgeInsets.all(rw(context, 10)),
+                                          margin: EdgeInsets.all(
+                                            rw(context, 10),
+                                          ),
                                         );
                                         return;
                                       }
                                       Clipboard.setData(
-                                          ClipboardData(text: f.value));
-                                      Get.snackbar('Copied',
-                                          'Copied to clipboard',
-                                          snackPosition: SnackPosition.TOP,
-                                          backgroundColor: Colors.green,
-                                          colorText: Colors.white,
-                                          duration: const Duration(seconds: 1),
-                                          margin: EdgeInsets.all(rw(context, 10)));
+                                        ClipboardData(text: f.value),
+                                      );
+                                      Get.snackbar(
+                                        'Copied',
+                                        'Copied to clipboard',
+                                        snackPosition: SnackPosition.TOP,
+                                        backgroundColor: Colors.green,
+                                        colorText: Colors.white,
+                                        duration: const Duration(seconds: 1),
+                                        margin: EdgeInsets.all(rw(context, 10)),
+                                      );
                                     },
-                                    child: Icon(Icons.copy,
-                                        size: rw(context, 14),
-                                        color: isExpired ? Colors.grey.shade300 : Colors.grey.shade400),
+                                    child: Icon(
+                                      Icons.copy,
+                                      size: rw(context, 14),
+                                      color: isExpired
+                                          ? Colors.grey.shade300
+                                          : Colors.grey.shade400,
+                                    ),
                                   ),
                                 ],
                               ],
@@ -1567,11 +1761,12 @@ class _InvitationDetailSheetState extends State<_InvitationDetailSheet> {
               ),
               if (!isLast)
                 Divider(
-                    height: 1,
-                    thickness: 1,
-                    color: Colors.grey.shade200,
-                    indent: rw(context, 14),
-                    endIndent: rw(context, 14)),
+                  height: 1,
+                  thickness: 1,
+                  color: Colors.grey.shade200,
+                  indent: rw(context, 14),
+                  endIndent: rw(context, 14),
+                ),
             ],
           );
         }),
@@ -1598,7 +1793,9 @@ class _SheetFieldRow extends StatelessWidget {
   Widget build(BuildContext ctx) {
     return Container(
       padding: EdgeInsets.symmetric(
-          horizontal: rw(ctx, 14), vertical: rh(ctx, 12)),
+        horizontal: rw(ctx, 14),
+        vertical: rh(ctx, 12),
+      ),
       decoration: BoxDecoration(
         color: Colors.grey.shade50,
         borderRadius: BorderRadius.circular(rw(ctx, 10)),
@@ -1610,18 +1807,23 @@ class _SheetFieldRow extends StatelessWidget {
           hSpace(ctx, 10),
           SizedBox(
             width: rw(ctx, 100),
-            child: Text(label,
-                style: TextStyle(
-                    fontSize: rfs(ctx, 12), color: Colors.grey.shade500)),
+            child: Text(
+              label,
+              style: TextStyle(
+                fontSize: rfs(ctx, 12),
+                color: Colors.grey.shade500,
+              ),
+            ),
           ),
           Expanded(
             child: Text(
               value,
               textAlign: TextAlign.end,
               style: TextStyle(
-                  fontSize: rfs(ctx, 13),
-                  fontWeight: FontWeight.w600,
-                  color: Colors.black87),
+                fontSize: rfs(ctx, 13),
+                fontWeight: FontWeight.w600,
+                color: Colors.black87,
+              ),
               overflow: TextOverflow.ellipsis,
             ),
           ),

@@ -8,7 +8,8 @@ class CreateQuickAccessDialog extends StatefulWidget {
   const CreateQuickAccessDialog({super.key});
 
   @override
-  State<CreateQuickAccessDialog> createState() => _CreateQuickAccessDialogState();
+  State<CreateQuickAccessDialog> createState() =>
+      _CreateQuickAccessDialogState();
 }
 
 class _CreateQuickAccessDialogState extends State<CreateQuickAccessDialog> {
@@ -18,10 +19,10 @@ class _CreateQuickAccessDialogState extends State<CreateQuickAccessDialog> {
 
   // Form Fields
   String? selectedProviderId;
-  String selectedRecipientMode = 'self'; // 'self' or 'others'
+  String? selectedRecipientMode; // 'self' or 'others'
   String? selectedHostId;
   String? selectedSiteId;
-  int selectedDuration = 60;
+  int? selectedDuration;
 
   final receiverNameCtrl = TextEditingController();
   final receiverEmailCtrl = TextEditingController();
@@ -39,21 +40,13 @@ class _CreateQuickAccessDialogState extends State<CreateQuickAccessDialog> {
   @override
   void initState() {
     super.initState();
-    // Default to the first provider if available
-    final providers = controller.visitorProviders
-        .where((p) => p['active'] == true && p['is_quick_access'] == true)
-        .toList();
-    if (providers.isNotEmpty) {
-      selectedProviderId = providers.first['id']?.toString();
-      selectedProvider = providers.first;
-      _updateVehiclePlateVisibility();
-    }
   }
 
   void _updateVehiclePlateVisibility() {
     if (selectedProvider != null) {
       setState(() {
-        showVehiclePlate = selectedProvider!['need_plate_number'] == true ||
+        showVehiclePlate =
+            selectedProvider!['need_plate_number'] == true ||
             selectedProvider!['support_vehicle'] == true;
       });
     }
@@ -74,10 +67,34 @@ class _CreateQuickAccessDialogState extends State<CreateQuickAccessDialog> {
   void _submit() async {
     if (!_formKey.currentState!.validate()) return;
 
+    if (selectedProviderId == null) {
+      Get.snackbar(
+        'Required',
+        'Please select a Visitor Provider',
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+        snackPosition: SnackPosition.TOP,
+        margin: EdgeInsets.all(rw(context, 12)),
+      );
+      return;
+    }
+
     if (selectedSiteId == null) {
       Get.snackbar(
         'Required',
         'Please select a Drop Point',
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+        snackPosition: SnackPosition.TOP,
+        margin: EdgeInsets.all(rw(context, 12)),
+      );
+      return;
+    }
+
+    if (selectedDuration == null) {
+      Get.snackbar(
+        'Required',
+        'Please select a Duration',
         backgroundColor: Colors.red,
         colorText: Colors.white,
         snackPosition: SnackPosition.TOP,
@@ -113,9 +130,6 @@ class _CreateQuickAccessDialogState extends State<CreateQuickAccessDialog> {
         "visitor_provider_id": selectedProviderId,
         "tz": "Asia/Jakarta",
         "is_receiver_self": isSelf,
-        "receiver_name": isSelf ? (user.fullname ?? '') : receiverNameCtrl.text.trim(),
-        "receiver_phone": isSelf ? (user.phone ?? '-') : receiverPhoneCtrl.text.trim(),
-        "receiver_email": isSelf ? (user.email ?? '') : receiverEmailCtrl.text.trim(),
         "duration": selectedDuration,
         "host_id": hostId,
         "site_id": selectedSiteId,
@@ -124,8 +138,16 @@ class _CreateQuickAccessDialogState extends State<CreateQuickAccessDialog> {
         "visitor_email": courierEmailCtrl.text.trim().isEmpty
             ? "courier-no@required.com"
             : courierEmailCtrl.text.trim(),
-        "visitor_Phone": courierPhoneCtrl.text.trim(),
       };
+
+      if (isSelf) {
+        body["visitor_phone"] = courierPhoneCtrl.text.trim();
+      } else {
+        body["receiver_name"] = receiverNameCtrl.text.trim();
+        body["receiver_phone"] = receiverPhoneCtrl.text.trim();
+        body["receiver_email"] = receiverEmailCtrl.text.trim();
+        body["visitor_Phone"] = courierPhoneCtrl.text.trim();
+      }
 
       final bool success = await controller.createQuickAccessAction(body);
 
@@ -251,26 +273,12 @@ class _CreateQuickAccessDialogState extends State<CreateQuickAccessDialog> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Visitor Provider
-                        _buildRequiredLabel(context, 'Visitor Provider', hasInfo: true),
-                        _buildDropdown(
-                          hint: 'Select Visitor Provider',
-                          value: selectedProviderId,
-                          items: providerItems,
-                          onChanged: (val) {
-                            setState(() {
-                              selectedProviderId = val;
-                              selectedProvider = providers.firstWhereOrNull(
-                                (p) => p['id']?.toString() == val,
-                              );
-                              _updateVehiclePlateVisibility();
-                            });
-                          },
-                        ),
-                        vSpace(context, 16),
-
                         // Recipient
-                        _buildRequiredLabel(context, 'Recipient', hasInfo: true),
+                        _buildRequiredLabel(
+                          context,
+                          'Recipient',
+                          hasInfo: true,
+                        ),
                         _buildDropdown(
                           hint: 'Select Recipient',
                           value: selectedRecipientMode,
@@ -283,198 +291,242 @@ class _CreateQuickAccessDialogState extends State<CreateQuickAccessDialog> {
                         ),
                         vSpace(context, 16),
 
-                        // Receiver Info (Conditional on Others)
-                        if (selectedRecipientMode == 'others') ...[
-                          _buildRequiredLabel(context, 'Receiver Name'),
+                        if (selectedRecipientMode != null) ...[
+                          // Visitor Provider
+                          _buildRequiredLabel(
+                            context,
+                            'Visitor Provider',
+                            hasInfo: true,
+                          ),
+                          _buildDropdown(
+                            hint: 'Select Visitor Provider',
+                            value: selectedProviderId,
+                            items: providerItems,
+                            onChanged: (val) {
+                              setState(() {
+                                selectedProviderId = val;
+                                selectedProvider = providers.firstWhereOrNull(
+                                  (p) => p['id']?.toString() == val,
+                                );
+                                _updateVehiclePlateVisibility();
+                              });
+                            },
+                          ),
+                          vSpace(context, 16),
+
+                          // Receiver Info (Conditional on Others)
+                          if (selectedRecipientMode == 'others') ...[
+                            _buildRequiredLabel(context, 'Receiver Name'),
+                            _buildTextField(
+                              controller: receiverNameCtrl,
+                              hintText: 'Enter receiver name',
+                              validator: (val) {
+                                if (val == null || val.trim().isEmpty) {
+                                  return 'Receiver name is required';
+                                }
+                                return null;
+                              },
+                            ),
+                            vSpace(context, 16),
+                            _buildRequiredLabel(context, 'Receiver Email'),
+                            _buildTextField(
+                              controller: receiverEmailCtrl,
+                              hintText: 'Enter receiver email',
+                              keyboardType: TextInputType.emailAddress,
+                              validator: (val) {
+                                if (val == null || val.trim().isEmpty) {
+                                  return 'Receiver email is required';
+                                }
+                                if (!GetUtils.isEmail(val.trim())) {
+                                  return 'Invalid email address';
+                                }
+                                return null;
+                              },
+                            ),
+                            vSpace(context, 16),
+                            _buildRequiredLabel(context, 'Receiver Phone'),
+                            _buildTextField(
+                              controller: receiverPhoneCtrl,
+                              hintText: 'Enter receiver phone number',
+                              keyboardType: TextInputType.phone,
+                              validator: (val) {
+                                if (val == null || val.trim().isEmpty) {
+                                  return 'Receiver phone number is required';
+                                }
+                                return null;
+                              },
+                            ),
+                            vSpace(context, 16),
+                          ],
+
+                          // Host Selection (Conditional on operator role)
+                          if (!isUserEmp) ...[
+                            _buildRequiredLabel(context, 'Host'),
+                            _buildDropdown(
+                              hint: 'Select Host',
+                              value: selectedHostId,
+                              items: controller.hosts
+                                  .map(
+                                    (h) => {
+                                      "id": h['id'].toString(),
+                                      "name": h['name'].toString(),
+                                    },
+                                  )
+                                  .toList(),
+                              onChanged: (val) {
+                                setState(() => selectedHostId = val);
+                              },
+                            ),
+                            vSpace(context, 16),
+                          ],
+
+                          // Drop Point
+                          _buildRequiredLabel(context, 'Drop Point'),
+                          vSpace(context, 8),
+                          _buildDropPointsGrid(),
+                          vSpace(context, 16),
+
+                          // Courier Info heading
+                          Text(
+                            'Courier Information',
+                            style: TextStyle(
+                              fontSize: rfs(context, 14),
+                              fontWeight: FontWeight.bold,
+                              color: const Color(0xFF1E293B),
+                            ),
+                          ),
+                          vSpace(context, 12),
+
+                          _buildRequiredLabel(context, 'Courier Name'),
                           _buildTextField(
-                            controller: receiverNameCtrl,
-                            hintText: 'Enter receiver name',
+                            controller: courierNameCtrl,
+                            hintText: 'Enter courier name',
                             validator: (val) {
                               if (val == null || val.trim().isEmpty) {
-                                return 'Receiver name is required';
+                                return 'Courier name is required';
                               }
                               return null;
                             },
                           ),
                           vSpace(context, 16),
-                          _buildRequiredLabel(context, 'Receiver Email'),
+
+                          _buildLabel(context, 'Courier Email (Optional)'),
                           _buildTextField(
-                            controller: receiverEmailCtrl,
-                            hintText: 'Enter receiver email',
+                            controller: courierEmailCtrl,
+                            hintText: 'Enter courier email',
                             keyboardType: TextInputType.emailAddress,
                             validator: (val) {
-                              if (val == null || val.trim().isEmpty) {
-                                return 'Receiver email is required';
-                              }
-                              if (!GetUtils.isEmail(val.trim())) {
+                              if (val != null &&
+                                  val.trim().isNotEmpty &&
+                                  !GetUtils.isEmail(val.trim())) {
                                 return 'Invalid email address';
                               }
                               return null;
                             },
                           ),
                           vSpace(context, 16),
-                          _buildRequiredLabel(context, 'Receiver Phone'),
+
+                          _buildRequiredLabel(context, 'Courier Phone'),
                           _buildTextField(
-                            controller: receiverPhoneCtrl,
-                            hintText: 'Enter receiver phone number',
+                            controller: courierPhoneCtrl,
+                            hintText: 'Enter courier phone',
                             keyboardType: TextInputType.phone,
                             validator: (val) {
                               if (val == null || val.trim().isEmpty) {
-                                return 'Receiver phone number is required';
+                                return 'Courier phone number is required';
                               }
                               return null;
                             },
                           ),
                           vSpace(context, 16),
-                        ],
 
-                        // Host Selection (Conditional on operator role)
-                        if (!isUserEmp) ...[
-                          _buildRequiredLabel(context, 'Host'),
+                          // Vehicle Plate Number
+                          if (showVehiclePlate) ...[
+                            _buildRequiredLabel(
+                              context,
+                              'Vehicle Plate Number',
+                            ),
+                            _buildTextField(
+                              controller: vehiclePlateCtrl,
+                              hintText: 'Enter plate number (e.g. AB77281)',
+                              validator: (val) {
+                                if (val == null || val.trim().isEmpty) {
+                                  return 'Vehicle plate number is required';
+                                }
+                                return null;
+                              },
+                            ),
+                          ] else ...[
+                            _buildLabel(context, 'Vehicle Plate Number'),
+                            _buildTextField(
+                              controller: TextEditingController(
+                                text: 'Not Supported',
+                              ),
+                              hintText: '',
+                              readOnly: true,
+                            ),
+                          ],
+                          vSpace(context, 16),
+
+                          // Duration
+                          _buildRequiredLabel(context, 'Duration'),
                           _buildDropdown(
-                            hint: 'Select Host',
-                            value: selectedHostId,
-                            items: controller.hosts
-                                .map((h) => {
-                                      "id": h['id'].toString(),
-                                      "name": h['name'].toString()
-                                    })
-                                .toList(),
+                            hint: 'Select Duration',
+                            value: selectedDuration?.toString(),
+                            items: durationItems,
                             onChanged: (val) {
-                              setState(() => selectedHostId = val);
-                            },
-                          ),
-                          vSpace(context, 16),
-                        ],
-
-                        // Drop Point
-                        _buildRequiredLabel(context, 'Drop Point'),
-                        vSpace(context, 8),
-                        _buildDropPointsGrid(),
-                        vSpace(context, 16),
-
-                        // Courier Info heading
-                        Text(
-                          'Courier Information',
-                          style: TextStyle(
-                            fontSize: rfs(context, 14),
-                            fontWeight: FontWeight.bold,
-                            color: const Color(0xFF1E293B),
-                          ),
-                        ),
-                        vSpace(context, 12),
-
-                        _buildRequiredLabel(context, 'Courier Name'),
-                        _buildTextField(
-                          controller: courierNameCtrl,
-                          hintText: 'Enter courier name',
-                          validator: (val) {
-                            if (val == null || val.trim().isEmpty) {
-                              return 'Courier name is required';
-                            }
-                            return null;
-                          },
-                        ),
-                        vSpace(context, 16),
-
-                        _buildLabel(context, 'Courier Email (Optional)'),
-                        _buildTextField(
-                          controller: courierEmailCtrl,
-                          hintText: 'Enter courier email',
-                          keyboardType: TextInputType.emailAddress,
-                          validator: (val) {
-                            if (val != null &&
-                                val.trim().isNotEmpty &&
-                                !GetUtils.isEmail(val.trim())) {
-                              return 'Invalid email address';
-                            }
-                            return null;
-                          },
-                        ),
-                        vSpace(context, 16),
-
-                        _buildRequiredLabel(context, 'Courier Phone'),
-                        _buildTextField(
-                          controller: courierPhoneCtrl,
-                          hintText: 'Enter courier phone',
-                          keyboardType: TextInputType.phone,
-                          validator: (val) {
-                            if (val == null || val.trim().isEmpty) {
-                              return 'Courier phone number is required';
-                            }
-                            return null;
-                          },
-                        ),
-                        vSpace(context, 16),
-
-                        // Vehicle Plate Number (Conditional)
-                        if (showVehiclePlate) ...[
-                          _buildRequiredLabel(context, 'Vehicle Plate Number'),
-                          _buildTextField(
-                            controller: vehiclePlateCtrl,
-                            hintText: 'Enter plate number (e.g. AB77281)',
-                            validator: (val) {
-                              if (val == null || val.trim().isEmpty) {
-                                return 'Vehicle plate number is required';
+                              if (val != null) {
+                                setState(
+                                  () => selectedDuration = int.parse(val),
+                                );
                               }
-                              return null;
                             },
                           ),
-                          vSpace(context, 16),
                         ],
-
-                        // Duration
-                        _buildRequiredLabel(context, 'Duration'),
-                        _buildDropdown(
-                          hint: 'Select Duration',
-                          value: selectedDuration.toString(),
-                          items: durationItems,
-                          onChanged: (val) {
-                            if (val != null) {
-                              setState(() => selectedDuration = int.parse(val));
-                            }
-                          },
-                        ),
                       ],
                     ),
                   ),
                 ),
 
                 // Footer / Submit Button
-                const Divider(height: 1),
-                Padding(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: rw(context, 20),
-                    vertical: rh(context, 12),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF005596),
-                          foregroundColor: Colors.white,
-                          padding: EdgeInsets.symmetric(
-                            horizontal: rw(context, 24),
-                            vertical: rh(context, 12),
+                if (selectedRecipientMode != null) ...[
+                  const Divider(height: 1),
+                  Padding(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: rw(context, 20),
+                      vertical: rh(context, 12),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF005596),
+                            foregroundColor: Colors.white,
+                            padding: EdgeInsets.symmetric(
+                              horizontal: rw(context, 24),
+                              vertical: rh(context, 12),
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(
+                                rw(context, 8),
+                              ),
+                            ),
+                            elevation: 0,
                           ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(rw(context, 8)),
+                          onPressed: isSubmitting ? null : _submit,
+                          child: Text(
+                            'Submit',
+                            style: TextStyle(
+                              fontSize: rfs(context, 13),
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
-                          elevation: 0,
                         ),
-                        onPressed: isSubmitting ? null : _submit,
-                        child: Text(
-                          'Submit',
-                          style: TextStyle(
-                            fontSize: rfs(context, 13),
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
+                ],
               ],
             ),
           ),
@@ -487,9 +539,7 @@ class _CreateQuickAccessDialogState extends State<CreateQuickAccessDialog> {
                   color: Colors.white.withValues(alpha: 0.6),
                   borderRadius: BorderRadius.circular(rw(context, 16)),
                 ),
-                child: const Center(
-                  child: CircularProgressIndicator(),
-                ),
+                child: const Center(child: CircularProgressIndicator()),
               ),
             ),
         ],
@@ -499,7 +549,11 @@ class _CreateQuickAccessDialogState extends State<CreateQuickAccessDialog> {
 
   // --- Sub-widgets builder ---
 
-  Widget _buildRequiredLabel(BuildContext context, String label, {bool hasInfo = false}) {
+  Widget _buildRequiredLabel(
+    BuildContext context,
+    String label, {
+    bool hasInfo = false,
+  }) {
     return Padding(
       padding: EdgeInsets.only(bottom: rh(context, 6.0)),
       child: Row(
@@ -552,15 +606,20 @@ class _CreateQuickAccessDialogState extends State<CreateQuickAccessDialog> {
     required String hintText,
     TextInputType keyboardType = TextInputType.text,
     String? Function(String?)? validator,
+    bool readOnly = false,
   }) {
     return TextFormField(
       controller: controller,
       keyboardType: keyboardType,
-      style: TextStyle(fontSize: rfs(context, 13)),
+      readOnly: readOnly,
+      style: TextStyle(
+        fontSize: rfs(context, 13),
+        color: readOnly ? Colors.grey.shade600 : Colors.black,
+      ),
       validator: validator,
       decoration: InputDecoration(
         filled: true,
-        fillColor: Colors.white,
+        fillColor: readOnly ? Colors.grey.shade100 : Colors.white,
         hintText: hintText,
         hintStyle: TextStyle(color: Colors.grey, fontSize: rfs(context, 13)),
         contentPadding: EdgeInsets.symmetric(
@@ -653,7 +712,9 @@ class _CreateQuickAccessDialogState extends State<CreateQuickAccessDialog> {
       context: context,
       backgroundColor: Colors.white,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(rw(context, 20))),
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(rw(context, 20)),
+        ),
       ),
       builder: (context) {
         return Column(
@@ -762,7 +823,7 @@ class _CreateQuickAccessDialogState extends State<CreateQuickAccessDialog> {
                   color: Colors.black.withValues(alpha: 0.02),
                   blurRadius: 4,
                   offset: const Offset(0, 2),
-                )
+                ),
               ],
             ),
             child: Text(

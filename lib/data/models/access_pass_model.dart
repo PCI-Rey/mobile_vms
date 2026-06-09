@@ -122,7 +122,7 @@ class AccessPassModel {
       vehicleType: json['vehicle_type']?.toString() ?? '',
       isDriving: json['is_driving'] == true,
       tz: json['tz']?.toString() ?? '',
-      siteId: json['site_id']?.toString() ?? '',
+      siteId: (json['site_id'] ?? json['site_place'])?.toString() ?? '',
       visitorName: json['visitor_name']?.toString() ?? '',
       isPraregisterDone: json['is_complete_preregister'] == true ||
           json['is_praregister_done'] == true,

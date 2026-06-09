@@ -10,12 +10,16 @@ class FilterBottomSheet extends StatefulWidget {
   final DateTime? initialStartDate;
   final DateTime? initialEndDate;
   final String? initialSiteId;
+  final String? initialStatus;
+  final bool showStatusFilter;
 
   const FilterBottomSheet({
     super.key,
     this.initialStartDate,
     this.initialEndDate,
     this.initialSiteId,
+    this.initialStatus,
+    this.showStatusFilter = false,
   });
 
   @override
@@ -26,6 +30,8 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
   DateTime? startDate;
   DateTime? endDate;
   String? selectedGedung;
+  String? selectedStatus;
+  final List<String> statusList = ['Preregis', 'Checkin', 'Checkout'];
   final List<Map<String, String>> gedungList = [];
   bool isLoadingGedung = false;
 
@@ -36,6 +42,7 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
     startDate = widget.initialStartDate;
     endDate = widget.initialEndDate;
     selectedGedung = widget.initialSiteId;
+    selectedStatus = widget.initialStatus;
     _fetchGedung();
   }
 
@@ -101,6 +108,49 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                           : null,
                       onTap: () {
                         setState(() => selectedGedung = item['id']);
+                        Navigator.pop(context);
+                      },
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _showStatusSelection(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(rw(context, 20))),
+      ),
+      builder: (context) {
+        return Container(
+          padding: EdgeInsets.all(rw(context, 20)),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Pilih Status',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: rfs(context, 18)),
+              ),
+              vSpace(context, 16),
+              Flexible(
+                child: ListView.builder(
+                  shrinkWrap: true,
+                  itemCount: statusList.length,
+                  itemBuilder: (context, index) {
+                    final item = statusList[index];
+                    return ListTile(
+                      title: Text(item),
+                      trailing: selectedStatus == item
+                          ? const Icon(Icons.check, color: AppColors.primary500)
+                          : null,
+                      onTap: () {
+                        setState(() => selectedStatus = item);
                         Navigator.pop(context);
                       },
                     );
@@ -254,6 +304,50 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                     ),
                   ),
 
+            if (widget.showStatusFilter) ...[
+              vSpace(context, 16),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text("Status", style: TextStyles.subtitle2),
+                  vSpace(context, 6),
+                  GestureDetector(
+                    onTap: () => _showStatusSelection(context),
+                    child: Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: rw(context, 12),
+                        vertical: rh(context, 16),
+                      ),
+                      decoration: BoxDecoration(
+                        color: const Color(0xffF2F8FD),
+                        borderRadius: BorderRadius.circular(rw(context, 8)),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            selectedStatus?.isNotEmpty == true
+                                ? selectedStatus!
+                                : 'Pilih Status',
+                            style: TextStyle(
+                              color: selectedStatus == null || selectedStatus!.isEmpty
+                                  ? Colors.grey
+                                  : Colors.black,
+                              fontSize: rfs(context, 14),
+                            ),
+                          ),
+                          const Icon(
+                            Icons.keyboard_arrow_down,
+                            color: Colors.grey,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+
             vSpace(context, 24),
 
             SizedBox(
@@ -298,6 +392,7 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                     'endDate': endDate,
                     'siteId': selectedGedung,
                     'siteName': selectedSite?['name'],
+                    'status': selectedStatus,
                   });
                 },
                 child: const Text(

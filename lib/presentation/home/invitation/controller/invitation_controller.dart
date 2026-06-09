@@ -12,6 +12,7 @@ class InvitationController extends GetxController {
 
   final RxList<AccessPassModel> allInvitations = <AccessPassModel>[].obs;
   final RxList<AccessPassModel> ongoingInvitations = <AccessPassModel>[].obs;
+  final RxList<AccessPassModel> quickAccessInvitations = <AccessPassModel>[].obs;
   final RxBool isLoading = false.obs;
   final RxBool isNewestFirst = true.obs; // Default: Terbaru di atas
 
@@ -24,6 +25,7 @@ class InvitationController extends GetxController {
   final Rx<DateTime?> endDate = Rx<DateTime?>(null);
   final RxString selectedSiteId = ''.obs;
   final RxString selectedSiteName = ''.obs;
+  final RxString selectedStatus = ''.obs;
 
   @override
   void onInit() {
@@ -38,11 +40,13 @@ class InvitationController extends GetxController {
     DateTime? end,
     String? siteId,
     String? siteName,
+    String? status,
   }) {
     startDate.value = start;
     endDate.value = end;
     selectedSiteId.value = siteId ?? '';
     selectedSiteName.value = siteName ?? '';
+    selectedStatus.value = status ?? '';
     _applyFilters();
   }
 
@@ -52,7 +56,8 @@ class InvitationController extends GetxController {
   }
 
   void _applyFilters() {
-    List<AccessPassModel> filtered = List.from(allInvitations);
+    List<AccessPassModel> filtered = List.from(allInvitations.where((item) => item.visitorStatus != 'QuickAccess'));
+    List<AccessPassModel> quickAccess = List.from(allInvitations.where((item) => item.visitorStatus == 'QuickAccess'));
 
     // 1. Filter Berdasarkan Tanggal (Lokal)
     if (startDate.value != null) {
@@ -85,10 +90,15 @@ class InvitationController extends GetxController {
     if (selectedSiteId.value.isNotEmpty || selectedSiteName.value.isNotEmpty) {
       filtered = filtered.where((item) {
         return (selectedSiteId.value.isNotEmpty &&
-                item.siteId == selectedSiteId.value) ||
+                item.siteId.toLowerCase() == selectedSiteId.value.toLowerCase()) ||
             (selectedSiteName.value.isNotEmpty &&
-                item.sitePlaceName == selectedSiteName.value);
+                item.sitePlaceName.toLowerCase() == selectedSiteName.value.toLowerCase());
       }).toList();
+    }
+
+    // Filter Berdasarkan Status (Lokal)
+    if (selectedStatus.value.isNotEmpty) {
+      filtered = filtered.where((item) => item.visitorStatus.toLowerCase() == selectedStatus.value.toLowerCase()).toList();
     }
 
     // 3. Sorting
@@ -96,13 +106,20 @@ class InvitationController extends GetxController {
       filtered.sort(
         (a, b) => b.visitorPeriodStart.compareTo(a.visitorPeriodStart),
       );
+      quickAccess.sort(
+        (a, b) => b.visitorPeriodStart.compareTo(a.visitorPeriodStart),
+      );
     } else {
       filtered.sort(
+        (a, b) => a.visitorPeriodStart.compareTo(b.visitorPeriodStart),
+      );
+      quickAccess.sort(
         (a, b) => a.visitorPeriodStart.compareTo(b.visitorPeriodStart),
       );
     }
 
     ongoingInvitations.assignAll(filtered);
+    quickAccessInvitations.assignAll(quickAccess);
   }
 
   Future<void> fetchOngoingInvitations({
@@ -114,6 +131,7 @@ class InvitationController extends GetxController {
       endDate.value = null;
       selectedSiteId.value = '';
       selectedSiteName.value = '';
+      selectedStatus.value = '';
     }
     final user = _hive.getUser();
     final token = user?.token;
@@ -188,7 +206,7 @@ class InvitationController extends GetxController {
 
   Future<void> _fetchSites(String token) async {
     try {
-      final response = await _api.getSitesWithToken(token);
+      final response = await _api.getDropPoints(token);
       if (response.data['status'] == 'success') {
         sites.assignAll(
           List<Map<String, dynamic>>.from(response.data['collection']),

@@ -278,6 +278,21 @@ class ApiService {
     }
   }
 
+  Future<Response> getDropPoints(String token) async {
+    try {
+      final response = await _dio.get(
+        '/$pathApi/invitation-site/drop-point',
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+      return response;
+    } on DioException catch (e) {
+      debugPrint('Dio Error getDropPoints: ${e.message}');
+      if (e.response != null) return e.response!;
+      rethrow;
+    }
+  }
+
+
   Future<Response> getVisitorTypeById(String token, String id) async {
     try {
       final response = await _dio.get(
@@ -483,7 +498,6 @@ class ApiService {
     }
   }
 
-
   /// GET /api/visitor/{id}
   /// Get full detail of a single visitor transaction by its row ID.
   Future<Response> getVisitorDetail(String token, String id) async {
@@ -512,11 +526,7 @@ class ApiService {
     try {
       final response = await _dio.get(
         '/$pathApi/visitor-share-link/dt',
-        queryParameters: {
-          'start': start,
-          'length': length,
-          'draw': 1,
-        },
+        queryParameters: {'start': start, 'length': length, 'draw': 1},
         options: Options(headers: {'Authorization': 'Bearer $token'}),
       );
       return response;
