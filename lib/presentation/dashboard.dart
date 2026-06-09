@@ -123,7 +123,6 @@ class _DashboardState extends State<Dashboard> with SingleTickerProviderStateMix
   void _setupByRole(String role, UserModel user) {
     List<Widget> widgets = [
       const HomePage(),
-      ParkingPage(),
       const HistoryPage(),
       const ProfilePage(),
     ];
@@ -133,7 +132,6 @@ class _DashboardState extends State<Dashboard> with SingleTickerProviderStateMix
     } else if (role == 'operator') {
       widgets = [
         const HomePage(),
-        ParkingPage(),
         const HistoryPage(),
         const ProfilePage(),
       ];
@@ -157,17 +155,6 @@ class _DashboardState extends State<Dashboard> with SingleTickerProviderStateMix
           width: rw(context, 24),
         ),
         label: 'home'.tr,
-      ),
-      BottomNavigationBarItem(
-        icon: Assets.icons.parking.image(
-          height: rw(context, 24),
-          width: rw(context, 24),
-        ),
-        activeIcon: Assets.icons.parkingSelected.image(
-          height: rw(context, 24),
-          width: rw(context, 24),
-        ),
-        label: 'parking'.tr,
       ),
       BottomNavigationBarItem(
         icon: Assets.icons.history.image(
@@ -194,7 +181,7 @@ class _DashboardState extends State<Dashboard> with SingleTickerProviderStateMix
     ];
 
     if (_checkIsGuest(role, user)) {
-      return [items[0], items[3]];
+      return [items[0], items[2]];
     }
 
     return items;
@@ -204,8 +191,8 @@ class _DashboardState extends State<Dashboard> with SingleTickerProviderStateMix
     final double screenWidth = MediaQuery.of(context).size.width;
     final double bottomPadding = MediaQuery.of(context).padding.bottom;
     
-    // Aligns perfectly centered above the Profile tab (which is index 3 of 4 tabs)
-    final double rightPosition = (screenWidth / 8) - 24;
+    // Aligns perfectly centered above the Profile tab (which is index 2 of 3 tabs)
+    final double rightPosition = (screenWidth / 6) - 24;
     final double bottomPosition = bottomPadding + rh(context, 85.0);
 
     final String lang = Get.isRegistered<LanguageController>()

@@ -1097,9 +1097,7 @@ class _ApprovalCard extends StatelessWidget {
                       color: statusBg,
                       borderRadius: BorderRadius.circular(rw(context, 20)),
                       border: hasBorder
-                          ? Border.all(
-                              color: statusFg.withValues(alpha: 0.4),
-                            )
+                          ? Border.all(color: statusFg.withValues(alpha: 0.4))
                           : null,
                     ),
                     child: Text(
@@ -1114,12 +1112,8 @@ class _ApprovalCard extends StatelessWidget {
                 ],
               ),
             ),
-            Divider(
-              height: 1,
-              thickness: 1,
-              color: Colors.grey.shade100,
-            ),
-            
+            Divider(height: 1, thickness: 1, color: Colors.grey.shade100),
+
             // Body: Info grid fields
             Padding(
               padding: EdgeInsets.only(
@@ -1137,7 +1131,8 @@ class _ApprovalCard extends StatelessWidget {
                           context,
                           Icons.badge_outlined,
                           'Visitor Type',
-                          ticket.visitorTypeName == null || ticket.visitorTypeName!.isEmpty
+                          ticket.visitorTypeName == null ||
+                                  ticket.visitorTypeName!.isEmpty
                               ? '-'
                               : ticket.visitorTypeName!,
                         ),
@@ -1163,7 +1158,8 @@ class _ApprovalCard extends StatelessWidget {
                           context,
                           Icons.business_outlined,
                           'Organization',
-                          ticket.hostOrganizationName == null || ticket.hostOrganizationName!.isEmpty
+                          ticket.hostOrganizationName == null ||
+                                  ticket.hostOrganizationName!.isEmpty
                               ? '-'
                               : ticket.hostOrganizationName!,
                         ),
@@ -1312,10 +1308,7 @@ class _ApprovalCard extends StatelessWidget {
 // ═══════════════════════════════════════════════════════════════════════════
 
 class _RejectedCard extends StatelessWidget {
-  const _RejectedCard({
-    required this.ticket,
-    required this.index,
-  });
+  const _RejectedCard({required this.ticket, required this.index});
 
   final ApprovalTicketModel ticket;
   final int index;
@@ -1409,12 +1402,8 @@ class _RejectedCard extends StatelessWidget {
                 ],
               ),
             ),
-            Divider(
-              height: 1,
-              thickness: 1,
-              color: Colors.grey.shade100,
-            ),
-            
+            Divider(height: 1, thickness: 1, color: Colors.grey.shade100),
+
             // Body: Info grid fields
             Padding(
               padding: EdgeInsets.only(
@@ -1432,7 +1421,8 @@ class _RejectedCard extends StatelessWidget {
                           context,
                           Icons.badge_outlined,
                           'Visitor Type',
-                          ticket.visitorTypeName == null || ticket.visitorTypeName!.isEmpty
+                          ticket.visitorTypeName == null ||
+                                  ticket.visitorTypeName!.isEmpty
                               ? '-'
                               : ticket.visitorTypeName!,
                         ),
@@ -1458,7 +1448,8 @@ class _RejectedCard extends StatelessWidget {
                           context,
                           Icons.business_outlined,
                           'Organization',
-                          ticket.hostOrganizationName == null || ticket.hostOrganizationName!.isEmpty
+                          ticket.hostOrganizationName == null ||
+                                  ticket.hostOrganizationName!.isEmpty
                               ? '-'
                               : ticket.hostOrganizationName!,
                         ),
