@@ -469,9 +469,7 @@ class _HomePageState extends State<HomePage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Section: Approval
-          _buildSectionHeader(context, 'Approval'),
-          vSpace(context, 16),
+          // 1. Date Selection (Moved to the very top)
           DatePicker(
             DateTime.now(),
             initialSelectedDate: DateTime.now(),
@@ -498,43 +496,22 @@ class _HomePageState extends State<HomePage> {
           const Divider(height: 1, color: Color(0xFFF0F0F0)),
           vSpace(context, 24),
 
-          // Itinerary List
+          // 2. Section Header: Approval
+          _buildSectionHeader(context, 'Approval'),
+          vSpace(context, 16),
+
+          // 3. Approval Data List
           const IteneraryList(),
 
-          vSpace(context, 32),
+          vSpace(context, 24),
           const Divider(height: 1, color: Color(0xFFF0F0F0)),
-          vSpace(context, 32),
+          vSpace(context, 24),
 
-          // Section: Share Link
+          // 4. Section Header: Share Link
           _buildSectionHeader(context, 'Share Link'),
           vSpace(context, 16),
-          DatePicker(
-            DateTime.now(),
-            initialSelectedDate: DateTime.now(),
-            daysCount: 30,
-            selectionColor: AppColors.primary500,
-            selectedTextColor: Colors.white,
-            deactivatedColor: Colors.grey.shade400,
-            dayTextStyle: TextStyle(
-              fontSize: rfs(context, 11),
-              fontWeight: FontWeight.w600,
-            ),
-            dateTextStyle: TextStyle(
-              fontSize: rfs(context, 16),
-              fontWeight: FontWeight.w800,
-            ),
-            monthTextStyle: TextStyle(
-              fontSize: rfs(context, 10),
-              fontWeight: FontWeight.w500,
-            ),
-            onDateChange: (date) => debugPrint("Tanggal dipilih (Share Link): $date"),
-          ),
 
-          vSpace(context, 24),
-          const Divider(height: 1, color: Color(0xFFF0F0F0)),
-          vSpace(context, 24),
-
-          // List of Share Link Data (replaces Extended Request)
+          // 5. Share Link Data List
           const ShareLinkHomeList(),
 
           vSpace(context, 20),

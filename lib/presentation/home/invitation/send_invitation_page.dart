@@ -408,13 +408,16 @@ class _SendInvitationPageState extends State<SendInvitationPage>
                         final Color jenisColor;
 
                         if (item.visitorStatus.isEmpty) {
-                          jenis = item.isPraregisterDone ? 'Praregis' : 'Invitation';
+                          jenis = item.isPraregisterDone
+                              ? 'Praregis'
+                              : 'Invitation';
                           jenisColor = item.isPraregisterDone
                               ? const Color(0xFF00B0FF)
                               : const Color(0xFF6D4C41);
                         } else {
                           final lowerStatus = item.visitorStatus.toLowerCase();
-                          if (lowerStatus.contains('preregis') || lowerStatus.contains('praregis')) {
+                          if (lowerStatus.contains('preregis') ||
+                              lowerStatus.contains('praregis')) {
                             jenis = 'Praregis';
                             jenisColor = const Color(0xFF00B0FF);
                           } else if (lowerStatus == 'available') {
@@ -439,7 +442,9 @@ class _SendInvitationPageState extends State<SendInvitationPage>
                             jenis = 'Invitation';
                             jenisColor = const Color(0xFF6D4C41);
                           } else {
-                            jenis = item.visitorStatus[0].toUpperCase() + item.visitorStatus.substring(1);
+                            jenis =
+                                item.visitorStatus[0].toUpperCase() +
+                                item.visitorStatus.substring(1);
                             jenisColor = const Color(0xFF546E7A);
                           }
                         }
@@ -772,7 +777,8 @@ class _SendInvitationPageState extends State<SendInvitationPage>
                         ? Get.find<InvitationController>()
                         : Get.put(InvitationController());
 
-                    final listToShow = inviteCtrl.quickAccessInvitations.toList();
+                    final listToShow = inviteCtrl.quickAccessInvitations
+                        .toList();
 
                     if (inviteCtrl.isLoading.value && listToShow.isEmpty) {
                       return Center(
@@ -1375,8 +1381,8 @@ class _InvitationDetailSheetState extends State<_InvitationDetailSheet> {
                         item.visitorStatus.isEmpty
                             ? '-'
                             : (item.visitorStatus.toLowerCase() == 'quickaccess'
-                                ? 'Quick Access'
-                                : item.visitorStatus),
+                                  ? 'Quick Access'
+                                  : item.visitorStatus),
                         Icons.info_outline,
                         badgeColor: statusColor,
                       ),
@@ -1403,7 +1409,8 @@ class _InvitationDetailSheetState extends State<_InvitationDetailSheet> {
                             : item.vehiclePlateNumber,
                         Icons.subtitles_outlined,
                       ),
-                      if (item.visitorStatus.toLowerCase() == 'quickaccess') ...[
+                      if (item.visitorStatus.toLowerCase() ==
+                          'quickaccess') ...[
                         _SheetField(
                           'Receiver Name',
                           item.receiverName.isEmpty ? '-' : item.receiverName,

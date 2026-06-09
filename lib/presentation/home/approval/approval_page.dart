@@ -1007,15 +1007,19 @@ class _ApprovalCard extends StatelessWidget {
 
     Color statusBg;
     Color statusFg;
+    bool hasBorder = true;
     if (isPending) {
       statusBg = const Color(0xFFFFF3E0);
       statusFg = const Color(0xFFE65100);
+      hasBorder = true;
     } else if (isApproved) {
-      statusBg = const Color(0xFFE8F5E9);
-      statusFg = const Color(0xFF2E7D32);
+      statusBg = const Color(0xFF43A047);
+      statusFg = Colors.white;
+      hasBorder = false;
     } else {
-      statusBg = const Color(0xFFFFEBEE);
-      statusFg = const Color(0xFFC62828);
+      statusBg = const Color(0xFFE53935);
+      statusFg = Colors.white;
+      hasBorder = false;
     }
 
     final start = ticket.visitorPeriodStart;
@@ -1092,9 +1096,11 @@ class _ApprovalCard extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: statusBg,
                       borderRadius: BorderRadius.circular(rw(context, 20)),
-                      border: Border.all(
-                        color: statusFg.withValues(alpha: 0.4),
-                      ),
+                      border: hasBorder
+                          ? Border.all(
+                              color: statusFg.withValues(alpha: 0.4),
+                            )
+                          : null,
                     ),
                     child: Text(
                       ticket.approvalActorStatus ?? '-',
@@ -1331,12 +1337,11 @@ class _RejectedCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(rw(context, 12)),
-          border: Border.all(color: const Color(0xFFFFCDD2), width: 1),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.04),
-              blurRadius: rw(context, 8),
-              offset: Offset(0, rh(context, 2)),
+              color: Colors.black.withValues(alpha: 0.06),
+              blurRadius: rw(context, 10),
+              offset: Offset(0, rh(context, 3)),
             ),
           ],
         ),
@@ -1389,18 +1394,15 @@ class _RejectedCard extends StatelessWidget {
                       vertical: rh(context, 4),
                     ),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFFFEBEE),
+                      color: const Color(0xFFE53935),
                       borderRadius: BorderRadius.circular(rw(context, 20)),
-                      border: Border.all(
-                        color: const Color(0xFFC62828).withValues(alpha: 0.4),
-                      ),
                     ),
                     child: Text(
                       ticket.approvalActorStatus ?? 'Rejected',
                       style: TextStyle(
                         fontSize: rfs(context, 10),
                         fontWeight: FontWeight.w600,
-                        color: const Color(0xFFC62828),
+                        color: Colors.white,
                       ),
                     ),
                   ),

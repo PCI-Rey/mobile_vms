@@ -138,17 +138,6 @@ class _ShareLinkHomeListState extends State<ShareLinkHomeList> {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header row: title only
-          Text(
-            'List Share Link',
-            style: TextStyle(
-              fontSize: rfs(context, 15),
-              fontWeight: FontWeight.w700,
-              color: Colors.black87,
-            ),
-          ),
-          vSpace(context, 12),
-
           // Carousel
           SizedBox(
             height: rh(context, 220), // Height for the card and shadow
