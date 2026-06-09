@@ -3,18 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../core/helper/responsive_helper.dart';
 import '../../presentation/home/alarm/list_alarm_page.dart';
-import '../../presentation/home/evacuate/evacuate_page.dart';
 import '../../presentation/notification/notification_page.dart';
-import '../../presentation/parking/as_operator/parking_page.dart';
 import '../../presentation/profile/profile_page.dart';
-import 'invitation/widgets/create_share_link_dialog.dart';
 
 import 'invitation/widgets/share_link_home_list.dart';
 import '../../presentation/home/invitation/send_invitation_page.dart';
 import '../../presentation/auth/controller/language_controller.dart';
 import '../../presentation/auth/controller/user_controller.dart';
-import '../../presentation/parking/as_guest/guest_parking_page.dart';
-import '../../presentation/home/visitor/search_visitor_page.dart';
 import 'agenda/widgets/itenerary_list.dart';
 
 import '../../core/core.dart';
@@ -454,7 +449,7 @@ class _HomePageState extends State<HomePage> {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: _bgPage,
         borderRadius: BorderRadius.vertical(top: Radius.circular(rw(context, 36))),
         boxShadow: [
           BoxShadow(

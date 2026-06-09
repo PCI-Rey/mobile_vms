@@ -495,7 +495,7 @@ class InvitationController extends GetxController {
             'Failed to create quick access visit';
       }
       debugPrint('createQuickAccessAction error: $e');
-      if (e is String) throw e;
+      if (e is String) rethrow;
       throw e.toString();
     }
   }

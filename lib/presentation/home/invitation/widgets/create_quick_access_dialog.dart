@@ -34,6 +34,7 @@ class _CreateQuickAccessDialogState extends State<CreateQuickAccessDialog> {
   final vehiclePlateCtrl = TextEditingController();
 
   bool isSubmitting = false;
+  bool _success = false;
   Map<String, dynamic>? selectedProvider;
   bool showVehiclePlate = false;
 
@@ -154,6 +155,7 @@ class _CreateQuickAccessDialogState extends State<CreateQuickAccessDialog> {
       if (!mounted) return;
 
       if (success) {
+        setState(() => _success = true);
         Get.snackbar(
           'Success',
           'Quick Access Visit created successfully',
@@ -191,6 +193,55 @@ class _CreateQuickAccessDialogState extends State<CreateQuickAccessDialog> {
     }
   }
 
+  bool _hasChanges() {
+    return selectedProviderId != null ||
+        selectedRecipientMode != null ||
+        selectedHostId != null ||
+        selectedSiteId != null ||
+        selectedDuration != null ||
+        receiverNameCtrl.text.isNotEmpty ||
+        receiverEmailCtrl.text.isNotEmpty ||
+        receiverPhoneCtrl.text.isNotEmpty ||
+        courierNameCtrl.text.isNotEmpty ||
+        courierEmailCtrl.text.isNotEmpty ||
+        courierPhoneCtrl.text.isNotEmpty ||
+        vehiclePlateCtrl.text.isNotEmpty;
+  }
+
+  Future<bool> _showExitConfirmation() async {
+    if (!_hasChanges()) return true;
+
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(rw(context, 16))),
+        title: const Text(
+          'Discard Progress?',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        content: const Text(
+          'Are you sure you want to close this form? Your progress will be lost.',
+          textAlign: TextAlign.justify,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('No', style: TextStyle(color: Colors.grey)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text(
+              'Yes, Discard',
+              style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+            ),
+          ),
+        ],
+      ),
+    );
+    return result ?? false;
+  }
+
   @override
   Widget build(BuildContext context) {
     final user = _hive.getUser();
@@ -218,53 +269,72 @@ class _CreateQuickAccessDialogState extends State<CreateQuickAccessDialog> {
       {"id": "120", "name": "120 Minutes"},
     ];
 
-    return Dialog(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(rw(context, 16)),
-      ),
-      backgroundColor: Colors.white,
-      insetPadding: EdgeInsets.symmetric(
-        horizontal: rw(context, 16),
-        vertical: rh(context, 24),
-      ),
-      child: Stack(
-        children: [
-          Form(
-            key: _formKey,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Header
-                Padding(
-                  padding: EdgeInsets.fromLTRB(
-                    rw(context, 20),
-                    rh(context, 20),
-                    rw(context, 20),
-                    rh(context, 10),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'Quick Access',
-                        style: TextStyle(
-                          fontSize: rfs(context, 18),
-                          fontWeight: FontWeight.bold,
-                          color: const Color(0xFF1E293B),
+    return PopScope(
+      canPop: _success,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) return;
+        if (_success && mounted) {
+          Navigator.of(context).pop(true);
+          return;
+        }
+        final navigator = Navigator.of(context);
+        final shouldExit = await _showExitConfirmation();
+        if (shouldExit && mounted) {
+          navigator.pop();
+        }
+      },
+      child: Dialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(rw(context, 16)),
+        ),
+        backgroundColor: Colors.white,
+        insetPadding: EdgeInsets.symmetric(
+          horizontal: rw(context, 16),
+          vertical: rh(context, 24),
+        ),
+        child: Stack(
+          children: [
+            Form(
+              key: _formKey,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Header
+                  Padding(
+                    padding: EdgeInsets.fromLTRB(
+                      rw(context, 20),
+                      rh(context, 20),
+                      rw(context, 20),
+                      rh(context, 10),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Quick Access',
+                          style: TextStyle(
+                            fontSize: rfs(context, 18),
+                            fontWeight: FontWeight.bold,
+                            color: const Color(0xFF1E293B),
+                          ),
                         ),
-                      ),
-                      IconButton(
-                        onPressed: () => Navigator.pop(context),
-                        icon: Icon(
-                          Icons.close,
-                          color: Colors.grey.shade600,
-                          size: rw(context, 22),
+                        IconButton(
+                          onPressed: () async {
+                            final navigator = Navigator.of(context);
+                            if (await _showExitConfirmation()) {
+                              if (mounted) navigator.pop();
+                            }
+                          },
+                          icon: Icon(
+                            Icons.close,
+                            color: Colors.grey.shade600,
+                            size: rw(context, 22),
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
-                const Divider(height: 1),
+                  const Divider(height: 1),
 
                 // Content Area
                 Flexible(
@@ -544,8 +614,9 @@ class _CreateQuickAccessDialogState extends State<CreateQuickAccessDialog> {
             ),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
 
   // --- Sub-widgets builder ---
 

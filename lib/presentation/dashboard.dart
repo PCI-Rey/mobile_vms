@@ -3,7 +3,6 @@ import 'package:flutter_visitor_app/core/services/notification_service.dart';
 import 'home/guest_home_page.dart';
 import 'history/history_page.dart';
 import 'home/home_page.dart';
-import 'parking/as_operator/parking_page.dart';
 import 'profile/profile_page.dart';
 import '../core/core.dart';
 import '../core/helper/responsive_helper.dart';
@@ -11,8 +10,9 @@ import '../data/datasources/auth_datasource.dart';
 import '../data/models/user_model.dart';
 import '../presentation/auth/login_page.dart';
 import 'package:get/get.dart';
-import 'home/invitation/send_invitation_page.dart';
 import 'home/invitation/widgets/create_share_link_dialog.dart';
+import 'home/invitation/widgets/create_quick_access_dialog.dart';
+import 'home/visitor_request/add_pra_registration_dialog.dart';
 import 'home/invitation/controller/invitation_controller.dart';
 import 'auth/controller/language_controller.dart';
 
@@ -23,7 +23,8 @@ class Dashboard extends StatefulWidget {
   State<Dashboard> createState() => _DashboardState();
 }
 
-class _DashboardState extends State<Dashboard> with SingleTickerProviderStateMixin {
+class _DashboardState extends State<Dashboard>
+    with SingleTickerProviderStateMixin {
   int _selectedIndex = 0;
   bool _isMenuExpanded = false;
   late AnimationController _animationController;
@@ -130,11 +131,7 @@ class _DashboardState extends State<Dashboard> with SingleTickerProviderStateMix
     if (_checkIsGuest(role, user)) {
       widgets = [const GuestHomePage(), const ProfilePage()];
     } else if (role == 'operator') {
-      widgets = [
-        const HomePage(),
-        const HistoryPage(),
-        const ProfilePage(),
-      ];
+      widgets = [const HomePage(), const HistoryPage(), const ProfilePage()];
     }
 
     setState(() {
@@ -190,7 +187,7 @@ class _DashboardState extends State<Dashboard> with SingleTickerProviderStateMix
   Widget _buildSpeedDial(BuildContext context) {
     final double screenWidth = MediaQuery.of(context).size.width;
     final double bottomPadding = MediaQuery.of(context).padding.bottom;
-    
+
     // Aligns perfectly centered above the Profile tab (which is index 2 of 3 tabs)
     final double rightPosition = (screenWidth / 6) - 24;
     final double bottomPosition = bottomPadding + rh(context, 85.0);
@@ -198,7 +195,9 @@ class _DashboardState extends State<Dashboard> with SingleTickerProviderStateMix
     final String lang = Get.isRegistered<LanguageController>()
         ? LanguageController.to.selectedLang.value
         : 'id';
-    final String shareLinkLabel = lang == 'id' ? 'Bagikan Tautan' : 'Share Link';
+    final String shareLinkLabel = lang == 'id'
+        ? 'Bagikan Tautan'
+        : 'Share Link';
 
     return AnimatedBuilder(
       animation: _expandAnimation,
@@ -217,7 +216,15 @@ class _DashboardState extends State<Dashboard> with SingleTickerProviderStateMix
               if (!Get.isRegistered<InvitationController>()) {
                 Get.put(InvitationController());
               }
-              context.push(const SendInvitationPage(initialTab: 2));
+              showDialog(
+                context: context,
+                barrierDismissible: false,
+                builder: (context) => const CreateQuickAccessDialog(),
+              ).then((result) {
+                if (result == true) {
+                  Get.find<InvitationController>().fetchOngoingInvitations(clearFilters: true);
+                }
+              });
             },
             'offsetMultiplier': 2.0,
           },
@@ -245,8 +252,14 @@ class _DashboardState extends State<Dashboard> with SingleTickerProviderStateMix
             'bgColor': const Color(0xFFEAF3DE),
             'iconColor': const Color(0xFF3B6D11),
             'isClickable': true,
-            'onTap': () {
-              context.push(const SendInvitationPage());
+            'onTap': () async {
+              if (!Get.isRegistered<InvitationController>()) {
+                Get.put(InvitationController());
+              }
+              final result = await showAddPraRegistrationDialog(context);
+              if (result == true) {
+                Get.find<InvitationController>().fetchOngoingInvitations(clearFilters: true);
+              }
             },
             'offsetMultiplier': 0.0,
           },
@@ -258,7 +271,8 @@ class _DashboardState extends State<Dashboard> with SingleTickerProviderStateMix
             // Sub-buttons
             ...menuItems.map((item) {
               final double mult = item['offsetMultiplier'] as double;
-              final double itemBottom = bottomPosition + 4 + (48 + 12 + mult * 56) * value;
+              final double itemBottom =
+                  bottomPosition + 4 + (48 + 12 + mult * 56) * value;
 
               return Positioned(
                 right: rightPosition + 4,
@@ -283,7 +297,9 @@ class _DashboardState extends State<Dashboard> with SingleTickerProviderStateMix
                               ),
                               decoration: BoxDecoration(
                                 color: Colors.white,
-                                borderRadius: BorderRadius.circular(rw(context, 8)),
+                                borderRadius: BorderRadius.circular(
+                                  rw(context, 8),
+                                ),
                                 boxShadow: [
                                   BoxShadow(
                                     color: Colors.black.withValues(alpha: 0.08),
@@ -363,9 +379,12 @@ class _DashboardState extends State<Dashboard> with SingleTickerProviderStateMix
                     ],
                   ),
                   child: RotationTransition(
-                    turns: Tween<double>(begin: 0.0, end: 0.5).animate(_expandAnimation),
-                    child: const Icon(
-                      Icons.keyboard_arrow_down,
+                    turns: Tween<double>(
+                      begin: 0.0,
+                      end: 0.5,
+                    ).animate(_expandAnimation),
+                    child: Icon(
+                      _expandAnimation.value > 0.5 ? Icons.close : Icons.add,
                       color: Colors.white,
                       size: 28,
                     ),

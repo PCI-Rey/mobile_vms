@@ -38,7 +38,6 @@ class AccessPassModel {
   final String receiverEmail;
   final String receiverPhone;
 
-
   AccessPassModel({
     required this.id,
     required this.agenda,
@@ -130,13 +129,13 @@ class AccessPassModel {
       tz: json['tz']?.toString() ?? '',
       siteId: (json['site_id'] ?? json['site_place'])?.toString() ?? '',
       visitorName: json['visitor_name']?.toString() ?? '',
-      isPraregisterDone: json['is_complete_preregister'] == true ||
+      isPraregisterDone:
+          json['is_complete_preregister'] == true ||
           json['is_praregister_done'] == true,
       visitorRole: json['visitor_role']?.toString() ?? '',
       approvalStatus: json['approval_status']?.toString() ?? '',
       visitorTypeName: json['visitor_type_name']?.toString() ?? '',
-      transactionVisitorId:
-          json['transaction_visitor_id']?.toString() ?? '',
+      transactionVisitorId: json['transaction_visitor_id']?.toString() ?? '',
       invitedByName: json['invited_by_name']?.toString() ?? '',
       visitorOrganizationName:
           json['visitor_organization_name']?.toString() ?? '',
