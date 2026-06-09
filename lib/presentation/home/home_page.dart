@@ -309,45 +309,9 @@ class _HomePageState extends State<HomePage> {
         {
           'label': 'approval'.tr,
           'icon': Icons.fact_check_outlined,
-          'bgColor': const Color(0xFFFAEEDA),
-          'iconColor': const Color(0xFF854F0B),
+          'bgColor': const Color(0xFFFFF3E0),
+          'iconColor': const Color(0xFFE65100),
           'onTap': () => context.push(const ApprovalPage()),
-        },
-        {
-          'label': langCtrl.selectedLang.value == 'id'
-              ? 'Bagikan Tautan'
-              : 'Share Link',
-          'icon': Icons.add_link,
-          'bgColor': const Color(0xFFF3EEFE),
-          'iconColor': const Color(0xFF534AB7),
-          'onTap': () {
-            if (!Get.isRegistered<InvitationController>()) {
-              Get.put(InvitationController());
-            }
-            showDialog(
-              context: context,
-              barrierDismissible: false,
-              builder: (context) => const CreateShareLinkDialog(),
-            );
-          },
-        },
-        {
-          'label': 'parking'.tr,
-          'icon': Icons.local_parking_rounded,
-          'bgColor': const Color(0xFFFBEAF0),
-          'iconColor': const Color(0xFF993556),
-          'onTap': () => context.push(
-            UserController.to.user.value?.roleAccess == 'guest'
-                ? const GuestParkingPage()
-                : const ParkingPage(),
-          ),
-        },
-        {
-          'label': 'visitor'.tr,
-          'icon': Icons.person_search_outlined,
-          'bgColor': const Color(0xFFE1F5EE),
-          'iconColor': const Color(0xFF0F6E56),
-          'onTap': () => context.push(const SearchVisitorPage()),
         },
         {
           'label': 'alarm'.tr,
@@ -355,13 +319,6 @@ class _HomePageState extends State<HomePage> {
           'bgColor': const Color(0xFFFFEBEB),
           'iconColor': const Color(0xFFD32F2F),
           'onTap': () => context.push(const AlarmListPage()),
-        },
-        {
-          'label': 'evacuate'.tr,
-          'icon': Icons.run_circle_outlined,
-          'bgColor': const Color(0xFFF5F5F5),
-          'iconColor': const Color(0xFF616161),
-          'onTap': () => context.push(const EvacuatePage()),
         },
       ];
 
@@ -382,30 +339,13 @@ class _HomePageState extends State<HomePage> {
             ),
           ],
         ),
-        child: Column(
-          children: [
-            // Row 1 (4 items)
-            Row(
-              children: items
-                  .take(4)
-                  .map(
-                    (item) =>
-                        Expanded(child: _buildMenuItem(context, item)),
-                  )
-                  .toList(),
-            ),
-            vSpace(context, 24),
-            // Row 2 (4 items)
-            Row(
-              children: items
-                  .skip(4)
-                  .map(
-                    (item) =>
-                        Expanded(child: _buildMenuItem(context, item)),
-                  )
-                  .toList(),
-            ),
-          ],
+        child: Row(
+          children: items
+              .map(
+                (item) =>
+                    Expanded(child: _buildMenuItem(context, item)),
+              )
+              .toList(),
         ),
       );
     });
