@@ -28,6 +28,7 @@ class _IteneraryListState extends State<IteneraryList> {
   );
   final RxInt _currentPage = 1200.obs;
   Worker? _listWorker;
+  Worker? _dateWorker;
 
   @override
   void initState() {
@@ -38,27 +39,45 @@ class _IteneraryListState extends State<IteneraryList> {
       }
     });
 
-    _listWorker = ever(controller.approvalTickets, (list) {
-      if (_pageController.hasClients && list.isNotEmpty) {
-        final listLength = list.length > 3 ? 3 : list.length;
+    void updateCarousel() {
+      final selectedDate = controller.selectedDashboardDate.value;
+      final filtered = controller.approvalTickets.where((ticket) {
+        if (ticket.visitorPeriodStart == null) return false;
+        return ticket.visitorPeriodStart!.year == selectedDate.year &&
+            ticket.visitorPeriodStart!.month == selectedDate.month &&
+            ticket.visitorPeriodStart!.day == selectedDate.day;
+      }).toList();
+      if (_pageController.hasClients && filtered.isNotEmpty) {
+        final listLength = filtered.length > 3 ? 3 : filtered.length;
         final targetPage = 1200 - (1200 % listLength);
         _pageController.jumpToPage(targetPage);
         _currentPage.value = targetPage;
         _resetCarouselTimer();
       }
-    });
+    }
+
+    _listWorker = ever(controller.approvalTickets, (_) => updateCarousel());
+    _dateWorker = ever(controller.selectedDashboardDate, (_) => updateCarousel());
 
     _startCarouselTimer();
   }
 
   void _startCarouselTimer() {
     _carouselTimer = Timer.periodic(const Duration(seconds: 7), (timer) {
+      final selectedDate = controller.selectedDashboardDate.value;
+      final filtered = controller.approvalTickets.where((ticket) {
+        if (ticket.visitorPeriodStart == null) return false;
+        return ticket.visitorPeriodStart!.year == selectedDate.year &&
+            ticket.visitorPeriodStart!.month == selectedDate.month &&
+            ticket.visitorPeriodStart!.day == selectedDate.day;
+      }).toList();
+
       if (mounted &&
-          controller.approvalTickets.isNotEmpty &&
+          filtered.isNotEmpty &&
           _pageController.hasClients) {
-        final listLength = controller.approvalTickets.length > 3
+        final listLength = filtered.length > 3
             ? 3
-            : controller.approvalTickets.length;
+            : filtered.length;
         if (listLength > 1) {
           _currentPage.value++;
           _pageController.animateToPage(
@@ -81,6 +100,7 @@ class _IteneraryListState extends State<IteneraryList> {
     _pageController.dispose();
     _carouselTimer?.cancel();
     _listWorker?.dispose();
+    _dateWorker?.dispose();
     super.dispose();
   }
 
@@ -133,6 +153,26 @@ class _IteneraryListState extends State<IteneraryList> {
   @override
   Widget build(BuildContext context) {
     return Obx(() {
+      final selectedDate = controller.selectedDashboardDate.value;
+      final filteredTickets = controller.approvalTickets.where((ticket) {
+        if (ticket.visitorPeriodStart == null) return false;
+        return ticket.visitorPeriodStart!.year == selectedDate.year &&
+            ticket.visitorPeriodStart!.month == selectedDate.month &&
+            ticket.visitorPeriodStart!.day == selectedDate.day;
+      }).toList();
+
+      // Sort descending by visitorPeriodStart (newest first on that date)
+      filteredTickets.sort((a, b) {
+        if (a.visitorPeriodStart == null && b.visitorPeriodStart == null) return 0;
+        if (a.visitorPeriodStart == null) return 1;
+        if (b.visitorPeriodStart == null) return -1;
+        return b.visitorPeriodStart!.compareTo(a.visitorPeriodStart!);
+      });
+
+      final list = filteredTickets.length > 3
+          ? filteredTickets.take(3).toList()
+          : filteredTickets;
+
       if (controller.isApprovalLoading.value &&
           controller.approvalTickets.isEmpty) {
         return const Center(
@@ -143,7 +183,7 @@ class _IteneraryListState extends State<IteneraryList> {
         );
       }
 
-      if (controller.approvalTickets.isEmpty) {
+      if (filteredTickets.isEmpty) {
         return Center(
           child: Padding(
             padding: EdgeInsets.symmetric(vertical: rh(context, 32)),
@@ -157,7 +197,7 @@ class _IteneraryListState extends State<IteneraryList> {
                 ),
                 vSpace(context, 12),
                 Text(
-                  'No invitation approval requests found.',
+                  'No invitation approval requests found for this date.',
                   style: TextStyle(
                     color: Colors.grey.shade500,
                     fontSize: rfs(context, 13),
@@ -176,10 +216,6 @@ class _IteneraryListState extends State<IteneraryList> {
           // Carousel
           SizedBox(
             height: rh(context, () {
-              final tickets = controller.approvalTickets;
-              final list = tickets.length > 3
-                  ? tickets.take(3).toList()
-                  : tickets;
               if (list.isEmpty) return 210.0;
               final listLength = list.length;
               final currentIndex = _currentPage.value % listLength;
@@ -203,10 +239,6 @@ class _IteneraryListState extends State<IteneraryList> {
                 _currentPage.value = index;
               },
               itemBuilder: (context, index) {
-                final tickets = controller.approvalTickets;
-                final list = tickets.length > 3
-                    ? tickets.take(3).toList()
-                    : tickets;
                 final int realIndex = index % list.length;
                 final ticket = list[realIndex];
 
@@ -223,17 +255,17 @@ class _IteneraryListState extends State<IteneraryList> {
           vSpace(context, 12),
 
           // Carousel Indicators
-          if (controller.approvalTickets.length > 1) ...[
+          if (filteredTickets.length > 1) ...[
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: List.generate(
-                controller.approvalTickets.length > 3
+                filteredTickets.length > 3
                     ? 3
-                    : controller.approvalTickets.length,
+                    : filteredTickets.length,
                 (index) {
-                  final listLength = controller.approvalTickets.length > 3
+                  final listLength = filteredTickets.length > 3
                       ? 3
-                      : controller.approvalTickets.length;
+                      : filteredTickets.length;
                   final isActive = (_currentPage.value % listLength) == index;
                   return AnimatedContainer(
                     duration: const Duration(milliseconds: 300),

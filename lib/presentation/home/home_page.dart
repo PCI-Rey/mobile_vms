@@ -36,6 +36,65 @@ class _HomePageState extends State<HomePage> {
       ? Get.find<InvitationController>()
       : Get.put(InvitationController());
 
+  final DatePickerController _datePickerController = DatePickerController();
+
+  Worker? _dateScrollWorker;
+
+  @override
+  void initState() {
+    super.initState();
+    Future.delayed(const Duration(milliseconds: 150), () {
+      if (mounted) {
+        _datePickerController.animateToDate(invitationController.selectedDashboardDate.value);
+      }
+    });
+
+    _dateScrollWorker = ever(invitationController.selectedDashboardDate, (date) {
+      Future.delayed(const Duration(milliseconds: 150), () {
+        if (mounted) {
+          _datePickerController.setDateAndAnimate(date);
+          setState(() {});
+        }
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _dateScrollWorker?.dispose();
+    super.dispose();
+  }
+
+  Future<void> _selectDateFromCalendar(BuildContext context) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: invitationController.selectedDashboardDate.value,
+      firstDate: DateTime.now().subtract(const Duration(days: 365)),
+      lastDate: DateTime.now().add(const Duration(days: 365 * 2)),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: _blue,
+              onPrimary: Colors.white,
+              onSurface: Colors.black87,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+    if (picked != null) {
+      final normalized = DateTime(picked.year, picked.month, picked.day);
+      if (normalized != invitationController.selectedDashboardDate.value) {
+        invitationController.selectedDashboardDate.value = normalized;
+      } else {
+        _datePickerController.setDateAndAnimate(normalized);
+        setState(() {});
+      }
+    }
+  }
+
   // Design constants
   static const _blue = Color(0xFF1976D2);
   static const _blueDark = Color(0xFF0D47A1);
@@ -410,27 +469,65 @@ class _HomePageState extends State<HomePage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // 1. Date Selection (Moved to the very top)
-          DatePicker(
-            DateTime.now(),
-            initialSelectedDate: DateTime.now(),
-            daysCount: 30,
-            selectionColor: AppColors.primary500,
-            selectedTextColor: Colors.white,
-            deactivatedColor: Colors.grey.shade400,
-            dayTextStyle: TextStyle(
-              fontSize: rfs(context, 11),
-              fontWeight: FontWeight.w600,
-            ),
-            dateTextStyle: TextStyle(
-              fontSize: rfs(context, 16),
-              fontWeight: FontWeight.w800,
-            ),
-            monthTextStyle: TextStyle(
-              fontSize: rfs(context, 10),
-              fontWeight: FontWeight.w500,
-            ),
-            onDateChange: (date) => debugPrint("Tanggal dipilih (Active Visit): $date"),
-          ),
+          Obx(() {
+            debugPrint("BUILD DatePicker: date=${invitationController.selectedDashboardDate.value}");
+            return Row(
+              children: [
+                Expanded(
+                  child: DatePicker(
+                    DateTime(
+                      DateTime.now().year,
+                      DateTime.now().month,
+                      DateTime.now().day,
+                    ).subtract(const Duration(days: 60)),
+                    key: const ValueKey('timeline_date_picker'),
+                    controller: _datePickerController,
+                    initialSelectedDate: invitationController.selectedDashboardDate.value,
+                  daysCount: 1095,
+                  selectionColor: AppColors.primary500,
+                  selectedTextColor: Colors.white,
+                  deactivatedColor: Colors.grey.shade400,
+                  dayTextStyle: TextStyle(
+                    fontSize: rfs(context, 11),
+                    fontWeight: FontWeight.w600,
+                  ),
+                  dateTextStyle: TextStyle(
+                    fontSize: rfs(context, 16),
+                    fontWeight: FontWeight.w800,
+                  ),
+                  monthTextStyle: TextStyle(
+                    fontSize: rfs(context, 10),
+                    fontWeight: FontWeight.w500,
+                  ),
+                  onDateChange: (date) {
+                    invitationController.selectedDashboardDate.value = DateTime(
+                      date.year,
+                      date.month,
+                      date.day,
+                    );
+                  },
+                ),
+              ),
+              hSpace(context, 12),
+              GestureDetector(
+                onTap: () => _selectDateFromCalendar(context),
+                child: Container(
+                  padding: EdgeInsets.all(rw(context, 12)),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary50,
+                    borderRadius: BorderRadius.circular(rw(context, 12)),
+                    border: Border.all(color: AppColors.primary100),
+                  ),
+                  child: Icon(
+                    Icons.calendar_month_outlined,
+                    color: AppColors.primary500,
+                    size: rw(context, 22),
+                  ),
+                ),
+              ),
+            ],
+          );
+        }),
 
           vSpace(context, 24),
           const Divider(height: 1, color: Color(0xFFF0F0F0)),

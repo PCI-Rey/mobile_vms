@@ -29,6 +29,20 @@ class _ShareLinkHomeListState extends State<ShareLinkHomeList> {
   final RxInt _currentPage = 1200.obs;
 
   Worker? _listWorker;
+  Worker? _dateWorker;
+
+  DateTime? _parseShareLinkDate(String? dateStr) {
+    if (dateStr == null) return null;
+    try {
+      String normalized = dateStr;
+      if (!normalized.endsWith('Z') && !normalized.contains('+')) {
+        normalized = '${normalized.replaceFirst(' ', 'T')}Z';
+      }
+      return DateTime.parse(normalized).toLocal();
+    } catch (e) {
+      return null;
+    }
+  }
 
   @override
   void initState() {
@@ -38,17 +52,29 @@ class _ShareLinkHomeListState extends State<ShareLinkHomeList> {
       controller.fetchDashboardShareLinks();
     });
 
-    // Reset to start when list changes (focused on new item)
-    _listWorker = ever(controller.dashboardShareLinks, (list) {
-      if (_pageController.hasClients && list.isNotEmpty) {
-        final listLength = list.length > 3 ? 3 : list.length;
-        // Jump to the nearest multiple of listLength near 1200 so that (page % listLength) == 0
+    void updateCarousel() {
+      final selectedDate = controller.selectedDashboardDate.value;
+      final filtered = controller.dashboardShareLinks.where((item) {
+        final dateStr = item['visitor_period_start']?.toString() ??
+            item['created_at']?.toString() ??
+            item['expired_at']?.toString();
+        final date = _parseShareLinkDate(dateStr);
+        if (date == null) return false;
+        return date.year == selectedDate.year &&
+            date.month == selectedDate.month &&
+            date.day == selectedDate.day;
+      }).toList();
+      if (_pageController.hasClients && filtered.isNotEmpty) {
+        final listLength = filtered.length > 3 ? 3 : filtered.length;
         final targetPage = 1200 - (1200 % listLength);
         _pageController.jumpToPage(targetPage);
         _currentPage.value = targetPage;
-        _resetCarouselTimer(); // Reset the timer so it stays on item 1 longer
+        _resetCarouselTimer();
       }
-    });
+    }
+
+    _listWorker = ever(controller.dashboardShareLinks, (_) => updateCarousel());
+    _dateWorker = ever(controller.selectedDashboardDate, (_) => updateCarousel());
 
     // Start timer for live countdown
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
@@ -62,13 +88,25 @@ class _ShareLinkHomeListState extends State<ShareLinkHomeList> {
 
   void _startCarouselTimer() {
     _carouselTimer = Timer.periodic(const Duration(seconds: 7), (timer) {
+      final selectedDate = controller.selectedDashboardDate.value;
+      final filtered = controller.dashboardShareLinks.where((item) {
+        final dateStr = item['visitor_period_start']?.toString() ??
+            item['created_at']?.toString() ??
+            item['expired_at']?.toString();
+        final date = _parseShareLinkDate(dateStr);
+        if (date == null) return false;
+        return date.year == selectedDate.year &&
+            date.month == selectedDate.month &&
+            date.day == selectedDate.day;
+      }).toList();
+
       if (mounted &&
-          controller.dashboardShareLinks.isNotEmpty &&
+          filtered.isNotEmpty &&
           _pageController.hasClients) {
         // Only slide if there is more than 1 item
-        final listLength = controller.dashboardShareLinks.length > 3
+        final listLength = filtered.length > 3
             ? 3
-            : controller.dashboardShareLinks.length;
+            : filtered.length;
         if (listLength > 1) {
           _currentPage.value++;
           _pageController.animateToPage(
@@ -92,6 +130,7 @@ class _ShareLinkHomeListState extends State<ShareLinkHomeList> {
     _carouselTimer?.cancel();
     _timer?.cancel();
     _listWorker?.dispose();
+    _dateWorker?.dispose();
     super.dispose();
   }
 
@@ -100,6 +139,38 @@ class _ShareLinkHomeListState extends State<ShareLinkHomeList> {
   @override
   Widget build(BuildContext context) {
     return Obx(() {
+      final selectedDate = controller.selectedDashboardDate.value;
+      final filteredShareLinks = controller.dashboardShareLinks.where((item) {
+        final dateStr = item['visitor_period_start']?.toString() ??
+            item['created_at']?.toString() ??
+            item['expired_at']?.toString();
+        final date = _parseShareLinkDate(dateStr);
+        if (date == null) return false;
+        return date.year == selectedDate.year &&
+            date.month == selectedDate.month &&
+            date.day == selectedDate.day;
+      }).toList();
+
+      // Sort descending by date (newest first on that date)
+      filteredShareLinks.sort((a, b) {
+        final dateStrA = a['visitor_period_start']?.toString() ??
+            a['created_at']?.toString() ??
+            a['expired_at']?.toString();
+        final dateStrB = b['visitor_period_start']?.toString() ??
+            b['created_at']?.toString() ??
+            b['expired_at']?.toString();
+        final dateA = _parseShareLinkDate(dateStrA);
+        final dateB = _parseShareLinkDate(dateStrB);
+        if (dateA == null && dateB == null) return 0;
+        if (dateA == null) return 1;
+        if (dateB == null) return -1;
+        return dateB.compareTo(dateA);
+      });
+
+      final list = filteredShareLinks.length > 3
+          ? filteredShareLinks.take(3).toList()
+          : filteredShareLinks;
+
       if (controller.isShareLinkLoading.value &&
           controller.dashboardShareLinks.isEmpty) {
         return Center(
@@ -110,7 +181,7 @@ class _ShareLinkHomeListState extends State<ShareLinkHomeList> {
         );
       }
 
-      if (controller.dashboardShareLinks.isEmpty) {
+      if (filteredShareLinks.isEmpty) {
         return Center(
           child: Padding(
             padding: EdgeInsets.all(rw(context, 20.0)),
@@ -123,7 +194,7 @@ class _ShareLinkHomeListState extends State<ShareLinkHomeList> {
                 ),
                 vSpace(context, 8),
                 Text(
-                  'No share links found',
+                  'No share links found for this date.',
                   style: TextStyle(
                     color: Colors.grey.shade500,
                     fontSize: rfs(context, 12),
@@ -147,9 +218,6 @@ class _ShareLinkHomeListState extends State<ShareLinkHomeList> {
                 _currentPage.value = index;
               },
               itemBuilder: (context, index) {
-                final links = controller.dashboardShareLinks;
-                // Only take the first 3 items for the carousel logic as per requirement
-                final list = links.length > 3 ? links.take(3).toList() : links;
                 final int realIndex = index % list.length;
                 final item = list[realIndex];
 
@@ -170,17 +238,17 @@ class _ShareLinkHomeListState extends State<ShareLinkHomeList> {
           vSpace(context, 12),
 
           // Carousel Indicators
-          if (controller.dashboardShareLinks.length > 1)
+          if (filteredShareLinks.length > 1)
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: List.generate(
-                controller.dashboardShareLinks.length > 3
+                filteredShareLinks.length > 3
                     ? 3
-                    : controller.dashboardShareLinks.length,
+                    : filteredShareLinks.length,
                 (index) {
-                  final listLength = controller.dashboardShareLinks.length > 3
+                  final listLength = filteredShareLinks.length > 3
                       ? 3
-                      : controller.dashboardShareLinks.length;
+                      : filteredShareLinks.length;
                   final isActive = (_currentPage.value % listLength) == index;
                   return AnimatedContainer(
                     duration: const Duration(milliseconds: 300),

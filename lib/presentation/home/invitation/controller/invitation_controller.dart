@@ -25,6 +25,11 @@ class InvitationController extends GetxController {
 
   final Rx<DateTime?> startDate = Rx<DateTime?>(null);
   final Rx<DateTime?> endDate = Rx<DateTime?>(null);
+  final Rx<DateTime> selectedDashboardDate = DateTime(
+    DateTime.now().year,
+    DateTime.now().month,
+    DateTime.now().day,
+  ).obs;
   final RxString selectedSiteId = ''.obs;
   final RxString selectedSiteName = ''.obs;
   final RxString selectedStatus = ''.obs;
@@ -273,7 +278,7 @@ class InvitationController extends GetxController {
       final response = await _api.getShareLinkDt(
         token,
         start: 0,
-        length: 3,
+        length: 500,
         sortColumn: 'created_at',
         sortDir: 'desc',
       );
