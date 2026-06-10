@@ -24,24 +24,27 @@ class AccessPassSection extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: EdgeInsets.symmetric(horizontal: rw(context, 16)),
+          padding: EdgeInsets.symmetric(horizontal: rw(context, 20)),
           child: Obx(() {
             // Trigger rebuild when language changes
             LanguageController.to.selectedLang.value;
             String title = 'access_pass'.tr;
-            
-            if (guestCtrl.accessPasses.isNotEmpty && 
-                guestCtrl.selectedPassIndex.value < guestCtrl.accessPasses.length) {
-              final selectedItem = guestCtrl.accessPasses[guestCtrl.selectedPassIndex.value];
+
+            if (guestCtrl.accessPasses.isNotEmpty &&
+                guestCtrl.selectedPassIndex.value <
+                    guestCtrl.accessPasses.length) {
+              final selectedItem =
+                  guestCtrl.accessPasses[guestCtrl.selectedPassIndex.value];
               title = '${'access_pass'.tr} • ${selectedItem.agenda}';
             }
-            
+
             return Text(
               title,
               style: TextStyle(
                 color: Colors.white,
-                fontSize: rfs(context, 16),
-                fontWeight: FontWeight.w600,
+                fontSize: rfs(context, 20),
+                fontWeight: FontWeight.w800,
+                letterSpacing: 0.2,
               ),
             );
           }),
@@ -56,10 +59,11 @@ class AccessPassSection extends StatelessWidget {
           if (guestCtrl.accessPasses.isEmpty) {
             return _buildPassEmpty(context);
           }
-          
+
           final int index = guestCtrl.selectedPassIndex.value;
-          final item = guestCtrl.accessPasses[index < guestCtrl.accessPasses.length ? index : 0];
-          
+          final item = guestCtrl.accessPasses[
+              index < guestCtrl.accessPasses.length ? index : 0];
+
           return AccessPassCard(
             item: item,
             onTap: () => onTap(item),
@@ -72,7 +76,7 @@ class AccessPassSection extends StatelessWidget {
   Widget _buildPassPlaceholder(BuildContext context) {
     return Container(
       margin: EdgeInsets.symmetric(horizontal: rw(context, 16)),
-      height: rh(context, 110),
+      height: rh(context, 130),
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(rw(context, 20)),
@@ -86,7 +90,7 @@ class AccessPassSection extends StatelessWidget {
   Widget _buildPassEmpty(BuildContext context) {
     return Container(
       margin: EdgeInsets.symmetric(horizontal: rw(context, 16)),
-      padding: EdgeInsets.symmetric(vertical: rh(context, 24)),
+      padding: EdgeInsets.symmetric(vertical: rh(context, 28)),
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(rw(context, 20)),
@@ -98,14 +102,14 @@ class AccessPassSection extends StatelessWidget {
             Icon(
               Icons.qr_code_2_outlined,
               color: Colors.white54,
-              size: rw(context, 40),
+              size: rw(context, 44),
             ),
             vSpace(context, 8),
             Text(
               'no_access_pass'.tr,
               style: TextStyle(
                 color: Colors.white70,
-                fontSize: rfs(context, 13),
+                fontSize: rfs(context, 14),
               ),
             ),
           ],
@@ -125,8 +129,8 @@ class AccessPassCard extends StatelessWidget {
     required this.onTap,
   });
 
-  static const _blue = Color(0xFF1976D2);
-  static const _blueDark = Color(0xFF0E5DB5);
+  static const _blue = Color(0xFF1565C0);
+  static const _blueDark = Color(0xFF0D47A1);
 
   String _translateStatus(String status) {
     switch (status.toLowerCase()) {
@@ -150,86 +154,104 @@ class AccessPassCard extends StatelessWidget {
       onTap: onTap,
       child: Container(
         margin: EdgeInsets.symmetric(horizontal: rw(context, 16)),
-        padding: EdgeInsets.symmetric(
-          horizontal: rw(context, 20),
-          vertical: rh(context, 16),
-        ),
+        padding: EdgeInsets.all(rw(context, 20)),
         decoration: BoxDecoration(
           gradient: const LinearGradient(
             colors: [_blue, _blueDark],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
-          borderRadius: BorderRadius.circular(rw(context, 20)),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
+          borderRadius: BorderRadius.circular(rw(context, 24)),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.18)),
           boxShadow: [
             BoxShadow(
-              color: _blue.withValues(alpha: 0.4),
-              blurRadius: rw(context, 16),
-              offset: Offset(0, rh(context, 6)),
+              color: _blue.withValues(alpha: 0.45),
+              blurRadius: rw(context, 20),
+              offset: Offset(0, rh(context, 8)),
             ),
           ],
         ),
         child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
+            // ── Left: badge + name + status ───────────────
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
+                  // "Guest Pass" badge
                   Container(
                     padding: EdgeInsets.symmetric(
-                      horizontal: rw(context, 8),
-                      vertical: rh(context, 3),
+                      horizontal: rw(context, 10),
+                      vertical: rh(context, 4),
                     ),
                     decoration: BoxDecoration(
                       color: Colors.white.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(rw(context, 20)),
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.3),
+                      ),
                     ),
                     child: Text(
                       'guest_pass'.tr,
                       style: TextStyle(
                         color: Colors.white,
-                        fontSize: rfs(context, 10),
+                        fontSize: rfs(context, 12),
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.5,
                       ),
                     ),
                   ),
+                  vSpace(context, 10),
+
+                  // Visitor name
+                  Obx(() {
+                    final String defaultName = userCtrl.fullName;
+                    final String displayName =
+                        (item.visitorName as String).isNotEmpty
+                            ? item.visitorName
+                            : defaultName;
+                    return Text(
+                      displayName,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: rfs(context, 22),
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: -0.3,
+                      ),
+                    );
+                  }),
                   vSpace(context, 8),
-                  Obx(
-                    () {
-                      final String defaultName = userCtrl.fullName;
-                      final String displayName = (item.visitorName as String).isNotEmpty
-                          ? item.visitorName
-                          : defaultName;
-                          
-                      return Text(
-                        displayName,
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: rfs(context, 16),
-                          fontWeight: FontWeight.w600,
-                        ),
-                      );
-                    },
-                  ),
-                  vSpace(context, 6),
+
+                  // Status dot + site name
                   Row(
                     children: [
                       Container(
-                        width: rw(context, 7),
-                        height: rw(context, 7),
-                        decoration: const BoxDecoration(
-                          color: Color(0xFF4ADE80),
+                        width: rw(context, 8),
+                        height: rw(context, 8),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF4ADE80),
                           shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFF4ADE80).withValues(
+                                alpha: 0.5,
+                              ),
+                              blurRadius: 4,
+                            ),
+                          ],
                         ),
                       ),
-                      hSpace(context, 6),
+                      hSpace(context, 7),
                       Expanded(
                         child: Text(
                           '${_translateStatus(item.visitorStatus)} · ${item.sitePlaceName}',
                           style: TextStyle(
-                            color: Colors.white70,
-                            fontSize: rfs(context, 11),
+                            color: Colors.white.withValues(alpha: 0.8),
+                            fontSize: rfs(context, 13),
+                            fontWeight: FontWeight.w500,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -241,31 +263,46 @@ class AccessPassCard extends StatelessWidget {
               ),
             ),
             hSpace(context, 16),
-            CustomCircleImage(
-              image: userCtrl.faceUrl != null
-                  ? Image.network(
-                      userCtrl.faceUrl!,
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, _, _) =>
-                          Assets.images.avaPerson1.image(fit: BoxFit.cover),
-                    )
-                  : Assets.images.avaPerson1.image(fit: BoxFit.cover),
-              size: rw(context, 48),
-              borderWidth: 1.5,
-            ),
-            hSpace(context, 16),
-            Container(
-              width: rw(context, 54),
-              height: rw(context, 54),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(rw(context, 12)),
-              ),
-              padding: const EdgeInsets.all(4),
-              child: QrImageView(
-                data: item.visitorNumber,
-                version: QrVersions.auto,
-              ),
+
+            // ── Right: photo stacked above QR ─────────────
+            Column(
+              children: [
+                CustomCircleImage(
+                  image: userCtrl.faceUrl != null
+                      ? Image.network(
+                          userCtrl.faceUrl!,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, _, _) =>
+                              Assets.images.avaPerson1.image(
+                            fit: BoxFit.cover,
+                          ),
+                        )
+                      : Assets.images.avaPerson1.image(fit: BoxFit.cover),
+                  size: rw(context, 52),
+                  borderWidth: 2,
+                ),
+                vSpace(context, 10),
+                Container(
+                  width: rw(context, 62),
+                  height: rw(context, 62),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(rw(context, 12)),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.15),
+                        blurRadius: 6,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  padding: const EdgeInsets.all(4),
+                  child: QrImageView(
+                    data: item.visitorNumber,
+                    version: QrVersions.auto,
+                  ),
+                ),
+              ],
             ),
           ],
         ),
