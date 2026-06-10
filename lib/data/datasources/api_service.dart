@@ -6,7 +6,7 @@ import 'dart:io';
 class ApiService {
   final Dio _dio = Dio(
     BaseOptions(
-      baseUrl: 'https://be-vms.app.bio-experience.com',
+      baseUrl: 'http://192.168.1.116:8000',
       connectTimeout: const Duration(seconds: 15),
       receiveTimeout: const Duration(seconds: 30),
       headers: {
@@ -291,7 +291,6 @@ class ApiService {
       rethrow;
     }
   }
-
 
   Future<Response> getVisitorTypeById(String token, String id) async {
     try {

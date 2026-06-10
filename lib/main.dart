@@ -133,7 +133,7 @@ class _MyAppState extends State<MyApp> {
       fallbackLocale: const Locale('en', 'US'),
       theme: ThemeData(
         primaryColor: AppColors.primary500,
-        scaffoldBackgroundColor: const Color(0xffFAFCFF),
+        scaffoldBackgroundColor: const Color(0xffF5F7FB),
         textTheme: GoogleFonts.poppinsTextTheme(
           Theme.of(context).textTheme.apply(
             bodyColor: AppColors.grey900,

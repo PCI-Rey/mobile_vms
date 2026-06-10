@@ -66,7 +66,7 @@ class _SendInvitationPageState extends State<SendInvitationPage>
         title: Text(
           "Invitation",
           style: TextStyle(
-            fontSize: rfs(context, 20),
+            fontSize: rfs(context, 24),
             fontWeight: FontWeight.w700,
             color: Colors.black87,
           ),
@@ -165,16 +165,17 @@ class _SendInvitationPageState extends State<SendInvitationPage>
             color: Colors.white,
             child: TabBar(
               controller: _tabController,
+              dividerColor: Colors.transparent,
               labelColor: AppColors.primary600,
               unselectedLabelColor: Colors.grey.shade500,
               indicatorColor: AppColors.primary600,
               indicatorWeight: 2.5,
               labelStyle: TextStyle(
-                fontSize: rfs(context, 14),
+                fontSize: rfs(context, 16),
                 fontWeight: FontWeight.w700,
               ),
               unselectedLabelStyle: TextStyle(
-                fontSize: rfs(context, 14),
+                fontSize: rfs(context, 16),
                 fontWeight: FontWeight.w500,
               ),
               tabs: const [
@@ -207,9 +208,11 @@ class _SendInvitationPageState extends State<SendInvitationPage>
       children: [
         // ── Filter bar ─────────────────────────────────────────────
         Padding(
-          padding: EdgeInsets.symmetric(
-            horizontal: rw(context, 20),
-            vertical: rh(context, 10),
+          padding: EdgeInsets.only(
+            left: rw(context, 20),
+            right: rw(context, 20),
+            top: rh(context, 16),
+            bottom: rh(context, 6),
           ),
           child: SingleChildScrollView(
             scrollDirection: Axis.horizontal,
@@ -234,7 +237,7 @@ class _SendInvitationPageState extends State<SendInvitationPage>
                             initialEndDate: endDate,
                             initialSiteId: inviteCtrl.selectedSiteId.value,
                             initialStatus: selectedStatus,
-                            showStatusFilter: true,
+                            showStatusFilter: false,
                           ),
                         );
 
@@ -317,7 +320,6 @@ class _SendInvitationPageState extends State<SendInvitationPage>
             ),
           ),
         ),
-        Container(height: 1, color: const Color(0xFFF0F0F0)),
 
         // ── List ──────────────────────────────────────────────────
         Expanded(
@@ -328,7 +330,12 @@ class _SendInvitationPageState extends State<SendInvitationPage>
             },
             child: SingleChildScrollView(
               physics: const AlwaysScrollableScrollPhysics(),
-              padding: EdgeInsets.all(rw(context, 20.0)),
+              padding: EdgeInsets.only(
+                left: rw(context, 20.0),
+                right: rw(context, 20.0),
+                bottom: rw(context, 20.0),
+                top: rw(context, 10.0),
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -1065,7 +1072,7 @@ class _SendInvitationPageState extends State<SendInvitationPage>
   Widget _buildFilterChip(BuildContext context, String label) {
     return Container(
       height: rh(context, 32),
-      padding: EdgeInsets.symmetric(horizontal: rw(context, 12)),
+      padding: EdgeInsets.symmetric(horizontal: rw(context, 14)),
       decoration: BoxDecoration(
         border: Border.all(color: Colors.grey.shade300),
         borderRadius: BorderRadius.circular(rw(context, 50)),

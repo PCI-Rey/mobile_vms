@@ -209,19 +209,20 @@ class _CreateQuickAccessDialogState extends State<CreateQuickAccessDialog> {
   }
 
   Future<bool> _showExitConfirmation() async {
-    if (!_hasChanges()) return true;
-
+    final hasData = _hasChanges();
     final result = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(rw(context, 16))),
-        title: const Text(
-          'Discard Progress?',
-          style: TextStyle(fontWeight: FontWeight.bold),
+        title: Text(
+          hasData ? 'Discard Progress?' : 'Close Form?',
+          style: const TextStyle(fontWeight: FontWeight.bold),
         ),
-        content: const Text(
-          'Are you sure you want to close this form? Your progress will be lost.',
+        content: Text(
+          hasData
+              ? 'Are you sure you want to close this form? Your progress will be lost.'
+              : 'Are you sure you want to close this form?',
           textAlign: TextAlign.justify,
         ),
         actions: [
@@ -231,9 +232,9 @@ class _CreateQuickAccessDialogState extends State<CreateQuickAccessDialog> {
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text(
-              'Yes, Discard',
-              style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+            child: Text(
+              hasData ? 'Yes, Discard' : 'Yes, Close',
+              style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
             ),
           ),
         ],
@@ -302,33 +303,40 @@ class _CreateQuickAccessDialogState extends State<CreateQuickAccessDialog> {
                   // Header
                   Padding(
                     padding: EdgeInsets.fromLTRB(
-                      rw(context, 20),
+                      rw(context, 8),
                       rh(context, 20),
-                      rw(context, 20),
+                      rw(context, 8),
                       rh(context, 10),
                     ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    child: Stack(
+                      alignment: Alignment.center,
                       children: [
-                        Text(
-                          'Quick Access',
-                          style: TextStyle(
-                            fontSize: rfs(context, 18),
-                            fontWeight: FontWeight.bold,
-                            color: const Color(0xFF1E293B),
+                        // Centered title
+                        Center(
+                          child: Text(
+                            'Quick Access',
+                            style: TextStyle(
+                              fontSize: rfs(context, 18),
+                              fontWeight: FontWeight.bold,
+                              color: const Color(0xFF1E293B),
+                            ),
                           ),
                         ),
-                        IconButton(
-                          onPressed: () async {
-                            final navigator = Navigator.of(context);
-                            if (await _showExitConfirmation()) {
-                              if (mounted) navigator.pop();
-                            }
-                          },
-                          icon: Icon(
-                            Icons.close,
-                            color: Colors.grey.shade600,
-                            size: rw(context, 22),
+                        // Close button aligned to the right
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: IconButton(
+                            onPressed: () async {
+                              final navigator = Navigator.of(context);
+                              if (await _showExitConfirmation()) {
+                                if (mounted) navigator.pop();
+                              }
+                            },
+                            icon: Icon(
+                              Icons.close,
+                              color: Colors.grey.shade600,
+                              size: rw(context, 22),
+                            ),
                           ),
                         ),
                       ],

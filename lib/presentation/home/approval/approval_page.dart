@@ -1250,7 +1250,7 @@ class _ApprovalCard extends StatelessWidget {
                     hSpace(context, 10),
                     Expanded(
                       child: ElevatedButton(
-                        onPressed: () => _VisitorApprovalDialog.show(
+                        onPressed: () => VisitorApprovalDialog.show(
                           context,
                           ticket,
                           controller,
@@ -1519,8 +1519,8 @@ class _RejectedCard extends StatelessWidget {
   }
 }
 
-class _VisitorApprovalDialog extends StatefulWidget {
-  const _VisitorApprovalDialog({
+class VisitorApprovalDialog extends StatefulWidget {
+  const VisitorApprovalDialog({
     required this.ticket,
     required this.controller,
   });
@@ -1537,15 +1537,15 @@ class _VisitorApprovalDialog extends StatefulWidget {
       context: context,
       barrierDismissible: false,
       builder: (_) =>
-          _VisitorApprovalDialog(ticket: ticket, controller: controller),
+          VisitorApprovalDialog(ticket: ticket, controller: controller),
     );
   }
 
   @override
-  State<_VisitorApprovalDialog> createState() => _VisitorApprovalDialogState();
+  State<VisitorApprovalDialog> createState() => _VisitorApprovalDialogState();
 }
 
-class _VisitorApprovalDialogState extends State<_VisitorApprovalDialog> {
+class _VisitorApprovalDialogState extends State<VisitorApprovalDialog> {
   List<Map<String, dynamic>> _visitors = [];
   final Set<String> _selectedIds = {};
   bool _isLoading = true;

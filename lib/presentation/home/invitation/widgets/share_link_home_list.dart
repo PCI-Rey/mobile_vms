@@ -87,41 +87,11 @@ class _ShareLinkHomeListState extends State<ShareLinkHomeList> {
   }
 
   void _startCarouselTimer() {
-    _carouselTimer = Timer.periodic(const Duration(seconds: 7), (timer) {
-      final selectedDate = controller.selectedDashboardDate.value;
-      final filtered = controller.dashboardShareLinks.where((item) {
-        final dateStr = item['visitor_period_start']?.toString() ??
-            item['created_at']?.toString() ??
-            item['expired_at']?.toString();
-        final date = _parseShareLinkDate(dateStr);
-        if (date == null) return false;
-        return date.year == selectedDate.year &&
-            date.month == selectedDate.month &&
-            date.day == selectedDate.day;
-      }).toList();
-
-      if (mounted &&
-          filtered.isNotEmpty &&
-          _pageController.hasClients) {
-        // Only slide if there is more than 1 item
-        final listLength = filtered.length > 3
-            ? 3
-            : filtered.length;
-        if (listLength > 1) {
-          _currentPage.value++;
-          _pageController.animateToPage(
-            _currentPage.value,
-            duration: const Duration(milliseconds: 800),
-            curve: Curves.fastOutSlowIn,
-          );
-        }
-      }
-    });
+    // Auto slide disabled as per user request
   }
 
   void _resetCarouselTimer() {
-    _carouselTimer?.cancel();
-    _startCarouselTimer();
+    // Auto slide disabled as per user request
   }
 
   @override

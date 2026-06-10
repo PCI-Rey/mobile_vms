@@ -7,6 +7,7 @@ import '../../../../core/helper/responsive_helper.dart';
 import '../../invitation/controller/invitation_controller.dart';
 import '../../../../data/models/approval_ticket_model.dart';
 import '../../approval/approval_page.dart';
+import '../../approval/widgets/approve_detail_model.dart';
 
 class IteneraryList extends StatefulWidget {
   const IteneraryList({super.key});
@@ -63,36 +64,11 @@ class _IteneraryListState extends State<IteneraryList> {
   }
 
   void _startCarouselTimer() {
-    _carouselTimer = Timer.periodic(const Duration(seconds: 7), (timer) {
-      final selectedDate = controller.selectedDashboardDate.value;
-      final filtered = controller.approvalTickets.where((ticket) {
-        if (ticket.visitorPeriodStart == null) return false;
-        return ticket.visitorPeriodStart!.year == selectedDate.year &&
-            ticket.visitorPeriodStart!.month == selectedDate.month &&
-            ticket.visitorPeriodStart!.day == selectedDate.day;
-      }).toList();
-
-      if (mounted &&
-          filtered.isNotEmpty &&
-          _pageController.hasClients) {
-        final listLength = filtered.length > 3
-            ? 3
-            : filtered.length;
-        if (listLength > 1) {
-          _currentPage.value++;
-          _pageController.animateToPage(
-            _currentPage.value,
-            duration: const Duration(milliseconds: 800),
-            curve: Curves.fastOutSlowIn,
-          );
-        }
-      }
-    });
+    // Auto slide disabled as per user request
   }
 
   void _resetCarouselTimer() {
-    _carouselTimer?.cancel();
-    _startCarouselTimer();
+    // Auto slide disabled as per user request
   }
 
   @override
@@ -102,6 +78,50 @@ class _IteneraryListState extends State<IteneraryList> {
     _listWorker?.dispose();
     _dateWorker?.dispose();
     super.dispose();
+  }
+
+  void _confirmAction(
+    BuildContext context, {
+    required String title,
+    required String message,
+    required Future<bool> Function() onConfirm,
+  }) {
+    showDialog(
+      context: context,
+      builder: (dialogCtx) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(rw(context, 16)),
+        ),
+        title: Text(
+          title,
+          style: TextStyle(
+            fontWeight: FontWeight.w700,
+            fontSize: rfs(context, 16),
+          ),
+        ),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogCtx).pop(),
+            child: const Text('Batal'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.of(dialogCtx).pop();
+              await onConfirm();
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary500,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(rw(context, 8)),
+              ),
+            ),
+            child: const Text('Ya'),
+          ),
+        ],
+      ),
+    );
   }
 
   bool _checkNeedApproval(ApprovalTicketModel ticket) {
@@ -210,29 +230,43 @@ class _IteneraryListState extends State<IteneraryList> {
         );
       }
 
+      double carouselHeight = 235.0;
+      if (list.isNotEmpty) {
+        final int currentIndex = _currentPage.value % list.length;
+        if (currentIndex < list.length) {
+          final ticket = list[currentIndex];
+          final isPending =
+              ticket.approvalActorStatus?.toLowerCase() == 'pending' ||
+              ticket.approvalStatus?.toLowerCase() == 'pending';
+          final isApproved =
+              ticket.approvalActorStatus?.toLowerCase() == 'approved' ||
+              ticket.approvalStatus?.toLowerCase() == 'approved';
+          final isRejected =
+              ticket.approvalActorStatus?.toLowerCase() == 'rejected' ||
+              ticket.approvalActorStatus?.toLowerCase() == 'denied' ||
+              ticket.approvalStatus?.toLowerCase() == 'rejected' ||
+              ticket.approvalStatus?.toLowerCase() == 'denied';
+
+          final needsApproval = isPending && _checkNeedApproval(ticket);
+
+          if (needsApproval) {
+            carouselHeight = 325.0;
+          } else if ((isApproved || isRejected) && ticket.approvedAt != null) {
+            carouselHeight = 235.0;
+          } else {
+            carouselHeight = 200.0;
+          }
+        }
+      }
+
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Carousel
-          SizedBox(
-            height: rh(context, () {
-              if (list.isEmpty) return 210.0;
-              final listLength = list.length;
-              final currentIndex = _currentPage.value % listLength;
-              final currentTicket = list[currentIndex];
-
-              final isPending =
-                  currentTicket.approvalActorStatus?.toLowerCase() ==
-                      'pending' ||
-                  currentTicket.approvalStatus?.toLowerCase() == 'pending';
-              final bool hasButtons =
-                  isPending && _checkNeedApproval(currentTicket);
-              if (hasButtons) {
-                return 300.0;
-              } else {
-                return currentTicket.approvedAt != null ? 245.0 : 210.0;
-              }
-            }()),
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 250),
+            curve: Curves.easeInOut,
+            height: rh(context, list.isEmpty ? 235.0 : carouselHeight),
             child: PageView.builder(
               controller: _pageController,
               onPageChanged: (int index) {
@@ -330,6 +364,8 @@ class _IteneraryListState extends State<IteneraryList> {
         ticket.approvalStatus?.toLowerCase() == 'rejected' ||
         ticket.approvalStatus?.toLowerCase() == 'denied';
 
+    final needsApproval = isPending && _checkNeedApproval(ticket);
+
     Color statusBg;
     Color statusFg;
     bool hasBorder = true;
@@ -352,7 +388,7 @@ class _IteneraryListState extends State<IteneraryList> {
       statusLabel = 'Pending';
     }
 
-    return Container(
+    final cardContent = Container(
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(rw(context, 12)),
@@ -372,8 +408,8 @@ class _IteneraryListState extends State<IteneraryList> {
             padding: EdgeInsets.only(
               left: rw(context, 16),
               right: rw(context, 16),
-              top: rh(context, 16),
-              bottom: rh(context, 12),
+              top: rh(context, 12),
+              bottom: rh(context, 8),
             ),
             child: Row(
               children: [
@@ -438,14 +474,14 @@ class _IteneraryListState extends State<IteneraryList> {
             thickness: 1,
             color: Colors.grey.shade100,
           ),
-          
+
           // Body: Info grid fields
           Padding(
             padding: EdgeInsets.only(
               left: rw(context, 16),
               right: rw(context, 16),
-              top: rh(context, 12),
-              bottom: rh(context, 16),
+              top: rh(context, 8),
+              bottom: rh(context, 12),
             ),
             child: Column(
               children: [
@@ -474,7 +510,7 @@ class _IteneraryListState extends State<IteneraryList> {
                     ),
                   ],
                 ),
-                vSpace(context, 8),
+                vSpace(context, 6),
                 Row(
                   children: [
                     Expanded(
@@ -500,7 +536,7 @@ class _IteneraryListState extends State<IteneraryList> {
                     ),
                   ],
                 ),
-                vSpace(context, 8),
+                vSpace(context, 6),
                 Row(
                   children: [
                     Expanded(
@@ -526,8 +562,8 @@ class _IteneraryListState extends State<IteneraryList> {
             ),
           ),
 
-          // Actions if pending
-          if (isPending && _checkNeedApproval(ticket)) ...[
+          // Actions if pending AND needs approval
+          if (needsApproval) ...[
             Container(height: 1, color: const Color(0xFFF0F0F0)),
             Padding(
               padding: EdgeInsets.symmetric(
@@ -538,14 +574,19 @@ class _IteneraryListState extends State<IteneraryList> {
                 children: [
                   Expanded(
                     child: OutlinedButton(
-                      onPressed: () {
-                        if (ticket.approvalTicketId != null) {
-                          controller.rejectTicketAction(
-                            ticket.approvalTicketId!,
-                            ticket.actorId ?? '',
-                          );
-                        }
-                      },
+                      onPressed: () => _confirmAction(
+                        context,
+                        title: 'Tolak Approval',
+                        message:
+                            'Apakah Anda yakin ingin menolak approval ini?',
+                        onConfirm: () => controller.rejectMeetingHostAction(
+                          approvalTicketId:
+                              ticket.approvalTicketId ??
+                              ticket.ticketId ??
+                              '',
+                          actorId: ticket.actorId ?? '',
+                        ),
+                      ),
                       style: OutlinedButton.styleFrom(
                         padding: EdgeInsets.symmetric(
                           vertical: rh(context, 9),
@@ -568,14 +609,11 @@ class _IteneraryListState extends State<IteneraryList> {
                   hSpace(context, 10),
                   Expanded(
                     child: ElevatedButton(
-                      onPressed: () {
-                        if (ticket.approvalTicketId != null) {
-                          controller.approveTicketAction(
-                            ticket.approvalTicketId!,
-                            ticket.actorId ?? '',
-                          );
-                        }
-                      },
+                      onPressed: () => VisitorApprovalDialog.show(
+                        context,
+                        ticket,
+                        controller,
+                      ),
                       style: ElevatedButton.styleFrom(
                         padding: EdgeInsets.symmetric(
                           vertical: rh(context, 9),
@@ -637,6 +675,13 @@ class _IteneraryListState extends State<IteneraryList> {
           ],
         ],
       ),
+    );
+
+    // Wrap with GestureDetector to open detail modal on tap.
+    // For pending cards with action buttons, only the card body (non-button area) opens detail.
+    return GestureDetector(
+      onTap: () => ApprovalDetailModal.show(context, ticket),
+      child: cardContent,
     );
   }
 

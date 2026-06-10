@@ -547,12 +547,39 @@ class PraRegistrationController extends GetxController {
         if (groupVisitors.isEmpty) return false;
         return groupVisitors.every((v) => v.isValid);
       } else {
-        return name.value.trim().isNotEmpty &&
+        // Check hardcoded primary fields
+        final primaryFieldsValid = name.value.trim().isNotEmpty &&
             email.value.trim().isNotEmpty &&
             phone.value.trim().isNotEmpty &&
             organization.value.trim().isNotEmpty &&
             identityId.value.trim().isNotEmpty &&
             selectedVisitorRole.value.trim().isNotEmpty;
+
+        if (!primaryFieldsValid) return false;
+
+        // Also check any additional mandatory API form fields
+        // (fields not covered by the hardcoded checks above)
+        const handledRemarks = {
+          'name', 'email', 'phone', 'organization', 'company',
+          'identity_id', 'indentity_id', 'visitor_role',
+          'is_employee', 'employee_name', 'employee',
+          // Step 2 fields — skip them in step 1 validation
+          'host', 'site_place', 'agenda',
+          'visitor_period_start', 'visitor_period_end',
+        };
+
+        for (final section in formStructure.value?.sectionPageVisitorTypes ?? <SectionPageVisitorType>[]) {
+          for (final field in section.praForm) {
+            if (!field.isEnable) continue;
+            if (!field.mandatory) continue;
+            final rem = field.remarks.toLowerCase();
+            if (handledRemarks.contains(rem)) continue;
+            // This is an extra mandatory field — ensure it has an answer
+            if (field.answerText.trim().isEmpty) return false;
+          }
+        }
+
+        return true;
       }
     } else if (step == 2) {
       return selectedHostId.value.isNotEmpty && 

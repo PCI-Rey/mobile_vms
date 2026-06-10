@@ -225,7 +225,7 @@ class _AgendaDetailPageState extends State<AgendaDetailPage> {
               RepaintBoundary(
                 key: _accessPassKey,
                 child: Container(
-                  color: const Color(0xffFAFCFF),
+                  color: const Color(0xffF5F7FB),
                   width: double.infinity,
                   padding: EdgeInsets.all(rw(context, 20)),
 

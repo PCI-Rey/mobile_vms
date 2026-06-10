@@ -83,32 +83,34 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
   }
 
   bool _hasChanges() {
-    return selectedHostId != null ||
-        selectedSiteId != null ||
-        selectedVisitorTypeId != null ||
-        selectedAgendaOption != null ||
-        agendaCtrl.text.isNotEmpty ||
-        visitStart != null ||
-        visitEnd != null ||
-        (selectedExpiredMinutes != null && selectedExpiredMinutes != '0') ||
+    // Only count a field as changed if its toggle is enabled (user explicitly turned it on)
+    // or if the field is always-visible and has been modified
+    return (isHostEnabled && selectedHostId != null) ||
+        (isSiteEnabled && selectedSiteId != null) ||
+        (isVisitorTypeEnabled && selectedVisitorTypeId != null) ||
+        (isAgendaEnabled && (selectedAgendaOption != null || agendaCtrl.text.isNotEmpty)) ||
+        (isVisitStartEnabled && visitStart != null) ||
+        (isVisitEndEnabled && visitEnd != null) ||
+        (isExpiredEnabled && selectedExpiredMinutes != null && selectedExpiredMinutes != '0') ||
         (quotaCtrl.text.isNotEmpty && quotaCtrl.text != '0') ||
         isSingleUse == true;
   }
 
   Future<bool> _showExitConfirmation() async {
-    if (!_hasChanges()) return true;
-
+    final hasData = _hasChanges();
     final result = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(rw(context, 16))),
-        title: const Text(
-          'Discard Progress?',
-          style: TextStyle(fontWeight: FontWeight.bold),
+        title: Text(
+          hasData ? 'Discard Progress?' : 'Close Form?',
+          style: const TextStyle(fontWeight: FontWeight.bold),
         ),
-        content: const Text(
-          'Are you sure you want to close this form? Your progress will be lost.',
+        content: Text(
+          hasData
+              ? 'Are you sure you want to close this form? Your progress will be lost.'
+              : 'Are you sure you want to close this form?',
           textAlign: TextAlign.justify,
         ),
         actions: [
@@ -118,9 +120,9 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text(
-              'Yes, Discard',
-              style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+            child: Text(
+              hasData ? 'Yes, Discard' : 'Yes, Close',
+              style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
             ),
           ),
         ],
@@ -157,10 +159,11 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
+                Stack(
+                  alignment: Alignment.center,
                   children: [
-                    hSpace(context, 40),
-                    Expanded(
+                    // Centered title
+                    Center(
                       child: Text(
                         'Create Share Link Registration',
                         textAlign: TextAlign.center,
@@ -170,14 +173,18 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
                         ),
                       ),
                     ),
-                    IconButton(
-                      icon: const Icon(Icons.close),
-                      onPressed: () async {
-                        final navigator = Navigator.of(context);
-                        if (await _showExitConfirmation()) {
-                          if (mounted) navigator.pop();
-                        }
-                      },
+                    // Close button on the right
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: IconButton(
+                        icon: const Icon(Icons.close),
+                        onPressed: () async {
+                          final navigator = Navigator.of(context);
+                          if (await _showExitConfirmation()) {
+                            if (mounted) navigator.pop();
+                          }
+                        },
+                      ),
                     ),
                   ],
                 ),
