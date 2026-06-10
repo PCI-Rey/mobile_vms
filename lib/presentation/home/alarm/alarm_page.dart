@@ -14,8 +14,13 @@ class AlarmPage extends StatelessWidget {
         backgroundColor: Colors.white,
         title: Text(
           "Alarm Alert",
-          style: TextStyle(fontSize: rfs(context, 18)),
+          style: TextStyle(
+            fontSize: rfs(context, 24),
+            fontWeight: FontWeight.w700,
+            color: Colors.black87,
+          ),
         ),
+        centerTitle: true,
         leading: const BackButton(),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1.0),

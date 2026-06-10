@@ -1,3 +1,4 @@
+import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
 import '../../../../data/datasources/alarm_datasource.dart';
 import '../../../../data/models/alarm_model.dart';
@@ -11,7 +12,9 @@ class AlarmController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    loadAlarms();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      loadAlarms();
+    });
   }
 
   Future<void> loadAlarms() async {

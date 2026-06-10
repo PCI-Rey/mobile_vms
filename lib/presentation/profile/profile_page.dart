@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import '../../presentation/auth/controller/user_controller.dart';
 import '../../presentation/auth/login_page.dart';
 import '../../presentation/profile/profile_detail_page.dart';
+import 'profile_dummy_pages.dart';
 import '../../core/helper/responsive_helper.dart';
 import '../../core/core.dart';
 
@@ -12,15 +13,16 @@ class ProfilePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xffF5F7FB),
+      backgroundColor: const Color(0xFFF8FAFF),
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: const Color(0xFF1976D2),
         elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.black),
+        iconTheme: const IconThemeData(color: Colors.white),
+        centerTitle: true,
         title: Text(
           'profile'.tr,
           style: const TextStyle(
-            color: Colors.black,
+            color: Colors.white,
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -30,58 +32,98 @@ class ProfilePage extends StatelessWidget {
         return Column(
           children: [
             // Header section
-            Container(
-              color: const Color(0xFFE3F3FB),
-              padding: EdgeInsets.symmetric(horizontal: rw(context, 20), vertical: rh(context, 16)),
-              child: Row(
-                children: [
-                  CustomCircleImage(
-                    image: Assets.images.avaPerson1.image(),
-                    size: rw(context, 60),
-                  ),
-                  hSpace(context, 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          user?.fullname ?? 'User',
-                          style: TextStyle(
-                            fontSize: rfs(context, 18),
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        Text(
-                          user?.email ?? 'mail@example.com',
-                          style: TextStyle(fontSize: rfs(context, 14)),
-                        ),
-                        vSpace(context, 4),
-                        Container(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: rw(context, 8),
-                            vertical: rh(context, 2),
-                          ),
-                          decoration: BoxDecoration(
-                            color: const Color(0xffD6F0FF),
-                            borderRadius: BorderRadius.circular(rw(context, 30)),
-                          ),
-                          child: Text(
-                            user?.roleAccess?.toUpperCase() ?? 'GUEST',
-                            style: TextStyle(
-                              fontSize: rfs(context, 12),
-                              color: const Color(0xff1976D2),
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ),
-                      ],
+            Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Container(
+                  height: rh(context, 80),
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF1976D2), Color(0xFF0D47A1)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.only(
+                      bottomLeft: Radius.circular(rw(context, 30)),
+                      bottomRight: Radius.circular(rw(context, 30)),
                     ),
                   ),
-                ],
-              ),
+                ),
+                Container(
+                  margin: EdgeInsets.only(
+                    top: rh(context, 20),
+                    left: rw(context, 20),
+                    right: rw(context, 20),
+                  ),
+                  padding: EdgeInsets.all(rw(context, 20)),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(rw(context, 16)),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.05),
+                        blurRadius: 10,
+                        offset: const Offset(0, 5),
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    children: [
+                      CustomCircleImage(
+                        image: Assets.images.avaPerson1.image(fit: BoxFit.cover),
+                        size: rw(context, 65),
+                        scale: 1.5,
+                      ),
+                      hSpace(context, 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              user?.fullname ?? 'User',
+                              style: TextStyle(
+                                fontSize: rfs(context, 18),
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            vSpace(context, 2),
+                            Text(
+                              user?.email ?? 'mail@example.com',
+                              style: TextStyle(
+                                fontSize: rfs(context, 14),
+                                color: Colors.grey.shade600,
+                              ),
+                            ),
+                            vSpace(context, 8),
+                            Container(
+                              padding: EdgeInsets.symmetric(
+                                horizontal: rw(context, 12),
+                                vertical: rh(context, 4),
+                              ),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFE3F3FB),
+                                borderRadius: BorderRadius.circular(rw(context, 30)),
+                              ),
+                              child: Text(
+                                user?.roleAccess?.toUpperCase() ?? 'GUEST',
+                                style: TextStyle(
+                                  fontSize: rfs(context, 12),
+                                  color: const Color(0xff1976D2),
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
 
-            vSpace(context, 16),
+            vSpace(context, 24),
 
             // Menu section
             Padding(
@@ -103,7 +145,9 @@ class ProfilePage extends StatelessWidget {
                   TileMenu(
                     icon: Icon(Icons.lock, color: Colors.white, size: rw(context, 25)),
                     label: 'security'.tr,
-                    onTap: () {},
+                    onTap: () {
+                      context.push(const SecurityPage());
+                    },
                   ),
                   vSpace(context, 12),
                   TileMenu(
@@ -113,7 +157,9 @@ class ProfilePage extends StatelessWidget {
                       size: rw(context, 25),
                     ),
                     label: 'Pemberitahuan'.tr,
-                    onTap: () {},
+                    onTap: () {
+                      context.push(const PemberitahuanPage());
+                    },
                   ),
                   vSpace(context, 12),
                   TileMenu(
@@ -123,7 +169,9 @@ class ProfilePage extends StatelessWidget {
                       size: rw(context, 25),
                     ),
                     label: 'Help Center'.tr,
-                    onTap: () {},
+                    onTap: () {
+                      context.push(const HelpCenterPage());
+                    },
                   ),
                   vSpace(context, 12),
                   TileMenu(
@@ -133,7 +181,9 @@ class ProfilePage extends StatelessWidget {
                       size: rw(context, 25),
                     ),
                     label: 'Barcode'.tr,
-                    onTap: () {},
+                    onTap: () {
+                      context.push(const BarcodePage());
+                    },
                   ),
                 ],
               ),

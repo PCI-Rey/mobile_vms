@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:get/get.dart';
 import '../../core/helper/responsive_helper.dart';
 import '../../core/core.dart';
+import '../../core/components/alarm_alert_card.dart';
+import '../../data/models/alarm_model.dart';
+import '../home/alarm/controller/alarm_controller.dart';
+import '../home/alarm/list_alarm_page.dart';
 
 class NotificationDialog extends StatefulWidget {
   const NotificationDialog({super.key});
@@ -11,69 +16,65 @@ class NotificationDialog extends StatefulWidget {
 }
 
 class _NotificationDialogState extends State<NotificationDialog> {
-  List<Map<String, dynamic>> notifications = [
-    {
-      'id': 1,
-      'title': 'Notifikasi',
-      'date': 'Mon, 16 Jul 2025 10:00',
-      'description': 'John Doe triggered a high-risk alarm at Lobby 2.',
-      'textColor': AppColors.primary500,
-      'backgroundIconColor': AppColors.primary500,
-      'backgroundColor': Colors.white,
-      'icon': const Icon(FontAwesomeIcons.bell, color: Colors.white, size: 18),
-      'notificationType': 'general',
-    },
-    {
-      'id': 2,
-      'title': 'Notifikasi Approval',
-      'date': 'Mon, 16 Jul 2025 10:00',
-      'description': 'An unknown visitor entered the restricted area.',
-      'textColor': AppColors.primary500,
-      'backgroundColor': Colors.white,
-      'backgroundIconColor': AppColors.primary500,
-      'icon': const Icon(FontAwesomeIcons.bell, color: Colors.white, size: 18),
-      'notificationType': 'general',
-    },
-    {
-      'id': 3,
-      'title': 'Notifikasi Alarm',
-      'date': 'Mon, 16 Jul 2025 10:00',
-      'description': 'Visitor completed scanning successfully.',
-      'textColor': AppColors.error500,
-      'backgroundIconColor': AppColors.error500,
-      'backgroundColor': AppColors.error100,
-      'icon': Assets.icons.bell.image(
-        width: 18,
-        height: 18,
-        color: Colors.white,
-      ),
-      'notificationType': 'alarm',
-    },
-  ];
+  late final AlarmController alarmController;
 
-  void _handleApprove(int id) {
-    debugPrint("✅ Approved $id");
-    _removeNotification(id);
-  }
-
-  void _handleDeny(int id) {
-    debugPrint("❌ Denied $id");
-    _removeNotification(id);
-  }
-
-  void _removeNotification(int id) {
-    setState(() {
-      notifications.removeWhere((notif) => notif['id'] == id);
-    });
+  @override
+  void initState() {
+    super.initState();
+    if (Get.isRegistered<AlarmController>()) {
+      alarmController = Get.find<AlarmController>();
+    } else {
+      alarmController = Get.put(AlarmController());
+    }
   }
 
   String selectedType = 'all';
 
-  List<Map<String, dynamic>> get filteredNotifications {
-    if (selectedType == 'all') return notifications;
-    return notifications
-        .where((notif) => notif['notificationType'] == selectedType)
-        .toList();
+  List<AlarmModel> getAlarmsForType(String type) {
+    final sourceAlarms = alarmController.alarms;
+    if (sourceAlarms.isEmpty) return [];
+
+    List<AlarmModel> result = [];
+    if (type == 'general') {
+      result = List.generate(5, (index) {
+        final base = sourceAlarms[index % sourceAlarms.length];
+        return base.copyWith(
+          id: 'gen_$index',
+          alarmDescription: 'General Notification ${index + 1}',
+          status: AlarmStatus.low,
+        );
+      });
+    } else if (type == 'alarm') {
+      result = List.generate(5, (index) {
+        final base = sourceAlarms[index % sourceAlarms.length];
+        return base.copyWith(
+          id: 'alr_$index',
+          alarmDescription: 'Critical Alert ${index + 1}',
+          status: AlarmStatus.high,
+        );
+      });
+    } else {
+      final gen = List.generate(5, (index) {
+        final base = sourceAlarms[index % sourceAlarms.length];
+        return base.copyWith(
+          id: 'all_gen_$index',
+          alarmDescription: 'General Notification ${index + 1}',
+          status: AlarmStatus.low,
+        );
+      });
+      final alr = List.generate(5, (index) {
+        final base = sourceAlarms[index % sourceAlarms.length];
+        return base.copyWith(
+          id: 'all_alr_$index',
+          alarmDescription: 'Critical Alert ${index + 1}',
+          status: AlarmStatus.high,
+        );
+      });
+      result = [...gen, ...alr];
+    }
+
+    // Tampilkan 3 data saja yang paling atas
+    return result.take(3).toList();
   }
 
   @override
@@ -263,57 +264,100 @@ class _NotificationDialogState extends State<NotificationDialog> {
               ),
             ),
 
-            vSpace(context, 16),
+            vSpace(context, 12),
 
-            // Notification list
-            Expanded(
-              child: filteredNotifications.isEmpty
-                  ? Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.notifications_none,
-                            size: rw(context, 64),
-                            color: Colors.grey.withValues(alpha: 0.5),
+            // More button row
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: rw(context, 24)),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  GestureDetector(
+                    onTap: () {
+                      int initialTab = 0;
+                      if (selectedType == 'general') {
+                        initialTab = 1;
+                      } else if (selectedType == 'alarm') {
+                        initialTab = 2;
+                      }
+                      context.push(AlarmListPage(initialTab: initialTab));
+                    },
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          'More',
+                          style: TextStyle(
+                            color: AppColors.primary500,
+                            fontWeight: FontWeight.w600,
+                            fontSize: rfs(context, 14),
                           ),
-                          vSpace(context, 16),
-                          Text(
-                            'No notifications',
-                            style: TextStyle(
-                              fontSize: rfs(context, 16),
-                              color: Colors.grey.withValues(alpha: 0.7),
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                      ),
-                    )
-                  : ListView.builder(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: rw(context, 16),
-                      ),
-                      itemCount: filteredNotifications.length,
-                      itemBuilder: (context, index) {
-                        final notif = filteredNotifications[index];
-                        return Padding(
-                          padding: EdgeInsets.only(bottom: rh(context, 12)),
-                          child: NotificationCard(
-                            title: notif['title'],
-                            date: notif['date'],
-                            description: notif['description'],
-                            backgroundColor: notif['backgroundColor'],
-                            textColor: notif['textColor'],
-                            backgroundIconColor: notif['backgroundIconColor'],
-                            iconData: notif['icon'],
-                            primaryActionLabel: 'Approve',
-                            secondaryActionLabel: 'Deny',
-                            onPrimaryAction: () => _handleApprove(notif['id']),
-                            onSecondaryAction: () => _handleDeny(notif['id']),
-                          ),
-                        );
-                      },
+                        ),
+                        hSpace(context, 4),
+                        Icon(
+                          Icons.arrow_forward_ios,
+                          size: rw(context, 12),
+                          color: AppColors.primary500,
+                        ),
+                      ],
                     ),
+                  ),
+                ],
+              ),
+            ),
+
+            vSpace(context, 12),
+
+            // Notification list using AlarmAlertCard
+            Expanded(
+              child: Obx(() {
+                final alarmsToShow = getAlarmsForType(selectedType);
+
+                if (alarmsToShow.isEmpty) {
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.notifications_none,
+                          size: rw(context, 64),
+                          color: Colors.grey.withValues(alpha: 0.5),
+                        ),
+                        vSpace(context, 16),
+                        Text(
+                          'No notifications',
+                          style: TextStyle(
+                            fontSize: rfs(context, 16),
+                            color: Colors.grey.withValues(alpha: 0.7),
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }
+
+                return ListView.separated(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: rw(context, 16),
+                  ),
+                  itemCount: alarmsToShow.length,
+                  separatorBuilder: (context, index) => vSpace(context, 12),
+                  itemBuilder: (context, index) {
+                    final alarm = alarmsToShow[index];
+                    return AlarmAlertCard(
+                      index: index,
+                      visitorName: alarm.visitorName,
+                      alarmDescription: alarm.alarmDescription,
+                      location: alarm.location,
+                      date: alarm.date,
+                      timeRange: alarm.timeRange,
+                      status: alarm.status,
+                      key: ValueKey('notif_alarm_${alarm.id}_$index'),
+                    );
+                  },
+                );
+              }),
             ),
 
             // Bottom padding

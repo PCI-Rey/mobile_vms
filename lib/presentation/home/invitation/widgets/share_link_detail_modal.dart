@@ -209,7 +209,6 @@ class ShareLinkDetailModal {
                           ],
                         ),
                       ),
-                      const Divider(height: 1),
                       Padding(
                         padding: EdgeInsets.symmetric(
                           horizontal: rw(ctx, 20),
@@ -224,7 +223,7 @@ class ShareLinkDetailModal {
                               icon: Icons.copy,
                               color: isExpired
                                   ? Colors.grey
-                                  : Colors.orange.shade600,
+                                  : const Color(0xFF005596),
                               onTap: () {
                                 if (isExpired) {
                                   Get.snackbar(
@@ -253,7 +252,7 @@ class ShareLinkDetailModal {
                               ctx,
                               label: 'Delete',
                               icon: Icons.delete,
-                              color: Colors.red.shade600,
+                              color: AppColors.error500,
                               onTap: () {
                                 Navigator.pop(ctx);
                                 _confirmDelete(context, item['id'].toString());

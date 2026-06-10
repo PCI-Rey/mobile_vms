@@ -384,7 +384,7 @@ class _DashboardState extends State<Dashboard>
                       end: 0.5,
                     ).animate(_expandAnimation),
                     child: Icon(
-                      _expandAnimation.value > 0.5 ? Icons.close : Icons.add,
+                      _expandAnimation.value > 0.5 ? Icons.close : Icons.link,
                       color: Colors.white,
                       size: 28,
                     ),
@@ -449,6 +449,10 @@ class _DashboardState extends State<Dashboard>
     );
 
     if (isGuest) {
+      return scaffold;
+    }
+
+    if (_selectedIndex != 0) {
       return scaffold;
     }
 

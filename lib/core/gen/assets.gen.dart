@@ -179,9 +179,9 @@ class $AssetsImagesGen {
   AssetGenImage get avaBuilding =>
       const AssetGenImage('assets/images/ava_building.jpg');
 
-  /// File path: assets/images/ava_person1.png
+  /// File path: assets/images/Endru.png
   AssetGenImage get avaPerson1 =>
-      const AssetGenImage('assets/images/ava_person1.png');
+      const AssetGenImage('assets/images/Endru.png');
 
   /// File path: assets/images/ava_person2.png
   AssetGenImage get avaPerson2 =>

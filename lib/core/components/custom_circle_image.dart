@@ -5,6 +5,7 @@ class CustomCircleImage extends StatelessWidget {
   final double size;
   final double borderWidth;
   final Color borderColor;
+  final double scale;
 
   const CustomCircleImage({
     super.key,
@@ -12,6 +13,7 @@ class CustomCircleImage extends StatelessWidget {
     this.size = 36.0,
     this.borderWidth = 1.0,
     this.borderColor = Colors.white,
+    this.scale = 1.0,
   });
 
   @override
@@ -19,7 +21,12 @@ class CustomCircleImage extends StatelessWidget {
     return SizedBox(
       width: size,
       height: size,
-      child: ClipOval(child: image),
+      child: ClipOval(
+        child: Transform.scale(
+          scale: scale,
+          child: image,
+        ),
+      ),
     );
   }
 }

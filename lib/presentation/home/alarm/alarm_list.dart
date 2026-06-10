@@ -43,15 +43,6 @@ class AlarmList extends StatelessWidget {
 
         // Obx for reactive UI
         Obx(() {
-          if (controller.isLoading.value) {
-            return Center(
-              child: Padding(
-                padding: EdgeInsets.all(rw(context, 20.0)),
-                child: const CircularProgressIndicator(),
-              ),
-            );
-          }
-
           if (controller.errorMessage.value != null) {
             return _buildErrorWidget(
               context,
@@ -102,6 +93,7 @@ class AlarmList extends StatelessWidget {
         final alarm = displayAlarms[index];
 
         return AlarmAlertCard(
+          index: index,
           visitorName: alarm.visitorName,
           alarmDescription: alarm.alarmDescription,
           location: alarm.location,

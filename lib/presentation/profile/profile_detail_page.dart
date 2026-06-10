@@ -34,19 +34,47 @@ class DetailProfilePage extends StatelessWidget {
                     Center(
                       child: Column(
                         children: [
-                          Container(
-                            padding: EdgeInsets.all(rw(context, 4)),
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                color: context.theme.primaryColor.withValues(alpha: 0.2),
-                                width: 2,
+                          Stack(
+                            children: [
+                              Container(
+                                padding: EdgeInsets.all(rw(context, 4)),
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: context.theme.primaryColor.withValues(alpha: 0.2),
+                                    width: 2,
+                                  ),
+                                ),
+                                child: CustomCircleImage(
+                                  image: Assets.images.avaPerson1.image(fit: BoxFit.cover),
+                                  size: rw(context, 100),
+                                  scale: 1.5,
+                                ),
                               ),
-                            ),
-                            child: CustomCircleImage(
-                              image: Assets.images.avaPerson1.image(),
-                              size: rw(context, 100),
-                            ),
+                              Positioned(
+                                bottom: 0,
+                                right: 0,
+                                child: Container(
+                                  padding: EdgeInsets.all(rw(context, 6)),
+                                  decoration: BoxDecoration(
+                                    color: context.theme.primaryColor,
+                                    shape: BoxShape.circle,
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withValues(alpha: 0.1),
+                                        blurRadius: 4,
+                                        offset: const Offset(0, 2),
+                                      ),
+                                    ],
+                                  ),
+                                  child: Icon(
+                                    Icons.edit,
+                                    color: Colors.white,
+                                    size: rw(context, 16),
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                           vSpace(context, 16),
                           Obx(() => Text(
@@ -89,6 +117,7 @@ class DetailProfilePage extends StatelessWidget {
                       label: 'Nama',
                       readOnly: true,
                       hintText: 'Nama Anda',
+                      suffixIconData: Icons.edit_outlined,
                     ),
                     CustomTextField(
                       controller: controller.emailController,
@@ -96,6 +125,7 @@ class DetailProfilePage extends StatelessWidget {
                       readOnly: true,
                       hintText: 'nama@email.com',
                       keyboardType: TextInputType.emailAddress,
+                      suffixIconData: Icons.edit_outlined,
                     ),
                     CustomTextField(
                       controller: controller.nomorHpController,
@@ -103,30 +133,35 @@ class DetailProfilePage extends StatelessWidget {
                       readOnly: true,
                       hintText: '0812 3456 7890',
                       keyboardType: TextInputType.phone,
+                      suffixIconData: Icons.edit_outlined,
                     ),
                     CustomTextField(
                       controller: controller.alamatController,
                       label: 'Alamat Rumah',
                       readOnly: true,
                       hintText: 'Jl. Melati No. 123',
+                      suffixIconData: Icons.edit_outlined,
                     ),
                     CustomTextField(
                       controller: controller.districtController,
                       label: 'Nama Distrik',
                       readOnly: true,
                       hintText: 'Nama Distrik',
+                      suffixIconData: Icons.edit_outlined,
                     ),
                     CustomTextField(
                       controller: controller.organisasiController,
                       label: 'Organisasi',
                       readOnly: true,
                       hintText: 'PT Maju Jaya',
+                      suffixIconData: Icons.edit_outlined,
                     ),
                     CustomTextField(
                       controller: controller.departemenController,
                       label: 'Departemen',
                       readOnly: true,
                       hintText: 'IT Support',
+                      suffixIconData: Icons.edit_outlined,
                     ),
                     vSpace(context, 16),
                     Text(

@@ -6,7 +6,7 @@ import 'dart:io';
 class ApiService {
   final Dio _dio = Dio(
     BaseOptions(
-      baseUrl: 'http://192.168.1.116:8000',
+      baseUrl: 'https://be-vms.app.bio-experience.com',
       connectTimeout: const Duration(seconds: 15),
       receiveTimeout: const Duration(seconds: 30),
       headers: {

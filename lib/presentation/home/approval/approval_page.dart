@@ -188,7 +188,7 @@ class _ApprovalPageState extends State<ApprovalPage>
         title: Text(
           'Approval',
           style: TextStyle(
-            fontSize: rfs(context, 20),
+            fontSize: rfs(context, 22),
             fontWeight: FontWeight.w700,
             color: Colors.black87,
           ),
@@ -211,12 +211,13 @@ class _ApprovalPageState extends State<ApprovalPage>
               unselectedLabelColor: Colors.grey.shade500,
               indicatorColor: AppColors.primary600,
               indicatorWeight: 2.5,
+              dividerColor: Colors.transparent,
               labelStyle: TextStyle(
-                fontSize: rfs(context, 14),
+                fontSize: rfs(context, 18),
                 fontWeight: FontWeight.w700,
               ),
               unselectedLabelStyle: TextStyle(
-                fontSize: rfs(context, 14),
+                fontSize: rfs(context, 18),
                 fontWeight: FontWeight.w500,
               ),
               tabs: const [
@@ -467,7 +468,6 @@ class _PendingTabView extends StatelessWidget {
             ),
           ),
         ),
-        Container(height: 1, color: const Color(0xFFF0F0F0)),
 
         // ── List ─────────────────────────────────────────────────────────
         Expanded(
@@ -585,7 +585,6 @@ class _ApprovedTabView extends StatelessWidget {
             ),
           ),
         ),
-        Container(height: 1, color: const Color(0xFFF0F0F0)),
 
         // ── List ────────────────────────────────────────────────────
         Expanded(
@@ -695,7 +694,6 @@ class _RejectedTabView extends StatelessWidget {
             ),
           ),
         ),
-        Container(height: 1, color: const Color(0xFFF0F0F0)),
 
         // ── List ────────────────────────────────────────────────────
         Expanded(
@@ -760,6 +758,25 @@ class _ListHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    Color badgeBg;
+    Color badgeFg;
+    Color borderColor;
+
+    final lbl = label.toLowerCase();
+    if (lbl.contains('pending')) {
+      badgeBg = const Color(0xFFFFF3E0);
+      badgeFg = const Color(0xFFE65100);
+      borderColor = const Color(0xFFFFB74D);
+    } else if (lbl.contains('approved') || lbl.contains('approve')) {
+      badgeBg = const Color(0xFFE8F5E9);
+      badgeFg = const Color(0xFF2E7D32);
+      borderColor = const Color(0xFF81C784);
+    } else {
+      badgeBg = const Color(0xFFFFEBEE);
+      badgeFg = const Color(0xFFC62828);
+      borderColor = const Color(0xFFE57373);
+    }
+
     return Padding(
       padding: EdgeInsets.fromLTRB(
         rw(context, 20),
@@ -773,7 +790,7 @@ class _ListHeader extends StatelessWidget {
           Text(
             'List Approval',
             style: TextStyle(
-              fontSize: rfs(context, 15),
+              fontSize: rfs(context, 18),
               fontWeight: FontWeight.w800,
               color: Colors.black87,
             ),
@@ -784,15 +801,16 @@ class _ListHeader extends StatelessWidget {
               vertical: rh(context, 3),
             ),
             decoration: BoxDecoration(
-              color: AppColors.primary50,
+              color: badgeBg,
               borderRadius: BorderRadius.circular(rw(context, 20)),
+              border: Border.all(color: borderColor, width: 1),
             ),
             child: Text(
               '$count $label',
               style: TextStyle(
-                fontSize: rfs(context, 12),
+                fontSize: rfs(context, 13),
                 fontWeight: FontWeight.w600,
-                color: AppColors.primary700,
+                color: badgeFg,
               ),
             ),
           ),
@@ -936,9 +954,9 @@ Widget _buildCardField(
   Widget? trailing,
 }) {
   return Row(
-    crossAxisAlignment: CrossAxisAlignment.start,
+    crossAxisAlignment: CrossAxisAlignment.center,
     children: [
-      Icon(icon, size: rw(context, 13), color: Colors.grey.shade400),
+      Icon(icon, size: rw(context, 12), color: Colors.grey.shade400),
       hSpace(context, 5),
       Expanded(
         child: Column(
@@ -947,7 +965,7 @@ Widget _buildCardField(
             Text(
               label,
               style: TextStyle(
-                fontSize: rfs(context, 10),
+                fontSize: rfs(context, 12),
                 color: Colors.grey.shade500,
               ),
             ),
@@ -957,7 +975,7 @@ Widget _buildCardField(
                   child: Text(
                     value,
                     style: TextStyle(
-                      fontSize: rfs(context, 12),
+                      fontSize: rfs(context, 10),
                       fontWeight: FontWeight.w600,
                       color: color ?? Colors.black87,
                     ),
@@ -1070,7 +1088,7 @@ class _ApprovalCard extends StatelessWidget {
                       '${index + 1}',
                       style: TextStyle(
                         color: Colors.white,
-                        fontSize: rfs(context, 11),
+                        fontSize: rfs(context, 12),
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -1081,7 +1099,7 @@ class _ApprovalCard extends StatelessWidget {
                       ticket.agenda ?? '-',
                       style: TextStyle(
                         fontWeight: FontWeight.w700,
-                        fontSize: rfs(context, 14),
+                        fontSize: rfs(context, 16),
                         color: Colors.black87,
                       ),
                       overflow: TextOverflow.ellipsis,
@@ -1103,7 +1121,7 @@ class _ApprovalCard extends StatelessWidget {
                     child: Text(
                       ticket.approvalActorStatus ?? '-',
                       style: TextStyle(
-                        fontSize: rfs(context, 10),
+                        fontSize: rfs(context, 12),
                         fontWeight: FontWeight.w600,
                         color: statusFg,
                       ),
@@ -1290,7 +1308,7 @@ class _ApprovalCard extends StatelessWidget {
                 child: Text(
                   'Disetujui: ${DateFormat('dd MMM yyyy, HH:mm').format(ticket.approvedAt!)}',
                   style: TextStyle(
-                    fontSize: rfs(context, 11),
+                    fontSize: rfs(context, 13),
                     color: const Color(0xFF2E7D32),
                   ),
                 ),
@@ -1363,7 +1381,7 @@ class _RejectedCard extends StatelessWidget {
                       '${index + 1}',
                       style: TextStyle(
                         color: Colors.white,
-                        fontSize: rfs(context, 11),
+                        fontSize: rfs(context, 12),
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -1374,7 +1392,7 @@ class _RejectedCard extends StatelessWidget {
                       ticket.agenda ?? '-',
                       style: TextStyle(
                         fontWeight: FontWeight.w700,
-                        fontSize: rfs(context, 14),
+                        fontSize: rfs(context, 16),
                         color: Colors.black87,
                       ),
                       overflow: TextOverflow.ellipsis,
@@ -1393,7 +1411,7 @@ class _RejectedCard extends StatelessWidget {
                     child: Text(
                       ticket.approvalActorStatus ?? 'Rejected',
                       style: TextStyle(
-                        fontSize: rfs(context, 10),
+                        fontSize: rfs(context, 12),
                         fontWeight: FontWeight.w600,
                         color: Colors.white,
                       ),
@@ -1505,7 +1523,7 @@ class _RejectedCard extends StatelessWidget {
                 child: Text(
                   'Ditolak: ${DateFormat('dd MMM yyyy, HH:mm').format(ticket.approvedAt!)}',
                   style: TextStyle(
-                    fontSize: rfs(context, 11),
+                    fontSize: rfs(context, 13),
                     color: const Color(0xFFC62828),
                     fontWeight: FontWeight.w500,
                   ),
@@ -1520,10 +1538,7 @@ class _RejectedCard extends StatelessWidget {
 }
 
 class VisitorApprovalDialog extends StatefulWidget {
-  const VisitorApprovalDialog({
-    required this.ticket,
-    required this.controller,
-  });
+  const VisitorApprovalDialog({super.key, required this.ticket, required this.controller});
 
   final ApprovalTicketModel ticket;
   final InvitationController controller;
@@ -1661,6 +1676,7 @@ class _VisitorApprovalDialogState extends State<VisitorApprovalDialog> {
       ),
       title: Text(
         'Pilih Visitor untuk Disetujui',
+        textAlign: TextAlign.center,
         style: TextStyle(
           fontSize: rfs(context, 16),
           fontWeight: FontWeight.w800,

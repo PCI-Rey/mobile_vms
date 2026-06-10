@@ -39,13 +39,21 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
-    Future.delayed(const Duration(milliseconds: 150), () {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         _scrollToDate(
           invitationController.selectedDashboardDate.value,
           animate: false,
         );
       }
+      Future.delayed(const Duration(milliseconds: 300), () {
+        if (mounted) {
+          _scrollToDate(
+            invitationController.selectedDashboardDate.value,
+            animate: false,
+          );
+        }
+      });
     });
 
     _dateScrollWorker = ever(invitationController.selectedDashboardDate, (
@@ -77,10 +85,13 @@ class _HomePageState extends State<HomePage> {
 
     final index = date.difference(startDate).inDays;
     if (index >= 0 && index < 1095) {
-      final itemWidth = rw(context, 60) + rw(context, 8);
+      final itemWidth = rw(context, 62) + rw(context, 8);
       final screenWidth = MediaQuery.of(context).size.width;
+      final calendarButtonWidth = rw(context, 46) + rw(context, 12);
+      final parentPadding = rw(context, 24) * 2;
+      final viewportWidth = screenWidth - parentPadding - calendarButtonWidth;
       final targetOffset =
-          (index * itemWidth) - (screenWidth / 2) + (itemWidth / 2);
+          (index * itemWidth) - (viewportWidth / 2) + (itemWidth / 2);
 
       if (_scrollController.hasClients) {
         final maxScroll = _scrollController.position.maxScrollExtent;
@@ -206,12 +217,14 @@ class _HomePageState extends State<HomePage> {
         vertical: rh(context, 8),
       ),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           GestureDetector(
             onTap: () => Get.to(() => const ProfilePage()),
             child: CustomCircleImage(
               image: Assets.images.avaPerson1.image(fit: BoxFit.cover),
               size: rw(context, 48),
+              scale: 1.5,
             ),
           ),
           hSpace(context, 16),
@@ -219,11 +232,12 @@ class _HomePageState extends State<HomePage> {
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(
                   'welcome'.tr,
                   style: TextStyle(
-                    fontSize: rfs(context, 12),
+                    fontSize: rfs(context, 22),
                     color: Colors.white.withValues(alpha: 0.8),
                     fontWeight: FontWeight.w500,
                   ),

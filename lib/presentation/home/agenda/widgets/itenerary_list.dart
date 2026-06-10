@@ -430,7 +430,7 @@ class _IteneraryListState extends State<IteneraryList> {
                       '$no',
                       style: TextStyle(
                         color: Colors.white,
-                        fontSize: rfs(context, 11),
+                        fontSize: rfs(context, 12),
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -441,7 +441,7 @@ class _IteneraryListState extends State<IteneraryList> {
                       ticket.agenda ?? '-',
                       style: TextStyle(
                         fontWeight: FontWeight.w700,
-                        fontSize: rfs(context, 14),
+                        fontSize: rfs(context, 16),
                         color: Colors.black87,
                       ),
                       overflow: TextOverflow.ellipsis,
@@ -465,7 +465,7 @@ class _IteneraryListState extends State<IteneraryList> {
                     child: Text(
                       statusLabel,
                       style: TextStyle(
-                        fontSize: rfs(context, 10),
+                        fontSize: rfs(context, 12),
                         fontWeight: FontWeight.w600,
                         color: statusFg,
                       ),
@@ -643,37 +643,37 @@ class _IteneraryListState extends State<IteneraryList> {
                 ),
               ),
             ] else if (isApproved && ticket.approvedAt != null) ...[
-              Container(height: 1, color: const Color(0xFFF0F0F0)),
-              Padding(
-                padding: EdgeInsets.symmetric(
-                  horizontal: rw(context, 16),
-                  vertical: rh(context, 10),
-                ),
-                child: Text(
-                  'Disetujui: ${DateFormat('dd MMM yyyy, HH:mm').format(ticket.approvedAt!)}',
-                  style: TextStyle(
-                    fontSize: rfs(context, 11),
-                    color: const Color(0xFF2E7D32),
-                  ),
-                ),
-              ),
-            ] else if (isRejected && ticket.approvedAt != null) ...[
-              Container(height: 1, color: const Color(0xFFF0F0F0)),
-              Padding(
-                padding: EdgeInsets.symmetric(
-                  horizontal: rw(context, 16),
-                  vertical: rh(context, 10),
-                ),
-                child: Text(
-                  'Ditolak: ${DateFormat('dd MMM yyyy, HH:mm').format(ticket.approvedAt!)}',
-                  style: TextStyle(
-                    fontSize: rfs(context, 11),
-                    color: const Color(0xFFC62828),
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ),
-            ],
+               Container(height: 1, color: const Color(0xFFF0F0F0)),
+               Padding(
+                 padding: EdgeInsets.symmetric(
+                   horizontal: rw(context, 16),
+                   vertical: rh(context, 10),
+                 ),
+                 child: Text(
+                   'Disetujui: ${DateFormat('dd MMM yyyy, HH:mm').format(ticket.approvedAt!)}',
+                   style: TextStyle(
+                     fontSize: rfs(context, 13),
+                     color: const Color(0xFF2E7D32),
+                   ),
+                 ),
+               ),
+             ] else if (isRejected && ticket.approvedAt != null) ...[
+               Container(height: 1, color: const Color(0xFFF0F0F0)),
+               Padding(
+                 padding: EdgeInsets.symmetric(
+                   horizontal: rw(context, 16),
+                   vertical: rh(context, 10),
+                 ),
+                 child: Text(
+                   'Ditolak: ${DateFormat('dd MMM yyyy, HH:mm').format(ticket.approvedAt!)}',
+                   style: TextStyle(
+                     fontSize: rfs(context, 13),
+                     color: const Color(0xFFC62828),
+                     fontWeight: FontWeight.w500,
+                   ),
+                 ),
+               ),
+             ],
           ],
         ),
       ),
@@ -696,9 +696,9 @@ class _IteneraryListState extends State<IteneraryList> {
     Widget? trailing,
   }) {
     return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        Icon(icon, size: rw(context, 13), color: Colors.grey.shade400),
+        Icon(icon, size: rw(context, 12), color: Colors.grey.shade400),
         hSpace(context, 5),
         Expanded(
           child: Column(
@@ -707,7 +707,7 @@ class _IteneraryListState extends State<IteneraryList> {
               Text(
                 label,
                 style: TextStyle(
-                  fontSize: rfs(context, 10),
+                  fontSize: rfs(context, 12),
                   color: Colors.grey.shade500,
                 ),
               ),
@@ -717,7 +717,7 @@ class _IteneraryListState extends State<IteneraryList> {
                     child: Text(
                       value,
                       style: TextStyle(
-                        fontSize: rfs(context, 12),
+                        fontSize: rfs(context, 10),
                         fontWeight: FontWeight.w600,
                         color: color ?? Colors.black87,
                       ),

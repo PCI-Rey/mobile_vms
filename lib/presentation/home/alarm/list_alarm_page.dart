@@ -10,21 +10,28 @@ import '../../history/widgets/filter_bottom_sheet.dart';
 import 'controller/alarm_controller.dart';
 
 class AlarmListPage extends StatefulWidget {
-  const AlarmListPage({super.key});
+  final int initialTab;
+  const AlarmListPage({super.key, this.initialTab = 0});
 
   @override
   State<AlarmListPage> createState() => _AlarmListPageState();
 }
 
-class _AlarmListPageState extends State<AlarmListPage> {
+class _AlarmListPageState extends State<AlarmListPage> with SingleTickerProviderStateMixin {
   DateTime? startDate;
   DateTime? endDate;
   String? selectedGedung;
   late final AlarmController controller;
+  late TabController _tabController;
 
   @override
   void initState() {
     super.initState();
+    _tabController = TabController(
+      length: 3,
+      vsync: this,
+      initialIndex: widget.initialTab,
+    );
     if (Get.isRegistered<AlarmController>()) {
       controller = Get.find<AlarmController>();
     } else {
@@ -35,138 +42,131 @@ class _AlarmListPageState extends State<AlarmListPage> {
   }
 
   @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.white,
         title: Text(
           'Alarm Alert',
-          style: TextStyle(fontSize: rfs(context, 18)),
+          style: TextStyle(
+            fontSize: rfs(context, 24),
+            fontWeight: FontWeight.w700,
+            color: Colors.black87,
+          ),
         ),
+        centerTitle: true,
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1.0),
           child: Container(color: AppColors.grey300, height: 1.0),
         ),
       ),
-      body: Padding(
-        padding: EdgeInsets.all(rw(context, 20.0)),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Filter Section
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: [
-                  GestureDetector(
-                    onTap: () async {
-                      final result =
-                          await showModalBottomSheet<Map<String, dynamic>>(
-                            context: context,
-                            enableDrag: true,
-                            isDismissible: true,
-                            isScrollControlled: true,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.vertical(
-                                top: Radius.circular(rw(context, 16)),
-                              ),
-                            ),
-                            builder: (context) => const FilterBottomSheet(),
-                          );
-
-                      if (result != null) {
-                        try {
-                          setState(() {
-                            startDate = result['startDate'];
-                            endDate = result['endDate'];
-                            selectedGedung = result['gedung'];
-                          });
-
-                          debugPrint(
-                            'Applying filter - Gedung: $selectedGedung, Start: $startDate, End: $endDate',
-                          );
-
-                          // Apply filter using controller
-                          controller.loadAlarmsWithFilter(
-                            startDate: startDate,
-                            endDate: endDate,
-                            gedung: selectedGedung,
-                          );
-                        } catch (e) {
-                          debugPrint('Error applying filter: $e');
-                          // Fallback to load all alarms
-                          controller.loadAlarms();
-                        }
-                      }
-                    },
-                    child: _buildFilterChip('Filter'),
-                  ),
-
-                  hSpace(context, 10),
-
-                  if (selectedGedung != null)
-                    _buildFilterValueChip(
-                      selectedGedung!,
-                      onClear: () {
-                        setState(() => selectedGedung = null);
-                        _applyFilter();
-                      },
-                    ),
-
-                  hSpace(context, 10),
-
-                  if (startDate != null || endDate != null)
-                    _buildFilterValueChip(
-                      _formatDateRange(startDate, endDate),
-                      onClear: () {
-                        setState(() {
-                          startDate = null;
-                          endDate = null;
-                        });
-                        _applyFilter();
-                      },
-                    ),
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Tab Bar
+          Container(
+              color: Colors.white,
+              child: TabBar(
+                controller: _tabController,
+                labelColor: AppColors.primary600,
+                unselectedLabelColor: Colors.grey.shade500,
+                indicatorColor: AppColors.primary600,
+                indicatorWeight: 2.5,
+                dividerColor: Colors.transparent,
+                labelStyle: TextStyle(
+                  fontSize: rfs(context, 16),
+                  fontWeight: FontWeight.w700,
+                ),
+                unselectedLabelStyle: TextStyle(
+                  fontSize: rfs(context, 16),
+                  fontWeight: FontWeight.w500,
+                ),
+                tabs: const [
+                  Tab(text: 'All'),
+                  Tab(text: 'General'),
+                  Tab(text: 'Alarm'),
                 ],
               ),
             ),
-
-            vSpace(context, 20),
-
-            // Obx for Alarms List
+            
+            // Tab Views
             Expanded(
-              child: Obx(() {
-                if (controller.isLoading.value) {
-                  return Center(
-                    child: Padding(
-                      padding: EdgeInsets.all(rw(context, 20.0)),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const CircularProgressIndicator(),
-                          vSpace(context, 16),
-                          const Text('Memuat alarm...'),
-                        ],
-                      ),
-                    ),
-                  );
-                }
-
-                if (controller.errorMessage.value != null) {
-                  return _buildErrorWidget(
-                    context,
-                    controller.errorMessage.value!,
-                  );
-                }
-
-                final alarms = controller.filteredAlarms;
-
-                return _buildAlarmList(context, alarms);
-              }),
+              child: TabBarView(
+                controller: _tabController,
+                children: [
+                  _buildTabContent(context, 'ALL'),
+                  _buildTabContent(context, 'GENERAL'),
+                  _buildTabContent(context, 'ALARM'),
+                ],
+              ),
             ),
           ],
         ),
-      ),
     );
+  }
+
+  Widget _buildTabContent(BuildContext context, String type) {
+    return Obx(() {
+      if (controller.errorMessage.value != null) {
+        return _buildErrorWidget(context, controller.errorMessage.value!);
+      }
+
+      final sourceAlarms = controller.filteredAlarms;
+      if (sourceAlarms.isEmpty) {
+        return _buildAlarmList(context, []);
+      }
+
+      // Generate dummy data according to requirements
+      List<AlarmModel> alarms = [];
+      if (type == 'GENERAL') {
+        alarms = List.generate(5, (index) {
+          final base = sourceAlarms[index % sourceAlarms.length];
+          return base.copyWith(
+            id: 'gen_$index',
+            alarmDescription: 'General Notification ${index + 1}',
+            status: AlarmStatus.low,
+          );
+        });
+      } else if (type == 'ALARM') {
+        alarms = List.generate(5, (index) {
+          final base = sourceAlarms[index % sourceAlarms.length];
+          return base.copyWith(
+            id: 'alr_$index',
+            alarmDescription: 'Critical Alert ${index + 1}',
+            status: AlarmStatus.high,
+          );
+        });
+      } else {
+        final gen = List.generate(5, (index) {
+          final base = sourceAlarms[index % sourceAlarms.length];
+          return base.copyWith(
+            id: 'all_gen_$index',
+            alarmDescription: 'General Notification ${index + 1}',
+            status: AlarmStatus.low,
+          );
+        });
+        final alr = List.generate(5, (index) {
+          final base = sourceAlarms[index % sourceAlarms.length];
+          return base.copyWith(
+            id: 'all_alr_$index',
+            alarmDescription: 'Critical Alert ${index + 1}',
+            status: AlarmStatus.high,
+          );
+        });
+        alarms = [...gen, ...alr];
+      }
+
+      return Padding(
+        padding: EdgeInsets.symmetric(horizontal: rw(context, 20.0), vertical: rh(context, 16.0)),
+        child: _buildAlarmList(context, alarms),
+      );
+    });
   }
 
   Widget _buildAlarmList(BuildContext context, List<AlarmModel> alarms) {
@@ -235,12 +235,14 @@ class _AlarmListPageState extends State<AlarmListPage> {
         controller.loadAlarms();
       },
       child: ListView.separated(
+        padding: EdgeInsets.zero,
         itemCount: alarms.length,
         separatorBuilder: (context, index) => vSpace(context, 12),
         itemBuilder: (context, index) {
           final alarm = alarms[index];
 
           return AlarmAlertCard(
+            index: index,
             visitorName: alarm.visitorName,
             alarmDescription: alarm.alarmDescription,
             location: alarm.location,
