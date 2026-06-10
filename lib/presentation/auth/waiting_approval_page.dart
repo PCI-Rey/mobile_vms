@@ -149,7 +149,7 @@ class _WaitingApprovalPageState extends State<WaitingApprovalPage>
         child: Column(
           children: [
             Expanded(
-              child: SingleChildScrollView(
+              child: Padding(
                 padding: EdgeInsets.symmetric(
                   horizontal: rw(context, 28),
                   vertical: rh(context, 32),
@@ -295,7 +295,8 @@ class _WaitingApprovalPageState extends State<WaitingApprovalPage>
                       ),
                     ),
 
-                    vSpace(context, 36),
+                    // ── Spacer pushes steps to center ─────────────────
+                    const Spacer(),
 
                     // ── Progress steps (minimal) ─────────────────────
                     _buildMinimalStep(
@@ -326,6 +327,9 @@ class _WaitingApprovalPageState extends State<WaitingApprovalPage>
                       label: 'You can log in again using the code provided',
                       done: false,
                     ),
+
+                    // ── Spacer balances steps in center ───────────────
+                    const Spacer(),
                   ],
                 ),
               ),

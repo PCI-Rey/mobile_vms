@@ -14,7 +14,7 @@ class DetailProfilePage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.white,
-        title: const Text('Akun'),
+        title: const Text('Account'),
         elevation: 0,
         automaticallyImplyLeading: false, // Hapus icon back kiri atas
       ),
@@ -114,22 +114,22 @@ class DetailProfilePage extends StatelessWidget {
                     vSpace(context, 32),
                     CustomTextField(
                       controller: controller.namaController,
-                      label: 'Nama',
+                      label: 'Name',
                       readOnly: true,
-                      hintText: 'Nama Anda',
+                      hintText: 'Your Name',
                       suffixIconData: Icons.edit_outlined,
                     ),
                     CustomTextField(
                       controller: controller.emailController,
                       label: 'Email',
                       readOnly: true,
-                      hintText: 'nama@email.com',
+                      hintText: 'name@email.com',
                       keyboardType: TextInputType.emailAddress,
                       suffixIconData: Icons.edit_outlined,
                     ),
                     CustomTextField(
                       controller: controller.nomorHpController,
-                      label: 'Nomor Handphone',
+                      label: 'Phone Number',
                       readOnly: true,
                       hintText: '0812 3456 7890',
                       keyboardType: TextInputType.phone,
@@ -137,35 +137,35 @@ class DetailProfilePage extends StatelessWidget {
                     ),
                     CustomTextField(
                       controller: controller.alamatController,
-                      label: 'Alamat Rumah',
+                      label: 'Home Address',
                       readOnly: true,
                       hintText: 'Jl. Melati No. 123',
                       suffixIconData: Icons.edit_outlined,
                     ),
                     CustomTextField(
                       controller: controller.districtController,
-                      label: 'Nama Distrik',
+                      label: 'District Name',
                       readOnly: true,
-                      hintText: 'Nama Distrik',
+                      hintText: 'District Name',
                       suffixIconData: Icons.edit_outlined,
                     ),
                     CustomTextField(
                       controller: controller.organisasiController,
-                      label: 'Organisasi',
+                      label: 'Organization',
                       readOnly: true,
                       hintText: 'PT Maju Jaya',
                       suffixIconData: Icons.edit_outlined,
                     ),
                     CustomTextField(
                       controller: controller.departemenController,
-                      label: 'Departemen',
+                      label: 'Department',
                       readOnly: true,
                       hintText: 'IT Support',
                       suffixIconData: Icons.edit_outlined,
                     ),
                     vSpace(context, 16),
                     Text(
-                      'Jenis Kelamin',
+                      'Gender',
                       style: TextStyle(fontSize: rfs(context, 14), fontWeight: FontWeight.w600),
                     ),
                     vSpace(context, 12),
@@ -186,7 +186,7 @@ class DetailProfilePage extends StatelessWidget {
           Padding(
             padding: EdgeInsets.all(rw(context, 20)),
             child: Button.filled(
-              label: 'Kembali',
+              label: 'Back',
               onPressed: () {
                 Get.back();
               },

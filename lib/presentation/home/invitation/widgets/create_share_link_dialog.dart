@@ -407,6 +407,10 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(rw(context, 8)),
                                   ),
+                                  textStyle: TextStyle(
+                                    fontSize: rfs(context, 14),
+                                    fontWeight: FontWeight.w600,
+                                  ),
                                 ),
                                 onPressed: () => _submit(false),
                                 child: const Text(
@@ -427,6 +431,10 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
                                   ),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(rw(context, 8)),
+                                  ),
+                                  textStyle: TextStyle(
+                                    fontSize: rfs(context, 13),
+                                    fontWeight: FontWeight.w600,
                                   ),
                                 ),
                                 onPressed: () => _submit(true),
@@ -937,6 +945,10 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
             vSpace(context, 20),
             TextFormField(
               controller: tempEmailCtrl,
+              keyboardType: TextInputType.emailAddress,
+              textCapitalization: TextCapitalization.none,
+              autocorrect: false,
+              enableSuggestions: false,
               style: TextStyle(fontSize: rfs(context, 14)),
               decoration: InputDecoration(
                 hintText: 'Email',

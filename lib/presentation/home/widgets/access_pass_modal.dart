@@ -9,6 +9,8 @@ import '../../../core/gen/assets.gen.dart';
 
 class AccessPassModal {
   static const _bgPage = Color(0xFFF4F7FB);
+  static const _primaryBlue = Color(0xFF1976D2);
+  static const _darkBlue = Color(0xFF0D47A1);
 
   static void show(BuildContext context, dynamic item) {
     final startStr = DateFormat(
@@ -39,45 +41,65 @@ class AccessPassModal {
               borderRadius: BorderRadius.vertical(
                 top: Radius.circular(rw(context, 28)),
               ),
-              child: SingleChildScrollView(
-                physics: const NeverScrollableScrollPhysics(),
-                child: SafeArea(
-                  top: false,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      // ── Fixed handle + title ──────────────────────────
-                      vSpace(ctx, 12),
-                      Center(
-                        child: Container(
-                          width: rw(ctx, 40),
-                          height: rh(ctx, 4),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // ── Handle ─────────────────────────────────────────
+                  vSpace(ctx, 12),
+                  Center(
+                    child: Container(
+                      width: rw(ctx, 40),
+                      height: rh(ctx, 4),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[300],
+                        borderRadius: BorderRadius.circular(rw(ctx, 2)),
+                      ),
+                    ),
+                  ),
+                  vSpace(ctx, 12),
+
+                  // ── Title Row ─────────────────────────────────────
+                  Padding(
+                    padding: EdgeInsets.symmetric(horizontal: rw(ctx, 20)),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: EdgeInsets.all(rw(ctx, 7)),
                           decoration: BoxDecoration(
-                            color: Colors.grey[300],
-                            borderRadius: BorderRadius.circular(rw(ctx, 2)),
+                            gradient: const LinearGradient(
+                              colors: [_primaryBlue, _darkBlue],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                            borderRadius: BorderRadius.circular(rw(ctx, 8)),
+                          ),
+                          child: Icon(
+                            Icons.badge_outlined,
+                            color: Colors.white,
+                            size: rw(ctx, 16),
                           ),
                         ),
-                      ),
-                      vSpace(ctx, 12),
-                      Padding(
-                        padding: EdgeInsets.symmetric(horizontal: rw(ctx, 20)),
-                        child: Row(
-                          children: [
-                            Text(
-                              'Guest Pass',
-                              style: TextStyle(
-                                fontSize: rfs(ctx, 16),
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            const Spacer(),
-                          ],
+                        hSpace(ctx, 10),
+                        Text(
+                          'Guest Pass',
+                          style: TextStyle(
+                            fontSize: rfs(ctx, 20),
+                            fontWeight: FontWeight.w800,
+                            color: Colors.black87,
+                            letterSpacing: 0.3,
+                          ),
                         ),
-                      ),
-                      vSpace(ctx, 16),
+                        const Spacer(),
+                      ],
+                    ),
+                  ),
+                  vSpace(ctx, 16),
 
-                      // ── Pass Content ───────────────────────────────
-                      Padding(
+                  // ── Scrollable Pass Content ─────────────────────
+                  Flexible(
+                    child: SingleChildScrollView(
+                      physics: const BouncingScrollPhysics(),
+                      child: Padding(
                         padding: EdgeInsets.fromLTRB(
                           rw(ctx, 16),
                           0,
@@ -90,152 +112,325 @@ class AccessPassModal {
                             borderRadius: BorderRadius.circular(rw(ctx, 20)),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.04),
-                                blurRadius: rw(ctx, 12),
+                                color: Colors.black.withValues(alpha: 0.06),
+                                blurRadius: rw(ctx, 16),
                                 offset: Offset(0, rh(ctx, 6)),
                               ),
                             ],
-                            border: Border.all(color: Colors.grey.shade200),
+                            border: Border.all(color: Colors.grey.shade100),
                           ),
                           child: Column(
                             children: [
-                              // Top name + status
-                              Padding(
+                              // ── Gradient Header: Name + Status ──
+                              Container(
+                                decoration: BoxDecoration(
+                                  gradient: const LinearGradient(
+                                    colors: [
+                                      Color(0xFF1976D2),
+                                      Color(0xFF0D47A1),
+                                    ],
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                  ),
+                                  borderRadius: BorderRadius.only(
+                                    topLeft: Radius.circular(rw(ctx, 20)),
+                                    topRight: Radius.circular(rw(ctx, 20)),
+                                  ),
+                                ),
                                 padding: EdgeInsets.fromLTRB(
-                                  rw(ctx, 16),
-                                  rh(ctx, 12),
-                                  rw(ctx, 16),
-                                  rh(ctx, 10),
+                                  rw(ctx, 18),
+                                  rh(ctx, 16),
+                                  rw(ctx, 18),
+                                  rh(ctx, 16),
                                 ),
                                 child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.center,
                                   children: [
                                     Expanded(
                                       child: Column(
                                         crossAxisAlignment:
                                             CrossAxisAlignment.start,
                                         children: [
-                                          Text(
-                                            'VMS',
-                                            style: TextStyle(
-                                              color: Colors.grey.shade500,
-                                              fontSize: rfs(ctx, 10),
-                                              fontWeight: FontWeight.w600,
+                                          Container(
+                                            padding: EdgeInsets.symmetric(
+                                              horizontal: rw(ctx, 8),
+                                              vertical: rh(ctx, 3),
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: Colors.white.withValues(
+                                                alpha: 0.15,
+                                              ),
+                                              borderRadius:
+                                                  BorderRadius.circular(
+                                                    rw(ctx, 20),
+                                                  ),
+                                            ),
+                                            child: Text(
+                                              'VMS',
+                                              style: TextStyle(
+                                                color: Colors.white70,
+                                                fontSize: rfs(ctx, 10),
+                                                fontWeight: FontWeight.w700,
+                                                letterSpacing: 1.5,
+                                              ),
                                             ),
                                           ),
-                                          vSpace(ctx, 2),
+                                          vSpace(ctx, 6),
                                           Text(
                                             (item.visitorName as String)
                                                     .isNotEmpty
                                                 ? item.visitorName
                                                 : UserController.to.fullName,
                                             style: TextStyle(
-                                              color: Colors.black87,
-                                              fontSize: rfs(ctx, 18),
-                                              fontWeight: FontWeight.w700,
+                                              color: Colors.white,
+                                              fontSize: rfs(ctx, 22),
+                                              fontWeight: FontWeight.w800,
+                                              letterSpacing: 0.3,
                                             ),
                                           ),
-                                          Text(
-                                            item.sitePlaceName,
-                                            style: TextStyle(
-                                              color: Colors.grey.shade600,
-                                              fontSize: rfs(ctx, 11),
-                                            ),
+                                          vSpace(ctx, 3),
+                                          Row(
+                                            children: [
+                                              Icon(
+                                                Icons.location_on_outlined,
+                                                size: rw(ctx, 12),
+                                                color: Colors.white60,
+                                              ),
+                                              hSpace(ctx, 3),
+                                              Flexible(
+                                                child: Text(
+                                                  item.sitePlaceName,
+                                                  style: TextStyle(
+                                                    color: Colors.white70,
+                                                    fontSize: rfs(ctx, 13),
+                                                    fontWeight: FontWeight.w500,
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
                                           ),
                                         ],
                                       ),
                                     ),
                                     hSpace(ctx, 12),
-                                    CustomCircleImage(
-                                      image: UserController.to.faceUrl != null
-                                          ? Image.network(
-                                              UserController.to.faceUrl!,
-                                              fit: BoxFit.cover,
-                                              errorBuilder: (_, _, _) => Assets
-                                                  .images
-                                                  .avaPerson1
-                                                  .image(fit: BoxFit.cover),
-                                            )
-                                          : Assets.images.avaPerson1.image(
-                                              fit: BoxFit.cover,
+                                    Column(
+                                      children: [
+                                        Container(
+                                          decoration: BoxDecoration(
+                                            shape: BoxShape.circle,
+                                            border: Border.all(
+                                              color: Colors.white.withValues(
+                                                alpha: 0.5,
+                                              ),
+                                              width: 2.5,
                                             ),
-                                      size: rw(ctx, 48),
-                                      borderWidth: 1.5,
+                                            boxShadow: [
+                                              BoxShadow(
+                                                color: Colors.black.withValues(
+                                                  alpha: 0.2,
+                                                ),
+                                                blurRadius: 8,
+                                              ),
+                                            ],
+                                          ),
+                                          child: CustomCircleImage(
+                                            image: UserController
+                                                        .to.faceUrl !=
+                                                    null
+                                                ? Image.network(
+                                                    UserController.to.faceUrl!,
+                                                    fit: BoxFit.cover,
+                                                    errorBuilder:
+                                                        (_, _, _) => Assets
+                                                            .images
+                                                            .avaPerson1
+                                                            .image(
+                                                              fit: BoxFit.cover,
+                                                            ),
+                                                  )
+                                                : Assets.images.avaPerson1
+                                                    .image(fit: BoxFit.cover),
+                                            size: rw(ctx, 52),
+                                            borderWidth: 0,
+                                          ),
+                                        ),
+                                        vSpace(ctx, 8),
+                                        Container(
+                                          padding: EdgeInsets.symmetric(
+                                            horizontal: rw(ctx, 10),
+                                            vertical: rh(ctx, 4),
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: Colors.white.withValues(
+                                              alpha: 0.2,
+                                            ),
+                                            borderRadius:
+                                                BorderRadius.circular(
+                                                  rw(ctx, 20),
+                                                ),
+                                            border: Border.all(
+                                              color: Colors.white.withValues(
+                                                alpha: 0.4,
+                                              ),
+                                            ),
+                                          ),
+                                          child: Text(
+                                            item.visitorStatus,
+                                            style: TextStyle(
+                                              color: Colors.white,
+                                              fontSize: rfs(ctx, 11),
+                                              fontWeight: FontWeight.w700,
+                                              letterSpacing: 0.5,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
                                     ),
-                                    hSpace(ctx, 6),
-                                    Container(
-                                      padding: EdgeInsets.symmetric(
-                                        horizontal: rw(ctx, 8),
-                                        vertical: rh(ctx, 3),
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: Colors.grey.shade100,
-                                        borderRadius: BorderRadius.circular(
-                                          rw(ctx, 20),
+                                  ],
+                                ),
+                              ),
+
+                              // ── Dashed separator ────────────────────
+                              Row(
+                                children: [
+                                  Container(
+                                    width: rw(ctx, 16),
+                                    height: rh(ctx, 16),
+                                    decoration: BoxDecoration(
+                                      color: _bgPage,
+                                      borderRadius: BorderRadius.only(
+                                        topRight: Radius.circular(rw(ctx, 16)),
+                                        bottomRight: Radius.circular(
+                                          rw(ctx, 16),
                                         ),
-                                        border: Border.all(
-                                          color: Colors.grey.shade300,
+                                      ),
+                                    ),
+                                  ),
+                                  Expanded(
+                                    child: LayoutBuilder(
+                                      builder: (ctx, bc) {
+                                        final dashW = rw(ctx, 6.0);
+                                        final dashSpace = rw(ctx, 4.0);
+                                        final count =
+                                            (bc.maxWidth / (dashW + dashSpace))
+                                                .floor();
+                                        return Row(
+                                          children: List.generate(
+                                            count,
+                                            (_) => Container(
+                                              width: dashW,
+                                              height: rh(ctx, 1.5),
+                                              margin: EdgeInsets.only(
+                                                right: dashSpace,
+                                              ),
+                                              color: Colors.grey.shade300,
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                  ),
+                                  Container(
+                                    width: rw(ctx, 16),
+                                    height: rh(ctx, 16),
+                                    decoration: BoxDecoration(
+                                      color: _bgPage,
+                                      borderRadius: BorderRadius.only(
+                                        topLeft: Radius.circular(rw(ctx, 16)),
+                                        bottomLeft: Radius.circular(
+                                          rw(ctx, 16),
                                         ),
                                       ),
-                                      child: Text(
-                                        item.visitorStatus,
+                                    ),
+                                  ),
+                                ],
+                              ),
+
+                              // ── QR Code Section ─────────────────────
+                              Padding(
+                                padding: EdgeInsets.fromLTRB(
+                                  rw(ctx, 24),
+                                  rh(ctx, 12),
+                                  rw(ctx, 24),
+                                  rh(ctx, 6),
+                                ),
+                                child: Container(
+                                  padding: EdgeInsets.all(rw(ctx, 16)),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(
+                                      rw(ctx, 16),
+                                    ),
+                                    border: Border.all(
+                                      color: Colors.grey.shade200,
+                                    ),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: const Color(
+                                          0xFF1976D2,
+                                        ).withValues(alpha: 0.06),
+                                        blurRadius: 12,
+                                        offset: const Offset(0, 4),
+                                      ),
+                                    ],
+                                  ),
+                                  child: Column(
+                                    children: [
+                                      // QR code with subtle background
+                                      Container(
+                                        padding: EdgeInsets.all(rw(ctx, 8)),
+                                        decoration: BoxDecoration(
+                                          color: Colors.white,
+                                          borderRadius: BorderRadius.circular(
+                                            rw(ctx, 10),
+                                          ),
+                                        ),
+                                        child: QrImageView(
+                                          data: item.visitorNumber,
+                                          version: QrVersions.auto,
+                                          size: rw(ctx, 140),
+                                        ),
+                                      ),
+                                      vSpace(ctx, 10),
+                                      // Visitor number with prominent styling
+                                      Text(
+                                        item.visitorNumber,
                                         style: TextStyle(
-                                          color: Colors.grey.shade800,
-                                          fontSize: rfs(ctx, 10),
-                                          fontWeight: FontWeight.w600,
+                                          fontSize: rfs(ctx, 20),
+                                          fontWeight: FontWeight.w900,
+                                          color: const Color(0xFF1E293B),
+                                          letterSpacing: 2.5,
                                         ),
                                       ),
-                                    ),
-                                  ],
+                                      vSpace(ctx, 4),
+                                      Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        children: [
+                                          Icon(
+                                            Icons.info_outline,
+                                            size: rw(ctx, 11),
+                                            color: Colors.grey.shade400,
+                                          ),
+                                          hSpace(ctx, 4),
+                                          Text(
+                                            'Show this code to the officer',
+                                            style: TextStyle(
+                                              fontSize: rfs(ctx, 11),
+                                              color: Colors.grey.shade500,
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               ),
 
-                              // Barcode card
-                              Container(
-                                margin: EdgeInsets.symmetric(
-                                  horizontal: rw(ctx, 16),
-                                ),
-                                padding: EdgeInsets.all(rw(ctx, 10)),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFF8FAFC),
-                                  borderRadius: BorderRadius.circular(
-                                    rw(ctx, 12),
-                                  ),
-                                  border: Border.all(
-                                    color: Colors.grey.shade200,
-                                  ),
-                                ),
-                                child: Column(
-                                  children: [
-                                    QrImageView(
-                                      data: item.visitorNumber,
-                                      version: QrVersions.auto,
-                                      size: rw(ctx, 150),
-                                    ),
-                                    vSpace(ctx, 6),
-                                    Text(
-                                      item.visitorNumber,
-                                      style: TextStyle(
-                                        fontSize: rfs(ctx, 15),
-                                        fontWeight: FontWeight.w800,
-                                        color: const Color(0xFF1E293B),
-                                        letterSpacing: 1.5,
-                                      ),
-                                    ),
-                                    vSpace(ctx, 2),
-                                    Text(
-                                      'Tunjukkan kode ini ke petugas',
-                                      style: TextStyle(
-                                        fontSize: rfs(ctx, 10),
-                                        color: Colors.grey,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
+                              vSpace(ctx, 12),
 
-                              vSpace(ctx, 10),
-
-                              // Info tiles
+                              // ── Info tiles ──────────────────────────
                               Padding(
                                 padding: EdgeInsets.fromLTRB(
                                   rw(ctx, 16),
@@ -245,26 +440,30 @@ class AccessPassModal {
                                 ),
                                 child: Column(
                                   children: [
-                                    AccessPassModal.buildInfoTile(
+                                    // Invitation Code — full width
+                                    _buildInfoTile(
                                       ctx,
                                       Icons.vpn_key_outlined,
                                       'Invitation Code',
                                       item.invitationCode,
+                                      highlight: true,
                                     ),
-                                    vSpace(ctx, 6),
+                                    vSpace(ctx, 8),
+
+                                    // Host + Agenda
                                     Row(
                                       children: [
                                         Expanded(
-                                          child: AccessPassModal.buildInfoTile(
+                                          child: _buildInfoTile(
                                             ctx,
                                             Icons.person_outline,
                                             'Host',
                                             item.hostName,
                                           ),
                                         ),
-                                        hSpace(ctx, 6),
+                                        hSpace(ctx, 8),
                                         Expanded(
-                                          child: AccessPassModal.buildInfoTile(
+                                          child: _buildInfoTile(
                                             ctx,
                                             Icons.event_note_outlined,
                                             'Agenda',
@@ -273,18 +472,22 @@ class AccessPassModal {
                                         ),
                                       ],
                                     ),
-                                    vSpace(ctx, 6),
-                                    AccessPassModal.buildInfoTile(
+                                    vSpace(ctx, 8),
+
+                                    // Visit Period — full width
+                                    _buildInfoTile(
                                       ctx,
                                       Icons.calendar_today_outlined,
                                       'Visit Period',
                                       '$startStr\n$endStr',
                                     ),
-                                    vSpace(ctx, 6),
+                                    vSpace(ctx, 8),
+
+                                    // Parking Area + Parking Slot
                                     Row(
                                       children: [
                                         Expanded(
-                                          child: AccessPassModal.buildInfoTile(
+                                          child: _buildInfoTile(
                                             ctx,
                                             Icons.local_parking_outlined,
                                             'Parking Area',
@@ -296,9 +499,9 @@ class AccessPassModal {
                                                 : item.parkingArea,
                                           ),
                                         ),
-                                        hSpace(ctx, 6),
+                                        hSpace(ctx, 8),
                                         Expanded(
-                                          child: AccessPassModal.buildInfoTile(
+                                          child: _buildInfoTile(
                                             ctx,
                                             Icons.crop_free_outlined,
                                             'Parking Slot',
@@ -312,11 +515,13 @@ class AccessPassModal {
                                         ),
                                       ],
                                     ),
-                                    vSpace(ctx, 6),
+                                    vSpace(ctx, 8),
+
+                                    // Vehicle Type + Plate Number
                                     Row(
                                       children: [
                                         Expanded(
-                                          child: AccessPassModal.buildInfoTile(
+                                          child: _buildInfoTile(
                                             ctx,
                                             Icons.directions_car_outlined,
                                             'Vehicle Type',
@@ -336,7 +541,8 @@ class AccessPassModal {
                                               return cleaned
                                                   .split(' ')
                                                   .map((word) {
-                                                    if (word.isEmpty) return '';
+                                                    if (word.isEmpty)
+                                                      return '';
                                                     return word[0]
                                                             .toUpperCase() +
                                                         word.substring(1);
@@ -345,9 +551,9 @@ class AccessPassModal {
                                             })(),
                                           ),
                                         ),
-                                        hSpace(ctx, 6),
+                                        hSpace(ctx, 8),
                                         Expanded(
-                                          child: AccessPassModal.buildInfoTile(
+                                          child: _buildInfoTile(
                                             ctx,
                                             Icons.badge_outlined,
                                             'Plate Number',
@@ -367,100 +573,95 @@ class AccessPassModal {
                                   ],
                                 ),
                               ),
-                              vSpace(ctx, rh(ctx, 16)),
+                              vSpace(ctx, rh(ctx, 20)),
                             ],
                           ),
                         ),
                       ),
-
-                      // ── Open Parking Blocker Button ────────────────
-                      Padding(
-                        padding: EdgeInsets.fromLTRB(
-                          rw(ctx, 16),
-                          0,
-                          rw(ctx, 16),
-                          rh(ctx, 8),
-                        ),
-                        child: SizedBox(
-                          width: double.infinity,
-                          height: rh(ctx, 46),
-                          child: ElevatedButton.icon(
-                            onPressed: () {
-                              Get.snackbar(
-                                'Success',
-                                'Parking blocker opened successfully',
-                                backgroundColor: Colors.green,
-                                colorText: Colors.white,
-                              );
-                            },
-                            icon: const Icon(
-                              Icons.local_parking,
-                              color: Colors.white,
-                              size: 20,
-                            ),
-                            label: Text(
-                              'Open Parking Blocker',
-                              style: TextStyle(
-                                fontSize: rfs(ctx, 13),
-                                fontWeight: FontWeight.w800,
-                                letterSpacing: 1.2,
-                                color: Colors.white,
-                              ),
-                            ),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(
-                                0xFF1976D2,
-                              ), // Accent Blue
-                              elevation: 0,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(
-                                  rw(ctx, 12),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-
-                      // ── Bottom Close Button ────────────────────────
-                      Padding(
-                        padding: EdgeInsets.fromLTRB(
-                          rw(ctx, 16),
-                          0,
-                          rw(ctx, 16),
-                          rh(ctx, 12),
-                        ),
-                        child: SizedBox(
-                          width: double.infinity,
-                          height: rh(ctx, 46),
-                          child: ElevatedButton(
-                            onPressed: () => Navigator.pop(ctx),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.white,
-                              foregroundColor: Colors.black87,
-                              elevation: 0,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(
-                                  rw(ctx, 12),
-                                ),
-                                side: BorderSide(color: Colors.grey.shade300),
-                              ),
-                            ),
-                            child: Text(
-                              'CLOSE',
-                              style: TextStyle(
-                                fontSize: rfs(ctx, 13),
-                                fontWeight: FontWeight.w800,
-                                letterSpacing: 1.5,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                      vSpace(ctx, rh(ctx, 12)),
-                    ],
+                    ),
                   ),
-                ),
+
+                  // ── Open Parking Blocker Button ──────────────────
+                  Padding(
+                    padding: EdgeInsets.fromLTRB(
+                      rw(ctx, 16),
+                      0,
+                      rw(ctx, 16),
+                      rh(ctx, 8),
+                    ),
+                    child: SizedBox(
+                      width: double.infinity,
+                      height: rh(ctx, 50),
+                      child: ElevatedButton.icon(
+                        onPressed: () {
+                          Get.snackbar(
+                            'Success',
+                            'Parking blocker opened successfully',
+                            backgroundColor: Colors.green,
+                            colorText: Colors.white,
+                          );
+                        },
+                        icon: const Icon(
+                          Icons.local_parking,
+                          color: Colors.white,
+                          size: 20,
+                        ),
+                        label: Text(
+                          'Open Parking Blocker',
+                          style: TextStyle(
+                            fontSize: rfs(ctx, 14),
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 1.2,
+                            color: Colors.white,
+                          ),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: _primaryBlue,
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(rw(ctx, 14)),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  // ── Close Button ─────────────────────────────────
+                  Padding(
+                    padding: EdgeInsets.fromLTRB(
+                      rw(ctx, 16),
+                      0,
+                      rw(ctx, 16),
+                      rh(ctx, 12),
+                    ),
+                    child: SizedBox(
+                      width: double.infinity,
+                      height: rh(ctx, 46),
+                      child: ElevatedButton(
+                        onPressed: () => Navigator.pop(ctx),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white,
+                          foregroundColor: Colors.black87,
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(rw(ctx, 14)),
+                            side: BorderSide(color: Colors.grey.shade300),
+                          ),
+                        ),
+                        child: Text(
+                          'CLOSE',
+                          style: TextStyle(
+                            fontSize: rfs(ctx, 13),
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 2.0,
+                            color: Colors.black54,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  vSpace(ctx, rh(ctx, 12)),
+                ],
               ),
             ),
           ),
@@ -469,53 +670,83 @@ class AccessPassModal {
     );
   }
 
-  static Widget buildInfoTile(
+  static Widget _buildInfoTile(
     BuildContext context,
     IconData icon,
     String label,
-    String value,
-  ) {
+    String value, {
+    bool highlight = false,
+  }) {
     return Container(
       width: double.infinity,
       padding: EdgeInsets.symmetric(
-        horizontal: rw(context, 12),
-        vertical: rh(context, 10),
+        horizontal: rw(context, 14),
+        vertical: rh(context, 12),
       ),
       decoration: BoxDecoration(
-        color: const Color(0xFFF1F5F9), // Slate 100
+        color: highlight
+            ? const Color(0xFFEEF4FF)
+            : const Color(0xFFF8FAFC),
         borderRadius: BorderRadius.circular(rw(context, 12)),
-        border: Border.all(color: Colors.grey.shade200),
+        border: Border.all(
+          color: highlight
+              ? const Color(0xFFBDD0F7)
+              : Colors.grey.shade200,
+        ),
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
+          // Label row
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(icon, size: rfs(context, 11), color: Colors.grey.shade600),
-              hSpace(context, 4),
+              Icon(
+                icon,
+                size: rfs(context, 12),
+                color: highlight
+                    ? const Color(0xFF1976D2)
+                    : Colors.grey.shade500,
+              ),
+              hSpace(context, 5),
               Text(
                 label.toUpperCase(),
                 style: TextStyle(
-                  fontSize: rfs(context, 9),
-                  color: Colors.grey.shade600,
+                  fontSize: rfs(context, 10),
+                  color: highlight
+                      ? const Color(0xFF1976D2)
+                      : Colors.grey.shade500,
                   letterSpacing: 1.2,
                   fontWeight: FontWeight.w700,
                 ),
               ),
             ],
           ),
-          vSpace(context, 4),
+          vSpace(context, 6),
+          // Value
           Text(
             value,
             textAlign: TextAlign.center,
             style: TextStyle(
-              fontSize: rfs(context, 14),
+              fontSize: rfs(context, 15),
               fontWeight: FontWeight.w800,
-              color: Colors.black87,
+              color: highlight
+                  ? const Color(0xFF0D47A1)
+                  : const Color(0xFF1E293B),
+              letterSpacing: highlight ? 1.0 : 0.2,
             ),
           ),
         ],
       ),
     );
   }
+
+  /// Public alias kept for backward compatibility.
+  static Widget buildInfoTile(
+    BuildContext context,
+    IconData icon,
+    String label,
+    String value,
+  ) =>
+      _buildInfoTile(context, icon, label, value);
 }

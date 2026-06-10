@@ -18,7 +18,7 @@ class GenderToggleButton extends StatelessWidget {
       children: [
         _genderButton(
           icon: Icons.male,
-          label: 'Laki-laki',
+          label: 'Male',
           selected: selectedGender == Gender.male,
           onTap: () => onChanged(Gender.male),
           selectedBorderColor: Colors.blue,
@@ -27,7 +27,7 @@ class GenderToggleButton extends StatelessWidget {
         const SizedBox(width: 12),
         _genderButton(
           icon: Icons.female,
-          label: 'Perempuan',
+          label: 'Female',
           selected: selectedGender == Gender.female,
           onTap: () => onChanged(Gender.female),
           selectedBorderColor: Colors.pink,

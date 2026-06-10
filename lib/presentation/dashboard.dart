@@ -384,7 +384,7 @@ class _DashboardState extends State<Dashboard>
                       end: 0.5,
                     ).animate(_expandAnimation),
                     child: Icon(
-                      _expandAnimation.value > 0.5 ? Icons.close : Icons.link,
+                      _expandAnimation.value > 0.5 ? Icons.close : Icons.add_link,
                       color: Colors.white,
                       size: 28,
                     ),

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../presentation/auth/controller/user_controller.dart';
 import '../../presentation/auth/login_page.dart';
-import '../../presentation/profile/profile_detail_page.dart';
 import 'profile_dummy_pages.dart';
 import '../../core/helper/responsive_helper.dart';
 import '../../core/core.dart';
@@ -131,18 +130,6 @@ class ProfilePage extends StatelessWidget {
               child: Column(
                 children: [
                   TileMenu(
-                    icon: Icon(
-                      Icons.person,
-                      color: Colors.white,
-                      size: rw(context, 25),
-                    ),
-                    label: 'account'.tr,
-                    onTap: () {
-                      context.push(DetailProfilePage());
-                    },
-                  ),
-                  vSpace(context, 12),
-                  TileMenu(
                     icon: Icon(Icons.lock, color: Colors.white, size: rw(context, 25)),
                     label: 'security'.tr,
                     onTap: () {
@@ -156,7 +143,7 @@ class ProfilePage extends StatelessWidget {
                       color: Colors.white,
                       size: rw(context, 25),
                     ),
-                    label: 'Pemberitahuan'.tr,
+                    label: 'Notification',
                     onTap: () {
                       context.push(const PemberitahuanPage());
                     },
@@ -192,7 +179,7 @@ class ProfilePage extends StatelessWidget {
             const Spacer(),
 
             Text(
-              'Versi 1.0.0',
+              'Version 1.0.0',
               style: TextStyle(color: Colors.grey, fontSize: rfs(context, 12)),
             ),
             vSpace(context, 8),

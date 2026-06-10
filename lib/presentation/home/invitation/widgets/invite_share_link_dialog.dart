@@ -84,10 +84,9 @@ class _InviteShareLinkDialogState extends State<InviteShareLinkDialog>
 
     try {
       final String id = widget.item['id']?.toString() ?? '';
-      final success = await controller.sendEmailForExistingShareLinkAction(
-        id,
-        [_emailController.text.trim()],
-      );
+      final success = await controller.sendEmailForExistingShareLinkAction(id, [
+        _emailController.text.trim(),
+      ]);
 
       if (success) {
         Get.snackbar(
@@ -129,7 +128,9 @@ class _InviteShareLinkDialogState extends State<InviteShareLinkDialog>
     final int expiredNumber = widget.item['expired_number'] ?? -1;
     final bool isNoExpired = expiredNumber == 0;
 
-    final String shortenUrl = (widget.item['shorten_url'] ?? '').toString().trim();
+    final String shortenUrl = (widget.item['shorten_url'] ?? '')
+        .toString()
+        .trim();
     final String url = (shortenUrl.isNotEmpty && shortenUrl != 'null')
         ? shortenUrl
         : (widget.item['url'] ?? '').toString().trim();
@@ -208,6 +209,12 @@ class _InviteShareLinkDialogState extends State<InviteShareLinkDialog>
                 labelStyle: TextStyle(
                   fontWeight: FontWeight.w700,
                   fontSize: rfs(context, 14),
+                  letterSpacing: 0,
+                ),
+                unselectedLabelStyle: TextStyle(
+                  fontWeight: FontWeight.w500,
+                  fontSize: rfs(context, 14),
+                  letterSpacing: 0,
                 ),
                 tabs: const [
                   Tab(text: 'Invite Via Link'),
@@ -392,8 +399,9 @@ class _InviteShareLinkDialogState extends State<InviteShareLinkDialog>
           child: ElevatedButton(
             onPressed: () {
               final String agenda = widget.item['agenda'] ?? '-';
-              final String visitorTypeId = widget.item['visitor_type_id']?.toString() ?? '';
-              
+              final String visitorTypeId =
+                  widget.item['visitor_type_id']?.toString() ?? '';
+
               String visitorTypeName = '-';
               if (visitorTypeId.isNotEmpty) {
                 try {
@@ -401,7 +409,8 @@ class _InviteShareLinkDialogState extends State<InviteShareLinkDialog>
                     (v) => v['id'].toString() == visitorTypeId,
                     orElse: () => <String, dynamic>{},
                   );
-                  visitorTypeName = type['name'] ?? type['visitor_type_name'] ?? '-';
+                  visitorTypeName =
+                      type['name'] ?? type['visitor_type_name'] ?? '-';
                 } catch (_) {
                   visitorTypeName = '-';
                 }
@@ -421,10 +430,15 @@ class _InviteShareLinkDialogState extends State<InviteShareLinkDialog>
                 }
               }
 
-              final String start = formatDateTime(widget.item['visitor_period_start']);
-              final String end = formatDateTime(widget.item['visitor_period_end']);
+              final String start = formatDateTime(
+                widget.item['visitor_period_start'],
+              );
+              final String end = formatDateTime(
+                widget.item['visitor_period_end'],
+              );
 
-              final String shareText = "*Agenda* : $agenda\n"
+              final String shareText =
+                  "*Agenda* : $agenda\n"
                   "*Visitor Type* : $visitorTypeName\n"
                   "*Start* : $start - $end\n"
                   "*Link Expired* : $expire\n\n"
@@ -445,6 +459,11 @@ class _InviteShareLinkDialogState extends State<InviteShareLinkDialog>
               elevation: 0,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(rw(context, 10)),
+              ),
+              textStyle: TextStyle(
+                fontSize: rfs(context, 15),
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0,
               ),
             ),
             child: Text(
@@ -483,6 +502,10 @@ class _InviteShareLinkDialogState extends State<InviteShareLinkDialog>
         TextField(
           controller: _emailController,
           enabled: !_isLoading,
+          keyboardType: TextInputType.emailAddress,
+          textCapitalization: TextCapitalization.none,
+          autocorrect: false,
+          enableSuggestions: false,
           style: TextStyle(fontSize: rfs(context, 14)),
           decoration: InputDecoration(
             hintText: 'Input your email',
@@ -616,6 +639,11 @@ class _InviteShareLinkDialogState extends State<InviteShareLinkDialog>
               elevation: 0,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(rw(context, 10)),
+              ),
+              textStyle: TextStyle(
+                fontSize: rfs(context, 15),
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0,
               ),
             ),
             child: _isLoading

@@ -350,7 +350,13 @@ class _IteneraryListState extends State<IteneraryList> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(rw(context, 12)),
-        border: Border.all(color: Colors.grey.shade200),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.06),
+            blurRadius: rw(context, 10),
+            offset: Offset(0, rh(context, 3)),
+          ),
+        ],
       ),
       child: SingleChildScrollView(
         physics: const NeverScrollableScrollPhysics(),

@@ -24,7 +24,7 @@ class _SecurityPageState extends State<SecurityPage> {
       backgroundColor: const Color(0xFFF8FAFF),
       appBar: AppBar(
         backgroundColor: Colors.white,
-        title: const Text('Keamanan'),
+        title: const Text('Security'),
         elevation: 0,
         centerTitle: true,
       ),
@@ -34,20 +34,20 @@ class _SecurityPageState extends State<SecurityPage> {
             child: ListView(
               padding: EdgeInsets.all(rw(context, 20)),
               children: [
-                _buildSectionHeader('Autentikasi'),
+                _buildSectionHeader('Authentication'),
                 _buildMenuItem(
                   icon: Icons.key_outlined,
-                  title: 'Ubah Kata Sandi',
-                  subtitle: 'Perbarui kata sandi Anda secara berkala',
+                  title: 'Change Password',
+                  subtitle: 'Update your password regularly',
                   onTap: () {
-                    Get.snackbar('Info', 'Fitur Ubah Kata Sandi');
+                    Get.snackbar('Info', 'Change Password Feature');
                   },
                 ),
                 vSpace(context, 12),
                 _buildSwitchItem(
                   icon: Icons.security_outlined,
-                  title: 'Autentikasi 2 Faktor (2FA)',
-                  subtitle: 'Amankan akun Anda dengan verifikasi tambahan',
+                  title: '2-Factor Authentication (2FA)',
+                  subtitle: 'Secure your account with additional verification',
                   value: _twoFactor,
                   onChanged: (val) {
                     setState(() => _twoFactor = val);
@@ -56,26 +56,26 @@ class _SecurityPageState extends State<SecurityPage> {
                 vSpace(context, 12),
                 _buildSwitchItem(
                   icon: Icons.fingerprint_outlined,
-                  title: 'Sidik Jari / Face ID',
-                  subtitle: 'Masuk lebih cepat menggunakan biometrik',
+                  title: 'Fingerprint / Face ID',
+                  subtitle: 'Sign in faster using biometrics',
                   value: _biometric,
                   onChanged: (val) {
                     setState(() => _biometric = val);
                   },
                 ),
                 vSpace(context, 24),
-                _buildSectionHeader('Aktivitas Login'),
+                _buildSectionHeader('Login Activity'),
                 _buildMenuItem(
                   icon: Icons.devices_outlined,
-                  title: 'Perangkat Terhubung',
-                  subtitle: 'Kelola perangkat yang sedang login',
+                  title: 'Connected Devices',
+                  subtitle: 'Manage devices currently logged in',
                   onTap: () {},
                 ),
                 vSpace(context, 12),
                 _buildMenuItem(
                   icon: Icons.history_outlined,
-                  title: 'Riwayat Aktivitas',
-                  subtitle: 'Lihat aktivitas masuk terakhir Anda',
+                  title: 'Activity History',
+                  subtitle: 'View your recent login activity',
                   onTap: () {},
                 ),
               ],
@@ -84,7 +84,7 @@ class _SecurityPageState extends State<SecurityPage> {
           Padding(
             padding: EdgeInsets.all(rw(context, 20)),
             child: Button.filled(
-              label: 'Kembali',
+              label: 'Back',
               onPressed: () => Get.back(),
             ),
           ),
@@ -197,7 +197,7 @@ class _PemberitahuanPageState extends State<PemberitahuanPage> {
       backgroundColor: const Color(0xFFF8FAFF),
       appBar: AppBar(
         backgroundColor: Colors.white,
-        title: const Text('Pemberitahuan'),
+        title: const Text('Notifications'),
         elevation: 0,
         centerTitle: true,
       ),
@@ -207,11 +207,11 @@ class _PemberitahuanPageState extends State<PemberitahuanPage> {
             child: ListView(
               padding: EdgeInsets.all(rw(context, 20)),
               children: [
-                _buildSectionHeader('Saluran Notifikasi'),
+                _buildSectionHeader('Notification Channels'),
                 _buildSwitchItem(
                   icon: Icons.notifications_active_outlined,
-                  title: 'Notifikasi Push',
-                  subtitle: 'Terima notifikasi instan di perangkat Anda',
+                  title: 'Push Notifications',
+                  subtitle: 'Receive instant notifications on your device',
                   value: _pushNotifications,
                   onChanged: (val) {
                     setState(() => _pushNotifications = val);
@@ -220,8 +220,8 @@ class _PemberitahuanPageState extends State<PemberitahuanPage> {
                 vSpace(context, 12),
                 _buildSwitchItem(
                   icon: Icons.email_outlined,
-                  title: 'Notifikasi Email',
-                  subtitle: 'Terima laporan dan pemberitahuan lewat email',
+                  title: 'Email Notifications',
+                  subtitle: 'Receive reports and alerts via email',
                   value: _emailNotifications,
                   onChanged: (val) {
                     setState(() => _emailNotifications = val);
@@ -230,19 +230,19 @@ class _PemberitahuanPageState extends State<PemberitahuanPage> {
                 vSpace(context, 12),
                 _buildSwitchItem(
                   icon: Icons.sms_outlined,
-                  title: 'Pemberitahuan SMS',
-                  subtitle: 'Kirim info darurat ke nomor seluler Anda',
+                  title: 'SMS Notifications',
+                  subtitle: 'Send urgent info to your mobile number',
                   value: _smsNotifications,
                   onChanged: (val) {
                     setState(() => _smsNotifications = val);
                   },
                 ),
                 vSpace(context, 24),
-                _buildSectionHeader('Kategori Alert'),
+                _buildSectionHeader('Alert Categories'),
                 _buildSwitchItem(
                   icon: Icons.warning_amber_outlined,
-                  title: 'Alarm & Peringatan',
-                  subtitle: 'Peringatan ketika ada pelanggaran area/status',
+                  title: 'Alarms & Warnings',
+                  subtitle: 'Alerts when there is an area/status violation',
                   value: _alarmAlerts,
                   onChanged: (val) {
                     setState(() => _alarmAlerts = val);
@@ -251,8 +251,8 @@ class _PemberitahuanPageState extends State<PemberitahuanPage> {
                 vSpace(context, 12),
                 _buildSwitchItem(
                   icon: Icons.check_circle_outline,
-                  title: 'Pemberitahuan Approval',
-                  subtitle: 'Notifikasi saat permintaan kunjungan disetujui',
+                  title: 'Approval Notifications',
+                  subtitle: 'Notified when a visit request is approved',
                   value: _approvalNotifs,
                   onChanged: (val) {
                     setState(() => _approvalNotifs = val);
@@ -264,7 +264,7 @@ class _PemberitahuanPageState extends State<PemberitahuanPage> {
           Padding(
             padding: EdgeInsets.all(rw(context, 20)),
             child: Button.filled(
-              label: 'Kembali',
+              label: 'Back',
               onPressed: () => Get.back(),
             ),
           ),
@@ -345,26 +345,26 @@ class HelpCenterPage extends StatelessWidget {
             child: ListView(
               padding: EdgeInsets.all(rw(context, 20)),
               children: [
-                _buildSectionHeader(context, 'Pertanyaan Populer (FAQ)'),
+                _buildSectionHeader(context, 'Popular Questions (FAQ)'),
                 _buildFaqItem(
                   context,
-                  'Bagaimana cara mengundang tamu?',
-                  'Buka halaman utama, pilih menu Send Invitation, pilih tab Invitation dan klik tombol tambah (+). Isi data tamu kemudian klik kirim.',
+                  'How do I invite a guest?',
+                  'Open the main page, select the Send Invitation menu, choose the Invitation tab, and tap the add (+) button. Fill in the guest details and tap send.',
                 ),
                 vSpace(context, 12),
                 _buildFaqItem(
                   context,
-                  'Bagaimana cara merespon Alarm Alert?',
-                  'Ketika ada alarm berbunyi, ketuk notifikasi alarm atau buka menu Alarm Alert, lalu Anda dapat menyetujui (Approve) atau menolak (Deny) alarm tersebut.',
+                  'How do I respond to an Alarm Alert?',
+                  'When an alarm sounds, tap the alarm notification or open the Alarm Alert menu, then you can Approve or Deny the alarm.',
                 ),
                 vSpace(context, 12),
                 _buildFaqItem(
                   context,
-                  'Mengapa barcode tamu tidak bisa dipindai?',
-                  'Pastikan layar ponsel tamu cukup terang atau barcode belum melewati masa kedaluwarsa (expired).',
+                  'Why can\'t the guest barcode be scanned?',
+                  'Make sure the guest\'s phone screen is bright enough and the barcode has not passed its expiration date.',
                 ),
                 vSpace(context, 24),
-                _buildSectionHeader(context, 'Butuh Bantuan Lain?'),
+                _buildSectionHeader(context, 'Need More Help?'),
                 Container(
                   padding: EdgeInsets.all(rw(context, 16)),
                   decoration: BoxDecoration(
@@ -388,8 +388,8 @@ class HelpCenterPage extends StatelessWidget {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: const [
-                                Text('Hubungi Customer Service', style: TextStyle(fontWeight: FontWeight.bold)),
-                                Text('Aktif 24/7 untuk membantu Anda', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                                Text('Contact Customer Service', style: TextStyle(fontWeight: FontWeight.bold)),
+                                Text('Available 24/7 to help you', style: TextStyle(fontSize: 12, color: Colors.grey)),
                               ],
                             ),
                           ),
@@ -397,10 +397,10 @@ class HelpCenterPage extends StatelessWidget {
                       ),
                       vSpace(context, 16),
                       Button.filled(
-                        label: 'Hubungi Support',
+                        label: 'Contact Support',
                         height: rh(context, 40),
                         onPressed: () {
-                          Get.snackbar('Support', 'Menghubungi Tim Support...');
+                          Get.snackbar('Support', 'Contacting Support Team...');
                         },
                       ),
                     ],
@@ -412,7 +412,7 @@ class HelpCenterPage extends StatelessWidget {
           Padding(
             padding: EdgeInsets.all(rw(context, 20)),
             child: Button.filled(
-              label: 'Kembali',
+              label: 'Back',
               onPressed: () => Get.back(),
             ),
           ),
@@ -480,7 +480,7 @@ class BarcodePage extends StatelessWidget {
       backgroundColor: const Color(0xFFF8FAFF),
       appBar: AppBar(
         backgroundColor: Colors.white,
-        title: const Text('Barcode / QR Tamu'),
+        title: const Text('Barcode / QR Code'),
         elevation: 0,
         centerTitle: true,
       ),
@@ -542,7 +542,7 @@ class BarcodePage extends StatelessWidget {
                         ),
                         vSpace(context, 24),
                         Text(
-                          'ID PERANGKAT: EMP-${user?.id ?? '12345'}',
+                          'DEVICE ID: EMP-${user?.id ?? '12345'}',
                           style: TextStyle(
                             fontSize: rfs(context, 12),
                             fontWeight: FontWeight.bold,
@@ -559,7 +559,7 @@ class BarcodePage extends StatelessWidget {
                             hSpace(context, 8),
                             const Expanded(
                               child: Text(
-                                'Gunakan QR Code ini untuk akses masuk ke gerbang turnstile kantor.',
+                                'Use this QR Code to access the office turnstile gate.',
                                 style: TextStyle(fontSize: 12, color: Colors.grey),
                               ),
                             ),
@@ -575,7 +575,7 @@ class BarcodePage extends StatelessWidget {
           Padding(
             padding: EdgeInsets.all(rw(context, 20)),
             child: Button.filled(
-              label: 'Kembali',
+              label: 'Back',
               onPressed: () => Get.back(),
             ),
           ),
