@@ -29,7 +29,7 @@ class AccessPassModal {
       builder: (ctx) {
         final double topPadding = MediaQuery.of(ctx).padding.top;
         return Padding(
-          padding: EdgeInsets.only(top: topPadding + 16),
+          padding: EdgeInsets.only(top: topPadding + 60),
           child: Container(
             decoration: BoxDecoration(
               color: _bgPage,
@@ -188,22 +188,23 @@ class AccessPassModal {
                                               letterSpacing: 0.3,
                                             ),
                                           ),
-                                          vSpace(ctx, 3),
+                                          vSpace(ctx, 4),
                                           Row(
+                                            crossAxisAlignment: CrossAxisAlignment.center,
                                             children: [
                                               Icon(
                                                 Icons.location_on_outlined,
-                                                size: rw(ctx, 12),
+                                                size: rw(ctx, 15),
                                                 color: Colors.white60,
                                               ),
-                                              hSpace(ctx, 3),
+                                              hSpace(ctx, 4),
                                               Flexible(
                                                 child: Text(
                                                   item.sitePlaceName,
                                                   style: TextStyle(
                                                     color: Colors.white70,
-                                                    fontSize: rfs(ctx, 13),
-                                                    fontWeight: FontWeight.w500,
+                                                    fontSize: rfs(ctx, 15),
+                                                    fontWeight: FontWeight.w600,
                                                   ),
                                                 ),
                                               ),
