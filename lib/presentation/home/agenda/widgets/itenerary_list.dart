@@ -124,51 +124,6 @@ class _IteneraryListState extends State<IteneraryList> {
     );
   }
 
-  bool _checkNeedApproval(ApprovalTicketModel ticket) {
-    if (ticket.needApproval != null) {
-      return ticket.needApproval!;
-    }
-    final sitesList = controller.sites;
-    if (sitesList.isEmpty) return true;
-
-    for (var s in sitesList) {
-      if (ticket.siteId != null && ticket.siteId!.isNotEmpty) {
-        if (s['id']?.toString().toLowerCase() == ticket.siteId!.toLowerCase()) {
-          return s['need_approval'] == true;
-        }
-      }
-      if (ticket.siteName != null && ticket.siteName!.isNotEmpty) {
-        if (s['name']?.toString().toLowerCase() ==
-            ticket.siteName!.toLowerCase()) {
-          return s['need_approval'] == true;
-        }
-      }
-      if (ticket.approverUserId != null && ticket.approverUserId!.isNotEmpty) {
-        if (s['host']?.toString().toLowerCase() ==
-                ticket.approverUserId!.toLowerCase() ||
-            s['Employee']?['id']?.toString().toLowerCase() ==
-                ticket.approverUserId!.toLowerCase()) {
-          return s['need_approval'] == true;
-        }
-      }
-      if (ticket.hostOrganizationName != null &&
-          ticket.hostOrganizationName!.isNotEmpty) {
-        if (s['name']?.toString().toLowerCase() ==
-                ticket.hostOrganizationName!.toLowerCase() ||
-            s['Employee']?['Organization']?['name']?.toString().toLowerCase() ==
-                ticket.hostOrganizationName!.toLowerCase()) {
-          return s['need_approval'] == true;
-        }
-      }
-      if (ticket.hostName != null && ticket.hostName!.isNotEmpty) {
-        if (s['Employee']?['name']?.toString().toLowerCase() ==
-            ticket.hostName!.toLowerCase()) {
-          return s['need_approval'] == true;
-        }
-      }
-    }
-    return true;
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -247,10 +202,10 @@ class _IteneraryListState extends State<IteneraryList> {
               ticket.approvalStatus?.toLowerCase() == 'rejected' ||
               ticket.approvalStatus?.toLowerCase() == 'denied';
 
-          final needsApproval = isPending && _checkNeedApproval(ticket);
+          final needsApproval = isPending;
 
           if (needsApproval) {
-            carouselHeight = 325.0;
+            carouselHeight = 270.0;
           } else if ((isApproved || isRejected) && ticket.approvedAt != null) {
             carouselHeight = 235.0;
           } else {
@@ -367,7 +322,7 @@ class _IteneraryListState extends State<IteneraryList> {
         ticket.approvalStatus?.toLowerCase() == 'rejected' ||
         ticket.approvalStatus?.toLowerCase() == 'denied';
 
-    final needsApproval = isPending && _checkNeedApproval(ticket);
+    final needsApproval = isPending;
 
     Color statusBg;
     Color statusFg;
@@ -395,13 +350,7 @@ class _IteneraryListState extends State<IteneraryList> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(rw(context, 12)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.06),
-            blurRadius: rw(context, 10),
-            offset: Offset(0, rh(context, 3)),
-          ),
-        ],
+        border: Border.all(color: Colors.grey.shade200),
       ),
       child: SingleChildScrollView(
         physics: const NeverScrollableScrollPhysics(),
@@ -603,7 +552,7 @@ class _IteneraryListState extends State<IteneraryList> {
                           ),
                         ),
                         child: Text(
-                          'Tolak',
+                          'Reject',
                           style: TextStyle(
                             fontSize: rfs(context, 13),
                             fontWeight: FontWeight.w700,
@@ -631,7 +580,7 @@ class _IteneraryListState extends State<IteneraryList> {
                           ),
                         ),
                         child: Text(
-                          'Setujui',
+                          'Approve',
                           style: TextStyle(
                             fontSize: rfs(context, 13),
                             fontWeight: FontWeight.w700,

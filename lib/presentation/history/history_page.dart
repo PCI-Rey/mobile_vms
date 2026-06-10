@@ -51,12 +51,10 @@ class _HistoryPageState extends State<HistoryPage> {
     );
   }
 
-
-
   Widget _buildHistoryContent() {
     final dummyData = [
       {
-        'agenda': 'Kunjungan',
+        'agenda': 'Visit',
         'status': 'Completed',
         'visitorType': 'Visitor (DKUT)',
         'host': 'Endru',

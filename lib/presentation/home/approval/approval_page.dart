@@ -1257,7 +1257,7 @@ class _ApprovalCard extends StatelessWidget {
                           ),
                         ),
                         child: Text(
-                          'Tolak',
+                          'Reject',
                           style: TextStyle(
                             fontSize: rfs(context, 13),
                             fontWeight: FontWeight.w700,
@@ -1285,7 +1285,7 @@ class _ApprovalCard extends StatelessWidget {
                           ),
                         ),
                         child: Text(
-                          'Setujui',
+                          'Approve',
                           style: TextStyle(
                             fontSize: rfs(context, 13),
                             fontWeight: FontWeight.w700,
@@ -1805,7 +1805,7 @@ class _VisitorApprovalDialogState extends State<VisitorApprovalDialog> {
             elevation: 0,
           ),
           child: Text(
-            'Setujui',
+            'Approve',
             style: TextStyle(
               fontSize: rfs(context, 13),
               fontWeight: FontWeight.w700,

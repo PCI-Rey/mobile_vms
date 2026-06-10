@@ -408,7 +408,7 @@ class _HomePageState extends State<HomePage> {
             parkingSlot: 'Slot A1',
             buildingName: 'Gedung HQ',
             visitorId: '7E20A56D62B',
-            profileImagePath: 'assets/images/ava_person1.png',
+            profileImagePath: 'assets/images/Endru.png',
             isTracked: true,
             isLowBattery: true,
           ),

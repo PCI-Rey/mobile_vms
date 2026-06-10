@@ -1195,16 +1195,23 @@ class _InvitationDetailSheetState extends State<_InvitationDetailSheet> {
   }
 
   Color _statusColor(String status) {
-    switch (status.toLowerCase()) {
+    switch (status.toLowerCase().trim()) {
       case 'checkin':
+      case 'approved':
+      case 'approve':
+      case 'success':
         return const Color(0xFF00897B);
       case 'checkout':
         return const Color(0xFF3949AB);
       case 'available':
         return const Color(0xFF8E24AA);
       case 'waiting':
+      case 'pending':
         return const Color(0xFFFB8C00);
       case 'denied':
+      case 'deny':
+      case 'rejected':
+      case 'reject':
         return const Color(0xFFE53935);
       case 'quickaccess':
         return const Color(0xFFD81B60);
@@ -1716,7 +1723,9 @@ class _InvitationDetailSheetState extends State<_InvitationDetailSheet> {
                                       fontSize: rfs(context, 12),
                                       fontWeight: FontWeight.w600,
                                       color: f.isCode
-                                          ? const Color(0xFF005596)
+                                          ? (isExpired
+                                              ? Colors.grey.shade400
+                                              : const Color(0xFF005596))
                                           : Colors.black87,
                                     ),
                                     textAlign: TextAlign.end,
@@ -1759,8 +1768,8 @@ class _InvitationDetailSheetState extends State<_InvitationDetailSheet> {
                                       Icons.copy,
                                       size: rw(context, 14),
                                       color: isExpired
-                                          ? Colors.grey.shade300
-                                          : Colors.grey.shade400,
+                                          ? Colors.grey.shade400
+                                          : const Color(0xFF005596),
                                     ),
                                   ),
                                 ],

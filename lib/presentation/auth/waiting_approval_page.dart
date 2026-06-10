@@ -7,7 +7,6 @@ import '../dashboard.dart';
 import 'controller/user_controller.dart';
 import '../home/controllers/guest_home_controller.dart';
 import '../../core/services/notification_service.dart';
-import '../../data/datasources/hive_service.dart';
 import 'verification_code_page.dart';
 
 class WaitingApprovalPage extends StatefulWidget {
@@ -29,10 +28,6 @@ class _WaitingApprovalPageState extends State<WaitingApprovalPage>
   final AuthDatasource _authDatasource = AuthDatasource();
   final RxBool _isChecking = false.obs;
   final RxBool _isApproved = false.obs;
-
-  // Flag: true kalau form sudah disimpan/selesai (minimize atau approved)
-  // Kalau false saat dispose(), auto-save ke Hive
-  bool _alreadySavedOrDone = false;
 
   late final AnimationController _animationController;
   late final AnimationController _pulseController;
@@ -67,53 +62,13 @@ class _WaitingApprovalPageState extends State<WaitingApprovalPage>
 
   @override
   void dispose() {
-    // Auto-save ke Hive kalau form belum disimpan (e.g. back button / Get.offAll)
-    if (!_alreadySavedOrDone) {
-      _autoSaveToHive();
-    }
     _animationController.dispose();
     _pulseController.dispose();
     _successController.dispose();
     super.dispose();
   }
 
-  /// Simpan form ke Hive secara sinkron (dipanggil dari dispose)
-  void _autoSaveToHive() {
-    final hive = HiveService();
-    final forms = hive.getMinimizedForms();
-    final index = forms.indexWhere((e) => e['code'] == widget.invitationCode);
-    final entry = {
-      'code': widget.invitationCode,
-      'message': widget.message,
-      'timestamp': DateTime.now().millisecondsSinceEpoch,
-    };
-    if (index >= 0) {
-      forms[index] = entry;
-    } else {
-      forms.add(entry);
-    }
-    // Gunakan fire-and-forget, dispose() tidak bisa await
-    hive.saveMinimizedForms(forms);
-  }
-
-  Future<void> _minimizeForm() async {
-    _alreadySavedOrDone = true; // Tandai sudah disimpan manual
-    final hive = HiveService();
-    final forms = hive.getMinimizedForms();
-
-    final index = forms.indexWhere((e) => e['code'] == widget.invitationCode);
-    if (index >= 0) {
-      forms[index]['message'] = widget.message;
-      forms[index]['timestamp'] = DateTime.now().millisecondsSinceEpoch;
-    } else {
-      forms.add({
-        'code': widget.invitationCode,
-        'message': widget.message,
-        'timestamp': DateTime.now().millisecondsSinceEpoch,
-      });
-    }
-
-    await hive.saveMinimizedForms(forms);
+  void _closePage() {
     Get.offAll(() => const VerificationCodePage());
   }
 
@@ -128,7 +83,6 @@ class _WaitingApprovalPageState extends State<WaitingApprovalPage>
         // Trigger success animations and redirecting button state
         _animationController.stop();
         _isApproved.value = true;
-        _alreadySavedOrDone = true; // Tandai sudah selesai (approved)
         _pulseController.repeat(reverse: true);
         _successController.forward();
 
@@ -365,6 +319,13 @@ class _WaitingApprovalPageState extends State<WaitingApprovalPage>
                       label: 'Decision notification via email',
                       done: false,
                     ),
+                    _buildStepDivider(context),
+                    _buildMinimalStep(
+                      context,
+                      number: '4',
+                      label: 'You can log in again using the code provided',
+                      done: false,
+                    ),
                   ],
                 ),
               ),
@@ -459,15 +420,15 @@ class _WaitingApprovalPageState extends State<WaitingApprovalPage>
 
                   vSpace(context, 8),
 
-                  // Minimize button
+                  // Close button
                   TextButton(
-                    onPressed: _minimizeForm,
+                    onPressed: _closePage,
                     style: TextButton.styleFrom(
                       foregroundColor: const Color(0xFF94A3B8),
                       minimumSize: Size(double.infinity, rh(context, 44)),
                     ),
                     child: Text(
-                      'Minimize',
+                      'Close',
                       style: TextStyle(
                         fontSize: rfs(context, 13.5),
                         fontWeight: FontWeight.w600,
