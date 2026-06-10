@@ -29,7 +29,7 @@ class GuestHeader extends StatelessWidget {
                           Assets.images.avaPerson1.image(fit: BoxFit.cover),
                     )
                   : Assets.images.avaPerson1.image(fit: BoxFit.cover),
-              size: rw(context, 44),
+              size: rw(context, 48),
             ),
           ),
           hSpace(context, 12),
@@ -40,17 +40,21 @@ class GuestHeader extends StatelessWidget {
                 Text(
                   'welcome'.tr,
                   style: TextStyle(
-                    fontSize: rfs(context, 12),
-                    color: Colors.white70,
+                    fontSize: rfs(context, 22),
+                    color: Colors.white.withValues(alpha: 0.8),
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
                 Obx(
                   () => Text(
                     userCtrl.fullName,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: TextStyle(
-                      fontSize: rfs(context, 17),
-                      fontWeight: FontWeight.w600,
+                      fontSize: rfs(context, 18),
+                      fontWeight: FontWeight.w800,
                       color: Colors.white,
+                      letterSpacing: -0.5,
                     ),
                   ),
                 ),
