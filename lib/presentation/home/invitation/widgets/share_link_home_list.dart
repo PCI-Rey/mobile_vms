@@ -184,6 +184,9 @@ class _ShareLinkHomeListState extends State<ShareLinkHomeList> {
             height: rh(context, 220), // Height for the card and shadow
             child: PageView.builder(
               controller: _pageController,
+              physics: list.length <= 1
+                  ? const NeverScrollableScrollPhysics()
+                  : const BouncingScrollPhysics(),
               onPageChanged: (int index) {
                 _currentPage.value = index;
               },

@@ -1,4 +1,4 @@
-import 'package:date_picker_timeline/date_picker_widget.dart';
+import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../core/helper/responsive_helper.dart';
@@ -31,7 +31,8 @@ class _HomePageState extends State<HomePage> {
       ? Get.find<InvitationController>()
       : Get.put(InvitationController());
 
-  final DatePickerController _datePickerController = DatePickerController();
+  final ScrollController _scrollController = ScrollController();
+  bool _isSelectingFromCalendar = false;
 
   Worker? _dateScrollWorker;
 
@@ -40,24 +41,62 @@ class _HomePageState extends State<HomePage> {
     super.initState();
     Future.delayed(const Duration(milliseconds: 150), () {
       if (mounted) {
-        _datePickerController.animateToDate(invitationController.selectedDashboardDate.value);
+        _scrollToDate(
+          invitationController.selectedDashboardDate.value,
+          animate: false,
+        );
       }
     });
 
-    _dateScrollWorker = ever(invitationController.selectedDashboardDate, (date) {
-      Future.delayed(const Duration(milliseconds: 150), () {
-        if (mounted) {
-          _datePickerController.setDateAndAnimate(date);
-          setState(() {});
+    _dateScrollWorker = ever(invitationController.selectedDashboardDate, (
+      date,
+    ) {
+      if (mounted) {
+        if (_isSelectingFromCalendar) {
+          _isSelectingFromCalendar = false;
+          _scrollToDate(date, animate: true);
         }
-      });
+        setState(() {});
+      }
     });
   }
 
   @override
   void dispose() {
     _dateScrollWorker?.dispose();
+    _scrollController.dispose();
     super.dispose();
+  }
+
+  void _scrollToDate(DateTime date, {bool animate = true}) {
+    final startDate = DateTime(
+      DateTime.now().year,
+      DateTime.now().month,
+      DateTime.now().day,
+    ).subtract(const Duration(days: 60));
+
+    final index = date.difference(startDate).inDays;
+    if (index >= 0 && index < 1095) {
+      final itemWidth = rw(context, 60) + rw(context, 8);
+      final screenWidth = MediaQuery.of(context).size.width;
+      final targetOffset =
+          (index * itemWidth) - (screenWidth / 2) + (itemWidth / 2);
+
+      if (_scrollController.hasClients) {
+        final maxScroll = _scrollController.position.maxScrollExtent;
+        final clampedOffset = targetOffset.clamp(0.0, maxScroll);
+
+        if (animate) {
+          _scrollController.animateTo(
+            clampedOffset,
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeInOut,
+          );
+        } else {
+          _scrollController.jumpTo(clampedOffset);
+        }
+      }
+    }
   }
 
   Future<void> _selectDateFromCalendar(BuildContext context) async {
@@ -82,9 +121,10 @@ class _HomePageState extends State<HomePage> {
     if (picked != null) {
       final normalized = DateTime(picked.year, picked.month, picked.day);
       if (normalized != invitationController.selectedDashboardDate.value) {
+        _isSelectingFromCalendar = true;
         invitationController.selectedDashboardDate.value = normalized;
       } else {
-        _datePickerController.setDateAndAnimate(normalized);
+        _scrollToDate(normalized, animate: true);
         setState(() {});
       }
     }
@@ -161,7 +201,10 @@ class _HomePageState extends State<HomePage> {
 
   Widget _buildHeader(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.symmetric(horizontal: rw(context, 24), vertical: rh(context, 8)),
+      padding: EdgeInsets.symmetric(
+        horizontal: rw(context, 24),
+        vertical: rh(context, 8),
+      ),
       child: Row(
         children: [
           GestureDetector(
@@ -259,7 +302,10 @@ class _HomePageState extends State<HomePage> {
           borderRadius: BorderRadius.circular(rw(context, 20)),
           color: Colors.white.withValues(alpha: 0.18),
         ),
-        padding: EdgeInsets.symmetric(horizontal: rw(context, 10), vertical: rh(context, 2)),
+        padding: EdgeInsets.symmetric(
+          horizontal: rw(context, 10),
+          vertical: rh(context, 2),
+        ),
         child: DropdownButtonHideUnderline(
           child: DropdownButton<String>(
             value: isId ? 'id' : 'en',
@@ -383,7 +429,7 @@ class _HomePageState extends State<HomePage> {
           horizontal: rw(context, 8),
         ),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: const Color(0xFFF5F7FB),
           borderRadius: BorderRadius.circular(rw(context, 28)),
           boxShadow: [
             BoxShadow(
@@ -395,20 +441,14 @@ class _HomePageState extends State<HomePage> {
         ),
         child: Row(
           children: items
-              .map(
-                (item) =>
-                    Expanded(child: _buildMenuItem(context, item)),
-              )
+              .map((item) => Expanded(child: _buildMenuItem(context, item)))
               .toList(),
         ),
       );
     });
   }
 
-  Widget _buildMenuItem(
-    BuildContext context,
-    Map<String, dynamic> item,
-  ) {
+  Widget _buildMenuItem(BuildContext context, Map<String, dynamic> item) {
     final boxSize = rw(context, 54);
     final iconSize = rw(context, 26);
 
@@ -434,7 +474,7 @@ class _HomePageState extends State<HomePage> {
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: TextStyle(
-              fontSize: rfs(context, 10.5),
+              fontSize: rfs(context, 12),
               fontWeight: FontWeight.w700,
               color: const Color(0xFF444441),
               letterSpacing: -0.3,
@@ -449,8 +489,10 @@ class _HomePageState extends State<HomePage> {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        color: _bgPage,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(rw(context, 36))),
+        color: const Color(0xFFF5F7FB),
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(rw(context, 36)),
+        ),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.03),
@@ -459,73 +501,60 @@ class _HomePageState extends State<HomePage> {
           ),
         ],
       ),
-      padding: EdgeInsets.fromLTRB(rw(context, 24), rh(context, 32), rw(context, 24), rh(context, 40)),
+      padding: EdgeInsets.fromLTRB(
+        rw(context, 24),
+        rh(context, 32),
+        rw(context, 24),
+        rh(context, 40),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // 1. Date Selection (Moved to the very top)
           Obx(() {
-            debugPrint("BUILD DatePicker: date=${invitationController.selectedDashboardDate.value}");
+            debugPrint(
+              "BUILD DatePicker: date=${invitationController.selectedDashboardDate.value}",
+            );
             return Row(
               children: [
                 Expanded(
-                  child: DatePicker(
-                    DateTime(
+                  child: HorizontalDatePicker(
+                    startDate: DateTime(
                       DateTime.now().year,
                       DateTime.now().month,
                       DateTime.now().day,
                     ).subtract(const Duration(days: 60)),
-                    key: const ValueKey('timeline_date_picker'),
-                    controller: _datePickerController,
-                    initialSelectedDate: invitationController.selectedDashboardDate.value,
-                  daysCount: 1095,
-                  selectionColor: AppColors.primary500,
-                  selectedTextColor: Colors.white,
-                  deactivatedColor: Colors.grey.shade400,
-                  dayTextStyle: TextStyle(
-                    fontSize: rfs(context, 11),
-                    fontWeight: FontWeight.w600,
-                  ),
-                  dateTextStyle: TextStyle(
-                    fontSize: rfs(context, 16),
-                    fontWeight: FontWeight.w800,
-                  ),
-                  monthTextStyle: TextStyle(
-                    fontSize: rfs(context, 10),
-                    fontWeight: FontWeight.w500,
-                  ),
-                  onDateChange: (date) {
-                    invitationController.selectedDashboardDate.value = DateTime(
-                      date.year,
-                      date.month,
-                      date.day,
-                    );
-                  },
-                ),
-              ),
-              hSpace(context, 12),
-              GestureDetector(
-                onTap: () => _selectDateFromCalendar(context),
-                child: Container(
-                  padding: EdgeInsets.all(rw(context, 12)),
-                  decoration: BoxDecoration(
-                    color: AppColors.primary50,
-                    borderRadius: BorderRadius.circular(rw(context, 12)),
-                    border: Border.all(color: AppColors.primary100),
-                  ),
-                  child: Icon(
-                    Icons.calendar_month_outlined,
-                    color: AppColors.primary500,
-                    size: rw(context, 22),
+                    daysCount: 1095,
+                    selectedDate:
+                        invitationController.selectedDashboardDate.value,
+                    scrollController: _scrollController,
+                    onDateChange: (date) {
+                      invitationController.selectedDashboardDate.value =
+                          DateTime(date.year, date.month, date.day);
+                    },
                   ),
                 ),
-              ),
-            ],
-          );
-        }),
+                hSpace(context, 12),
+                GestureDetector(
+                  onTap: () => _selectDateFromCalendar(context),
+                  child: Container(
+                    padding: EdgeInsets.all(rw(context, 12)),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary50,
+                      borderRadius: BorderRadius.circular(rw(context, 12)),
+                      border: Border.all(color: AppColors.primary100),
+                    ),
+                    child: Icon(
+                      Icons.calendar_month_outlined,
+                      color: AppColors.primary500,
+                      size: rw(context, 22),
+                    ),
+                  ),
+                ),
+              ],
+            );
+          }),
 
-          vSpace(context, 24),
-          const Divider(height: 1, color: Color(0xFFF0F0F0)),
           vSpace(context, 24),
 
           // 2. Section Header: Approval
@@ -535,8 +564,6 @@ class _HomePageState extends State<HomePage> {
           // 3. Approval Data List
           const IteneraryList(),
 
-          vSpace(context, 24),
-          const Divider(height: 1, color: Color(0xFFF0F0F0)),
           vSpace(context, 24),
 
           // 4. Section Header: Share Link
@@ -572,7 +599,7 @@ class _HomePageState extends State<HomePage> {
         Text(
           title,
           style: TextStyle(
-            fontSize: rfs(context, 17),
+            fontSize: rfs(context, 18),
             fontWeight: FontWeight.w900,
             color: Colors.black87,
             letterSpacing: -0.5,
@@ -589,11 +616,136 @@ class _HomePageState extends State<HomePage> {
                 borderRadius: BorderRadius.circular(rw(context, 8)),
                 border: Border.all(color: AppColors.grey300),
               ),
-              child: Icon(Icons.link, color: AppColors.grey600, size: rw(context, 20)),
+              child: Icon(
+                Icons.link,
+                color: AppColors.grey600,
+                size: rw(context, 20),
+              ),
             ),
           ),
         ],
       ],
+    );
+  }
+}
+
+class HorizontalDatePicker extends StatelessWidget {
+  final DateTime startDate;
+  final int daysCount;
+  final DateTime selectedDate;
+  final ValueChanged<DateTime> onDateChange;
+  final ScrollController scrollController;
+
+  const HorizontalDatePicker({
+    super.key,
+    required this.startDate,
+    required this.daysCount,
+    required this.selectedDate,
+    required this.onDateChange,
+    required this.scrollController,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: rh(context, 84),
+      child: ListView.builder(
+        controller: scrollController,
+        scrollDirection: Axis.horizontal,
+        itemCount: daysCount,
+        physics: const BouncingScrollPhysics(),
+        itemBuilder: (context, index) {
+          final date = startDate.add(Duration(days: index));
+          final isSelected = DateUtils.isSameDay(date, selectedDate);
+          final isToday = DateUtils.isSameDay(date, DateTime.now());
+
+          return GestureDetector(
+            onTap: () => onDateChange(date),
+            child: Container(
+              width: rw(context, 62),
+              margin: EdgeInsets.symmetric(horizontal: rw(context, 4)),
+              decoration: BoxDecoration(
+                color: isSelected ? AppColors.primary500 : Colors.white,
+                borderRadius: BorderRadius.circular(rw(context, 12)),
+                border: isSelected
+                    ? null
+                    : (isToday
+                          ? Border.all(color: AppColors.primary500, width: 1.5)
+                          : Border.all(color: Colors.grey.shade200, width: 1)),
+                boxShadow: isSelected
+                    ? [
+                        BoxShadow(
+                          color: AppColors.primary500.withValues(alpha: 0.3),
+                          blurRadius: rw(context, 8),
+                          offset: Offset(0, rh(context, 3)),
+                        ),
+                      ]
+                    : [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.02),
+                          blurRadius: rw(context, 4),
+                          offset: Offset(0, rh(context, 2)),
+                        ),
+                      ],
+              ),
+              child: Padding(
+                padding: EdgeInsets.symmetric(vertical: rh(context, 8)),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          DateFormat("MMM").format(date).toUpperCase(),
+                          style: TextStyle(
+                            fontSize: rfs(context, 10),
+                            fontWeight: FontWeight.w600,
+                            color: isSelected
+                                ? Colors.white
+                                : Colors.grey.shade500,
+                          ),
+                        ),
+                        if (isToday) ...[
+                          hSpace(context, 4),
+                          Container(
+                            width: rw(context, 5),
+                            height: rw(context, 5),
+                            decoration: BoxDecoration(
+                              color: isSelected
+                                  ? Colors.white
+                                  : AppColors.primary500,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                    Text(
+                      date.day.toString(),
+                      style: TextStyle(
+                        fontSize: rfs(context, 16),
+                        fontWeight: FontWeight.w800,
+                        color: isSelected ? Colors.white : Colors.black87,
+                      ),
+                    ),
+                    Text(
+                      DateFormat("E").format(date).toUpperCase(),
+                      style: TextStyle(
+                        fontSize: rfs(context, 9),
+                        fontWeight: FontWeight.w600,
+                        color: isSelected
+                            ? Colors.white
+                            : Colors.grey.shade500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
+      ),
     );
   }
 }

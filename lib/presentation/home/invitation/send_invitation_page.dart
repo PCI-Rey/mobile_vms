@@ -498,7 +498,7 @@ class _SendInvitationPageState extends State<SendInvitationPage>
                                           '${index + 1}',
                                           style: TextStyle(
                                             color: Colors.white,
-                                            fontSize: rfs(context, 11),
+                                            fontSize: rfs(context, 12),
                                             fontWeight: FontWeight.bold,
                                           ),
                                         ),
@@ -509,7 +509,7 @@ class _SendInvitationPageState extends State<SendInvitationPage>
                                           item.visitorName,
                                           style: TextStyle(
                                             fontWeight: FontWeight.w700,
-                                            fontSize: rfs(context, 14),
+                                            fontSize: rfs(context, 16),
                                             color: Colors.black87,
                                           ),
                                           overflow: TextOverflow.ellipsis,
@@ -538,7 +538,7 @@ class _SendInvitationPageState extends State<SendInvitationPage>
                                         child: Text(
                                           jenis,
                                           style: TextStyle(
-                                            fontSize: rfs(context, 10),
+                                            fontSize: rfs(context, 12),
                                             fontWeight: FontWeight.w600,
                                             color: jenisColor,
                                           ),
@@ -562,7 +562,7 @@ class _SendInvitationPageState extends State<SendInvitationPage>
                                         child: Text(
                                           isExpired ? 'Expired' : 'Active',
                                           style: TextStyle(
-                                            fontSize: rfs(context, 10),
+                                            fontSize: rfs(context, 12),
                                             fontWeight: FontWeight.w600,
                                             color: Colors.white,
                                           ),
@@ -874,7 +874,7 @@ class _SendInvitationPageState extends State<SendInvitationPage>
                                           '${index + 1}',
                                           style: TextStyle(
                                             color: Colors.white,
-                                            fontSize: rfs(context, 11),
+                                            fontSize: rfs(context, 12),
                                             fontWeight: FontWeight.bold,
                                           ),
                                         ),
@@ -885,7 +885,7 @@ class _SendInvitationPageState extends State<SendInvitationPage>
                                           item.visitorName,
                                           style: TextStyle(
                                             fontWeight: FontWeight.w700,
-                                            fontSize: rfs(context, 14),
+                                            fontSize: rfs(context, 16),
                                             color: Colors.black87,
                                           ),
                                           overflow: TextOverflow.ellipsis,
@@ -908,7 +908,7 @@ class _SendInvitationPageState extends State<SendInvitationPage>
                                         child: Text(
                                           isExpired ? 'Expired' : 'Active',
                                           style: TextStyle(
-                                            fontSize: rfs(context, 10),
+                                            fontSize: rfs(context, 12),
                                             fontWeight: FontWeight.w600,
                                             color: Colors.white,
                                           ),
@@ -1021,9 +1021,9 @@ class _SendInvitationPageState extends State<SendInvitationPage>
     Widget? trailing,
   }) {
     return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        Icon(icon, size: rw(context, 13), color: Colors.grey.shade400),
+        Icon(icon, size: rw(context, 12), color: Colors.grey.shade400),
         hSpace(context, 5),
         Expanded(
           child: Column(
@@ -1032,7 +1032,7 @@ class _SendInvitationPageState extends State<SendInvitationPage>
               Text(
                 label,
                 style: TextStyle(
-                  fontSize: rfs(context, 10),
+                  fontSize: rfs(context, 12),
                   color: Colors.grey.shade500,
                 ),
               ),
@@ -1042,7 +1042,7 @@ class _SendInvitationPageState extends State<SendInvitationPage>
                     child: Text(
                       value,
                       style: TextStyle(
-                        fontSize: rfs(context, 12),
+                        fontSize: rfs(context, 10),
                         fontWeight: FontWeight.w600,
                         color: color ?? Colors.black87,
                       ),
@@ -1295,7 +1295,7 @@ class _InvitationDetailSheetState extends State<_InvitationDetailSheet> {
                       child: Text(
                         isExpired ? 'Expired' : 'Active',
                         style: TextStyle(
-                          fontSize: rfs(context, 11),
+                          fontSize: rfs(context, 12),
                           fontWeight: FontWeight.w700,
                           color: Colors.white,
                         ),
@@ -1477,7 +1477,7 @@ class _InvitationDetailSheetState extends State<_InvitationDetailSheet> {
                                     Text(
                                       'Start',
                                       style: TextStyle(
-                                        fontSize: rfs(context, 11),
+                                        fontSize: rfs(context, 12),
                                         color: Colors.grey.shade500,
                                       ),
                                     ),
@@ -1489,7 +1489,7 @@ class _InvitationDetailSheetState extends State<_InvitationDetailSheet> {
                                     'dd MMM yyyy',
                                   ).format(item.visitorPeriodStart),
                                   style: TextStyle(
-                                    fontSize: rfs(context, 13),
+                                    fontSize: rfs(context, 12),
                                     fontWeight: FontWeight.w700,
                                     color: Colors.black87,
                                   ),
@@ -1530,7 +1530,7 @@ class _InvitationDetailSheetState extends State<_InvitationDetailSheet> {
                                       Text(
                                         'End',
                                         style: TextStyle(
-                                          fontSize: rfs(context, 11),
+                                          fontSize: rfs(context, 12),
                                           color: Colors.grey.shade500,
                                         ),
                                       ),
@@ -1542,7 +1542,7 @@ class _InvitationDetailSheetState extends State<_InvitationDetailSheet> {
                                       'dd MMM yyyy',
                                     ).format(item.visitorPeriodEnd),
                                     style: TextStyle(
-                                      fontSize: rfs(context, 13),
+                                      fontSize: rfs(context, 12),
                                       fontWeight: FontWeight.w700,
                                       color: isExpired
                                           ? Colors.red.shade600
@@ -1628,7 +1628,7 @@ class _InvitationDetailSheetState extends State<_InvitationDetailSheet> {
             title,
             style: TextStyle(
               fontWeight: FontWeight.w700,
-              fontSize: rfs(context, 13),
+              fontSize: rfs(context, 14),
               color: Colors.black87,
             ),
           ),
@@ -1698,7 +1698,7 @@ class _InvitationDetailSheetState extends State<_InvitationDetailSheet> {
                                   child: Text(
                                     f.value,
                                     style: TextStyle(
-                                      fontSize: rfs(context, 11),
+                                      fontSize: rfs(context, 12),
                                       fontWeight: FontWeight.w600,
                                       color: Colors.white,
                                     ),
@@ -1713,7 +1713,7 @@ class _InvitationDetailSheetState extends State<_InvitationDetailSheet> {
                                   child: Text(
                                     f.value,
                                     style: TextStyle(
-                                      fontSize: rfs(context, 13),
+                                      fontSize: rfs(context, 12),
                                       fontWeight: FontWeight.w600,
                                       color: f.isCode
                                           ? const Color(0xFF005596)
@@ -1831,7 +1831,7 @@ class _SheetFieldRow extends StatelessWidget {
               value,
               textAlign: TextAlign.end,
               style: TextStyle(
-                fontSize: rfs(ctx, 13),
+                fontSize: rfs(ctx, 12),
                 fontWeight: FontWeight.w600,
                 color: Colors.black87,
               ),

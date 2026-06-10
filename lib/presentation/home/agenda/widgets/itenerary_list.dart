@@ -269,6 +269,9 @@ class _IteneraryListState extends State<IteneraryList> {
             height: rh(context, list.isEmpty ? 235.0 : carouselHeight),
             child: PageView.builder(
               controller: _pageController,
+              physics: list.length <= 1
+                  ? const NeverScrollableScrollPhysics()
+                  : const BouncingScrollPhysics(),
               onPageChanged: (int index) {
                 _currentPage.value = index;
               },
@@ -400,280 +403,279 @@ class _IteneraryListState extends State<IteneraryList> {
           ),
         ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header: Number circle + Agenda (title) + Status badge
-          Padding(
-            padding: EdgeInsets.only(
-              left: rw(context, 16),
-              right: rw(context, 16),
-              top: rh(context, 12),
-              bottom: rh(context, 8),
-            ),
-            child: Row(
-              children: [
-                Container(
-                  width: rw(context, 26),
-                  height: rw(context, 26),
-                  alignment: Alignment.center,
-                  decoration: const BoxDecoration(
-                    color: Color(0xFF005596),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Text(
-                    '$no',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: rfs(context, 11),
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-                hSpace(context, 10),
-                Expanded(
-                  child: Text(
-                    ticket.agenda ?? '-',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w700,
-                      fontSize: rfs(context, 14),
-                      color: Colors.black87,
-                    ),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-                hSpace(context, 6),
-                Container(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: rw(context, 8),
-                    vertical: rh(context, 4),
-                  ),
-                  decoration: BoxDecoration(
-                    color: statusBg,
-                    borderRadius: BorderRadius.circular(rw(context, 20)),
-                    border: hasBorder
-                        ? Border.all(
-                            color: statusFg.withValues(alpha: 0.4),
-                          )
-                        : null,
-                  ),
-                  child: Text(
-                    statusLabel,
-                    style: TextStyle(
-                      fontSize: rfs(context, 10),
-                      fontWeight: FontWeight.w600,
-                      color: statusFg,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Divider(
-            height: 1,
-            thickness: 1,
-            color: Colors.grey.shade100,
-          ),
-
-          // Body: Info grid fields
-          Padding(
-            padding: EdgeInsets.only(
-              left: rw(context, 16),
-              right: rw(context, 16),
-              top: rh(context, 8),
-              bottom: rh(context, 12),
-            ),
-            child: Column(
-              children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: _buildCardField(
-                        context,
-                        Icons.badge_outlined,
-                        'Visitor Type',
-                        ticket.visitorTypeName == null || ticket.visitorTypeName!.isEmpty
-                            ? '-'
-                            : ticket.visitorTypeName!,
-                      ),
-                    ),
-                    hSpace(context, 8),
-                    Expanded(
-                      child: _buildCardField(
-                        context,
-                        Icons.person_outline,
-                        'Host',
-                        ticket.hostName == null || ticket.hostName!.isEmpty
-                            ? '-'
-                            : ticket.hostName!,
-                      ),
-                    ),
-                  ],
-                ),
-                vSpace(context, 6),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _buildCardField(
-                        context,
-                        Icons.business_outlined,
-                        'Organization',
-                        ticket.hostOrganizationName == null || ticket.hostOrganizationName!.isEmpty
-                            ? '-'
-                            : ticket.hostOrganizationName!,
-                      ),
-                    ),
-                    hSpace(context, 8),
-                    Expanded(
-                      child: _buildCardField(
-                        context,
-                        Icons.timeline,
-                        'Flow',
-                        ticket.flow == null || ticket.flow!.isEmpty
-                            ? '-'
-                            : ticket.flow!,
-                      ),
-                    ),
-                  ],
-                ),
-                vSpace(context, 6),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _buildCardField(
-                        context,
-                        Icons.login_outlined,
-                        'Period Start',
-                        startStr,
-                      ),
-                    ),
-                    hSpace(context, 8),
-                    Expanded(
-                      child: _buildCardField(
-                        context,
-                        Icons.logout_outlined,
-                        'Period End',
-                        endStr,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-
-          // Actions if pending AND needs approval
-          if (needsApproval) ...[
-            Container(height: 1, color: const Color(0xFFF0F0F0)),
+      child: SingleChildScrollView(
+        physics: const NeverScrollableScrollPhysics(),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header: Number circle + Agenda (title) + Status badge
             Padding(
-              padding: EdgeInsets.symmetric(
-                horizontal: rw(context, 12),
-                vertical: rh(context, 10),
+              padding: EdgeInsets.only(
+                left: rw(context, 16),
+                right: rw(context, 16),
+                top: rh(context, 12),
+                bottom: rh(context, 8),
               ),
               child: Row(
                 children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: () => _confirmAction(
-                        context,
-                        title: 'Tolak Approval',
-                        message:
-                            'Apakah Anda yakin ingin menolak approval ini?',
-                        onConfirm: () => controller.rejectMeetingHostAction(
-                          approvalTicketId:
-                              ticket.approvalTicketId ??
-                              ticket.ticketId ??
-                              '',
-                          actorId: ticket.actorId ?? '',
-                        ),
-                      ),
-                      style: OutlinedButton.styleFrom(
-                        padding: EdgeInsets.symmetric(
-                          vertical: rh(context, 9),
-                        ),
-                        side: const BorderSide(color: Color(0xFFD32F2F)),
-                        foregroundColor: const Color(0xFFD32F2F),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(rw(context, 8)),
-                        ),
-                      ),
-                      child: Text(
-                        'Tolak',
-                        style: TextStyle(
-                          fontSize: rfs(context, 13),
-                          fontWeight: FontWeight.w700,
-                        ),
+                  Container(
+                    width: rw(context, 26),
+                    height: rw(context, 26),
+                    alignment: Alignment.center,
+                    decoration: const BoxDecoration(
+                      color: Color(0xFF005596),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Text(
+                      '$no',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: rfs(context, 11),
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
                   ),
                   hSpace(context, 10),
                   Expanded(
-                    child: ElevatedButton(
-                      onPressed: () => VisitorApprovalDialog.show(
-                        context,
-                        ticket,
-                        controller,
+                    child: Text(
+                      ticket.agenda ?? '-',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: rfs(context, 14),
+                        color: Colors.black87,
                       ),
-                      style: ElevatedButton.styleFrom(
-                        padding: EdgeInsets.symmetric(
-                          vertical: rh(context, 9),
-                        ),
-                        backgroundColor: AppColors.primary500,
-                        foregroundColor: Colors.white,
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(rw(context, 8)),
-                        ),
-                      ),
-                      child: Text(
-                        'Setujui',
-                        style: TextStyle(
-                          fontSize: rfs(context, 13),
-                          fontWeight: FontWeight.w700,
-                        ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  hSpace(context, 6),
+                  Container(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: rw(context, 8),
+                      vertical: rh(context, 4),
+                    ),
+                    decoration: BoxDecoration(
+                      color: statusBg,
+                      borderRadius: BorderRadius.circular(rw(context, 20)),
+                      border: hasBorder
+                          ? Border.all(
+                              color: statusFg.withValues(alpha: 0.4),
+                            )
+                          : null,
+                    ),
+                    child: Text(
+                      statusLabel,
+                      style: TextStyle(
+                        fontSize: rfs(context, 10),
+                        fontWeight: FontWeight.w600,
+                        color: statusFg,
                       ),
                     ),
                   ),
                 ],
               ),
             ),
-          ] else if (isApproved && ticket.approvedAt != null) ...[
-            Container(height: 1, color: const Color(0xFFF0F0F0)),
+            Divider(
+              height: 1,
+              thickness: 1,
+              color: Colors.grey.shade100,
+            ),
+  
+            // Body: Info grid fields
             Padding(
-              padding: EdgeInsets.fromLTRB(
-                rw(context, 16),
-                rh(context, 8),
-                rw(context, 16),
-                rh(context, 10),
+              padding: EdgeInsets.only(
+                left: rw(context, 16),
+                right: rw(context, 16),
+                top: rh(context, 8),
+                bottom: rh(context, 12),
               ),
-              child: Text(
-                'Disetujui: ${DateFormat('dd MMM yyyy, HH:mm').format(ticket.approvedAt!)}',
-                style: TextStyle(
-                  fontSize: rfs(context, 11),
-                  color: const Color(0xFF2E7D32),
-                ),
+              child: Column(
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _buildCardField(
+                          context,
+                          Icons.badge_outlined,
+                          'Visitor Type',
+                          ticket.visitorTypeName == null || ticket.visitorTypeName!.isEmpty
+                              ? '-'
+                              : ticket.visitorTypeName!,
+                        ),
+                      ),
+                      hSpace(context, 8),
+                      Expanded(
+                        child: _buildCardField(
+                          context,
+                          Icons.person_outline,
+                          'Host',
+                          ticket.hostName == null || ticket.hostName!.isEmpty
+                              ? '-'
+                              : ticket.hostName!,
+                        ),
+                      ),
+                    ],
+                  ),
+                  vSpace(context, 6),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _buildCardField(
+                          context,
+                          Icons.business_outlined,
+                          'Organization',
+                          ticket.hostOrganizationName == null || ticket.hostOrganizationName!.isEmpty
+                              ? '-'
+                              : ticket.hostOrganizationName!,
+                        ),
+                      ),
+                      hSpace(context, 8),
+                      Expanded(
+                        child: _buildCardField(
+                          context,
+                          Icons.timeline,
+                          'Flow',
+                          ticket.flow == null || ticket.flow!.isEmpty
+                              ? '-'
+                              : ticket.flow!,
+                        ),
+                      ),
+                    ],
+                  ),
+                  vSpace(context, 6),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _buildCardField(
+                          context,
+                          Icons.login_outlined,
+                          'Period Start',
+                          startStr,
+                        ),
+                      ),
+                      hSpace(context, 8),
+                      Expanded(
+                        child: _buildCardField(
+                          context,
+                          Icons.logout_outlined,
+                          'Period End',
+                          endStr,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ),
-          ] else if (isRejected && ticket.approvedAt != null) ...[
-            Container(height: 1, color: const Color(0xFFF0F0F0)),
-            Padding(
-              padding: EdgeInsets.fromLTRB(
-                rw(context, 16),
-                rh(context, 8),
-                rw(context, 16),
-                rh(context, 10),
-              ),
-              child: Text(
-                'Ditolak: ${DateFormat('dd MMM yyyy, HH:mm').format(ticket.approvedAt!)}',
-                style: TextStyle(
-                  fontSize: rfs(context, 11),
-                  color: const Color(0xFFC62828),
-                  fontWeight: FontWeight.w500,
+  
+            // Actions if pending AND needs approval
+            if (needsApproval) ...[
+              Container(height: 1, color: const Color(0xFFF0F0F0)),
+              Padding(
+                padding: EdgeInsets.symmetric(
+                  horizontal: rw(context, 12),
+                  vertical: rh(context, 10),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () => _confirmAction(
+                          context,
+                          title: 'Tolak Approval',
+                          message:
+                              'Apakah Anda yakin ingin menolak approval ini?',
+                          onConfirm: () => controller.rejectMeetingHostAction(
+                            approvalTicketId:
+                                ticket.approvalTicketId ??
+                                ticket.ticketId ??
+                                '',
+                            actorId: ticket.actorId ?? '',
+                          ),
+                        ),
+                        style: OutlinedButton.styleFrom(
+                          padding: EdgeInsets.symmetric(
+                            vertical: rh(context, 9),
+                          ),
+                          side: const BorderSide(color: Color(0xFFD32F2F)),
+                          foregroundColor: const Color(0xFFD32F2F),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(rw(context, 8)),
+                          ),
+                        ),
+                        child: Text(
+                          'Tolak',
+                          style: TextStyle(
+                            fontSize: rfs(context, 13),
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    ),
+                    hSpace(context, 10),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () => VisitorApprovalDialog.show(
+                          context,
+                          ticket,
+                          controller,
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          padding: EdgeInsets.symmetric(
+                            vertical: rh(context, 9),
+                          ),
+                          backgroundColor: AppColors.primary500,
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(rw(context, 8)),
+                          ),
+                        ),
+                        child: Text(
+                          'Setujui',
+                          style: TextStyle(
+                            fontSize: rfs(context, 13),
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
-            ),
+            ] else if (isApproved && ticket.approvedAt != null) ...[
+              Container(height: 1, color: const Color(0xFFF0F0F0)),
+              Padding(
+                padding: EdgeInsets.symmetric(
+                  horizontal: rw(context, 16),
+                  vertical: rh(context, 10),
+                ),
+                child: Text(
+                  'Disetujui: ${DateFormat('dd MMM yyyy, HH:mm').format(ticket.approvedAt!)}',
+                  style: TextStyle(
+                    fontSize: rfs(context, 11),
+                    color: const Color(0xFF2E7D32),
+                  ),
+                ),
+              ),
+            ] else if (isRejected && ticket.approvedAt != null) ...[
+              Container(height: 1, color: const Color(0xFFF0F0F0)),
+              Padding(
+                padding: EdgeInsets.symmetric(
+                  horizontal: rw(context, 16),
+                  vertical: rh(context, 10),
+                ),
+                child: Text(
+                  'Ditolak: ${DateFormat('dd MMM yyyy, HH:mm').format(ticket.approvedAt!)}',
+                  style: TextStyle(
+                    fontSize: rfs(context, 11),
+                    color: const Color(0xFFC62828),
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            ],
           ],
-        ],
+        ),
       ),
     );
 

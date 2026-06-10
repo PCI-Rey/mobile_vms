@@ -103,12 +103,12 @@ class ShareLinkCard extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        Icon(icon, size: rw(context, 14), color: Colors.grey.shade500),
+        Icon(icon, size: rw(context, 12), color: Colors.grey.shade500),
         hSpace(context, 6),
         Text(
           '$label: ',
           style: TextStyle(
-            fontSize: rfs(context, 11),
+            fontSize: rfs(context, 12),
             fontWeight: FontWeight.w500,
             color: Colors.grey.shade500,
             height: 1.2,
@@ -118,7 +118,7 @@ class ShareLinkCard extends StatelessWidget {
           child: Text(
             value,
             style: TextStyle(
-              fontSize: rfs(context, 11),
+              fontSize: rfs(context, 10),
               fontWeight: FontWeight.w600,
               color: color ?? Colors.black87,
               height: 1.2,
@@ -244,7 +244,7 @@ class ShareLinkCard extends StatelessWidget {
                       '$no',
                       style: TextStyle(
                         color: Colors.white,
-                        fontSize: rfs(context, 11),
+                        fontSize: rfs(context, 12),
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -255,7 +255,7 @@ class ShareLinkCard extends StatelessWidget {
                       agenda,
                       style: TextStyle(
                         fontWeight: FontWeight.w700,
-                        fontSize: rfs(context, 14),
+                        fontSize: rfs(context, 16),
                         color: Colors.black87,
                       ),
                       overflow: TextOverflow.ellipsis,
@@ -291,7 +291,7 @@ class ShareLinkCard extends StatelessWidget {
                         Text(
                           _getRemainingTime(expiredAt),
                           style: TextStyle(
-                            fontSize: rfs(context, 10),
+                            fontSize: rfs(context, 12),
                             fontWeight: FontWeight.w600,
                             color: isExpired ? Colors.grey : Colors.orange.shade800,
                           ),
@@ -315,7 +315,7 @@ class ShareLinkCard extends StatelessWidget {
                     child: Text(
                       status,
                       style: TextStyle(
-                        fontSize: rfs(context, 10),
+                        fontSize: rfs(context, 12),
                         fontWeight: FontWeight.w600,
                         color: Colors.white,
                       ),
@@ -430,7 +430,7 @@ class ShareLinkCard extends StatelessWidget {
                   label: Text(
                     isExpired ? 'Link Expired' : 'Share Link',
                     style: TextStyle(
-                      fontSize: rfs(context, 12),
+                      fontSize: rfs(context, 13),
                       fontWeight: FontWeight.w600,
                       color: isExpired ? Colors.grey.shade600 : Colors.white,
                     ),
