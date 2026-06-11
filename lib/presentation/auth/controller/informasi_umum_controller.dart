@@ -1140,6 +1140,33 @@ class InformasiUmumController extends GetxController {
           await authDatasource.checkVisitorCode(invitationCode);
 
       if (newUser != null && isPraregisterDone && newUser.token != null) {
+        // Fallback to locally uploaded selfie if the API check didn't return a faceUrl immediately
+        final String? finalFaceUrl = (newUser.faceUrl != null && newUser.faceUrl!.isNotEmpty)
+            ? newUser.faceUrl
+            : selfieUrl.value;
+
+        if (finalFaceUrl != null && finalFaceUrl.isNotEmpty) {
+          final updatedUser = UserModel(
+            id: newUser.id,
+            fullname: newUser.fullname,
+            username: newUser.username,
+            email: newUser.email,
+            roleAccess: newUser.roleAccess,
+            token: newUser.token,
+            applicationId: newUser.applicationId,
+            description: newUser.description,
+            phone: newUser.phone,
+            visitorCode: newUser.visitorCode,
+            invitationCode: newUser.invitationCode,
+            hostName: newUser.hostName,
+            sitePlaceName: newUser.sitePlaceName,
+            visitorStatus: newUser.visitorStatus,
+            faceUrl: finalFaceUrl,
+            extraData: newUser.extraData,
+          );
+          await authDatasource.saveAuthData(updatedUser);
+        }
+
         // checkVisitorCode already saved to Hive, just reload UserController
         final userCtrl = Get.isRegistered<UserController>()
             ? Get.find<UserController>()

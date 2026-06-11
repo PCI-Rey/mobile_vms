@@ -99,7 +99,7 @@ class AccessPassModal {
                         GestureDetector(
                           onTap: () => Navigator.pop(ctx),
                           child: Container(
-                            padding: EdgeInsets.all(rw(ctx, 6)),
+                            padding: EdgeInsets.all(rw(ctx, 8)),
                             decoration: BoxDecoration(
                               color: Colors.grey.shade100,
                               shape: BoxShape.circle,
@@ -107,7 +107,7 @@ class AccessPassModal {
                             child: Icon(
                               Icons.close,
                               color: Colors.grey.shade600,
-                              size: rw(ctx, 18),
+                              size: rw(ctx, 22),
                             ),
                           ),
                         ),
@@ -172,31 +172,6 @@ class AccessPassModal {
                                         crossAxisAlignment:
                                             CrossAxisAlignment.start,
                                         children: [
-                                          Container(
-                                            padding: EdgeInsets.symmetric(
-                                              horizontal: rw(ctx, 8),
-                                              vertical: rh(ctx, 3),
-                                            ),
-                                            decoration: BoxDecoration(
-                                              color: Colors.white.withValues(
-                                                alpha: 0.15,
-                                              ),
-                                              borderRadius:
-                                                  BorderRadius.circular(
-                                                    rw(ctx, 20),
-                                                  ),
-                                            ),
-                                            child: Text(
-                                              'VMS',
-                                              style: TextStyle(
-                                                color: Colors.white70,
-                                                fontSize: rfs(ctx, 10),
-                                                fontWeight: FontWeight.w700,
-                                                letterSpacing: 1.5,
-                                              ),
-                                            ),
-                                          ),
-                                          vSpace(ctx, 6),
                                           Text(
                                             (item.visitorName as String)
                                                     .isNotEmpty

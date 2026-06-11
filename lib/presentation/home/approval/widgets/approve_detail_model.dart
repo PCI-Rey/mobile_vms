@@ -5,6 +5,7 @@ import '../../../../core/core.dart';
 import '../../../../core/helper/responsive_helper.dart';
 import '../../../../data/models/approval_ticket_model.dart';
 import '../../invitation/controller/invitation_controller.dart';
+import '../approval_page.dart';
 
 class ApprovalDetailModal extends StatefulWidget {
   const ApprovalDetailModal({super.key, required this.ticket});
@@ -15,9 +16,10 @@ class ApprovalDetailModal extends StatefulWidget {
     BuildContext context,
     ApprovalTicketModel ticket,
   ) {
-    return showDialog<void>(
+    return showModalBottomSheet<void>(
       context: context,
-      barrierDismissible: true,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
       builder: (_) => ApprovalDetailModal(ticket: ticket),
     );
   }
@@ -85,195 +87,159 @@ class _ApprovalDetailModalState extends State<ApprovalDetailModal> {
       statusBgColor = AppColors.error500;
     }
 
-    return Dialog(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(rw(context, 16)),
-      ),
-      backgroundColor: Colors.white,
-      clipBehavior: Clip.antiAlias,
-      child: Container(
-        width: double.infinity,
-        constraints: BoxConstraints(
-          maxWidth: rw(context, 400),
-          maxHeight: MediaQuery.of(context).size.height * 0.8,
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(rw(context, 24)),
         ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // ── Header ─────────────────────────────────────────────────
-            Padding(
-              padding: EdgeInsets.symmetric(
-                horizontal: rw(context, 20),
-                vertical: rh(context, 14),
+      ),
+      child: SafeArea(
+        child: Container(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(context).size.height * 0.85,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              vSpace(context, 12),
+              // Drag handle
+              Center(
+                child: Container(
+                  width: rw(context, 40),
+                  height: rh(context, 4),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[300],
+                    borderRadius: BorderRadius.circular(rw(context, 2)),
+                  ),
+                ),
               ),
-              child: Row(
-                children: [
-                  Container(
-                    padding: EdgeInsets.all(rw(context, 10)),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF005596).withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(rw(context, 10)),
-                    ),
-                    child: const Icon(
-                      Icons.assignment_outlined,
-                      color: Color(0xFF005596),
-                    ),
-                  ),
-                  hSpace(context, 12),
-                  Expanded(
-                    child: Text(
-                      ticket.agenda ?? '-',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w800,
-                        fontSize: rfs(context, 16),
-                        color: Colors.black87,
-                      ),
-                    ),
-                  ),
-                  Container(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: rw(context, 10),
-                      vertical: rh(context, 5),
-                    ),
-                    decoration: BoxDecoration(
-                      color: statusBgColor,
-                      borderRadius: BorderRadius.circular(rw(context, 20)),
-                    ),
-                    child: Text(
-                      ticket.approvalActorStatus ?? '-',
-                      style: TextStyle(
-                        fontSize: rfs(context, 12),
-                        fontWeight: FontWeight.w700,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Container(height: 1, color: Colors.grey.shade100),
+              vSpace(context, 12),
 
-            // ── Scrollable Body ────────────────────────────────────────
-            Expanded(
-              child: SingleChildScrollView(
+              // ── Header ─────────────────────────────────────────────────
+              Padding(
                 padding: EdgeInsets.symmetric(
                   horizontal: rw(context, 20),
-                  vertical: rh(context, 16),
+                  vertical: rh(context, 14),
                 ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                child: Row(
                   children: [
-                    // 1. Ticket Information
-                    _section(context, 'Ticket Information'),
-                    _grid(context, [
-                      _SheetField(
-                        'Host',
-                        '${ticket.hostName ?? '-'} (${ticket.hostOrganizationName ?? '-'})',
-                        Icons.person_outline,
-                      ),
-                      if (ticket.visitorTypeName != null)
-                        _SheetField(
-                          'Tipe Visitor',
-                          ticket.visitorTypeName!,
-                          Icons.badge_outlined,
-                        ),
-                      if (ticket.flow != null)
-                        _SheetField(
-                          'Flow',
-                          ticket.flow!,
-                          Icons.timeline_outlined,
-                        ),
-                      _SheetField(
-                        'Status Transaksi',
-                        ticket.transactionStatus ?? '-',
-                        Icons.info_outline,
-                        badgeColor: _statusColor(ticket.transactionStatus ?? ''),
-                      ),
-                      if (isApproved && ticket.approvedAt != null)
-                        _SheetField(
-                          'Disetujui',
-                          DateFormat('dd MMM yyyy, HH:mm').format(ticket.approvedAt!),
-                          Icons.done_all_outlined,
-                        ),
-                    ]),
-
-                    vSpace(context, 16),
-
-                    // 2. Visit Period
-                    _section(context, 'Visit Period'),
                     Container(
-                      padding: EdgeInsets.all(rw(context, 14)),
+                      padding: EdgeInsets.all(rw(context, 10)),
                       decoration: BoxDecoration(
-                        color: Colors.grey.shade50,
+                        color: const Color(0xFF005596).withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(rw(context, 10)),
-                        border: Border.all(color: Colors.grey.shade200),
                       ),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    Icon(
-                                      Icons.login_outlined,
-                                      size: rw(context, 14),
-                                      color: Colors.green.shade600,
-                                    ),
-                                    hSpace(context, 4),
-                                    Text(
-                                      'Start',
-                                      style: TextStyle(
-                                        fontSize: rfs(context, 12),
-                                        color: Colors.grey.shade500,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                vSpace(context, 4),
-                                Text(
-                                  ticket.visitorPeriodStart != null
-                                      ? DateFormat('dd MMM yyyy').format(ticket.visitorPeriodStart!)
-                                      : '-',
-                                  style: TextStyle(
-                                    fontSize: rfs(context, 12),
-                                    fontWeight: FontWeight.w700,
-                                    color: Colors.black87,
-                                  ),
-                                ),
-                                if (ticket.visitorPeriodStart != null)
-                                  Text(
-                                    DateFormat('HH:mm').format(ticket.visitorPeriodStart!),
-                                    style: TextStyle(
-                                      fontSize: rfs(context, 12),
-                                      color: Colors.grey.shade600,
-                                    ),
-                                  ),
-                              ],
-                            ),
+                      child: const Icon(
+                        Icons.assignment_outlined,
+                        color: Color(0xFF005596),
+                      ),
+                    ),
+                    hSpace(context, 12),
+                    Expanded(
+                      child: Text(
+                        ticket.agenda ?? '-',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w800,
+                          fontSize: rfs(context, 16),
+                          color: Colors.black87,
+                        ),
+                      ),
+                    ),
+                    Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: rw(context, 10),
+                        vertical: rh(context, 5),
+                      ),
+                      decoration: BoxDecoration(
+                        color: statusBgColor,
+                        borderRadius: BorderRadius.circular(rw(context, 20)),
+                      ),
+                      child: Text(
+                        ticket.approvalActorStatus ?? '-',
+                        style: TextStyle(
+                          fontSize: rfs(context, 12),
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Container(height: 1, color: Colors.grey.shade100),
+
+              // ── Scrollable Body ────────────────────────────────────────
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: rw(context, 20),
+                    vertical: rh(context, 16),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // 1. Ticket Information
+                      _section(context, 'Ticket Information'),
+                      _grid(context, [
+                        _SheetField(
+                          'Host',
+                          '${ticket.hostName ?? '-'} (${ticket.hostOrganizationName ?? '-'})',
+                          Icons.person_outline,
+                        ),
+                        if (ticket.visitorTypeName != null)
+                          _SheetField(
+                            'Tipe Visitor',
+                            ticket.visitorTypeName!,
+                            Icons.badge_outlined,
                           ),
-                          Container(
-                            width: 1,
-                            height: rh(context, 50),
-                            color: Colors.grey.shade300,
+                        if (ticket.flow != null)
+                          _SheetField(
+                            'Flow',
+                            ticket.flow!,
+                            Icons.timeline_outlined,
                           ),
-                          Expanded(
-                            child: Padding(
-                              padding: EdgeInsets.only(left: rw(context, 12)),
+                        _SheetField(
+                          'Status Transaksi',
+                          ticket.transactionStatus ?? '-',
+                          Icons.info_outline,
+                          badgeColor: _statusColor(ticket.transactionStatus ?? ''),
+                        ),
+                        if (isApproved && ticket.approvedAt != null)
+                          _SheetField(
+                            'Disetujui',
+                            DateFormat('dd MMM yyyy, HH:mm').format(ticket.approvedAt!),
+                            Icons.done_all_outlined,
+                          ),
+                      ]),
+
+                      vSpace(context, 16),
+
+                      // 2. Visit Period
+                      _section(context, 'Visit Period'),
+                      Container(
+                        padding: EdgeInsets.all(rw(context, 14)),
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade50,
+                          borderRadius: BorderRadius.circular(rw(context, 10)),
+                          border: Border.all(color: Colors.grey.shade200),
+                        ),
+                        child: Row(
+                          children: [
+                            Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Row(
                                     children: [
                                       Icon(
-                                        Icons.logout_outlined,
+                                        Icons.login_outlined,
                                         size: rw(context, 14),
-                                        color: Colors.grey.shade500,
+                                        color: Colors.green.shade600,
                                       ),
                                       hSpace(context, 4),
                                       Text(
-                                        'End',
+                                        'Start',
                                         style: TextStyle(
                                           fontSize: rfs(context, 12),
                                           color: Colors.grey.shade500,
@@ -283,8 +249,8 @@ class _ApprovalDetailModalState extends State<ApprovalDetailModal> {
                                   ),
                                   vSpace(context, 4),
                                   Text(
-                                    ticket.visitorPeriodEnd != null
-                                        ? DateFormat('dd MMM yyyy').format(ticket.visitorPeriodEnd!)
+                                    ticket.visitorPeriodStart != null
+                                        ? DateFormat('dd MMM yyyy').format(ticket.visitorPeriodStart!)
                                         : '-',
                                     style: TextStyle(
                                       fontSize: rfs(context, 12),
@@ -292,9 +258,9 @@ class _ApprovalDetailModalState extends State<ApprovalDetailModal> {
                                       color: Colors.black87,
                                     ),
                                   ),
-                                  if (ticket.visitorPeriodEnd != null)
+                                  if (ticket.visitorPeriodStart != null)
                                     Text(
-                                      DateFormat('HH:mm').format(ticket.visitorPeriodEnd!),
+                                      DateFormat('HH:mm').format(ticket.visitorPeriodStart!),
                                       style: TextStyle(
                                         fontSize: rfs(context, 12),
                                         color: Colors.grey.shade600,
@@ -303,70 +269,238 @@ class _ApprovalDetailModalState extends State<ApprovalDetailModal> {
                                 ],
                               ),
                             ),
+                            Container(
+                              width: 1,
+                              height: rh(context, 50),
+                              color: Colors.grey.shade300,
+                            ),
+                            Expanded(
+                              child: Padding(
+                                padding: EdgeInsets.only(left: rw(context, 12)),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        Icon(
+                                          Icons.logout_outlined,
+                                          size: rw(context, 14),
+                                          color: Colors.grey.shade500,
+                                        ),
+                                        hSpace(context, 4),
+                                        Text(
+                                          'End',
+                                          style: TextStyle(
+                                            fontSize: rfs(context, 12),
+                                            color: Colors.grey.shade500,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    vSpace(context, 4),
+                                    Text(
+                                      ticket.visitorPeriodEnd != null
+                                          ? DateFormat('dd MMM yyyy').format(ticket.visitorPeriodEnd!)
+                                          : '-',
+                                      style: TextStyle(
+                                        fontSize: rfs(context, 12),
+                                        fontWeight: FontWeight.w700,
+                                        color: Colors.black87,
+                                      ),
+                                    ),
+                                    if (ticket.visitorPeriodEnd != null)
+                                      Text(
+                                        DateFormat('HH:mm').format(ticket.visitorPeriodEnd!),
+                                        style: TextStyle(
+                                          fontSize: rfs(context, 12),
+                                          color: Colors.grey.shade600,
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      vSpace(context, 16),
+
+                      // 3. Daftar Visitor
+                      _section(context, 'Daftar Visitor'),
+                      if (_loading)
+                        const Center(
+                          child: Padding(
+                            padding: EdgeInsets.all(24),
+                            child: CircularProgressIndicator(),
                           ),
-                        ],
-                      ),
-                    ),
-
-                    vSpace(context, 16),
-
-                    // 3. Daftar Visitor
-                    _section(context, 'Daftar Visitor'),
-                    if (_loading)
-                      const Center(
-                        child: Padding(
-                          padding: EdgeInsets.all(24),
-                          child: CircularProgressIndicator(),
+                        )
+                      else if (_error != null)
+                        _ErrorState(message: _error!)
+                      else if (_visitors.isEmpty)
+                        _EmptyVisitors()
+                      else
+                        ..._visitors.map(
+                          (v) => Padding(
+                            padding: EdgeInsets.only(bottom: rh(context, 10)),
+                            child: _VisitorCard(visitor: v),
+                          ),
                         ),
-                      )
-                    else if (_error != null)
-                      _ErrorState(message: _error!)
-                    else if (_visitors.isEmpty)
-                      _EmptyVisitors()
-                    else
-                      ..._visitors.map(
-                        (v) => Padding(
-                          padding: EdgeInsets.only(bottom: rh(context, 10)),
-                          child: _VisitorCard(visitor: v),
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-            ),
-
-            // ── Close button ───────────────────────────────────────────
-            Padding(
-              padding: EdgeInsets.fromLTRB(
-                rw(context, 20),
-                rh(context, 10),
-                rw(context, 20),
-                rh(context, 16),
-              ),
-              child: SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF005596),
-                    padding: EdgeInsets.symmetric(vertical: rh(context, 14)),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(rw(context, 12)),
-                    ),
-                  ),
-                  onPressed: () => Navigator.pop(context),
-                  child: Text(
-                    'Close',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: rfs(context, 14),
-                    ),
+                    ],
                   ),
                 ),
               ),
-            ),
-          ],
+
+              // ── Reject/Approve Buttons ──────────────────────────────────
+              if (isPending) ...[
+                Padding(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: rw(context, 20),
+                    vertical: rh(context, 8),
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () => _confirmAction(
+                            context,
+                            title: 'Tolak Approval',
+                            message: 'Apakah Anda yakin ingin menolak approval ini?',
+                            onConfirm: () => _ctrl.rejectMeetingHostAction(
+                              approvalTicketId: ticket.approvalTicketId ?? ticket.ticketId ?? '',
+                              actorId: ticket.actorId ?? '',
+                            ),
+                          ),
+                          style: OutlinedButton.styleFrom(
+                            padding: EdgeInsets.symmetric(vertical: rh(context, 14)),
+                            side: const BorderSide(color: Color(0xFFD32F2F)),
+                            foregroundColor: const Color(0xFFD32F2F),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(rw(context, 12)),
+                            ),
+                          ),
+                          child: Text(
+                            'Reject',
+                            style: TextStyle(
+                              fontSize: rfs(context, 14),
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                      ),
+                      hSpace(context, 12),
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: () async {
+                            await VisitorApprovalDialog.show(context, ticket, _ctrl);
+                            if (context.mounted) {
+                              Navigator.of(context).pop(); // close bottom sheet
+                            }
+                          },
+                          style: ElevatedButton.styleFrom(
+                            padding: EdgeInsets.symmetric(vertical: rh(context, 14)),
+                            backgroundColor: AppColors.primary500,
+                            foregroundColor: Colors.white,
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(rw(context, 12)),
+                            ),
+                          ),
+                          child: Text(
+                            'Approve',
+                            style: TextStyle(
+                              fontSize: rfs(context, 14),
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+
+              // ── Close button ───────────────────────────────────────────
+              Padding(
+                padding: EdgeInsets.fromLTRB(
+                  rw(context, 20),
+                  rh(context, 10),
+                  rw(context, 20),
+                  rh(context, 16),
+                ),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF005596),
+                      padding: EdgeInsets.symmetric(vertical: rh(context, 14)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(rw(context, 12)),
+                      ),
+                    ),
+                    onPressed: () => Navigator.pop(context),
+                    child: Text(
+                      'Close',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: rfs(context, 14),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
+      ),
+    );
+  }
+
+  void _confirmAction(
+    BuildContext context, {
+    required String title,
+    required String message,
+    required Future<bool> Function() onConfirm,
+  }) {
+    showDialog(
+      context: context,
+      builder: (dialogCtx) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(rw(context, 16)),
+        ),
+        title: Text(
+          title,
+          style: TextStyle(
+            fontWeight: FontWeight.w700,
+            fontSize: rfs(context, 16),
+          ),
+        ),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogCtx).pop(),
+            child: const Text('Batal'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.of(dialogCtx).pop();
+              final success = await onConfirm();
+              if (success && mounted) {
+                Navigator.of(context).pop(); // close bottom sheet
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary500,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(rw(context, 8)),
+              ),
+              elevation: 0,
+            ),
+            child: const Text('Ya, Konfirmasi'),
+          ),
+        ],
       ),
     );
   }

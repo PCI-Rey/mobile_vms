@@ -147,7 +147,7 @@ class AppTranslations extends Translations {
       'home': 'Beranda',
       'history': 'Riwayat',
       'profile': 'Profil',
-      'account': 'Akun',
+      'account': 'Account',
       'security': 'Keamanan',
       'confirm_exit': 'Konfirmasi Keluar',
       'confirm_logout': 'Apakah Anda yakin ingin keluar?',

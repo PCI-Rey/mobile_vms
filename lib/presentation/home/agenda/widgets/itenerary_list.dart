@@ -357,6 +357,7 @@ class _IteneraryListState extends State<IteneraryList> {
             offset: Offset(0, rh(context, 3)),
           ),
         ],
+        border: Border.all(color: Colors.grey.shade100),
       ),
       child: SingleChildScrollView(
         physics: const NeverScrollableScrollPhysics(),

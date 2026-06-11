@@ -878,6 +878,7 @@ class _FilterChip extends StatelessWidget {
       height: rh(context, 32),
       padding: EdgeInsets.symmetric(horizontal: rw(context, 12)),
       decoration: BoxDecoration(
+        color: Colors.white,
         border: Border.all(color: Colors.grey.shade300),
         borderRadius: BorderRadius.circular(rw(context, 50)),
       ),
@@ -1062,6 +1063,7 @@ class _ApprovalCard extends StatelessWidget {
               offset: Offset(0, rh(context, 3)),
             ),
           ],
+          border: Border.all(color: Colors.grey.shade100),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -1355,6 +1357,7 @@ class _RejectedCard extends StatelessWidget {
               offset: Offset(0, rh(context, 3)),
             ),
           ],
+          border: Border.all(color: Colors.grey.shade100),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,

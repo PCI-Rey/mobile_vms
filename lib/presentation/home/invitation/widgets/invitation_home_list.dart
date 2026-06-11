@@ -246,6 +246,7 @@ class _InvitationHomeListState extends State<InvitationHomeList> {
               offset: Offset(0, rh(context, 3)),
             ),
           ],
+          border: Border.all(color: Colors.grey.shade100),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,

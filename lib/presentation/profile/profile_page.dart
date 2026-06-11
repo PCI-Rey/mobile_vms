@@ -29,7 +29,9 @@ class ProfilePage extends StatelessWidget {
       ),
       body: Obx(() {
         final user = UserController.to.user.value;
-        final bool isEmployee = user?.roleAccess?.toLowerCase() == 'employee' || user?.roleAccess?.toLowerCase() == 'admin';
+        final bool isEmployee = (user?.roleAccess?.toLowerCase() == 'employee' || user?.roleAccess?.toLowerCase() == 'admin') &&
+            (user?.invitationCode == null || user!.invitationCode!.isEmpty) &&
+            (user?.visitorCode == null || user!.visitorCode!.isEmpty);
         return Column(
           children: [
             // Header section
@@ -130,7 +132,9 @@ class ProfilePage extends StatelessWidget {
                                 borderRadius: BorderRadius.circular(rw(context, 30)),
                               ),
                               child: Text(
-                                user?.roleAccess?.toUpperCase() ?? 'GUEST',
+                                isEmployee
+                                    ? (user?.roleAccess?.toUpperCase() ?? 'EMPLOYEE')
+                                    : 'VISITOR',
                                 style: TextStyle(
                                   fontSize: rfs(context, 12),
                                   color: const Color(0xff1976D2),
@@ -157,7 +161,7 @@ class ProfilePage extends StatelessWidget {
                   if (isEmployee) ...[
                     TileMenu(
                       icon: Icon(Icons.person, color: Colors.white, size: rw(context, 25)),
-                      label: 'Akun',
+                      label: 'account'.tr,
                       onTap: () {
                         context.push(const DetailProfilePage());
                       },
@@ -178,7 +182,7 @@ class ProfilePage extends StatelessWidget {
                       color: Colors.white,
                       size: rw(context, 25),
                     ),
-                    label: 'Notification',
+                    label: 'notification'.tr,
                     onTap: () {
                       context.push(const PemberitahuanPage());
                     },
@@ -190,7 +194,7 @@ class ProfilePage extends StatelessWidget {
                       color: Colors.white,
                       size: rw(context, 25),
                     ),
-                    label: 'Help Center'.tr,
+                    label: 'help_center'.tr,
                     onTap: () {
                       context.push(const HelpCenterPage());
                     },

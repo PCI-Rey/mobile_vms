@@ -1209,13 +1209,14 @@ class _StepOther extends StatelessWidget {
               },
               buttonStyleData: ButtonStyleData(
                 height: rh(context, 50),
-                padding: EdgeInsets.symmetric(horizontal: rw(context, 12)),
+                padding: EdgeInsets.only(left: 0, right: rw(context, 12)),
                 decoration: BoxDecoration(
                   color: AppColors.primary50,
                   borderRadius: BorderRadius.circular(rw(context, 8)),
                   border: Border.all(color: AppColors.grey300, width: 1.5),
                 ),
               ),
+              menuItemStyleData: EdgeInsets.symmetric(horizontal: rw(context, 12)).toMapMenuItemStyleData(),
               dropdownStyleData: DropdownStyleData(
                 maxHeight: rh(context, 250),
                 offset: Offset(0, rh(context, -10)),

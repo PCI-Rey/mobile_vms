@@ -143,24 +143,28 @@ class _DashboardState extends State<Dashboard>
   List<BottomNavigationBarItem> _getNavItems(String role, UserModel? user) {
     final items = [
       BottomNavigationBarItem(
-        icon: Assets.icons.home.image(
-          height: rw(context, 24),
-          width: rw(context, 24),
+        icon: Icon(
+          Icons.home_outlined,
+          size: rw(context, 24),
+          color: Colors.grey.shade500,
         ),
-        activeIcon: Assets.icons.homeSelected.image(
-          height: rw(context, 24),
-          width: rw(context, 24),
+        activeIcon: Icon(
+          Icons.home_rounded,
+          size: rw(context, 24),
+          color: AppColors.primary500,
         ),
         label: 'home'.tr,
       ),
       BottomNavigationBarItem(
-        icon: Assets.icons.history.image(
-          height: rw(context, 24),
-          width: rw(context, 24),
+        icon: Icon(
+          Icons.history_rounded,
+          size: rw(context, 24),
+          color: Colors.grey.shade500,
         ),
-        activeIcon: Assets.icons.historySelected.image(
-          height: rw(context, 24),
-          width: rw(context, 24),
+        activeIcon: Icon(
+          Icons.history_rounded,
+          size: rw(context, 24),
+          color: AppColors.primary500,
         ),
         label: 'history'.tr,
       ),

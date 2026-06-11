@@ -65,5 +65,10 @@ class UserController extends GetxController {
   // Helper method to get fullname or default
   String get fullName => user.value?.fullname ?? 'User';
 
-  String? get faceUrl => user.value?.faceUrl;
+  String? get faceUrl {
+    final url = user.value?.faceUrl;
+    if (url == null || url.isEmpty) return null;
+    if (url.startsWith('http')) return url;
+    return 'https://be-vms.app.bio-experience.com$url';
+  }
 }

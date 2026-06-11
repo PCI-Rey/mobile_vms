@@ -73,6 +73,7 @@ class AuthDatasource {
             hostName: collection['host_name']?.toString(),
             sitePlaceName: collection['site_place_name']?.toString(),
             visitorStatus: collection['visitor_status']?.toString(),
+            faceUrl: collection['visitor_face']?.toString() ?? collection['face_url']?.toString(),
             // Store complete raw collection as extraData
             extraData: json.encode(collection),
           );

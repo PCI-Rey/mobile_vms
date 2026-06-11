@@ -471,6 +471,7 @@ class _SendInvitationPageState extends State<SendInvitationPage>
                                   offset: Offset(0, rh(context, 3)),
                                 ),
                               ],
+                              border: Border.all(color: Colors.grey.shade100),
                             ),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -843,9 +844,9 @@ class _SendInvitationPageState extends State<SendInvitationPage>
                               ),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.04),
-                                  blurRadius: 10,
-                                  offset: const Offset(0, 4),
+                                  color: Colors.black.withValues(alpha: 0.06),
+                                  blurRadius: rw(context, 10),
+                                  offset: Offset(0, rh(context, 3)),
                                 ),
                               ],
                               border: Border.all(color: Colors.grey.shade100),
@@ -1069,6 +1070,7 @@ class _SendInvitationPageState extends State<SendInvitationPage>
       height: rh(context, 32),
       padding: EdgeInsets.symmetric(horizontal: rw(context, 14)),
       decoration: BoxDecoration(
+        color: Colors.white,
         border: Border.all(color: Colors.grey.shade300),
         borderRadius: BorderRadius.circular(rw(context, 50)),
       ),
@@ -1724,8 +1726,8 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
                                       fontWeight: FontWeight.w600,
                                       color: f.isCode
                                           ? (isExpired
-                                              ? Colors.grey.shade400
-                                              : const Color(0xFF005596))
+                                                ? Colors.grey.shade400
+                                                : const Color(0xFF005596))
                                           : Colors.black87,
                                     ),
                                     textAlign: TextAlign.end,
