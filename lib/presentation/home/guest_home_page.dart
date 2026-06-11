@@ -24,12 +24,13 @@ class _GuestHomePageState extends State<GuestHomePage> {
   final userCtrl = UserController.to;
 
   static const _blue = Color(0xFF1976D2);
-  static const _blueDark = Color(0xFF0E5DB5);
-  static const _bgPage = Color(0xFFF4F7FB);
+  static const _blueDark = Color(0xFF0D47A1);
+  static const _bgPage = Color(0xFFF8FAFF);
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: _bgPage,
       body: LayoutBuilder(
         builder: (context, constraints) {
           return Stack(
@@ -53,7 +54,7 @@ class _GuestHomePageState extends State<GuestHomePage> {
                   children: [
                     // --- TOP FIXED SECTION ---
                     const GuestHeader(),
-                    
+
                     // --- SCROLLABLE BODY ---
                     Expanded(
                       child: LayoutBuilder(
@@ -73,7 +74,8 @@ class _GuestHomePageState extends State<GuestHomePage> {
                                     const GuestMenuGrid(),
                                     vSpace(context, 24),
                                     AccessPassSection(
-                                      onTap: (item) => AccessPassModal.show(context, item),
+                                      onTap: (item) =>
+                                          AccessPassModal.show(context, item),
                                     ),
                                     vSpace(context, 24),
 
@@ -104,7 +106,9 @@ class _GuestHomePageState extends State<GuestHomePage> {
       width: double.infinity,
       decoration: BoxDecoration(
         color: _bgPage,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(rw(context, 32))),
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(rw(context, 32)),
+        ),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.04),
@@ -143,14 +147,16 @@ class _GuestHomePageState extends State<GuestHomePage> {
                     Text(
                       'active_visit'.tr,
                       style: TextStyle(
-                        fontSize: rfs(context, 16),
-                        fontWeight: FontWeight.w700,
+                        fontSize: rfs(context, 20),
+                        fontWeight: FontWeight.w900,
+                        color: Colors.black87,
+                        letterSpacing: -0.5,
                       ),
                     ),
                     Text(
                       'active_visits_desc'.tr,
                       style: TextStyle(
-                        fontSize: rfs(context, 12),
+                        fontSize: rfs(context, 16),
                         color: Colors.grey,
                       ),
                     ),
@@ -199,11 +205,13 @@ class _GuestHomePageState extends State<GuestHomePage> {
             return Column(
               children: [
                 for (int i = 0; i < guestCtrl.activeVisits.length; i++) ...[
-                  Obx(() => VisitSummaryCard(
-                    item: guestCtrl.activeVisits[i],
-                    isSelected: guestCtrl.selectedVisitIndex.value == i,
-                    onTap: () => guestCtrl.selectVisit(i),
-                  )),
+                  Obx(
+                    () => VisitSummaryCard(
+                      item: guestCtrl.activeVisits[i],
+                      isSelected: guestCtrl.selectedVisitIndex.value == i,
+                      onTap: () => guestCtrl.selectVisit(i),
+                    ),
+                  ),
                   if (i < guestCtrl.activeVisits.length - 1)
                     vSpace(context, 10),
                 ],

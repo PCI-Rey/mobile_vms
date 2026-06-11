@@ -43,8 +43,8 @@ class AccessPassSection extends StatelessWidget {
               style: TextStyle(
                 color: Colors.white,
                 fontSize: rfs(context, 20),
-                fontWeight: FontWeight.w800,
-                letterSpacing: 0.2,
+                fontWeight: FontWeight.w900,
+                letterSpacing: -0.5,
               ),
             );
           }),

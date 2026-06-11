@@ -20,16 +20,16 @@ class GuestMenuGrid extends StatelessWidget {
     final boxRadius = rw(context, 14);
 
     return Container(
-      margin: EdgeInsets.symmetric(horizontal: rw(context, 16)),
-      padding: EdgeInsets.symmetric(vertical: rh(context, 20), horizontal: rw(context, 12)),
+      margin: EdgeInsets.symmetric(horizontal: rw(context, 20)),
+      padding: EdgeInsets.symmetric(vertical: rh(context, 24), horizontal: rw(context, 8)),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(rw(context, 24)),
+        color: const Color(0xFFF5F7FB),
+        borderRadius: BorderRadius.circular(rw(context, 28)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.06),
-            blurRadius: rw(context, 16),
-            offset: Offset(0, rh(context, 6)),
+            color: Colors.black.withValues(alpha: 0.07),
+            blurRadius: rw(context, 20),
+            offset: Offset(0, rh(context, 10)),
           ),
         ],
       ),
@@ -46,25 +46,11 @@ class GuestMenuGrid extends StatelessWidget {
             onTap: () => Get.to(() => const GuestInvitationPage()),
           ),
           GuestMenuItemModel(
-            label: 'history'.tr,
-            icon: Icons.history_rounded,
-            bgColor: const Color(0xFFEAF3DE),
-            iconColor: const Color(0xFF3B6D11),
-            onTap: () => Get.to(() => const HistoryPage()),
-          ),
-          GuestMenuItemModel(
             label: 'parking'.tr,
             icon: Icons.local_parking_rounded,
             bgColor: const Color(0xFFFAEEDA),
             iconColor: const Color(0xFF854F0B),
             onTap: () => Get.to(() => const GuestParkingPage()),
-          ),
-          GuestMenuItemModel(
-            label: 'report'.tr,
-            icon: Icons.bar_chart_rounded,
-            bgColor: const Color(0xFFF3EEFE),
-            iconColor: const Color(0xFF534AB7),
-            onTap: () => Get.to(() => const GuestReportPage()),
           ),
           GuestMenuItemModel(
             label: 'notification'.tr,
@@ -83,43 +69,20 @@ class GuestMenuGrid extends StatelessWidget {
           ),
         ];
 
-        return Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Row(
-              children: items
-                  .take(3)
-                  .map(
-                    (m) => Expanded(
-                      child: _buildMenuItem(
-                        context,
-                        m,
-                        iconBoxSize,
-                        iconSize,
-                        boxRadius,
-                      ),
-                    ),
-                  )
-                  .toList(),
-            ),
-            vSpace(context, 20),
-            Row(
-              children: items
-                  .skip(3)
-                  .map(
-                    (m) => Expanded(
-                      child: _buildMenuItem(
-                        context,
-                        m,
-                        iconBoxSize,
-                        iconSize,
-                        boxRadius,
-                      ),
-                    ),
-                  )
-                  .toList(),
-            ),
-          ],
+        return Row(
+          children: items
+              .map(
+                (m) => Expanded(
+                  child: _buildMenuItem(
+                    context,
+                    m,
+                    iconBoxSize,
+                    iconSize,
+                    boxRadius,
+                  ),
+                ),
+              )
+              .toList(),
         );
       }),
     );
@@ -132,8 +95,9 @@ class GuestMenuGrid extends StatelessWidget {
     double iconSize,
     double radius,
   ) {
-    return GestureDetector(
+    return InkWell(
       onTap: item.onTap,
+      borderRadius: BorderRadius.circular(rw(context, 16)),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -178,11 +142,13 @@ class GuestMenuGrid extends StatelessWidget {
           Text(
             item.label,
             style: TextStyle(
-              fontSize: rfs(context, 11),
-              fontWeight: FontWeight.w600,
+              fontSize: rfs(context, 12),
+              fontWeight: FontWeight.w700,
               color: const Color(0xFF444441),
+              letterSpacing: -0.3,
             ),
             maxLines: 1,
+            overflow: TextOverflow.ellipsis,
             textAlign: TextAlign.center,
           ),
         ],
