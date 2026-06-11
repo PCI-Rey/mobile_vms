@@ -27,7 +27,11 @@ class HomePage extends StatefulWidget {
   State<HomePage> createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage> {
+class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
+  final GlobalKey _bellKey = GlobalKey();
+  late AnimationController _bellAnimationController;
+  late Animation<double> _bellScaleAnimation;
+  late Animation<double> _bellRotateAnimation;
   final langCtrl = LanguageController.to;
   final InvitationController invitationController =
       Get.isRegistered<InvitationController>()
@@ -36,6 +40,7 @@ class _HomePageState extends State<HomePage> {
 
   final ScrollController _scrollController = ScrollController();
   bool _isSelectingFromCalendar = false;
+  bool _showBellRedDot = false;
 
   Worker? _dateScrollWorker;
   Worker? _approvalTicketsWorker;
@@ -43,6 +48,37 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
+
+    _bellAnimationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 600),
+    );
+
+    _bellScaleAnimation =
+        TweenSequence<double>([
+          TweenSequenceItem(tween: Tween(begin: 1.0, end: 1.35), weight: 30),
+          TweenSequenceItem(tween: Tween(begin: 1.35, end: 0.9), weight: 30),
+          TweenSequenceItem(tween: Tween(begin: 0.9, end: 1.0), weight: 40),
+        ]).animate(
+          CurvedAnimation(
+            parent: _bellAnimationController,
+            curve: Curves.easeInOut,
+          ),
+        );
+
+    _bellRotateAnimation =
+        TweenSequence<double>([
+          TweenSequenceItem(tween: Tween(begin: 0.0, end: 0.12), weight: 25),
+          TweenSequenceItem(tween: Tween(begin: 0.12, end: -0.12), weight: 25),
+          TweenSequenceItem(tween: Tween(begin: -0.12, end: 0.08), weight: 25),
+          TweenSequenceItem(tween: Tween(begin: 0.08, end: 0.0), weight: 25),
+        ]).animate(
+          CurvedAnimation(
+            parent: _bellAnimationController,
+            curve: Curves.easeInOut,
+          ),
+        );
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         _scrollToDate(
@@ -73,7 +109,9 @@ class _HomePageState extends State<HomePage> {
       }
     });
 
-    _approvalTicketsWorker = ever(invitationController.approvalTickets, (tickets) {
+    _approvalTicketsWorker = ever(invitationController.approvalTickets, (
+      tickets,
+    ) {
       if (mounted) {
         _checkAndShowPendingPopup(tickets);
       }
@@ -82,6 +120,7 @@ class _HomePageState extends State<HomePage> {
 
   @override
   void dispose() {
+    _bellAnimationController.dispose();
     _dateScrollWorker?.dispose();
     _approvalTicketsWorker?.dispose();
     _scrollController.dispose();
@@ -91,87 +130,414 @@ class _HomePageState extends State<HomePage> {
   void _checkAndShowPendingPopup(List<ApprovalTicketModel> tickets) {
     if (invitationController.hasShownPendingPopup) return;
 
-    final today = DateTime.now();
-    final pendingTickets = tickets.where((t) {
-      final isPending = (t.approvalActorStatus ?? '').toLowerCase() == 'pending' ||
+    List<ApprovalTicketModel> pendingTickets = tickets.where((t) {
+      final isPending =
+          (t.approvalActorStatus ?? '').toLowerCase() == 'pending' ||
           (t.approvalStatus ?? '').toLowerCase() == 'pending';
-      if (!isPending) return false;
-
-      if (t.visitorPeriodStart == null) return false;
-      return t.visitorPeriodStart!.year == today.year &&
-          t.visitorPeriodStart!.month == today.month &&
-          t.visitorPeriodStart!.day == today.day;
+      return isPending;
     }).toList();
+
+    // If we have postponed tickets (remind me again was pressed), only show those!
+    if (invitationController.postponedTicketIds.isNotEmpty) {
+      pendingTickets = pendingTickets.where((t) {
+        final id = t.approvalTicketId ?? t.ticketId;
+        return id != null && invitationController.postponedTicketIds.contains(id);
+      }).toList();
+    }
 
     if (pendingTickets.isNotEmpty) {
       invitationController.hasShownPendingPopup = true;
+      invitationController.postponedTicketIds.clear();
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
-          _showPendingWarningDialog(pendingTickets.length);
+          _showPendingWarningDialog(pendingTickets);
         }
       });
     }
   }
 
-  void _showPendingWarningDialog(int count) {
+  void _showPendingWarningDialog(List<ApprovalTicketModel> pendingTickets) {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (dialogCtx) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(rw(context, 20)),
-        ),
-        icon: Icon(
-          Icons.pending_actions_rounded,
-          size: rw(context, 48),
-          color: const Color(0xFFE65100), // Orange
-        ),
-        title: Text(
-          'Pending Approval',
-          style: TextStyle(
-            fontSize: rfs(context, 18),
-            fontWeight: FontWeight.w800,
-            color: Colors.black87,
-          ),
-        ),
-        content: Text(
-          'You have $count pending visitor request${count > 1 ? 's' : ''} for today that require${count > 1 ? '' : 's'} your approval or rejection.',
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            fontSize: rfs(context, 14),
-            color: Colors.black54,
-            height: 1.4,
-          ),
-        ),
-        actionsAlignment: MainAxisAlignment.center,
-        actions: [
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: () => Navigator.of(dialogCtx).pop(),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary500,
-                foregroundColor: Colors.white,
-                elevation: 0,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(rw(context, 12)),
-                ),
-                padding: EdgeInsets.symmetric(
-                  vertical: rh(context, 12),
-                ),
+      builder: (dialogCtx) {
+        final currentTickets = List<ApprovalTicketModel>.from(pendingTickets);
+        int currentPage = 0;
+        bool hasPressedRemindMe = false;
+        PageController? pageController;
+
+        return StatefulBuilder(
+          builder: (context, setState) {
+            pageController ??= PageController(initialPage: currentPage);
+            return Dialog(
+              backgroundColor: Colors.transparent,
+              elevation: 0,
+              insetPadding: EdgeInsets.symmetric(horizontal: rw(context, 16)),
+              child: Stack(
+                children: [
+                  // Main White Box Container wrapped in padding to ensure X button is within Stack bounds for hit testing
+                  Padding(
+                    padding: const EdgeInsets.only(top: 12, right: 12),
+                    child: Container(
+                      width: rw(context, 370),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: rw(context, 16),
+                        vertical: rh(context, 20),
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(rw(context, 20)),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.1),
+                            blurRadius: 20,
+                            offset: const Offset(0, 10),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.pending_actions_rounded,
+                            size: rw(context, 44),
+                            color: const Color(0xFFE65100), // Orange
+                          ),
+                          vSpace(context, 8),
+                          Text(
+                            'Pending Approval',
+                            style: TextStyle(
+                              fontSize: rfs(context, 18),
+                              fontWeight: FontWeight.w800,
+                              color: Colors.black87,
+                            ),
+                          ),
+                          vSpace(context, 16),
+
+                          // Carousel of Pending Tickets
+                          SizedBox(
+                            height: rh(context, 145),
+                            child: PageView.builder(
+                              key: ValueKey(currentTickets.length), // Rebuild PageView on item removal to avoid index mismatches
+                              controller: pageController,
+                              itemCount: currentTickets.length,
+                              onPageChanged: (index) {
+                                setState(() {
+                                  currentPage = index;
+                                });
+                              },
+                              itemBuilder: (context, index) {
+                                 final ticket = currentTickets[index];
+                                 invitationController.fetchVisitorNameForTicket(ticket);
+                                 final host = ticket.hostName ?? 'Unknown Host';
+                                 final agenda = ticket.agenda ?? 'Meeting';
+                                 final type = ticket.visitorTypeName ?? 'Visitor';
+                                 final start = ticket.visitorPeriodStart;
+                                 final startStr = start != null
+                                     ? DateFormat('dd MMMM yyyy, HH:mm').format(start)
+                                     : '-';
+
+                                 return Container(
+                                   margin: EdgeInsets.symmetric(horizontal: rw(context, 4)),
+                                   padding: EdgeInsets.symmetric(
+                                     horizontal: rw(context, 12),
+                                     vertical: rh(context, 12),
+                                   ),
+                                   decoration: BoxDecoration(
+                                     color: const Color(0xFFF5F7FB),
+                                     borderRadius: BorderRadius.circular(rw(context, 16)),
+                                     border: Border.all(color: Colors.grey.shade200),
+                                   ),
+                                   child: Row(
+                                     crossAxisAlignment: CrossAxisAlignment.center,
+                                     children: [
+                                       // TikTok style avatar / icon
+                                       Container(
+                                         width: rw(context, 46),
+                                         height: rw(context, 46),
+                                         decoration: const BoxDecoration(
+                                           color: AppColors.primary50,
+                                           shape: BoxShape.circle,
+                                         ),
+                                         child: Icon(
+                                           Icons.badge_outlined,
+                                           color: AppColors.primary500,
+                                           size: rw(context, 22),
+                                         ),
+                                       ),
+                                       hSpace(context, 12),
+
+                                       // Content
+                                       Expanded(
+                                         child: Column(
+                                           crossAxisAlignment: CrossAxisAlignment.start,
+                                           mainAxisAlignment: MainAxisAlignment.center,
+                                           children: [
+                                             Obx(() {
+                                               final ticketId = ticket.approvalTicketId ?? ticket.ticketId ?? '';
+                                               final displayName = invitationController.ticketVisitorNames[ticketId] ?? host;
+                                               return RichText(
+                                                 maxLines: 2,
+                                                 overflow: TextOverflow.ellipsis,
+                                                 text: TextSpan(
+                                                   style: TextStyle(
+                                                     fontSize: rfs(context, 15),
+                                                     color: Colors.black87,
+                                                     height: 1.3,
+                                                   ),
+                                                   children: [
+                                                     TextSpan(
+                                                       text: displayName,
+                                                       style: TextStyle(
+                                                         fontSize: rfs(context, 15),
+                                                         fontWeight: FontWeight.bold,
+                                                         color: Colors.black,
+                                                       ),
+                                                     ),
+                                                     TextSpan(
+                                                       text: ' requested approval for ',
+                                                       style: TextStyle(
+                                                         fontSize: rfs(context, 15),
+                                                         color: Colors.black87,
+                                                       ),
+                                                     ),
+                                                     TextSpan(
+                                                       text: agenda,
+                                                       style: TextStyle(
+                                                         fontSize: rfs(context, 15),
+                                                         fontWeight: FontWeight.bold,
+                                                         color: Colors.black,
+                                                       ),
+                                                     ),
+                                                     TextSpan(
+                                                       text: '.',
+                                                       style: TextStyle(
+                                                         fontSize: rfs(context, 15),
+                                                         color: Colors.black87,
+                                                       ),
+                                                     ),
+                                                   ],
+                                                 ),
+                                               );
+                                             }),vSpace(context, 4),
+                                            Text(
+                                              type,
+                                              style: TextStyle(
+                                                fontSize: rfs(context, 13),
+                                                fontWeight: FontWeight.w600,
+                                                color: Colors.grey.shade600,
+                                              ),
+                                            ),
+                                            vSpace(context, 2),
+                                            Text(
+                                              startStr,
+                                              style: TextStyle(
+                                                fontSize: rfs(context, 12),
+                                                color: Colors.grey.shade500,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                          vSpace(context, 10),
+
+                          // Dots Indicators
+                          if (currentTickets.length > 1)
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: List.generate(
+                                currentTickets.length,
+                                (index) => Container(
+                                  margin: const EdgeInsets.symmetric(horizontal: 3),
+                                  width: currentPage == index ? 12 : 6,
+                                  height: 6,
+                                  decoration: BoxDecoration(
+                                    color: currentPage == index
+                                        ? AppColors.primary500
+                                        : Colors.grey.shade300,
+                                    borderRadius: BorderRadius.circular(3),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          vSpace(context, 14),
+
+                          // Action Buttons
+                          Row(
+                            children: [
+                              Expanded(
+                                child: OutlinedButton(
+                                  onPressed: () {
+                                    final ticket = currentTickets[currentPage];
+                                    final ticketId = ticket.approvalTicketId ?? ticket.ticketId ?? '';
+                                    _runFlyingAnimation(setRedDot: true);
+                                    
+                                    setState(() {
+                                      hasPressedRemindMe = true;
+                                      invitationController.startReminderTimer(
+                                        3,
+                                        ticketId,
+                                        () {
+                                          invitationController.fetchApprovalTickets();
+                                        },
+                                      );
+
+                                      currentTickets.removeAt(currentPage);
+                                      if (currentPage >= currentTickets.length) {
+                                        currentPage = currentTickets.length - 1;
+                                      }
+                                      if (currentPage < 0) currentPage = 0;
+                                      pageController = PageController(initialPage: currentPage);
+                                    });
+
+                                    if (currentTickets.isEmpty) {
+                                      Navigator.of(dialogCtx).pop();
+                                    }
+                                  },
+                                  style: OutlinedButton.styleFrom(
+                                    foregroundColor: AppColors.grey700,
+                                    side: const BorderSide(color: AppColors.grey400),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(rw(context, 12)),
+                                    ),
+                                    padding: EdgeInsets.symmetric(vertical: rh(context, 10)),
+                                  ),
+                                  child: Text(
+                                    'Remind me again',
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(fontSize: rfs(context, 13.5), fontWeight: FontWeight.bold),
+                                  ),
+                                ),
+                              ),
+                              hSpace(context, 10),
+                              Expanded(
+                                child: ElevatedButton(
+                                  onPressed: () {
+                                    _runFlyingAnimation(setRedDot: false);
+
+                                    setState(() {
+                                      currentTickets.removeAt(currentPage);
+                                      if (currentPage >= currentTickets.length) {
+                                        currentPage = currentTickets.length - 1;
+                                      }
+                                      if (currentPage < 0) currentPage = 0;
+                                      pageController = PageController(initialPage: currentPage);
+                                    });
+
+                                    if (currentTickets.isEmpty) {
+                                      Navigator.of(dialogCtx).pop();
+                                      if (!hasPressedRemindMe) {
+                                        invitationController.cancelReminderTimer();
+                                      }
+                                    }
+                                  },
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: AppColors.primary500,
+                                    foregroundColor: Colors.white,
+                                    elevation: 0,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(rw(context, 12)),
+                                    ),
+                                    padding: EdgeInsets.symmetric(vertical: rh(context, 10)),
+                                  ),
+                                  child: Text(
+                                    'Yes, I Know',
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(fontSize: rfs(context, 13.5), fontWeight: FontWeight.bold),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                  // Close button 'x' outside the box at the top right (inside Stack bounds)
+                  Positioned(
+                    top: 0,
+                    right: 0,
+                    child: GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: () {
+                        this.setState(() {
+                          _showBellRedDot = true;
+                        });
+                        Navigator.of(dialogCtx).pop();
+                        _bellAnimationController.forward(from: 0.0);
+                      },
+                      child: Container(
+                        width: rw(context, 32),
+                        height: rw(context, 32),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.15),
+                              blurRadius: 6,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: const Icon(
+                          Icons.close,
+                          color: Colors.black87,
+                          size: 18,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
-              child: const Text(
-                'Yes, I Know',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ),
-        ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void _runFlyingAnimation({required bool setRedDot}) {
+    final renderBox = _bellKey.currentContext?.findRenderObject() as RenderBox?;
+    if (renderBox == null) return;
+
+    final bellPosition = renderBox.localToGlobal(Offset.zero);
+    final bellSize = renderBox.size;
+    final bellCenter = Offset(
+      bellPosition.dx + bellSize.width / 2,
+      bellPosition.dy + bellSize.height / 2,
+    );
+
+    final screenSize = MediaQuery.of(context).size;
+    final startPosition = Offset(screenSize.width / 2, screenSize.height / 2);
+
+    late OverlayEntry entry;
+    entry = OverlayEntry(
+      builder: (context) => FlyingIconAnimation(
+        startOffset: startPosition,
+        endOffset: bellCenter,
+        onComplete: () {
+          entry.remove();
+          if (setRedDot) {
+            setState(() {
+              _showBellRedDot = true;
+            });
+            _bellAnimationController.forward(from: 0.0);
+          }
+        },
       ),
     );
+
+    Overlay.of(context).insert(entry);
   }
 
   void _scrollToDate(DateTime date, {bool animate = true}) {
@@ -276,7 +642,9 @@ class _HomePageState extends State<HomePage> {
                   child: RefreshIndicator(
                     onRefresh: () async {
                       await Future.wait([
-                        invitationController.fetchOngoingInvitations(clearFilters: true),
+                        invitationController.fetchOngoingInvitations(
+                          clearFilters: true,
+                        ),
                         invitationController.fetchShareLinks(resetPage: true),
                         invitationController.fetchApprovalTickets(),
                         invitationController.fetchDashboardShareLinks(),
@@ -371,34 +739,49 @@ class _HomePageState extends State<HomePage> {
         _buildLanguageDropdown(context),
         hSpace(context, 12),
         GestureDetector(
-          onTap: () => showNotificationDialog(context),
-          child: Container(
-            padding: EdgeInsets.all(rw(context, 9)),
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.12),
-              shape: BoxShape.circle,
-              border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
-            ),
-            child: Stack(
-              children: [
-                Icon(
-                  Icons.notifications_none_rounded,
-                  color: Colors.white,
-                  size: rw(context, 22),
-                ),
-                Positioned(
-                  right: 1,
-                  top: 1,
-                  child: Container(
-                    width: rw(context, 7),
-                    height: rw(context, 7),
-                    decoration: const BoxDecoration(
-                      color: Colors.redAccent,
-                      shape: BoxShape.circle,
-                    ),
+          key: _bellKey,
+          onTap: () {
+            setState(() {
+              _showBellRedDot = false;
+            });
+            showNotificationDialog(context);
+          },
+          child: ScaleTransition(
+            scale: _bellScaleAnimation,
+            child: RotationTransition(
+              turns: _bellRotateAnimation,
+              child: Container(
+                padding: EdgeInsets.all(rw(context, 9)),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.12),
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.1),
                   ),
                 ),
-              ],
+                child: Stack(
+                  children: [
+                    Icon(
+                      Icons.notifications_none_rounded,
+                      color: Colors.white,
+                      size: rw(context, 22),
+                    ),
+                    if (_showBellRedDot)
+                      Positioned(
+                        right: 1,
+                        top: 1,
+                        child: Container(
+                          width: rw(context, 7),
+                          height: rw(context, 7),
+                          decoration: const BoxDecoration(
+                            color: Colors.redAccent,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
             ),
           ),
         ),
@@ -671,7 +1054,11 @@ class _HomePageState extends State<HomePage> {
           vSpace(context, 24),
 
           // 2. Section Header: Invitation
-          _buildSectionHeader(context, 'Invitation'),
+          _buildSectionHeader(
+            context,
+            'Invitation',
+            onShowMoreTap: () => Get.to(() => const SendInvitationPage(initialTab: 0)),
+          ),
           vSpace(context, 16),
 
           // 3. Invitation Data List
@@ -680,7 +1067,11 @@ class _HomePageState extends State<HomePage> {
           vSpace(context, 24),
 
           // 4. Section Header: Approval
-          _buildSectionHeader(context, 'Approval'),
+          _buildSectionHeader(
+            context,
+            'Approval',
+            onShowMoreTap: () => Get.to(() => const ApprovalPage()),
+          ),
           vSpace(context, 16),
 
           // 5. Approval Data List
@@ -689,7 +1080,11 @@ class _HomePageState extends State<HomePage> {
           vSpace(context, 24),
 
           // 6. Section Header: Share Link
-          _buildSectionHeader(context, 'Share Link'),
+          _buildSectionHeader(
+            context,
+            'Share Link',
+            onShowMoreTap: () => Get.to(() => const SendInvitationPage(initialTab: 1)),
+          ),
           vSpace(context, 16),
 
           // 7. Share Link Data List
@@ -698,7 +1093,11 @@ class _HomePageState extends State<HomePage> {
           vSpace(context, 24),
 
           // 8. Section Header: Quick Access
-          _buildSectionHeader(context, 'Quick Access'),
+          _buildSectionHeader(
+            context,
+            'Quick Access',
+            onShowMoreTap: () => Get.to(() => const SendInvitationPage(initialTab: 2)),
+          ),
           vSpace(context, 16),
 
           // 9. Quick Access Data List
@@ -713,44 +1112,65 @@ class _HomePageState extends State<HomePage> {
   Widget _buildSectionHeader(
     BuildContext context,
     String title, {
-    bool showLinkIcon = false,
-    VoidCallback? onLinkTap,
+    VoidCallback? onShowMoreTap,
   }) {
-    return Row(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Container(
-          width: rw(context, 5),
-          height: rh(context, 20),
-          decoration: BoxDecoration(
-            color: AppColors.primary500,
-            borderRadius: BorderRadius.circular(rw(context, 3)),
-          ),
-        ),
-        hSpace(context, 10),
-        Text(
-          title,
-          style: TextStyle(
-            fontSize: rfs(context, 18),
-            fontWeight: FontWeight.w900,
-            color: Colors.black87,
-            letterSpacing: -0.5,
-          ),
-        ),
-        if (showLinkIcon) ...[
-          const Spacer(),
-          IconButton(
-            onPressed: onLinkTap,
-            icon: Container(
-              padding: EdgeInsets.all(rw(context, 6)),
+        Row(
+          children: [
+            Container(
+              width: rw(context, 5),
+              height: rh(context, 20),
               decoration: BoxDecoration(
-                color: AppColors.grey100,
-                borderRadius: BorderRadius.circular(rw(context, 8)),
-                border: Border.all(color: AppColors.grey300),
+                color: AppColors.primary500,
+                borderRadius: BorderRadius.circular(rw(context, 3)),
               ),
-              child: Icon(
-                Icons.link,
-                color: AppColors.grey600,
-                size: rw(context, 20),
+            ),
+            hSpace(context, 10),
+            Text(
+              title,
+              style: TextStyle(
+                fontSize: rfs(context, 18),
+                fontWeight: FontWeight.w900,
+                color: Colors.black87,
+                letterSpacing: -0.5,
+              ),
+            ),
+          ],
+        ),
+        if (onShowMoreTap != null) ...[
+          vSpace(context, 6),
+          Align(
+            alignment: Alignment.centerRight,
+            child: TextButton(
+              onPressed: onShowMoreTap,
+              style: TextButton.styleFrom(
+                padding: EdgeInsets.symmetric(
+                  horizontal: rw(context, 4),
+                  vertical: rh(context, 2),
+                ),
+                minimumSize: Size.zero,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                foregroundColor: AppColors.primary500,
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'Show More',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: rfs(context, 13),
+                    ),
+                  ),
+                  hSpace(context, 4),
+                  Icon(
+                    Icons.arrow_forward_rounded,
+                    size: rw(context, 14),
+                    color: AppColors.primary500,
+                  ),
+                ],
               ),
             ),
           ),
@@ -865,9 +1285,7 @@ class HorizontalDatePicker extends StatelessWidget {
                       style: TextStyle(
                         fontSize: rfs(context, 9),
                         fontWeight: FontWeight.w600,
-                        color: isSelected
-                            ? Colors.white
-                            : Colors.grey.shade500,
+                        color: isSelected ? Colors.white : Colors.grey.shade500,
                       ),
                     ),
                   ],
@@ -877,6 +1295,107 @@ class HorizontalDatePicker extends StatelessWidget {
           );
         },
       ),
+    );
+  }
+}
+
+class FlyingIconAnimation extends StatefulWidget {
+  final Offset startOffset;
+  final Offset endOffset;
+  final VoidCallback onComplete;
+
+  const FlyingIconAnimation({
+    super.key,
+    required this.startOffset,
+    required this.endOffset,
+    required this.onComplete,
+  });
+
+  @override
+  State<FlyingIconAnimation> createState() => _FlyingIconAnimationState();
+}
+
+class _FlyingIconAnimationState extends State<FlyingIconAnimation>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _animation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 700),
+    );
+
+    _animation = CurvedAnimation(
+      parent: _controller,
+      curve: Curves.easeInOutCubic,
+    );
+
+    _controller.forward().then((_) {
+      widget.onComplete();
+    });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _animation,
+      builder: (context, child) {
+        final t = _animation.value;
+        // Curved path using a parabolic arc
+        final currentX =
+            widget.startOffset.dx +
+            (widget.endOffset.dx - widget.startOffset.dx) * t;
+        final arcY = -120 * t * (1 - t); // arc height
+        final currentY =
+            widget.startOffset.dy +
+            (widget.endOffset.dy - widget.startOffset.dy) * t +
+            arcY;
+
+        final scale = 1.8 - 1.0 * t; // Shrinks down
+        final opacity = (1.0 - t * 0.1).clamp(0.0, 1.0);
+
+        return Positioned(
+          left: currentX - 20,
+          top: currentY - 20,
+          child: Material(
+            color: Colors.transparent,
+            child: Opacity(
+              opacity: opacity,
+              child: Transform.scale(
+                scale: scale,
+                child: Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFE65100),
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black26,
+                        blurRadius: 10,
+                        offset: Offset(0, 5),
+                      ),
+                    ],
+                  ),
+                  child: const Icon(
+                    Icons.pending_actions_rounded,
+                    color: Colors.white,
+                    size: 18,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }

@@ -277,24 +277,6 @@ class _IteneraryListState extends State<IteneraryList> {
             vSpace(context, 12),
           ],
 
-          // More Approval button
-          Align(
-            alignment: Alignment.centerRight,
-            child: TextButton.icon(
-              onPressed: () {
-                Get.to(() => const ApprovalPage());
-              },
-              icon: Icon(Icons.arrow_forward_rounded, size: rw(context, 16)),
-              label: const Text('Show More Approval'),
-              style: TextButton.styleFrom(
-                foregroundColor: AppColors.primary500,
-                textStyle: TextStyle(
-                  fontWeight: FontWeight.w600,
-                  fontSize: rfs(context, 13),
-                ),
-              ),
-            ),
-          ),
         ],
       );
     });

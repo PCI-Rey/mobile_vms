@@ -170,23 +170,6 @@ class _QuickAccessHomeListState extends State<QuickAccessHomeList> {
             vSpace(context, 12),
           ],
 
-          Align(
-            alignment: Alignment.centerRight,
-            child: TextButton.icon(
-              onPressed: () {
-                Get.to(() => const SendInvitationPage(initialTab: 2));
-              },
-              icon: Icon(Icons.arrow_forward_rounded, size: rw(context, 16)),
-              label: const Text('Show More Quick Access'),
-              style: TextButton.styleFrom(
-                foregroundColor: AppColors.primary500,
-                textStyle: TextStyle(
-                  fontWeight: FontWeight.w600,
-                  fontSize: rfs(context, 13),
-                ),
-              ),
-            ),
-          ),
         ],
       );
     });

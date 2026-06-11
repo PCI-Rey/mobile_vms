@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:async';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -23,6 +24,45 @@ class InvitationController extends GetxController {
       <ApprovalTicketModel>[].obs;
   final RxBool isApprovalLoading = false.obs;
   bool hasShownPendingPopup = false;
+  Timer? _reminderTimer;
+  Timer? _countdownTimer;
+  final RxInt reminderCountdown = 0.obs;
+  final RxSet<String> postponedTicketIds = <String>{}.obs;
+  final RxMap<String, String> ticketVisitorNames = <String, String>{}.obs;
+
+  void startReminderTimer(int minutes, String ticketId, VoidCallback onTrigger) {
+    postponedTicketIds.add(ticketId);
+
+    if (_reminderTimer == null) {
+      reminderCountdown.value = minutes * 60;
+      _countdownTimer?.cancel();
+      _countdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+        if (reminderCountdown.value > 0) {
+          reminderCountdown.value--;
+        } else {
+          timer.cancel();
+        }
+      });
+
+      _reminderTimer = Timer(Duration(minutes: minutes), () {
+        hasShownPendingPopup = false;
+        reminderCountdown.value = 0;
+        _countdownTimer?.cancel();
+        _countdownTimer = null;
+        _reminderTimer = null;
+        onTrigger();
+      });
+    }
+  }
+
+  void cancelReminderTimer() {
+    _reminderTimer?.cancel();
+    _reminderTimer = null;
+    _countdownTimer?.cancel();
+    _countdownTimer = null;
+    reminderCountdown.value = 0;
+    postponedTicketIds.clear();
+  }
 
   final Rx<DateTime?> startDate = Rx<DateTime?>(null);
   final Rx<DateTime?> endDate = Rx<DateTime?>(null);
@@ -41,6 +81,12 @@ class InvitationController extends GetxController {
     fetchOngoingInvitations();
     fetchApprovalTickets();
     fetchMasterData();
+  }
+
+  @override
+  void onClose() {
+    _reminderTimer?.cancel();
+    super.onClose();
   }
 
   void setFilters({
@@ -503,6 +549,27 @@ class InvitationController extends GetxController {
 
   // ─── Approval Ticket Action ──────────────────────────────────────────
 
+  void fetchVisitorNameForTicket(ApprovalTicketModel ticket) {
+    final entityId = ticket.entityId;
+    final ticketId = ticket.approvalTicketId ?? ticket.ticketId;
+    if (entityId == null || ticketId == null) return;
+    if (ticketVisitorNames.containsKey(ticketId)) return;
+
+    // Use placeholder first
+    ticketVisitorNames[ticketId] = ticket.hostName ?? 'Visitor';
+
+    fetchTransactionVisitors(entityId).then((visitors) {
+      if (visitors.isNotEmpty) {
+        final name = visitors.first['visitor_name']?.toString() ??
+            visitors.first['name']?.toString() ??
+            'Visitor';
+        ticketVisitorNames[ticketId] = name;
+      }
+    }).catchError((e) {
+      debugPrint('Error fetching visitor name for $ticketId: $e');
+    });
+  }
+
   Future<void> fetchApprovalTickets({bool isSilent = false}) async {
     final user = _hive.getUser();
     final token = user?.token;
@@ -519,6 +586,10 @@ class InvitationController extends GetxController {
             .map((e) => ApprovalTicketModel.fromJson(e as Map<String, dynamic>))
             .toList();
         approvalTickets.assignAll(newTickets);
+        
+        for (final ticket in newTickets) {
+          fetchVisitorNameForTicket(ticket);
+        }
       }
     } catch (e) {
       debugPrint('fetchApprovalTickets error: $e');

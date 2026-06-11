@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:flutter_visitor_app/splashscreen.dart';
@@ -25,6 +26,27 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Suppress Flutter framework key event assertion bug on emulator/macOS physical keyboard
+  final originalOnError = FlutterError.onError;
+  FlutterError.onError = (FlutterErrorDetails details) {
+    final errStr = details.exception.toString();
+    if (errStr.contains('_pressedKeys.containsKey') || errStr.contains('KeyUpEvent is dispatched')) {
+      debugPrint('⚠️ Suppressed physical keyboard assertion error');
+      return;
+    }
+    originalOnError?.call(details);
+  };
+
+  PlatformDispatcher.instance.onError = (error, stack) {
+    final errStr = error.toString();
+    if (errStr.contains('_pressedKeys.containsKey') || errStr.contains('KeyUpEvent is dispatched')) {
+      debugPrint('⚠️ Suppressed physical keyboard platform dispatcher assertion error');
+      return true;
+    }
+    return false;
+  };
+
   await Hive.initFlutter();
   // Open boxes
   await Hive.openBox('authBox');
