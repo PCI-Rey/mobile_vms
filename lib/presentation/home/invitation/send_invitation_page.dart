@@ -1,4 +1,8 @@
 import 'dart:async';
+import 'dart:io';
+import 'package:path_provider/path_provider.dart';
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
@@ -1374,6 +1378,96 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
     if (mounted) setState(() => _loadingSite = false);
   }
 
+  Future<void> _downloadBarcodePdf(String visitorNumber) async {
+    try {
+      final pdf = pw.Document();
+      pdf.addPage(
+        pw.Page(
+          pageFormat: PdfPageFormat.a4,
+          build: (pw.Context context) {
+            return pw.Center(
+              child: pw.Container(
+                width: 300,
+                padding: const pw.EdgeInsets.all(24),
+                decoration: pw.BoxDecoration(
+                  border: pw.Border.all(color: PdfColors.grey300, width: 1),
+                  borderRadius: const pw.BorderRadius.all(pw.Radius.circular(16)),
+                ),
+                child: pw.Column(
+                  mainAxisSize: pw.MainAxisSize.min,
+                  children: [
+                    pw.Text(
+                      'Access Pass',
+                      style: pw.TextStyle(
+                        fontSize: 22,
+                        fontWeight: pw.FontWeight.bold,
+                      ),
+                    ),
+                    pw.SizedBox(height: 24),
+                    pw.Container(
+                      width: 180,
+                      height: 180,
+                      child: pw.BarcodeWidget(
+                        barcode: pw.Barcode.qrCode(),
+                        data: visitorNumber.isNotEmpty ? visitorNumber : 'N/A',
+                      ),
+                    ),
+                    pw.SizedBox(height: 24),
+                    pw.Text(
+                      'Show this while visiting',
+                      style: const pw.TextStyle(fontSize: 12),
+                    ),
+                    pw.SizedBox(height: 6),
+                    pw.Text(
+                      'ID : ${visitorNumber.isNotEmpty ? visitorNumber : '-'}',
+                      style: pw.TextStyle(
+                        fontSize: 16,
+                        fontWeight: pw.FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        ),
+      );
+
+      final bytes = await pdf.save();
+      
+      String? path;
+      if (Platform.isAndroid) {
+        final dir = Directory('/storage/emulated/0/Download');
+        if (await dir.exists()) {
+          path = '${dir.path}/access_pass_$visitorNumber.pdf';
+        }
+      }
+      
+      if (path == null) {
+        final dir = await getApplicationDocumentsDirectory();
+        path = '${dir.path}/access_pass_$visitorNumber.pdf';
+      }
+
+      final file = File(path);
+      await file.writeAsBytes(bytes);
+
+      Get.snackbar(
+        'Success',
+        'PDF downloaded successfully to:\n$path',
+        backgroundColor: Colors.green,
+        colorText: Colors.white,
+        duration: const Duration(seconds: 5),
+      );
+    } catch (e) {
+      Get.snackbar(
+        'Error',
+        'Failed to download PDF: $e',
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
+    }
+  }
+
   Color _statusColor(String status) {
     switch (status.toLowerCase().trim()) {
       case 'checkin':
@@ -2121,7 +2215,29 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
 
                     if (!widget.isFullDetail &&
                         widget.item.flow.toLowerCase() != 'quickaccessvisit') ...[
-                      _section(context, 'Barcode'),
+                      _section(
+                        context,
+                        'Barcode',
+                        trailing: GestureDetector(
+                          onTap: () {
+                            final barcodeItems = _groupVisitorModels.isNotEmpty
+                                ? _groupVisitorModels
+                                : [selectedItem];
+                            if (_currentBarcodeIndex < barcodeItems.length) {
+                              final activeVisitor = barcodeItems[_currentBarcodeIndex];
+                              _downloadBarcodePdf(activeVisitor.visitorNumber);
+                            }
+                          },
+                          child: Text(
+                            'Download',
+                            style: TextStyle(
+                              fontSize: rfs(context, 12),
+                              fontWeight: FontWeight.bold,
+                              color: const Color(0xFF005596),
+                            ),
+                          ),
+                        ),
+                      ),
                       vSpace(context, 8),
                       (() {
                         final barcodeItems = _groupVisitorModels.isNotEmpty
@@ -2135,11 +2251,10 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
                               itemCount: barcodeItems.length,
                               carouselController: _barcodeCarouselController,
                               options: CarouselOptions(
-                                height: rh(context, 340),
+                                height: rh(context, 385),
                                 autoPlay: false,
-                                enlargeCenterPage: barcodeItems.length > 1,
-                                enlargeFactor: 0.15,
-                                viewportFraction: barcodeItems.length > 1 ? 0.82 : 1.0,
+                                enlargeCenterPage: false,
+                                viewportFraction: 1.0,
                                 enableInfiniteScroll: barcodeItems.length > 1,
                                 scrollDirection: Axis.horizontal,
                                 onPageChanged: (index, reason) {
@@ -2153,7 +2268,7 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
                                 return Container(
                                   width: double.infinity,
                                   margin: EdgeInsets.symmetric(
-                                    horizontal: barcodeItems.length > 1 ? rw(context, 6) : 0,
+                                    horizontal: rw(context, 20),
                                     vertical: rh(context, 4),
                                   ),
                                   padding: EdgeInsets.all(rw(context, 16)),
@@ -2172,42 +2287,20 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
                                   child: Column(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
-                                      // Title row
-                                      Row(
-                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                        children: [
-                                          Text(
-                                            'Access Pass',
-                                            style: TextStyle(
-                                              fontSize: rfs(context, 16),
-                                              fontWeight: FontWeight.w800,
-                                              color: Colors.black87,
-                                            ),
+                                      // Access Pass Title (Centered)
+                                      Center(
+                                        child: Text(
+                                          'Access Pass',
+                                          style: TextStyle(
+                                            fontSize: rfs(context, 18),
+                                            fontWeight: FontWeight.w800,
+                                            color: Colors.black87,
                                           ),
-                                          Container(
-                                            padding: EdgeInsets.symmetric(
-                                              horizontal: rw(context, 8),
-                                              vertical: rh(context, 3),
-                                            ),
-                                            decoration: BoxDecoration(
-                                              color: Colors.green.shade50,
-                                              borderRadius: BorderRadius.circular(rw(context, 12)),
-                                              border: Border.all(color: Colors.green.shade200),
-                                            ),
-                                            child: Text(
-                                              'download',
-                                              style: TextStyle(
-                                                color: Colors.green.shade700,
-                                                fontSize: rfs(context, 10),
-                                                fontWeight: FontWeight.bold,
-                                              ),
-                                            ),
-                                          ),
-                                        ],
+                                        ),
                                       ),
                                       vSpace(context, 12),
                                       
-                                      // QR Code Box
+                                      // QR Code Box (Enlarged)
                                       Container(
                                         padding: EdgeInsets.all(rw(context, 10)),
                                         decoration: BoxDecoration(
@@ -2218,14 +2311,14 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
                                         child: QrImageView(
                                           data: model.visitorNumber.isNotEmpty ? model.visitorNumber : 'N/A',
                                           version: QrVersions.auto,
-                                          size: rw(context, 130),
+                                          size: rw(context, 175),
                                         ),
                                       ),
                                       vSpace(context, 12),
                                       
-                                      // Tracked / Low Battery Row
+                                      // Tracked / Low Battery Row (Centered)
                                       Row(
-                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                        mainAxisAlignment: MainAxisAlignment.center,
                                         children: [
                                           Text(
                                             'Tracked',
@@ -2235,6 +2328,7 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
                                               fontWeight: FontWeight.bold,
                                             ),
                                           ),
+                                          hSpace(context, 16),
                                           Text(
                                             'Low Battery',
                                             style: TextStyle(
