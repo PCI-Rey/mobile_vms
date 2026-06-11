@@ -128,7 +128,7 @@ class _InviteShareLinkDialogState extends State<InviteShareLinkDialog>
     final int expiredNumber = widget.item['expired_number'] ?? -1;
     final bool isNoExpired = expiredNumber == 0;
 
-    final String shortenUrl = (widget.item['shorten_url'] ?? '')
+    final String shortenUrl = (widget.item['shorten_url'] ?? widget.item['short_url'] ?? '')
         .toString()
         .trim();
     final String url = (shortenUrl.isNotEmpty && shortenUrl != 'null')

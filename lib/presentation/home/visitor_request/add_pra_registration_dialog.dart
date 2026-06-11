@@ -37,7 +37,9 @@ Future<bool> _showExitConfirmation(BuildContext context) async {
     context: context,
     builder: (context) => AlertDialog(
       backgroundColor: Colors.white,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(rw(context, 16))),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(rw(context, 16)),
+      ),
       title: Text(
         'Cancel Registration?',
         style: TextStyle(fontWeight: FontWeight.bold),
@@ -74,22 +76,18 @@ Future<bool> _showBackConfirmation(BuildContext context) async {
           ),
           title: Row(
             children: [
-              Icon(
-                Icons.warning_amber_rounded,
-                color: Colors.orange,
-                size: 28,
-              ),
+              Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 28),
               hSpace(context, 12),
-              Text(
-                'Warning',
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
+              Text('Warning', style: TextStyle(fontWeight: FontWeight.bold)),
             ],
           ),
           content: Text(
             'Are you sure you want to go back? Going back to Visitor Type selection will reset the information you have already entered in this step.',
             textAlign: TextAlign.justify,
-            style: TextStyle(fontSize: rfs(context, 14), color: Color(0xFF616161)),
+            style: TextStyle(
+              fontSize: rfs(context, 14),
+              color: Color(0xFF616161),
+            ),
           ),
           actions: [
             TextButton(
@@ -179,8 +177,13 @@ class _AddPraRegistrationDialog extends StatelessWidget {
       },
       child: Dialog(
         backgroundColor: Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(rw(context, 20))),
-        insetPadding: EdgeInsets.symmetric(horizontal: rw(context, 16), vertical: rh(context, 28)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(rw(context, 20)),
+        ),
+        insetPadding: EdgeInsets.symmetric(
+          horizontal: rw(context, 16),
+          vertical: rh(context, 28),
+        ),
         child: SizedBox(
           height: MediaQuery.of(context).size.height * 0.88,
           child: Obx(() {
@@ -270,7 +273,7 @@ class _DialogHeader extends StatelessWidget {
               children: [
                 Expanded(
                   child: Text(
-                    'Create Add Pra Registration',
+                    'Create Pra Registration',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: rfs(context, 17),
@@ -366,7 +369,10 @@ class _StepProgressBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: rw(context, 32), vertical: rh(context, 16)),
+      padding: EdgeInsets.symmetric(
+        horizontal: rw(context, 32),
+        vertical: rh(context, 16),
+      ),
       child: Row(
         children: List.generate(total, (index) {
           final isCompleted = index < currentStep;
@@ -415,11 +421,7 @@ class _StepProgressBar extends StatelessWidget {
                     ),
                     child: Center(
                       child: isCompleted
-                          ? Icon(
-                              Icons.check,
-                              size: 16,
-                              color: Colors.white,
-                            )
+                          ? Icon(Icons.check, size: 16, color: Colors.white)
                           : Text(
                               '${index + 1}',
                               style: TextStyle(
@@ -553,11 +555,7 @@ class _Step0UserType extends StatelessWidget {
                             ),
                           ),
                           child: isSelected
-                              ? Icon(
-                                  Icons.check,
-                                  size: 12,
-                                  color: Colors.white,
-                                )
+                              ? Icon(Icons.check, size: 12, color: Colors.white)
                               : null,
                         ),
                         hSpace(context, 12),
@@ -625,13 +623,17 @@ class _Step0UserType extends StatelessWidget {
           ),
 
           // ── Group List (visible when Group selected) ─────────────
-          if (controller.isGroup.value == true) ..._buildGroupList(context, controller),
+          if (controller.isGroup.value == true)
+            ..._buildGroupList(context, controller),
         ],
       );
     });
   }
 
-  List<Widget> _buildGroupList(BuildContext context, PraRegistrationController controller) {
+  List<Widget> _buildGroupList(
+    BuildContext context,
+    PraRegistrationController controller,
+  ) {
     return [
       vSpace(context, 24),
       _SectionHeader(title: 'Group List', isRequired: true),
@@ -653,7 +655,10 @@ class _Step0UserType extends StatelessWidget {
           children: [
             // Table header
             Container(
-              padding: EdgeInsets.symmetric(horizontal: rw(context, 14), vertical: rh(context, 10)),
+              padding: EdgeInsets.symmetric(
+                horizontal: rw(context, 14),
+                vertical: rh(context, 10),
+              ),
               decoration: BoxDecoration(
                 color: AppColors.grey100,
                 borderRadius: const BorderRadius.only(
@@ -788,7 +793,10 @@ class _StatusCard extends StatelessWidget {
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        padding: EdgeInsets.symmetric(vertical: rh(context, 14), horizontal: rw(context, 12)),
+        padding: EdgeInsets.symmetric(
+          vertical: rh(context, 14),
+          horizontal: rw(context, 12),
+        ),
         decoration: BoxDecoration(
           color: isSelected
               ? AppColors.primary500.withValues(alpha: 0.06)
@@ -953,31 +961,33 @@ class _Step1VisitorInfo extends StatelessWidget {
                             ) ??
                         false;
                     if (isEmpType) {
-                      return Obx(() => Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _EmployeeSearchField(
-                            controller: controller,
-                            initialValue: v.selectedEmployeeName.value,
-                            syncWith: v.selectedEmployeeName,
-                            onSelected: (emp) {
-                              final id = emp['id']?.toString() ?? '';
-                              controller.onGroupEmployeeSelected(v, id);
-                            },
-                            onClear: () {
-                              v.selectedEmployeeId.value = '';
-                              v.selectedEmployeeName.value = '';
-                              v.fullName.clear();
-                              v.email.clear();
-                              v.phone.clear();
-                              v.organization.clear();
-                              v.identityId.clear();
-                              controller.updateForm();
-                            },
-                          ),
-                          vSpace(context, 12),
-                        ],
-                      ));
+                      return Obx(
+                        () => Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _EmployeeSearchField(
+                              controller: controller,
+                              initialValue: v.selectedEmployeeName.value,
+                              syncWith: v.selectedEmployeeName,
+                              onSelected: (emp) {
+                                final id = emp['id']?.toString() ?? '';
+                                controller.onGroupEmployeeSelected(v, id);
+                              },
+                              onClear: () {
+                                v.selectedEmployeeId.value = '';
+                                v.selectedEmployeeName.value = '';
+                                v.fullName.clear();
+                                v.email.clear();
+                                v.phone.clear();
+                                v.organization.clear();
+                                v.identityId.clear();
+                                controller.updateForm();
+                              },
+                            ),
+                            vSpace(context, 12),
+                          ],
+                        ),
+                      );
                     }
                     return Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1028,7 +1038,9 @@ class _Step1VisitorInfo extends StatelessWidget {
                         ),
                       ),
                       style: TextButton.styleFrom(
-                        padding: EdgeInsets.symmetric(horizontal: rw(context, 8)),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: rw(context, 8),
+                        ),
                         minimumSize: Size.zero,
                         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                       ),
@@ -1183,6 +1195,23 @@ class _Step1VisitorInfo extends StatelessWidget {
                       Obx(() {
                         final roles =
                             controller.formStructure.value?.visitorRoles ?? [];
+                        final isEmployeeType = controller
+                            .selectedVisitorTypeName
+                            .value
+                            .toLowerCase()
+                            .contains('employee');
+
+                        if (isEmployeeType) {
+                          final defaultRole = roles.isNotEmpty ? roles.first.role : 'Employee';
+                          if (v.selectedVisitorRole.value != defaultRole) {
+                            WidgetsBinding.instance.addPostFrameCallback((_) {
+                              v.selectedVisitorRole.value = defaultRole;
+                              controller.updateForm();
+                            });
+                          }
+                          return const SizedBox.shrink();
+                        }
+
                         if (roles.isEmpty) return const SizedBox.shrink();
                         final selected = v.selectedVisitorRole.value;
                         return Column(
@@ -1211,12 +1240,11 @@ class _Step1VisitorInfo extends StatelessWidget {
                             Builder(
                               builder: (ctx) => GestureDetector(
                                 onTap: () async {
-                                  final result =
-                                      await _showVisitorRolePicker(
-                                        ctx,
-                                        roles,
-                                        selected,
-                                      );
+                                  final result = await _showVisitorRolePicker(
+                                    ctx,
+                                    roles,
+                                    selected,
+                                  );
                                   if (result != null) {
                                     v.selectedVisitorRole.value = result.role;
                                     controller.updateForm();
@@ -1233,52 +1261,34 @@ class _Step1VisitorInfo extends StatelessWidget {
                         );
                       }),
 
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(
-                            child: _GroupTextField(
-                              label: 'Full Name',
-                              controller: v.fullName,
-                              hint: 'Enter full name',
-                              onChanged: (_) => controller.updateForm(),
-                            ),
-                          ),
-                          hSpace(context, 12),
-                          Expanded(
-                            child: _GroupTextField(
-                              label: 'Email',
-                              controller: v.email,
-                              hint: 'Enter email',
-                              keyboardType: TextInputType.emailAddress,
-                              onChanged: (_) => controller.updateForm(),
-                            ),
-                          ),
-                        ],
+                      _GroupTextField(
+                        label: 'Full Name',
+                        controller: v.fullName,
+                        hint: 'Enter full name',
+                        onChanged: (_) => controller.updateForm(),
                       ),
                       vSpace(context, 16),
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(
-                            child: _GroupTextField(
-                              label: 'Phone',
-                              controller: v.phone,
-                              hint: 'e.g. 08123...',
-                              keyboardType: TextInputType.phone,
-                              onChanged: (_) => controller.updateForm(),
-                            ),
-                          ),
-                          hSpace(context, 12),
-                          Expanded(
-                            child: _GroupTextField(
-                              label: 'Organization',
-                              controller: v.organization,
-                              hint: 'Company / Instance',
-                              onChanged: (_) => controller.updateForm(),
-                            ),
-                          ),
-                        ],
+                      _GroupTextField(
+                        label: 'Email',
+                        controller: v.email,
+                        hint: 'Enter email',
+                        keyboardType: TextInputType.emailAddress,
+                        onChanged: (_) => controller.updateForm(),
+                      ),
+                      vSpace(context, 16),
+                      _GroupTextField(
+                        label: 'Phone',
+                        controller: v.phone,
+                        hint: 'e.g. 08123...',
+                        keyboardType: TextInputType.phone,
+                        onChanged: (_) => controller.updateForm(),
+                      ),
+                      vSpace(context, 16),
+                      _GroupTextField(
+                        label: 'Organization',
+                        controller: v.organization,
+                        hint: 'Company / Instance',
+                        onChanged: (_) => controller.updateForm(),
                       ),
                       vSpace(context, 16),
                       _GroupTextField(
@@ -1309,7 +1319,10 @@ class _Step1VisitorInfo extends StatelessWidget {
               icon: Icon(Icons.add_circle_outline_rounded, size: 20),
               label: Text(
                 'Add New Visitor',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: rfs(context, 14)),
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: rfs(context, 14),
+                ),
               ),
               style: OutlinedButton.styleFrom(
                 foregroundColor: AppColors.primary500,
@@ -1363,7 +1376,10 @@ Future<VisitorRoleItem?> _showVisitorRolePicker(
           ),
           Text(
             'Pilih Role',
-            style: TextStyle(fontSize: rfs(context, 15), fontWeight: FontWeight.w700),
+            style: TextStyle(
+              fontSize: rfs(context, 15),
+              fontWeight: FontWeight.w700,
+            ),
           ),
           vSpace(context, 8),
           const Divider(height: 1),
@@ -1452,7 +1468,10 @@ Future<DropdownItem?> _showEmployeePicker(
           ),
           Text(
             'Pilih Employee',
-            style: TextStyle(fontSize: rfs(context, 15), fontWeight: FontWeight.w700),
+            style: TextStyle(
+              fontSize: rfs(context, 15),
+              fontWeight: FontWeight.w700,
+            ),
           ),
           vSpace(context, 8),
           const Divider(height: 1),
@@ -1573,7 +1592,10 @@ class _DropdownTrigger extends StatelessWidget {
     final hasValue = text.isNotEmpty;
     return Container(
       width: double.infinity,
-      padding: EdgeInsets.symmetric(horizontal: rw(context, 12), vertical: rh(context, 13)),
+      padding: EdgeInsets.symmetric(
+        horizontal: rw(context, 12),
+        vertical: rh(context, 13),
+      ),
       decoration: BoxDecoration(
         border: Border.all(color: const Color(0xFFDDDDDD)),
         borderRadius: BorderRadius.circular(rw(context, 10)),
@@ -1651,7 +1673,10 @@ class _GroupTextField extends StatelessWidget {
             filled: true,
             fillColor: Colors.white,
             hintText: hint,
-            hintStyle: TextStyle(fontSize: rfs(context, 13), color: AppColors.grey400),
+            hintStyle: TextStyle(
+              fontSize: rfs(context, 13),
+              color: AppColors.grey400,
+            ),
             contentPadding: EdgeInsets.symmetric(
               horizontal: rw(context, 12),
               vertical: rh(context, 12),
@@ -1795,7 +1820,10 @@ class _FormFieldWidget extends StatelessWidget {
           }
           return Container(
             width: double.infinity,
-            padding: EdgeInsets.symmetric(horizontal: rw(context, 12), vertical: rh(context, 13)),
+            padding: EdgeInsets.symmetric(
+              horizontal: rw(context, 12),
+              vertical: rh(context, 13),
+            ),
             decoration: BoxDecoration(
               border: Border.all(color: const Color(0xFFDDDDDD)),
               borderRadius: BorderRadius.circular(rw(context, 10)),
@@ -1803,7 +1831,10 @@ class _FormFieldWidget extends StatelessWidget {
             ),
             child: Text(
               single.role,
-              style: TextStyle(fontSize: rfs(context, 14), color: Colors.black87),
+              style: TextStyle(
+                fontSize: rfs(context, 14),
+                color: Colors.black87,
+              ),
             ),
           );
         }
@@ -1846,7 +1877,10 @@ class _FormFieldWidget extends StatelessWidget {
           }
           return Container(
             width: double.infinity,
-            padding: EdgeInsets.symmetric(horizontal: rw(context, 12), vertical: rh(context, 13)),
+            padding: EdgeInsets.symmetric(
+              horizontal: rw(context, 12),
+              vertical: rh(context, 13),
+            ),
             decoration: BoxDecoration(
               border: Border.all(color: const Color(0xFFDDDDDD)),
               borderRadius: BorderRadius.circular(rw(context, 10)),
@@ -1854,7 +1888,10 @@ class _FormFieldWidget extends StatelessWidget {
             ),
             child: Text(
               single.name,
-              style: TextStyle(fontSize: rfs(context, 14), color: Colors.black87),
+              style: TextStyle(
+                fontSize: rfs(context, 14),
+                color: Colors.black87,
+              ),
             ),
           );
         }
@@ -2228,7 +2265,10 @@ class _FormFieldWidget extends StatelessWidget {
     }
 
     final decoration = InputDecoration(
-      contentPadding: EdgeInsets.symmetric(horizontal: rw(context, 12), vertical: rh(context, 12)),
+      contentPadding: EdgeInsets.symmetric(
+        horizontal: rw(context, 12),
+        vertical: rh(context, 12),
+      ),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(rw(context, 10)),
         borderSide: const BorderSide(color: Color(0xFFDDDDDD)),
@@ -2286,7 +2326,10 @@ class _FormFieldWidget extends StatelessWidget {
               return RadioListTile<String>(
                 value: opt.value,
                 activeColor: AppColors.primary500,
-                title: Text(opt.name, style: TextStyle(fontSize: rfs(context, 14))),
+                title: Text(
+                  opt.name,
+                  style: TextStyle(fontSize: rfs(context, 14)),
+                ),
                 contentPadding: EdgeInsets.zero,
               );
             }).toList(),
@@ -2301,7 +2344,10 @@ class _FormFieldWidget extends StatelessWidget {
       builder: (ctx, setState) => CheckboxListTile(
         value: field.answerText == 'true',
         activeColor: AppColors.primary500,
-        title: Text(field.shortName, style: TextStyle(fontSize: rfs(context, 14))),
+        title: Text(
+          field.shortName,
+          style: TextStyle(fontSize: rfs(context, 14)),
+        ),
         contentPadding: EdgeInsets.zero,
         onChanged: (v) {
           field.answerText = (v == true).toString();
@@ -2337,7 +2383,10 @@ class _FormFieldWidget extends StatelessWidget {
           hintText: withTime
               ? 'EEEE, DD MMMM YYYY, HH:mm'
               : 'EEEE, DD MMMM YYYY',
-          hintStyle: TextStyle(color: AppColors.grey400, fontSize: rfs(context, 13)),
+          hintStyle: TextStyle(
+            color: AppColors.grey400,
+            fontSize: rfs(context, 13),
+          ),
           suffixIcon: Icon(
             Icons.calendar_today_outlined,
             color: AppColors.grey500,
@@ -2557,7 +2606,10 @@ class _FileUploadStateState extends State<_FileUploadState> {
             ),
             Text(
               'Pilih Sumber Foto',
-              style: TextStyle(fontSize: rfs(context, 15), fontWeight: FontWeight.w700),
+              style: TextStyle(
+                fontSize: rfs(context, 15),
+                fontWeight: FontWeight.w700,
+              ),
             ),
             vSpace(context, 8),
             const Divider(height: 1),
@@ -2634,11 +2686,7 @@ class _FileUploadStateState extends State<_FileUploadState> {
                   shape: BoxShape.circle,
                 ),
                 padding: EdgeInsets.all(rw(context, 5)),
-                child: Icon(
-                  Icons.close_rounded,
-                  color: Colors.white,
-                  size: 16,
-                ),
+                child: Icon(Icons.close_rounded, color: Colors.white, size: 16),
               ),
             ),
           ),
@@ -2684,7 +2732,10 @@ class _FileUploadStateState extends State<_FileUploadState> {
                     vSpace(context, 6),
                     Text(
                       'Mengupload...',
-                      style: TextStyle(color: AppColors.grey500, fontSize: rfs(context, 12)),
+                      style: TextStyle(
+                        color: AppColors.grey500,
+                        fontSize: rfs(context, 12),
+                      ),
                     ),
                   ],
                 ),
@@ -2766,7 +2817,10 @@ class _BottomNav extends StatelessWidget {
             bottomRight: Radius.circular(20),
           ),
         ),
-        padding: EdgeInsets.symmetric(horizontal: rw(context, 20), vertical: rh(context, 14)),
+        padding: EdgeInsets.symmetric(
+          horizontal: rw(context, 20),
+          vertical: rh(context, 14),
+        ),
         child: Row(
           children: [
             // Back button
@@ -3034,7 +3088,10 @@ class _VisitorSearchFieldState extends State<_VisitorSearchField> {
                           ctrl.visitorSearchQuery.value.isEmpty
                               ? 'Type to search visitors...'
                               : 'No visitor found',
-                          style: TextStyle(color: Colors.grey, fontSize: rfs(context, 13)),
+                          style: TextStyle(
+                            color: Colors.grey,
+                            fontSize: rfs(context, 13),
+                          ),
                         ),
                       );
                     }
@@ -3075,7 +3132,9 @@ class _VisitorSearchFieldState extends State<_VisitorSearchField> {
                                   ),
                                   child: Center(
                                     child: Text(
-                                      name.isNotEmpty ? name[0].toUpperCase() : '?',
+                                      name.isNotEmpty
+                                          ? name[0].toUpperCase()
+                                          : '?',
                                       style: TextStyle(
                                         color: AppColors.primary500,
                                         fontWeight: FontWeight.bold,
@@ -3087,7 +3146,8 @@ class _VisitorSearchFieldState extends State<_VisitorSearchField> {
                                 hSpace(context, 12),
                                 Expanded(
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Text(
                                         name,
@@ -3210,6 +3270,7 @@ class _EmployeeSearchField extends StatefulWidget {
   final String initialValue;
   final void Function(Map<String, dynamic> employee) onSelected;
   final void Function()? onClear;
+
   /// Observable yang akan di-sync ke search field.
   /// Jika tidak diberikan, secara default listen ke controller.selectedEmployeeName.
   final RxString? syncWith;
@@ -3252,15 +3313,12 @@ class _EmployeeSearchFieldState extends State<_EmployeeSearchField> {
     // - syncWith jika diberikan (contoh: per-row group visitor)
     // - fallback ke controller.selectedEmployeeName (single mode)
     final targetObs = widget.syncWith ?? widget.controller.selectedEmployeeName;
-    _nameWorker = ever(
-      targetObs,
-      (String newName) {
-        if (!mounted) return;
-        if (_searchCtrl.text != newName) {
-          _searchCtrl.text = newName;
-        }
-      },
-    );
+    _nameWorker = ever(targetObs, (String newName) {
+      if (!mounted) return;
+      if (_searchCtrl.text != newName) {
+        _searchCtrl.text = newName;
+      }
+    });
   }
 
   @override
@@ -3342,7 +3400,9 @@ class _EmployeeSearchFieldState extends State<_EmployeeSearchField> {
                     if (ctrl.isLoadingEmployees.value) {
                       return Padding(
                         padding: EdgeInsets.all(rw(context, 16)),
-                        child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                        child: Center(
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
                       );
                     }
                     final results = ctrl.filteredEmployees;
@@ -3353,7 +3413,10 @@ class _EmployeeSearchFieldState extends State<_EmployeeSearchField> {
                           ctrl.employeeSearchQuery.value.isEmpty
                               ? 'Type to search employees...'
                               : 'No employee found',
-                          style: TextStyle(color: Colors.grey, fontSize: rfs(context, 13)),
+                          style: TextStyle(
+                            color: Colors.grey,
+                            fontSize: rfs(context, 13),
+                          ),
                         ),
                       );
                     }
@@ -3366,7 +3429,11 @@ class _EmployeeSearchFieldState extends State<_EmployeeSearchField> {
                       itemBuilder: (context, i) {
                         final e = results[i];
                         final name = e['name']?.toString() ?? '';
-                        final org = e['organization']?.toString() ?? e['Organization']?['name']?.toString() ?? e['company']?.toString() ?? '';
+                        final org =
+                            e['organization']?.toString() ??
+                            e['Organization']?['name']?.toString() ??
+                            e['company']?.toString() ??
+                            '';
                         final email = e['email']?.toString() ?? '';
                         return InkWell(
                           borderRadius: i == 0
@@ -3394,7 +3461,9 @@ class _EmployeeSearchFieldState extends State<_EmployeeSearchField> {
                                   ),
                                   child: Center(
                                     child: Text(
-                                      name.isNotEmpty ? name[0].toUpperCase() : '?',
+                                      name.isNotEmpty
+                                          ? name[0].toUpperCase()
+                                          : '?',
                                       style: TextStyle(
                                         color: AppColors.primary500,
                                         fontWeight: FontWeight.bold,
@@ -3406,7 +3475,8 @@ class _EmployeeSearchFieldState extends State<_EmployeeSearchField> {
                                 hSpace(context, 12),
                                 Expanded(
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Text(
                                         name,
@@ -3481,21 +3551,23 @@ class _EmployeeSearchFieldState extends State<_EmployeeSearchField> {
                     ),
                   )
                 : _searchCtrl.text.isNotEmpty
-                    ? IconButton(
-                        icon: Icon(Icons.close, size: 18, color: Colors.grey),
-                        onPressed: () {
-                          _searchCtrl.clear();
-                          widget.controller.employeeSearchQuery.value = '';
-                          _overlayEntry?.markNeedsBuild();
-                          if (widget.onClear != null) widget.onClear!();
-                        },
-                      )
-                    : const SizedBox.shrink(),
+                ? IconButton(
+                    icon: Icon(Icons.close, size: 18, color: Colors.grey),
+                    onPressed: () {
+                      _searchCtrl.clear();
+                      widget.controller.employeeSearchQuery.value = '';
+                      _overlayEntry?.markNeedsBuild();
+                      if (widget.onClear != null) widget.onClear!();
+                    },
+                  )
+                : const SizedBox.shrink(),
           ),
           filled: true,
           fillColor: Colors.white,
-          contentPadding:
-              EdgeInsets.symmetric(horizontal: rw(context, 14), vertical: rh(context, 12)),
+          contentPadding: EdgeInsets.symmetric(
+            horizontal: rw(context, 14),
+            vertical: rh(context, 12),
+          ),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(rw(context, 10)),
             borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
@@ -3507,7 +3579,9 @@ class _EmployeeSearchFieldState extends State<_EmployeeSearchField> {
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(rw(context, 10)),
             borderSide: const BorderSide(
-                color: AppColors.primary500, width: 1.5),
+              color: AppColors.primary500,
+              width: 1.5,
+            ),
           ),
         ),
       ),

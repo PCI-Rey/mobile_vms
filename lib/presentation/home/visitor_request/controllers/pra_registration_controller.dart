@@ -528,7 +528,17 @@ class PraRegistrationController extends GetxController {
       final response = await _api.getSitesWithToken(token);
       if (response.data['status'] == 'success') {
         final collection = response.data['collection'] as List<dynamic>? ?? [];
-        sites.value = collection.map((e) => DropdownItem(id: e['id']?.toString() ?? '', name: e['name']?.toString() ?? '')).toList();
+        final filteredCollection = collection.where((e) {
+          if (e is Map) {
+            final isDropPoint = e['is_drop_point'];
+            final name = e['name']?.toString().toLowerCase() ?? '';
+            if (isDropPoint == true || isDropPoint.toString() == 'true' || name == 'drop point') {
+              return false;
+            }
+          }
+          return true;
+        }).toList();
+        sites.value = filteredCollection.map((e) => DropdownItem(id: e['id']?.toString() ?? '', name: e['name']?.toString() ?? '')).toList();
       }
     } catch (e) {
       debugPrint('fetchSites error: $e');

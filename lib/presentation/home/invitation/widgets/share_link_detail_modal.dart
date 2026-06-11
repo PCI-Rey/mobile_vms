@@ -46,7 +46,7 @@ class ShareLinkDetailModal {
       }
     }
 
-    final String shortenUrl = (item['shorten_url'] ?? '').toString().trim();
+    final String shortenUrl = (item['shorten_url'] ?? item['short_url'] ?? '').toString().trim();
     final String url = (shortenUrl.isNotEmpty && shortenUrl != 'null')
         ? shortenUrl
         : (item['url'] ?? '').toString().trim();

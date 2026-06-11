@@ -158,7 +158,7 @@ class ShareLinkCard extends StatelessWidget {
 
     final String status = isExpired ? 'Expired' : 'Active';
 
-    final String shortenUrl = (item['shorten_url'] ?? '').toString().trim();
+    final String shortenUrl = (item['shorten_url'] ?? item['short_url'] ?? '').toString().trim();
     final String url = (shortenUrl.isNotEmpty && shortenUrl != 'null')
         ? shortenUrl
         : (item['url'] ?? '').toString().trim();

@@ -54,7 +54,14 @@ class _AccessPassDialogState extends State<AccessPassDialog> {
         constraints: BoxConstraints(maxWidth: rw(context, 400)),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(rw(context, 20)),
+          borderRadius: BorderRadius.circular(rw(context, 24)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.08),
+              blurRadius: 24,
+              offset: const Offset(0, 8),
+            ),
+          ],
         ),
         child: SingleChildScrollView(
           child: Column(
@@ -63,23 +70,34 @@ class _AccessPassDialogState extends State<AccessPassDialog> {
               // Header
               Container(
                 width: double.infinity,
-                padding: EdgeInsets.symmetric(
-                  vertical: rh(context, 20),
-                  horizontal: rw(context, 24),
+                padding: EdgeInsets.only(
+                  top: rh(context, 24),
+                  bottom: rh(context, 12),
+                  left: rw(context, 24),
+                  right: rw(context, 24),
                 ),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(rw(context, 20))),
-                ),
-                child: Text(
-                  'Your Access Pass',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w800,
-                    color: const Color(0xFF0F172A),
-                    letterSpacing: -0.5,
-                  ),
-                  textAlign: TextAlign.center,
+                child: Column(
+                  children: [
+                    Container(
+                      width: rw(context, 40),
+                      height: rh(context, 4),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade200,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                    vSpace(context, 16),
+                    Text(
+                      'Your Access Pass',
+                      style: TextStyle(
+                        fontSize: rfs(context, 20),
+                        fontWeight: FontWeight.w800,
+                        color: const Color(0xFF0F172A),
+                        letterSpacing: -0.5,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
                 ),
               ),
 
@@ -92,7 +110,7 @@ class _AccessPassDialogState extends State<AccessPassDialog> {
                   padding: EdgeInsets.only(
                     left: rw(context, 24),
                     right: rw(context, 24),
-                    top: rh(context, 20),
+                    top: rh(context, 16),
                   ),
                   child: Column(
                     children: [
@@ -101,8 +119,8 @@ class _AccessPassDialogState extends State<AccessPassDialog> {
                         children: [
                           // Profile picture with border
                           Container(
-                            width: rw(context, 48),
-                            height: rw(context, 48),
+                            width: rw(context, 52),
+                            height: rw(context, 52),
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
                               border: Border.all(
@@ -115,14 +133,14 @@ class _AccessPassDialogState extends State<AccessPassDialog> {
                                 ? ClipOval(
                                     child: Image.asset(
                                       widget.profileImagePath!,
-                                      width: rw(context, 48),
-                                      height: rw(context, 48),
+                                      width: rw(context, 52),
+                                      height: rw(context, 52),
                                       fit: BoxFit.cover,
                                     ),
                                   )
                                 : Icon(
                                     Icons.person,
-                                    size: rw(context, 28),
+                                    size: rw(context, 32),
                                     color: AppColors.grey600,
                                   ),
                           ),
@@ -136,20 +154,34 @@ class _AccessPassDialogState extends State<AccessPassDialog> {
                                 Text(
                                   widget.name,
                                   style: TextStyle(
-                                    fontSize: rfs(context, 16),
+                                    fontSize: rfs(context, 18),
                                     fontWeight: FontWeight.w800,
                                     color: const Color(0xFF0F172A),
-                                    letterSpacing: -0.3,
+                                    letterSpacing: -0.4,
                                   ),
                                 ),
-                                vSpace(context, 2),
-                                Text(
-                                  '${widget.date} ${widget.time}',
-                                  style: TextStyle(
-                                    fontSize: rfs(context, 13),
-                                    fontWeight: FontWeight.w500,
-                                    color: const Color(0xFF64748B),
-                                  ),
+                                vSpace(context, 4),
+                                Row(
+                                  children: [
+                                    Icon(
+                                      Icons.access_time,
+                                      size: rw(context, 13),
+                                      color: const Color(0xFF64748B),
+                                    ),
+                                    hSpace(context, 4),
+                                    Expanded(
+                                      child: Text(
+                                        '${widget.date} • ${widget.time}',
+                                        style: TextStyle(
+                                          fontSize: rfs(context, 12),
+                                          fontWeight: FontWeight.w500,
+                                          color: const Color(0xFF64748B),
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ],
                             ),
@@ -162,29 +194,20 @@ class _AccessPassDialogState extends State<AccessPassDialog> {
                             child: GestureDetector(
                               onTap: _isCapturing ? null : _downloadAccessPass,
                               child: Container(
-                                width: rw(context, 40),
-                                height: rw(context, 40),
+                                width: rw(context, 42),
+                                height: rw(context, 42),
                                 decoration: BoxDecoration(
                                   color: _isCapturing
                                       ? Colors.transparent
-                                      : AppColors.primary500,
+                                      : const Color(0xFFE8F1FB),
                                   shape: BoxShape.circle,
-                                  boxShadow: _isCapturing
-                                      ? null
-                                      : [
-                                          BoxShadow(
-                                            color: AppColors.primary500.withValues(alpha: 0.3),
-                                            blurRadius: 8,
-                                            offset: const Offset(0, 3),
-                                          ),
-                                        ],
                                 ),
                                 child: _isCapturing
                                     ? const SizedBox.shrink()
-                                    : Icon(
-                                        Icons.download,
-                                        size: rw(context, 20),
-                                        color: Colors.white,
+                                    : const Icon(
+                                        Icons.download_rounded,
+                                        size: 20,
+                                        color: Color(0xFF1976D2),
                                       ),
                               ),
                             ),
@@ -192,7 +215,7 @@ class _AccessPassDialogState extends State<AccessPassDialog> {
                         ],
                       ),
 
-                      vSpace(context, 24),
+                      vSpace(context, 20),
 
                       // Structured Info Card Grid
                       Container(
@@ -202,8 +225,8 @@ class _AccessPassDialogState extends State<AccessPassDialog> {
                         ),
                         decoration: BoxDecoration(
                           color: const Color(0xFFF8FAFC),
-                          borderRadius: BorderRadius.circular(rw(context, 12)),
-                          border: Border.all(color: const Color(0xFFE2E8F0)),
+                          borderRadius: BorderRadius.circular(rw(context, 16)),
+                          border: Border.all(color: const Color(0xFFF1F5F9)),
                         ),
                         child: Column(
                           children: [
@@ -218,7 +241,7 @@ class _AccessPassDialogState extends State<AccessPassDialog> {
                                 ),
                                 Container(
                                   width: 1,
-                                  height: rh(context, 32),
+                                  height: rh(context, 36),
                                   color: const Color(0xFFE2E8F0),
                                 ),
                                 Expanded(
@@ -249,7 +272,7 @@ class _AccessPassDialogState extends State<AccessPassDialog> {
                                 ),
                                 Container(
                                   width: 1,
-                                  height: rh(context, 32),
+                                  height: rh(context, 36),
                                   color: const Color(0xFFE2E8F0),
                                 ),
                                 Expanded(
@@ -268,84 +291,87 @@ class _AccessPassDialogState extends State<AccessPassDialog> {
                         ),
                       ),
 
-                      vSpace(context, 24),
+                      vSpace(context, 20),
 
                       // Building name with icon
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(
-                            Icons.business_outlined,
-                            size: rw(context, 20),
-                            color: AppColors.primary500,
+                          const Icon(
+                            Icons.location_on_rounded,
+                            size: 20,
+                            color: Color(0xFF1976D2),
                           ),
-                          hSpace(context, 8),
+                          hSpace(context, 6),
                           Text(
                             widget.buildingName,
                             style: TextStyle(
-                              fontSize: rfs(context, 20),
+                              fontSize: rfs(context, 18),
                               fontWeight: FontWeight.w800,
                               color: const Color(0xFF0F172A),
-                              letterSpacing: -0.5,
+                              letterSpacing: -0.4,
                             ),
                           ),
                         ],
                       ),
 
-                      vSpace(context, 24),
+                      vSpace(context, 20),
 
                       // QR Code section
                       Container(
-                        width: rw(context, 200),
-                        height: rw(context, 200),
+                        width: rw(context, 220),
+                        height: rw(context, 220),
                         decoration: BoxDecoration(
                           color: Colors.white,
-                          borderRadius: BorderRadius.circular(rw(context, 12)),
+                          borderRadius: BorderRadius.circular(rw(context, 20)),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.grey.withValues(alpha: 0.15),
-                              blurRadius: rw(context, 12),
-                              offset: Offset(0, rh(context, 4)),
+                              color: Colors.black.withOpacity(0.06),
+                              blurRadius: 16,
+                              offset: const Offset(0, 4),
                             ),
                           ],
+                          border: Border.all(color: const Color(0xFFF1F5F9)),
                         ),
                         child: Padding(
-                          padding: EdgeInsets.all(rw(context, 20)),
-                          child: Container(
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(rw(context, 8)),
-                            ),
-                            child: _buildQRCodePlaceholder(),
-                          ),
+                          padding: EdgeInsets.all(rw(context, 16)),
+                          child: _buildQRCodePlaceholder(),
                         ),
                       ),
 
                       // Status indicators (Pill badges)
                       if (widget.isTracked || widget.isLowBattery) ...[
-                        vSpace(context, 16),
+                        vSpace(context, 18),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             if (widget.isTracked)
                               Container(
                                 padding: EdgeInsets.symmetric(
-                                  horizontal: rw(context, 10),
-                                  vertical: rh(context, 4),
+                                  horizontal: rw(context, 12),
+                                  vertical: rh(context, 6),
                                 ),
                                 decoration: BoxDecoration(
-                                  color: Colors.red.shade50,
-                                  borderRadius: BorderRadius.circular(rw(context, 6)),
-                                  border: Border.all(color: Colors.red.shade100),
+                                  color: const Color(0xFFFEF2F2),
+                                  borderRadius: BorderRadius.circular(rw(context, 30)),
+                                  border: Border.all(color: const Color(0xFFFEE2E2)),
                                 ),
                                 child: Row(
                                   children: [
-                                    Icon(Icons.location_on_outlined, size: 14, color: Colors.red.shade600),
-                                    hSpace(context, 4),
+                                    Container(
+                                      width: 6,
+                                      height: 6,
+                                      decoration: const BoxDecoration(
+                                        color: Color(0xFFEF4444),
+                                        shape: BoxShape.circle,
+                                      ),
+                                    ),
+                                    hSpace(context, 6),
                                     Text(
                                       'Tracked',
                                       style: TextStyle(
-                                        fontSize: rfs(context, 11),
-                                        color: Colors.red.shade700,
+                                        fontSize: rfs(context, 12),
+                                        color: const Color(0xFFB91C1C),
                                         fontWeight: FontWeight.w700,
                                       ),
                                     ),
@@ -357,23 +383,30 @@ class _AccessPassDialogState extends State<AccessPassDialog> {
                             if (widget.isLowBattery)
                               Container(
                                 padding: EdgeInsets.symmetric(
-                                  horizontal: rw(context, 10),
-                                  vertical: rh(context, 4),
+                                  horizontal: rw(context, 12),
+                                  vertical: rh(context, 6),
                                 ),
                                 decoration: BoxDecoration(
-                                  color: Colors.orange.shade50,
-                                  borderRadius: BorderRadius.circular(rw(context, 6)),
-                                  border: Border.all(color: Colors.orange.shade100),
+                                  color: const Color(0xFFFFF7ED),
+                                  borderRadius: BorderRadius.circular(rw(context, 30)),
+                                  border: Border.all(color: const Color(0xFFFFEDD5)),
                                 ),
                                 child: Row(
                                   children: [
-                                    Icon(Icons.battery_alert_outlined, size: 14, color: Colors.orange.shade700),
-                                    hSpace(context, 4),
+                                    Container(
+                                      width: 6,
+                                      height: 6,
+                                      decoration: const BoxDecoration(
+                                        color: Color(0xFFF97316),
+                                        shape: BoxShape.circle,
+                                      ),
+                                    ),
+                                    hSpace(context, 6),
                                     Text(
                                       'Low Battery',
                                       style: TextStyle(
-                                        fontSize: rfs(context, 11),
-                                        color: Colors.orange.shade800,
+                                        fontSize: rfs(context, 12),
+                                        color: const Color(0xFFC2410C),
                                         fontWeight: FontWeight.w700,
                                       ),
                                     ),
@@ -390,33 +423,48 @@ class _AccessPassDialogState extends State<AccessPassDialog> {
                       Text(
                         'Show this while visiting',
                         style: TextStyle(
-                          fontSize: rfs(context, 13),
+                          fontSize: rfs(context, 12),
                           color: const Color(0xFF64748B),
-                          fontWeight: FontWeight.w500,
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: 0.2,
                         ),
                       ),
-                      vSpace(context, 6),
+                      vSpace(context, 8),
                       Container(
                         padding: EdgeInsets.symmetric(
-                          horizontal: rw(context, 12),
-                          vertical: rh(context, 6),
+                          horizontal: rw(context, 16),
+                          vertical: rh(context, 8),
                         ),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFF1F5F9),
-                          borderRadius: BorderRadius.circular(rw(context, 8)),
+                          color: const Color(0xFFF8FAFC),
+                          borderRadius: BorderRadius.circular(rw(context, 30)),
+                          border: Border.all(color: const Color(0xFFE2E8F0)),
                         ),
-                        child: Text(
-                          'ID: ${widget.visitorId}',
-                          style: TextStyle(
-                            fontSize: rfs(context, 14),
-                            fontWeight: FontWeight.w700,
-                            color: const Color(0xFF334155),
-                            letterSpacing: 0.5,
-                          ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              'ID: ',
+                              style: TextStyle(
+                                fontSize: rfs(context, 13),
+                                fontWeight: FontWeight.w600,
+                                color: const Color(0xFF64748B),
+                              ),
+                            ),
+                            Text(
+                              widget.visitorId,
+                              style: TextStyle(
+                                fontSize: rfs(context, 13),
+                                fontWeight: FontWeight.w800,
+                                color: const Color(0xFF0F172A),
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
 
-                      vSpace(context, 32),
+                      vSpace(context, 24),
                     ],
                   ),
                 ),
@@ -432,7 +480,7 @@ class _AccessPassDialogState extends State<AccessPassDialog> {
                 ),
                 child: SizedBox(
                   width: double.infinity,
-                  height: rh(context, 48),
+                  height: rh(context, 50),
                   child: ElevatedButton(
                     onPressed: () => Navigator.of(context).pop(),
                     style: ElevatedButton.styleFrom(
@@ -440,14 +488,15 @@ class _AccessPassDialogState extends State<AccessPassDialog> {
                       foregroundColor: Colors.white,
                       elevation: 0,
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(rw(context, 12)),
+                        borderRadius: BorderRadius.circular(rw(context, 14)),
                       ),
                     ),
                     child: Text(
                       'Close',
                       style: TextStyle(
-                        fontSize: rfs(context, 15),
+                        fontSize: rfs(context, 16),
                         fontWeight: FontWeight.w700,
+                        letterSpacing: 0.2,
                       ),
                     ),
                   ),

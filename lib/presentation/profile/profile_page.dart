@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import '../../presentation/auth/controller/user_controller.dart';
 import '../../presentation/auth/login_page.dart';
 import 'profile_dummy_pages.dart';
+import 'profile_detail_page.dart';
 import '../../core/helper/responsive_helper.dart';
 import '../../core/core.dart';
 
@@ -28,6 +29,7 @@ class ProfilePage extends StatelessWidget {
       ),
       body: Obx(() {
         final user = UserController.to.user.value;
+        final bool isEmployee = user?.roleAccess?.toLowerCase() == 'employee' || user?.roleAccess?.toLowerCase() == 'admin';
         return Column(
           children: [
             // Header section
@@ -70,28 +72,30 @@ class ProfilePage extends StatelessWidget {
                   child: Row(
                     children: [
                       CustomCircleImage(
-                        image: UserController.to.faceUrl != null &&
-                                UserController.to.faceUrl!.isNotEmpty
-                            ? Image.network(
-                                UserController.to.faceUrl!,
-                                fit: BoxFit.cover,
-                                errorBuilder: (_, _, _) => Container(
-                                  color: const Color(0xFFE2E8F0),
-                                  child: Icon(
-                                    Icons.person,
-                                    color: const Color(0xFF94A3B8),
-                                    size: rw(context, 36),
-                                  ),
-                                ),
-                              )
-                            : Container(
-                                color: const Color(0xFFE2E8F0),
-                                child: Icon(
-                                  Icons.person,
-                                  color: const Color(0xFF94A3B8),
-                                  size: rw(context, 36),
-                                ),
-                              ),
+                        image: isEmployee
+                            ? Assets.images.avaPerson1.image(fit: BoxFit.cover)
+                            : (UserController.to.faceUrl != null &&
+                                    UserController.to.faceUrl!.isNotEmpty
+                                ? Image.network(
+                                    UserController.to.faceUrl!,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (_, _, _) => Container(
+                                      color: const Color(0xFFE2E8F0),
+                                      child: Icon(
+                                        Icons.person,
+                                        color: const Color(0xFF94A3B8),
+                                        size: rw(context, 36),
+                                      ),
+                                    ),
+                                  )
+                                : Container(
+                                    color: const Color(0xFFE2E8F0),
+                                    child: Icon(
+                                      Icons.person,
+                                      color: const Color(0xFF94A3B8),
+                                      size: rw(context, 36),
+                                    ),
+                                  )),
                         size: rw(context, 65),
                         scale: 1.5,
                       ),
@@ -150,6 +154,16 @@ class ProfilePage extends StatelessWidget {
               padding: EdgeInsets.symmetric(horizontal: rw(context, 20)),
               child: Column(
                 children: [
+                  if (isEmployee) ...[
+                    TileMenu(
+                      icon: Icon(Icons.person, color: Colors.white, size: rw(context, 25)),
+                      label: 'Akun',
+                      onTap: () {
+                        context.push(const DetailProfilePage());
+                      },
+                    ),
+                    vSpace(context, 12),
+                  ],
                   TileMenu(
                     icon: Icon(Icons.lock, color: Colors.white, size: rw(context, 25)),
                     label: 'security'.tr,

@@ -1061,12 +1061,7 @@ class _SendInvitationPageState extends State<SendInvitationPage>
   }
 
   void _showInvitationDetailSheet(AccessPassModel item) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) => _InvitationDetailSheet(item: item),
-    );
+    showInvitationDetailSheet(context, item);
   }
 
   Widget _buildFilterChip(BuildContext context, String label) {
@@ -1146,16 +1141,25 @@ class _SendInvitationPageState extends State<SendInvitationPage>
 }
 
 // ─── _SheetField model ────────────────────────────────────────────────────────
-// ─── _InvitationDetailSheet ─────────────────────────────────────────────────
-class _InvitationDetailSheet extends StatefulWidget {
-  final AccessPassModel item;
-  const _InvitationDetailSheet({required this.item});
-
-  @override
-  State<_InvitationDetailSheet> createState() => _InvitationDetailSheetState();
+void showInvitationDetailSheet(BuildContext context, AccessPassModel item) {
+  showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.transparent,
+    builder: (ctx) => InvitationDetailSheet(item: item),
+  );
 }
 
-class _InvitationDetailSheetState extends State<_InvitationDetailSheet> {
+// ─── InvitationDetailSheet ─────────────────────────────────────────────────
+class InvitationDetailSheet extends StatefulWidget {
+  final AccessPassModel item;
+  const InvitationDetailSheet({required this.item});
+
+  @override
+  State<InvitationDetailSheet> createState() => InvitationDetailSheetState();
+}
+
+class InvitationDetailSheetState extends State<InvitationDetailSheet> {
   String _sitePlaceName = '';
   bool _loadingSite = true;
 
@@ -1367,6 +1371,13 @@ class _InvitationDetailSheetState extends State<_InvitationDetailSheet> {
                               : item.visitorIdentityId,
                           Icons.credit_card_outlined,
                         ),
+                      _SheetField(
+                        'Location',
+                        _loadingSite
+                            ? '...'
+                            : (_sitePlaceName.isEmpty ? '-' : _sitePlaceName),
+                        Icons.location_on_outlined,
+                      ),
                     ], isExpired: isExpired),
 
                     vSpace(context, 16),
@@ -1447,17 +1458,6 @@ class _InvitationDetailSheetState extends State<_InvitationDetailSheet> {
 
                     // 3. Visit Period
                     _section(context, 'Visit Period'),
-
-                    // Registered Site (async)
-                    _SheetFieldRow(
-                      context: context,
-                      icon: Icons.location_on_outlined,
-                      label: 'Registered Site',
-                      value: _loadingSite
-                          ? '...'
-                          : (_sitePlaceName.isEmpty ? '-' : _sitePlaceName),
-                    ),
-                    vSpace(context, 8),
 
                     // Start / End
                     Container(

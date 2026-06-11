@@ -7,6 +7,8 @@ import '../../presentation/notification/notification_page.dart';
 import '../../presentation/profile/profile_page.dart';
 
 import 'invitation/widgets/share_link_home_list.dart';
+import 'invitation/widgets/invitation_home_list.dart';
+import 'invitation/widgets/quick_access_home_list.dart';
 import '../../presentation/home/invitation/send_invitation_page.dart';
 import '../../presentation/auth/controller/language_controller.dart';
 import '../../presentation/auth/controller/user_controller.dart';
@@ -178,6 +180,7 @@ class _HomePageState extends State<HomePage> {
                   child: RefreshIndicator(
                     onRefresh: () async {
                       await Future.wait([
+                        invitationController.fetchOngoingInvitations(clearFilters: true),
                         invitationController.fetchShareLinks(resetPage: true),
                         invitationController.fetchApprovalTickets(),
                         invitationController.fetchDashboardShareLinks(),
@@ -571,21 +574,39 @@ class _HomePageState extends State<HomePage> {
 
           vSpace(context, 24),
 
-          // 2. Section Header: Approval
+          // 2. Section Header: Invitation
+          _buildSectionHeader(context, 'Invitation'),
+          vSpace(context, 16),
+
+          // 3. Invitation Data List
+          const InvitationHomeList(),
+
+          vSpace(context, 24),
+
+          // 4. Section Header: Approval
           _buildSectionHeader(context, 'Approval'),
           vSpace(context, 16),
 
-          // 3. Approval Data List
+          // 5. Approval Data List
           const IteneraryList(),
 
           vSpace(context, 24),
 
-          // 4. Section Header: Share Link
+          // 6. Section Header: Share Link
           _buildSectionHeader(context, 'Share Link'),
           vSpace(context, 16),
 
-          // 5. Share Link Data List
+          // 7. Share Link Data List
           const ShareLinkHomeList(),
+
+          vSpace(context, 24),
+
+          // 8. Section Header: Quick Access
+          _buildSectionHeader(context, 'Quick Access'),
+          vSpace(context, 16),
+
+          // 9. Quick Access Data List
+          const QuickAccessHomeList(),
 
           vSpace(context, 20),
         ],

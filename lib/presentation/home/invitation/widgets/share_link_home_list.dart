@@ -211,7 +211,7 @@ class _ShareLinkHomeListState extends State<ShareLinkHomeList> {
           vSpace(context, 12),
 
           // Carousel Indicators
-          if (filteredShareLinks.length > 1)
+          if (filteredShareLinks.length > 1) ...[
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: List.generate(
@@ -238,6 +238,8 @@ class _ShareLinkHomeListState extends State<ShareLinkHomeList> {
                 },
               ),
             ),
+            vSpace(context, 12),
+          ],
 
           // More Link button
           Align(
