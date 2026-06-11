@@ -59,7 +59,9 @@ class PraRegistrationController extends GetxController {
 
   final RxString selectedVisitorTypeId = ''.obs;
   final RxString selectedVisitorTypeName = ''.obs;
-  final Rx<VisitorTypeDetailModel?> formStructure = Rx<VisitorTypeDetailModel?>(null);
+  final Rx<VisitorTypeDetailModel?> formStructure = Rx<VisitorTypeDetailModel?>(
+    null,
+  );
   final RxBool isLoadingDetail = false.obs;
 
   final Rx<bool?> isGroup = Rx<bool?>(null);
@@ -82,17 +84,23 @@ class PraRegistrationController extends GetxController {
 
   TextEditingController? getFieldController(String remarks) {
     switch (remarks) {
-      case 'name': return nameCtrl;
-      case 'email': return emailCtrl;
-      case 'phone': return phoneCtrl;
-      case 'organization': return organizationCtrl;
-      case 'indentity_id': return identityIdCtrl;
-      default: return null;
+      case 'name':
+        return nameCtrl;
+      case 'email':
+        return emailCtrl;
+      case 'phone':
+        return phoneCtrl;
+      case 'organization':
+        return organizationCtrl;
+      case 'indentity_id':
+        return identityIdCtrl;
+      default:
+        return null;
     }
   }
 
   final RxList<DropdownItem> employees = <DropdownItem>[].obs;
-  final List<Map<String, dynamic>> _rawEmployees = <Map<String, dynamic>>[]; 
+  final List<Map<String, dynamic>> _rawEmployees = <Map<String, dynamic>>[];
   final RxString selectedEmployeeId = ''.obs;
   final RxString selectedEmployeeName = ''.obs;
   final RxBool isLoadingEmployees = false.obs;
@@ -102,9 +110,11 @@ class PraRegistrationController extends GetxController {
     final q = employeeSearchQuery.value.toLowerCase().trim();
     if (q.isEmpty) return _rawEmployees.toList();
     return _rawEmployees
-        .where((e) =>
-            (e['name']?.toString() ?? '').toLowerCase().contains(q) &&
-            (e['name']?.toString() ?? '').isNotEmpty)
+        .where(
+          (e) =>
+              (e['name']?.toString() ?? '').toLowerCase().contains(q) &&
+              (e['name']?.toString() ?? '').isNotEmpty,
+        )
         .toList();
   }
 
@@ -117,9 +127,11 @@ class PraRegistrationController extends GetxController {
     final q = visitorSearchQuery.value.toLowerCase().trim();
     if (q.isEmpty) return allVisitors.toList();
     return allVisitors
-        .where((v) =>
-            (v['name']?.toString() ?? '').toLowerCase().contains(q) &&
-            (v['name']?.toString() ?? '').isNotEmpty)
+        .where(
+          (v) =>
+              (v['name']?.toString() ?? '').toLowerCase().contains(q) &&
+              (v['name']?.toString() ?? '').isNotEmpty,
+        )
         .toList();
   }
 
@@ -230,21 +242,23 @@ class PraRegistrationController extends GetxController {
     try {
       final response = await _api.getVisitorTypeById(token, id);
       if (response.data['status'] == 'success') {
-        final collection = response.data['collection'] as Map<String, dynamic>? ?? {};
+        final collection =
+            response.data['collection'] as Map<String, dynamic>? ?? {};
         final structure = VisitorTypeDetailModel.fromJson(collection);
         for (var section in structure.sectionPageVisitorTypes) {
           for (var field in section.praForm) {
             if (field.remarks.toLowerCase() == 'is_employee') {
               final noOption = field.multipleOptionFields.firstWhereOrNull(
-                (opt) => opt.name.toLowerCase() == 'no' || 
-                         opt.value.toLowerCase() == 'no' || 
-                         opt.value == '0' || 
-                         opt.value == 'false'
+                (opt) =>
+                    opt.name.toLowerCase() == 'no' ||
+                    opt.value.toLowerCase() == 'no' ||
+                    opt.value == '0' ||
+                    opt.value == 'false',
               );
               if (noOption != null) {
                 field.answerText = noOption.value;
               } else {
-                field.answerText = 'No'; 
+                field.answerText = 'No';
               }
               isEmployee.value = false;
             }
@@ -252,7 +266,8 @@ class PraRegistrationController extends GetxController {
         }
         formStructure.value = structure;
         // Auto-select the visitor role if there is only one available
-        if (structure.visitorRoles.length == 1 && selectedVisitorRole.value.isEmpty) {
+        if (structure.visitorRoles.length == 1 &&
+            selectedVisitorRole.value.isEmpty) {
           selectedVisitorRole.value = structure.visitorRoles.first.role;
           // Also set the answerText on the visitor_role field if present
           for (var section in structure.sectionPageVisitorTypes) {
@@ -311,21 +326,27 @@ class PraRegistrationController extends GetxController {
     organization.value = o;
     identityId.value = id;
 
-    for (var section in formStructure.value?.sectionPageVisitorTypes ?? <SectionPageVisitorType>[]) {
+    for (var section
+        in formStructure.value?.sectionPageVisitorTypes ??
+            <SectionPageVisitorType>[]) {
       for (var field in section.praForm) {
         final rem = field.remarks.toLowerCase();
         if (rem == 'name') field.answerText = n;
         if (rem == 'email') field.answerText = e;
         if (rem == 'phone') field.answerText = p;
         if (rem == 'organization' || rem == 'company') field.answerText = o;
-        if (rem == 'identity_id' || rem == 'indentity_id') field.answerText = id;
+        if (rem == 'identity_id' || rem == 'indentity_id')
+          field.answerText = id;
       }
     }
     updateForm();
   }
 
   /// Auto-fill a group visitor row from a selected visitor map.
-  void autofillGroupVisitorFromVisitor(GroupVisitorRow row, Map<String, dynamic> v) {
+  void autofillGroupVisitorFromVisitor(
+    GroupVisitorRow row,
+    Map<String, dynamic> v,
+  ) {
     row.fullName.text = v['name']?.toString() ?? '';
     row.email.text = v['email']?.toString() ?? '';
     row.phone.text = v['phone']?.toString() ?? '';
@@ -343,9 +364,18 @@ class PraRegistrationController extends GetxController {
       if (response.data['status'] == 'success') {
         final collection = response.data['collection'] as List<dynamic>? ?? [];
         _rawEmployees.clear();
-        _rawEmployees.addAll(collection.map((e) => Map<String, dynamic>.from(jsonDecode(jsonEncode(e)) as Map)));
+        _rawEmployees.addAll(
+          collection.map(
+            (e) => Map<String, dynamic>.from(jsonDecode(jsonEncode(e)) as Map),
+          ),
+        );
         employees.value = collection
-            .map((e) => DropdownItem(id: e['id']?.toString() ?? '', name: e['name']?.toString() ?? ''))
+            .map(
+              (e) => DropdownItem(
+                id: e['id']?.toString() ?? '',
+                name: e['name']?.toString() ?? '',
+              ),
+            )
             .toList();
       }
     } catch (e) {
@@ -381,11 +411,14 @@ class PraRegistrationController extends GetxController {
     groupVisitors.clear();
     groupName.value = '';
     groupCode.value = '';
-    for (var section in formStructure.value?.sectionPageVisitorTypes ?? <SectionPageVisitorType>[]) {
+    for (var section
+        in formStructure.value?.sectionPageVisitorTypes ??
+            <SectionPageVisitorType>[]) {
       for (var field in section.praForm) {
         field.answerText = '';
         field.answerDatetime = '';
-        if (field.remarks.toLowerCase() == 'is_employee') field.answerText = 'No';
+        if (field.remarks.toLowerCase() == 'is_employee')
+          field.answerText = 'No';
       }
     }
     clearStep2Fields();
@@ -409,10 +442,18 @@ class PraRegistrationController extends GetxController {
     identityIdCtrl.clear();
 
     // Clear answerText of form fields in single mode
-    for (var section in formStructure.value?.sectionPageVisitorTypes ?? <SectionPageVisitorType>[]) {
+    for (var section
+        in formStructure.value?.sectionPageVisitorTypes ??
+            <SectionPageVisitorType>[]) {
       for (var field in section.praForm) {
         final rem = field.remarks.toLowerCase();
-        if (rem == 'name' || rem == 'email' || rem == 'phone' || rem == 'organization' || rem == 'indentity_id' || rem == 'identity_id' || rem == 'visitor_role') {
+        if (rem == 'name' ||
+            rem == 'email' ||
+            rem == 'phone' ||
+            rem == 'organization' ||
+            rem == 'indentity_id' ||
+            rem == 'identity_id' ||
+            rem == 'visitor_role') {
           field.answerText = '';
         }
       }
@@ -426,10 +467,17 @@ class PraRegistrationController extends GetxController {
     visitStart.value = null;
     visitEnd.value = null;
     agenda.value = '';
-    for (var section in formStructure.value?.sectionPageVisitorTypes ?? <SectionPageVisitorType>[]) {
+    for (var section
+        in formStructure.value?.sectionPageVisitorTypes ??
+            <SectionPageVisitorType>[]) {
       for (var field in section.praForm) {
         final rem = field.remarks.toLowerCase();
-        if (rem != 'name' && rem != 'email' && rem != 'phone' && rem != 'organization' && rem != 'identity_id' && rem != 'is_employee') {
+        if (rem != 'name' &&
+            rem != 'email' &&
+            rem != 'phone' &&
+            rem != 'organization' &&
+            rem != 'identity_id' &&
+            rem != 'is_employee') {
           field.answerText = '';
           field.answerDatetime = '';
         }
@@ -440,15 +488,24 @@ class PraRegistrationController extends GetxController {
 
   void onEmployeeSelected(String employeeId) {
     selectedEmployeeId.value = employeeId;
-    final emp = _rawEmployees.firstWhereOrNull((e) => e['id'].toString() == employeeId);
+    final emp = _rawEmployees.firstWhereOrNull(
+      (e) => e['id'].toString() == employeeId,
+    );
     if (emp != null) {
       selectedEmployeeName.value = emp['name']?.toString() ?? '';
-      
+
       String empOrg = '';
-      final orgData = emp['organization'] ?? emp['Organization'] ?? emp['organization_name'] ?? emp['company'] ?? emp['department'] ?? emp['office'];
+      final orgData =
+          emp['organization'] ??
+          emp['Organization'] ??
+          emp['organization_name'] ??
+          emp['company'] ??
+          emp['department'] ??
+          emp['office'];
       if (orgData != null) {
         if (orgData is Map) {
-          empOrg = orgData['name']?.toString() ?? orgData['code']?.toString() ?? '';
+          empOrg =
+              orgData['name']?.toString() ?? orgData['code']?.toString() ?? '';
         } else {
           empOrg = orgData.toString();
         }
@@ -464,14 +521,18 @@ class PraRegistrationController extends GetxController {
       phone.value = phoneCtrl.text;
       organization.value = organizationCtrl.text;
       identityId.value = identityIdCtrl.text;
-      for (var section in formStructure.value?.sectionPageVisitorTypes ?? <SectionPageVisitorType>[]) {
+      for (var section
+          in formStructure.value?.sectionPageVisitorTypes ??
+              <SectionPageVisitorType>[]) {
         for (var field in section.praForm) {
           final rem = field.remarks.toLowerCase();
           if (rem == 'name') field.answerText = name.value;
           if (rem == 'email') field.answerText = email.value;
           if (rem == 'phone') field.answerText = phone.value;
-          if (rem == 'organization' || rem == 'company') field.answerText = organization.value;
-          if (rem == 'identity_id' || rem == 'indentity_id') field.answerText = identityId.value;
+          if (rem == 'organization' || rem == 'company')
+            field.answerText = organization.value;
+          if (rem == 'identity_id' || rem == 'indentity_id')
+            field.answerText = identityId.value;
         }
       }
       updateForm();
@@ -480,15 +541,24 @@ class PraRegistrationController extends GetxController {
 
   void onGroupEmployeeSelected(GroupVisitorRow row, String employeeId) {
     row.selectedEmployeeId.value = employeeId;
-    final emp = _rawEmployees.firstWhereOrNull((e) => e['id'].toString() == employeeId);
+    final emp = _rawEmployees.firstWhereOrNull(
+      (e) => e['id'].toString() == employeeId,
+    );
     if (emp != null) {
       row.selectedEmployeeName.value = emp['name']?.toString() ?? '';
-      
+
       String empOrg = '';
-      final orgData = emp['organization'] ?? emp['Organization'] ?? emp['organization_name'] ?? emp['company'] ?? emp['department'] ?? emp['office'];
+      final orgData =
+          emp['organization'] ??
+          emp['Organization'] ??
+          emp['organization_name'] ??
+          emp['company'] ??
+          emp['department'] ??
+          emp['office'];
       if (orgData != null) {
         if (orgData is Map) {
-          empOrg = orgData['name']?.toString() ?? orgData['code']?.toString() ?? '';
+          empOrg =
+              orgData['name']?.toString() ?? orgData['code']?.toString() ?? '';
         } else {
           empOrg = orgData.toString();
         }
@@ -511,7 +581,14 @@ class PraRegistrationController extends GetxController {
       final response = await _api.getHosts(token);
       if (response.data['status'] == 'success') {
         final collection = response.data['collection'] as List<dynamic>? ?? [];
-        hosts.value = collection.map((e) => DropdownItem(id: e['id']?.toString() ?? '', name: e['name']?.toString() ?? '')).toList();
+        hosts.value = collection
+            .map(
+              (e) => DropdownItem(
+                id: e['id']?.toString() ?? '',
+                name: e['name']?.toString() ?? '',
+              ),
+            )
+            .toList();
       }
     } catch (e) {
       debugPrint('fetchHosts error: $e');
@@ -532,13 +609,22 @@ class PraRegistrationController extends GetxController {
           if (e is Map) {
             final isDropPoint = e['is_drop_point'];
             final name = e['name']?.toString().toLowerCase() ?? '';
-            if (isDropPoint == true || isDropPoint.toString() == 'true' || name == 'drop point') {
+            if (isDropPoint == true ||
+                isDropPoint.toString() == 'true' ||
+                name == 'drop point') {
               return false;
             }
           }
           return true;
         }).toList();
-        sites.value = filteredCollection.map((e) => DropdownItem(id: e['id']?.toString() ?? '', name: e['name']?.toString() ?? '')).toList();
+        sites.value = filteredCollection
+            .map(
+              (e) => DropdownItem(
+                id: e['id']?.toString() ?? '',
+                name: e['name']?.toString() ?? '',
+              ),
+            )
+            .toList();
       }
     } catch (e) {
       debugPrint('fetchSites error: $e');
@@ -549,8 +635,10 @@ class PraRegistrationController extends GetxController {
 
   bool isStepValid(int step) {
     if (step == 0) {
-      bool basic = selectedVisitorTypeId.value.isNotEmpty && isGroup.value != null;
-      if (isGroup.value == true) return basic && groupName.value.trim().isNotEmpty;
+      bool basic =
+          selectedVisitorTypeId.value.isNotEmpty && isGroup.value != null;
+      if (isGroup.value == true)
+        return basic && groupName.value.trim().isNotEmpty;
       return basic;
     } else if (step == 1) {
       if (isGroup.value == true) {
@@ -558,7 +646,8 @@ class PraRegistrationController extends GetxController {
         return groupVisitors.every((v) => v.isValid);
       } else {
         // Check hardcoded primary fields
-        final primaryFieldsValid = name.value.trim().isNotEmpty &&
+        final primaryFieldsValid =
+            name.value.trim().isNotEmpty &&
             email.value.trim().isNotEmpty &&
             phone.value.trim().isNotEmpty &&
             organization.value.trim().isNotEmpty &&
@@ -578,7 +667,9 @@ class PraRegistrationController extends GetxController {
           'visitor_period_start', 'visitor_period_end',
         };
 
-        for (final section in formStructure.value?.sectionPageVisitorTypes ?? <SectionPageVisitorType>[]) {
+        for (final section
+            in formStructure.value?.sectionPageVisitorTypes ??
+                <SectionPageVisitorType>[]) {
           for (final field in section.praForm) {
             if (!field.isEnable) continue;
             if (!field.mandatory) continue;
@@ -592,11 +683,11 @@ class PraRegistrationController extends GetxController {
         return true;
       }
     } else if (step == 2) {
-      return selectedHostId.value.isNotEmpty && 
-             agenda.value.trim().isNotEmpty && 
-             selectedSiteId.value.isNotEmpty && 
-             visitStart.value != null && 
-             visitEnd.value != null;
+      return selectedHostId.value.isNotEmpty &&
+          agenda.value.trim().isNotEmpty &&
+          selectedSiteId.value.isNotEmpty &&
+          visitStart.value != null &&
+          visitEnd.value != null;
     }
     return true;
   }
@@ -636,7 +727,12 @@ class PraRegistrationController extends GetxController {
 
   bool get isStep1Valid => isStepValid(0);
   bool get isStep2Valid => isStepValid(1);
-  bool get isStep3Valid => selectedHostId.value.isNotEmpty && agenda.value.trim().isNotEmpty && selectedSiteId.value.isNotEmpty && visitStart.value != null && visitEnd.value != null;
+  bool get isStep3Valid =>
+      selectedHostId.value.isNotEmpty &&
+      agenda.value.trim().isNotEmpty &&
+      selectedSiteId.value.isNotEmpty &&
+      visitStart.value != null &&
+      visitEnd.value != null;
 
   void updateForm() => formUpdateTrigger.value++;
 
@@ -686,9 +782,13 @@ class PraRegistrationController extends GetxController {
         // Use UTC offset to derive timezone string (no external package needed)
         final offset = DateTime.now().timeZoneOffset;
         final hours = offset.inHours;
-        if (hours == 7) { deviceTz = 'Asia/Jakarta'; }
-        else if (hours == 8) { deviceTz = 'Asia/Makassar'; }
-        else if (hours == 9) { deviceTz = 'Asia/Jayapura'; }
+        if (hours == 7) {
+          deviceTz = 'Asia/Jakarta';
+        } else if (hours == 8) {
+          deviceTz = 'Asia/Makassar';
+        } else if (hours == 9) {
+          deviceTz = 'Asia/Jayapura';
+        }
       } catch (e) {
         debugPrint('Timezone error: $e');
       }
@@ -705,18 +805,23 @@ class PraRegistrationController extends GetxController {
         final form = section.praForm.where((f) => f.isEnable).map((f) {
           String answerText = '';
           String answerDatetime = '';
-          final isDateTimeField = f.fieldType == 4 ||
+          final isDateTimeField =
+              f.fieldType == 4 ||
               f.fieldType == 9 ||
               f.remarks == 'visitor_period_start' ||
               f.remarks == 'visitor_period_end';
 
           if (f.remarks == 'visitor_period_start' && visitStart.value != null) {
-            answerDatetime =
-                visitStart.value!.toUtc().toIso8601String().substring(0, 19);
+            answerDatetime = visitStart.value!
+                .toUtc()
+                .toIso8601String()
+                .substring(0, 19);
           } else if (f.remarks == 'visitor_period_end' &&
               visitEnd.value != null) {
-            answerDatetime =
-                visitEnd.value!.toUtc().toIso8601String().substring(0, 19);
+            answerDatetime = visitEnd.value!
+                .toUtc()
+                .toIso8601String()
+                .substring(0, 19);
           } else if (isDateTimeField) {
             answerDatetime = f.answerDatetime;
           } else {
@@ -733,8 +838,9 @@ class PraRegistrationController extends GetxController {
             'mandatory': f.mandatory,
             'remarks': f.remarks,
             'custom_field_id': f.customFieldId,
-            'multiple_option_fields':
-                f.multipleOptionFields.map((o) => o.toJson()).toList(),
+            'multiple_option_fields': f.multipleOptionFields
+                .map((o) => o.toJson())
+                .toList(),
             'visitor_form_type': f.visitorFormType,
           };
 
@@ -768,8 +874,92 @@ class PraRegistrationController extends GetxController {
 
       if (isGroup.value == true) {
         // ── GROUP MODE ─────────────────────────────────────────────────────
-        // Map each visitor to their own entry in list_group to ensure server processes all of them
-        final List<Map<String, dynamic>> listGroup = groupVisitors.map((visitor) {
+        // The first visitor is the parent transaction payload in list_group
+        final parentVisitor = groupVisitors.first;
+        final parentRole = parentVisitor.selectedVisitorRole.value.isNotEmpty
+            ? parentVisitor.selectedVisitorRole.value
+            : 'Visitor';
+        
+        final parentAnswers = {
+          'name': parentVisitor.fullName.text.trim(),
+          'email': parentVisitor.email.text.trim(),
+          'phone': parentVisitor.phone.text.trim(),
+          'organization': parentVisitor.organization.text.trim(),
+          'indentity_id': parentVisitor.identityId.text.trim(),
+          'is_employee': parentVisitor.isEmployee.value.toString(),
+          'employee_name': parentVisitor.isEmployee.value ? parentVisitor.selectedEmployeeId.value : '',
+          'employee': parentVisitor.isEmployee.value ? parentVisitor.selectedEmployeeId.value : '',
+          'visitor_role': parentRole,
+        };
+
+        final parentQp = detail.sectionPageVisitorTypes.map((section) {
+          final form = section.praForm.where((f) => f.isEnable).map((f) {
+            String answerText = '';
+            String answerDatetime = '';
+            final isDateTimeField = f.fieldType == 4 ||
+                f.fieldType == 9 ||
+                f.remarks == 'visitor_period_start' ||
+                f.remarks == 'visitor_period_end';
+
+            if (f.remarks == 'visitor_period_start' && visitStart.value != null) {
+              answerDatetime = visitStart.value!.toUtc().toIso8601String().substring(0, 19);
+            } else if (f.remarks == 'visitor_period_end' && visitEnd.value != null) {
+              answerDatetime = visitEnd.value!.toUtc().toIso8601String().substring(0, 19);
+            } else if (isDateTimeField) {
+              answerDatetime = f.answerDatetime;
+            } else {
+              answerText = _answerTextForRemarksInGroup(f.remarks, f, parentAnswers);
+            }
+
+            final Map<String, dynamic> json = {
+              'sort': f.sort,
+              'short_name': f.shortName,
+              'long_display_text': f.longDisplayText,
+              'field_type': f.fieldType,
+              'is_primary': f.isPrimary,
+              'is_enable': f.isEnable,
+              'mandatory': f.mandatory,
+              'remarks': f.remarks,
+              'custom_field_id': f.customFieldId,
+              'multiple_option_fields': f.multipleOptionFields.map((o) => o.toJson()).toList(),
+              'visitor_form_type': f.visitorFormType,
+            };
+
+            if (answerDatetime.isNotEmpty) {
+              json['answer_datetime'] = answerDatetime;
+              json['answer_text'] = '';
+            } else {
+              json['answer_text'] = answerText;
+            }
+
+            if ([10, 11, 12].contains(f.fieldType)) {
+              json['answer_file'] = f.answerText;
+              json.remove('answer_text');
+              json.remove('answer_datetime');
+            }
+            return json;
+          }).toList();
+
+          return {
+            'id': section.id,
+            'sort': section.sort,
+            'name': section.name,
+            'status': 0,
+            'is_document': section.isDocument,
+            'can_multiple_used': section.canMultipleUsed,
+            'self_only': false,
+            'foreign_id': section.foreignId,
+            'form': form,
+          };
+        }).toList();
+
+        final List<dynamic> dataVisitorList = [
+          {'question_page': parentQp}
+        ];
+
+        // Append remaining visitors nested inside the parent's data_visitor array
+        for (int i = 1; i < groupVisitors.length; i++) {
+          final visitor = groupVisitors[i];
           final visitorRole = visitor.selectedVisitorRole.value.isNotEmpty
               ? visitor.selectedVisitorRole.value
               : 'Visitor';
@@ -785,7 +975,7 @@ class PraRegistrationController extends GetxController {
             'visitor_role': visitorRole,
           };
 
-          final qp = detail.sectionPageVisitorTypes.map((section) {
+          final memberQp = detail.sectionPageVisitorTypes.map((section) {
             final form = section.praForm.where((f) => f.isEnable).map((f) {
               String answerText = '';
               String answerDatetime = '';
@@ -846,23 +1036,28 @@ class PraRegistrationController extends GetxController {
             };
           }).toList();
 
-          return {
-            'visitor_type': selectedVisitorTypeId.value,
-            'is_group': true,
-            'type_registered': 1,
-            'tz': deviceTz,
-            'flow': 'Praregister',
-            'visitor_role': visitorRole,
-            if (selectedSiteId.value.isNotEmpty) 'registered_site': selectedSiteId.value,
-            'group_code': groupCode.value,
-            'group_name': groupName.value.trim(),
-            'data_visitor': [
-              {'question_page': qp}
-            ],
-          };
-        }).toList();
+          dataVisitorList.add({
+            'question_page': memberQp
+          });
+        }
 
-        body = {'list_group': listGroup};
+        final Map<String, dynamic> parentObject = {
+          'visitor_type': selectedVisitorTypeId.value,
+          'is_group': true,
+          'type_registered': 1,
+          'tz': deviceTz,
+          'flow': 'Praregister',
+          'visitor_role': parentRole,
+          if (selectedSiteId.value.isNotEmpty) 'registered_site': selectedSiteId.value,
+          'group_code': groupCode.value,
+          'group_name': groupName.value.trim(),
+          'data_visitor': dataVisitorList,
+        };
+
+        body = {
+          'list_group': [parentObject]
+        };
+        debugPrint("test: $body");
       } else {
         // ── SINGLE MODE ────────────────────────────────────────────────────
         body = {
@@ -899,8 +1094,9 @@ class PraRegistrationController extends GetxController {
 
       final data = rawData;
       final status = data['status']?.toString() ?? '';
-      final collectionMap =
-          data['collection'] is Map ? data['collection'] as Map : null;
+      final collectionMap = data['collection'] is Map
+          ? data['collection'] as Map
+          : null;
       final transactionStatus =
           collectionMap?['transaction_status']?.toString() ?? '';
 
@@ -916,7 +1112,9 @@ class PraRegistrationController extends GetxController {
 
         // Auto Refresh Invitation List if available
         if (Get.isRegistered<InvitationController>()) {
-          Get.find<InvitationController>().fetchOngoingInvitations(isSilent: true);
+          Get.find<InvitationController>().fetchOngoingInvitations(
+            isSilent: true,
+          );
         }
 
         return true;
@@ -936,52 +1134,84 @@ class PraRegistrationController extends GetxController {
 
   String _answerTextForRemarks(String remarks, VisitFormField field) {
     switch (remarks.toLowerCase()) {
-      case 'visitor_role': return selectedVisitorRole.value.isNotEmpty ? selectedVisitorRole.value : field.answerText;
-      case 'name': return name.value;
-      case 'email': return email.value;
-      case 'phone': return phone.value;
+      case 'visitor_role':
+        return selectedVisitorRole.value.isNotEmpty
+            ? selectedVisitorRole.value
+            : field.answerText;
+      case 'name':
+        return name.value;
+      case 'email':
+        return email.value;
+      case 'phone':
+        return phone.value;
       case 'organization':
-      case 'company': return organization.value;
+      case 'company':
+        return organization.value;
       case 'identity_id':
-      case 'indentity_id': return identityId.value;
+      case 'indentity_id':
+        return identityId.value;
       case 'is_employee':
         final target = isEmployee.value ? 'yes' : 'no';
         final opt = field.multipleOptionFields.firstWhereOrNull(
-          (o) => o.name.toLowerCase() == target || o.value.toLowerCase() == target
+          (o) =>
+              o.name.toLowerCase() == target || o.value.toLowerCase() == target,
         );
         return opt?.value ?? (isEmployee.value ? 'Yes' : 'No');
       case 'employee_name':
-      case 'employee': return selectedEmployeeId.value;
-      case 'agenda': return agenda.value;
-      default: return field.answerText;
+      case 'employee':
+        return selectedEmployeeId.value;
+      case 'agenda':
+        return agenda.value;
+      default:
+        return field.answerText;
     }
   }
 
-  String _answerTextForRemarksInGroup(String remarks, VisitFormField field, Map<String, String> answers) {
+  String _answerTextForRemarksInGroup(
+    String remarks,
+    VisitFormField field,
+    Map<String, String> answers,
+  ) {
     switch (remarks.toLowerCase()) {
-      case 'visitor_role': return answers['visitor_role'] ?? '';
-      case 'name': return answers['name'] ?? '';
-      case 'email': return answers['email'] ?? '';
-      case 'phone': return answers['phone'] ?? '';
+      case 'visitor_role':
+        return answers['visitor_role'] ?? '';
+      case 'name':
+        return answers['name'] ?? '';
+      case 'email':
+        return answers['email'] ?? '';
+      case 'phone':
+        return answers['phone'] ?? '';
       case 'organization':
-      case 'company': return answers['organization'] ?? '';
+      case 'company':
+        return answers['organization'] ?? '';
       case 'identity_id':
-      case 'indentity_id': return answers['indentity_id'] ?? '';
+      case 'indentity_id':
+        return answers['indentity_id'] ?? '';
       case 'is_employee':
         final isEmp = answers['is_employee'] == 'true';
         final target = isEmp ? 'yes' : 'no';
         final opt = field.multipleOptionFields.firstWhereOrNull(
-          (o) => o.name.toLowerCase() == target || o.value.toLowerCase() == target
+          (o) =>
+              o.name.toLowerCase() == target || o.value.toLowerCase() == target,
         );
         return opt?.value ?? (isEmp ? 'Yes' : 'No');
       case 'employee_name':
-      case 'employee': return answers['employee'] ?? '';
-      case 'agenda': return agenda.value;
-      default: return field.answerText;
+      case 'employee':
+        return answers['employee'] ?? '';
+      case 'agenda':
+        return agenda.value;
+      default:
+        return field.answerText;
     }
   }
 
   void _showError(String msg) {
-    Get.snackbar('Error', msg, backgroundColor: Colors.red, colorText: Colors.white, snackPosition: SnackPosition.TOP);
+    Get.snackbar(
+      'Error',
+      msg,
+      backgroundColor: Colors.red,
+      colorText: Colors.white,
+      snackPosition: SnackPosition.TOP,
+    );
   }
 }

@@ -41,6 +41,7 @@ class AccessPassModel {
   final String receiverName;
   final String receiverEmail;
   final String receiverPhone;
+  final String groupCode;
 
   AccessPassModel({
     required this.id,
@@ -82,6 +83,7 @@ class AccessPassModel {
     this.receiverName = '',
     this.receiverEmail = '',
     this.receiverPhone = '',
+    this.groupCode = '',
   });
 
   factory AccessPassModel.fromRawJson(String str) =>
@@ -91,11 +93,14 @@ class AccessPassModel {
 
   factory AccessPassModel.fromJson(Map<String, dynamic> json) {
     return AccessPassModel(
-      id: json['id']?.toString() ?? '',
+      id: (json['id'] ?? json['transaction_visitor_id'])?.toString() ?? '',
       agenda: json['agenda']?.toString() ?? '',
       initialTrxCode: json['initial_trx_code']?.toString() ?? '',
       host: json['host']?.toString() ?? '',
-      isGroup: json['is_group'] == true,
+      isGroup: json['is_group'] == true ||
+          json['is_group'] == 1 ||
+          json['is_group']?.toString() == 'true' ||
+          json['type_registered']?.toString() == '1',
       groupName: json['group_name']?.toString() ?? '',
       visitorPeriodStart:
           (json['visitor_period_start'] ??
@@ -137,7 +142,9 @@ class AccessPassModel {
       isDriving: json['is_driving'] == true,
       tz: json['tz']?.toString() ?? '',
       siteId: (json['site_id'] ?? json['site_place'])?.toString() ?? '',
-      visitorName: json['visitor_name']?.toString() ?? '',
+      visitorName: (json['visitor_name']?.toString() ?? '').isNotEmpty
+          ? json['visitor_name'].toString()
+          : (json['group_name']?.toString() ?? ''),
       isPraregisterDone:
           json['is_complete_preregister'] == true ||
           json['is_praregister_done'] == true,
@@ -158,6 +165,7 @@ class AccessPassModel {
       receiverName: json['receiver_name']?.toString() ?? '',
       receiverEmail: json['receiver_email']?.toString() ?? '',
       receiverPhone: json['receiver_phone']?.toString() ?? '',
+      groupCode: json['group_code']?.toString() ?? '',
     );
   }
 
@@ -201,6 +209,7 @@ class AccessPassModel {
     'receiver_name': receiverName,
     'receiver_email': receiverEmail,
     'receiver_phone': receiverPhone,
+    'group_code': groupCode,
   };
 
   /// Parse a datetime string from the API as UTC and convert to device local time.

@@ -414,45 +414,49 @@ class _SendInvitationPageState extends State<SendInvitationPage>
                         final String jenis;
                         final Color jenisColor;
 
-                        if (item.visitorStatus.isEmpty) {
-                          jenis = item.isPraregisterDone
-                              ? 'Praregis'
-                              : 'Invitation';
-                          jenisColor = item.isPraregisterDone
-                              ? const Color(0xFF00B0FF)
-                              : const Color(0xFF6D4C41);
+                        if (item.visitorStatus.isEmpty && item.flow.isEmpty) {
+                          jenis = 'Invitation';
+                          jenisColor = const Color(0xFF6D4C41);
                         } else {
-                          final lowerStatus = item.visitorStatus.toLowerCase();
-                          if (lowerStatus.contains('preregis') ||
-                              lowerStatus.contains('praregis')) {
-                            jenis = 'Praregis';
-                            jenisColor = const Color(0xFF00B0FF);
-                          } else if (lowerStatus == 'available') {
-                            jenis = 'Available';
-                            jenisColor = const Color(0xFF8E24AA);
-                          } else if (lowerStatus == 'checkin') {
-                            jenis = 'Checkin';
-                            jenisColor = const Color(0xFF00897B);
-                          } else if (lowerStatus == 'checkout') {
-                            jenis = 'Checkout';
-                            jenisColor = const Color(0xFF3949AB);
-                          } else if (lowerStatus == 'waiting') {
-                            jenis = 'Waiting';
-                            jenisColor = const Color(0xFFFB8C00);
-                          } else if (lowerStatus == 'denied') {
-                            jenis = 'Denied';
-                            jenisColor = const Color(0xFFE53935);
-                          } else if (lowerStatus == 'quickaccess') {
+                          // Use flow field to determine type badge
+                          final lowerFlow = item.flow.toLowerCase();
+                          if (lowerFlow == 'quickaccessvisit') {
                             jenis = 'Quick Access';
                             jenisColor = const Color(0xFFD81B60);
-                          } else if (lowerStatus == 'invitation') {
+                          } else if (lowerFlow == 'praregister') {
+                            jenis = 'Praregis';
+                            jenisColor = const Color(0xFF00B0FF);
+                          } else if (lowerFlow == 'invitation') {
                             jenis = 'Invitation';
                             jenisColor = const Color(0xFF6D4C41);
                           } else {
-                            jenis =
-                                item.visitorStatus[0].toUpperCase() +
-                                item.visitorStatus.substring(1);
-                            jenisColor = const Color(0xFF546E7A);
+                            // Fallback to transaction_status
+                            final lowerStatus = item.visitorStatus.toLowerCase();
+                            if (lowerStatus == 'available') {
+                              jenis = 'Available';
+                              jenisColor = const Color(0xFF8E24AA);
+                            } else if (lowerStatus == 'pending') {
+                              jenis = 'Pending';
+                              jenisColor = const Color(0xFFFB8C00);
+                            } else if (lowerStatus == 'undercreated') {
+                              jenis = 'Under Created';
+                              jenisColor = const Color(0xFF546E7A);
+                            } else if (lowerStatus == 'checkin') {
+                              jenis = 'Checkin';
+                              jenisColor = const Color(0xFF00897B);
+                            } else if (lowerStatus == 'checkout') {
+                              jenis = 'Checkout';
+                              jenisColor = const Color(0xFF3949AB);
+                            } else if (lowerStatus == 'reject' || lowerStatus == 'rejected' || lowerStatus == 'denied') {
+                              jenis = 'Rejected';
+                              jenisColor = const Color(0xFFE53935);
+                            } else if (item.visitorStatus.isNotEmpty) {
+                              jenis = item.visitorStatus[0].toUpperCase() + item.visitorStatus.substring(1);
+                              jenisColor = const Color(0xFF546E7A);
+                            } else {
+                              jenis = 'Invitation';
+                              jenisColor = const Color(0xFF6D4C41);
+                            }
                           }
                         }
 
@@ -507,7 +511,7 @@ class _SendInvitationPageState extends State<SendInvitationPage>
                                       hSpace(context, 10),
                                       Expanded(
                                         child: Text(
-                                          item.visitorName,
+                                          item.agenda.isEmpty ? '-' : item.agenda,
                                           style: TextStyle(
                                             fontWeight: FontWeight.w700,
                                             fontSize: rfs(context, 16),
@@ -807,7 +811,7 @@ class _SendInvitationPageState extends State<SendInvitationPage>
                                       hSpace(context, 10),
                                       Expanded(
                                         child: Text(
-                                          item.visitorName,
+                                          item.agenda.isEmpty ? '-' : item.agenda,
                                           style: TextStyle(
                                             fontWeight: FontWeight.w700,
                                             fontSize: rfs(context, 16),
@@ -1077,7 +1081,7 @@ void showInvitationDetailSheet(BuildContext context, AccessPassModel item) {
 // ─── InvitationDetailSheet ─────────────────────────────────────────────────
 class InvitationDetailSheet extends StatefulWidget {
   final AccessPassModel item;
-  const InvitationDetailSheet({required this.item});
+  const InvitationDetailSheet({super.key, required this.item});
 
   @override
   State<InvitationDetailSheet> createState() => InvitationDetailSheetState();
@@ -1087,10 +1091,119 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
   String _sitePlaceName = '';
   bool _loadingSite = true;
 
+  bool _loadingGroupVisitors = false;
+  List<AccessPassModel> _groupVisitorModels = [];
+  AccessPassModel? _selectedGroupVisitor;
+
   @override
   void initState() {
     super.initState();
     _fetchSiteDetail();
+    _fetchGroupVisitors();
+  }
+
+  Future<void> _fetchGroupVisitors() async {
+    if (mounted) setState(() => _loadingGroupVisitors = true);
+    try {
+      final controller = Get.isRegistered<InvitationController>()
+          ? Get.find<InvitationController>()
+          : Get.put(InvitationController());
+
+      final List<AccessPassModel> models = [];
+      // 1. Fetch group members directly from API (Dynamic as requested)
+      final String fetchId = widget.item.transactionVisitorId.isNotEmpty 
+          ? widget.item.transactionVisitorId 
+          : widget.item.id;
+      final list = await controller.fetchTransactionVisitors(fetchId);
+        
+        final parentFlow = widget.item.flow;
+        final parentSiteId = widget.item.siteId;
+        final parentSitePlaceName = widget.item.sitePlaceName;
+        final parentPeriodStart = widget.item.visitorPeriodStart;
+        final parentPeriodEnd = widget.item.visitorPeriodEnd;
+        final parentAgenda = widget.item.agenda;
+        final parentHostName = widget.item.hostName;
+        final parentVisitorTypeName = widget.item.visitorTypeName;
+        final parentVisitorTypeId = widget.item.visitorTypeId;
+        final parentGCode = widget.item.groupCode.isNotEmpty
+            ? widget.item.groupCode
+            : (widget.item.invitationCode.contains('-') ? widget.item.invitationCode.split('-').first : '');
+
+
+        for (var visitor in list) {
+          final mutableVisitor = Map<String, dynamic>.from(visitor);
+          if ((mutableVisitor['flow']?.toString() ?? '').isEmpty) {
+            mutableVisitor['flow'] = parentFlow;
+          }
+          if ((mutableVisitor['site_id']?.toString() ?? '').isEmpty && (mutableVisitor['site_place']?.toString() ?? '').isEmpty) {
+            mutableVisitor['site_id'] = parentSiteId;
+          }
+          
+          final model = AccessPassModel.fromJson(mutableVisitor);
+          
+          final finalModel = AccessPassModel(
+            id: model.id.isEmpty ? widget.item.id : model.id,
+            agenda: model.agenda.isEmpty ? parentAgenda : model.agenda,
+            initialTrxCode: model.initialTrxCode.isEmpty ? widget.item.initialTrxCode : model.initialTrxCode,
+            host: model.host.isEmpty ? widget.item.host : model.host,
+            isGroup: true,
+            groupName: model.groupName.isEmpty ? widget.item.groupName : model.groupName,
+            groupCode: parentGCode,
+            visitorPeriodStart: (mutableVisitor['visitor_period_start'] ?? mutableVisitor['visit_start']) != null 
+                ? model.visitorPeriodStart 
+                : parentPeriodStart,
+            visitorPeriodEnd: (mutableVisitor['visitor_period_end'] ?? mutableVisitor['visit_end']) != null 
+                ? model.visitorPeriodEnd 
+                : parentPeriodEnd,
+            visitorNumber: model.visitorNumber,
+            visitorCode: model.visitorCode.isEmpty ? widget.item.visitorCode : model.visitorCode,
+            invitationCode: model.invitationCode.isEmpty ? widget.item.invitationCode : model.invitationCode,
+            visitorStatus: model.visitorStatus.isEmpty ? widget.item.visitorStatus : model.visitorStatus,
+            sitePlaceName: model.sitePlaceName.isEmpty ? parentSitePlaceName : model.sitePlaceName,
+            hostName: model.hostName.isEmpty ? parentHostName : model.hostName,
+            parkingSlot: model.parkingSlot,
+            parkingArea: model.parkingArea,
+            vehiclePlateNumber: model.vehiclePlateNumber,
+            vehicleType: model.vehicleType,
+            isDriving: model.isDriving,
+            tz: model.tz.isEmpty ? widget.item.tz : model.tz,
+            siteId: model.siteId.isEmpty ? parentSiteId : model.siteId,
+            visitorName: model.visitorName,
+            isPraregisterDone: model.isPraregisterDone,
+            visitorRole: model.visitorRole.isEmpty ? widget.item.visitorRole : model.visitorRole,
+            approvalStatus: model.approvalStatus.isEmpty ? widget.item.approvalStatus : model.approvalStatus,
+            visitorTypeName: model.visitorTypeName.isEmpty ? parentVisitorTypeName : model.visitorTypeName,
+            visitorTypeId: model.visitorTypeId.isEmpty ? parentVisitorTypeId : model.visitorTypeId,
+            invitedByName: model.invitedByName.isEmpty ? widget.item.invitedByName : model.invitedByName,
+            invitedBy: model.invitedBy.isEmpty ? widget.item.invitedBy : model.invitedBy,
+            hostOrganizationName: model.hostOrganizationName.isEmpty ? widget.item.hostOrganizationName : model.hostOrganizationName,
+            flow: model.flow,
+            visitorOrganizationName: model.visitorOrganizationName,
+            visitorPhone: model.visitorPhone,
+            visitorEmail: model.visitorEmail,
+            visitorIdentityId: model.visitorIdentityId,
+            receiverName: model.receiverName,
+            receiverEmail: model.receiverEmail,
+            receiverPhone: model.receiverPhone,
+          );
+          models.add(finalModel);
+        }
+
+      if (mounted) {
+        setState(() {
+          _groupVisitorModels = models;
+          if (models.isNotEmpty) {
+            _selectedGroupVisitor = models.first;
+          }
+          _loadingGroupVisitors = false;
+        });
+      }
+    } catch (e) {
+      debugPrint('_fetchGroupVisitors error: $e');
+      if (mounted) {
+        setState(() => _loadingGroupVisitors = false);
+      }
+    }
   }
 
   Future<void> _fetchSiteDetail() async {
@@ -1154,8 +1267,10 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
   @override
   Widget build(BuildContext context) {
     final item = widget.item;
-    final isExpired = item.visitorPeriodEnd.isBefore(DateTime.now());
-    final statusColor = _statusColor(item.visitorStatus);
+    // Fallback to _selectedGroupVisitor if it's loaded, otherwise use item
+    final selectedItem = _selectedGroupVisitor ?? item;
+    final isExpired = selectedItem.visitorPeriodEnd.isBefore(DateTime.now());
+    final statusColor = _statusColor(selectedItem.visitorStatus);
 
     return DraggableScrollableSheet(
       initialChildSize: 0.9,
@@ -1207,15 +1322,52 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
                     ),
                     hSpace(context, 12),
                     Expanded(
-                      child: Text(
-                        item.visitorName,
-                        style: TextStyle(
-                          fontWeight: FontWeight.w800,
-                          fontSize: rfs(context, 16),
-                          color: Colors.black87,
-                        ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            'Detail',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w800,
+                              fontSize: rfs(context, 16),
+                              color: Colors.black87,
+                            ),
+                          ),
+                          vSpace(context, 2),
+                          Text(
+                            'Agenda ${selectedItem.agenda.isEmpty ? '-' : selectedItem.agenda}',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w500,
+                              fontSize: rfs(context, 13),
+                              color: Colors.grey.shade600,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
+                    hSpace(context, 8),
+                    if (selectedItem.visitorStatus.isNotEmpty) ...[
+                      Container(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: rw(context, 10),
+                          vertical: rh(context, 5),
+                        ),
+                        decoration: BoxDecoration(
+                          color: statusColor,
+                          borderRadius: BorderRadius.circular(rw(context, 20)),
+                        ),
+                        child: Text(
+                          selectedItem.visitorStatus,
+                          style: TextStyle(
+                            fontSize: rfs(context, 12),
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                      hSpace(context, 8),
+                    ],
                     Container(
                       padding: EdgeInsets.symmetric(
                         horizontal: rw(context, 10),
@@ -1250,126 +1402,208 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
                     vertical: rh(context, 16),
                   ),
                   children: [
+                    if (_loadingGroupVisitors)
+                      const Center(
+                        child: Padding(
+                          padding: EdgeInsets.all(16.0),
+                          child: CircularProgressIndicator(),
+                        ),
+                      )
+                    else if (_groupVisitorModels.length > 1) ...[
+                      _section(context, 'Group Members'),
+                      vSpace(context, 8),
+                        Container(
+                          height: rh(context, 55),
+                          child: ListView.separated(
+                            scrollDirection: Axis.horizontal,
+                            itemCount: _groupVisitorModels.length,
+                            separatorBuilder: (context, index) => hSpace(context, 10),
+                            itemBuilder: (context, index) {
+                              final model = _groupVisitorModels[index];
+                              final isSelected = _selectedGroupVisitor == model;
+                              
+                              return GestureDetector(
+                                onTap: () {
+                                  setState(() {
+                                    _selectedGroupVisitor = model;
+                                  });
+                                },
+                                child: Container(
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: rw(context, 12),
+                                    vertical: rh(context, 6),
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: isSelected
+                                        ? const Color(0xFF005596).withValues(alpha: 0.08)
+                                        : Colors.white,
+                                    borderRadius: BorderRadius.circular(rw(context, 8)),
+                                    border: Border.all(
+                                      color: isSelected
+                                          ? const Color(0xFF005596)
+                                          : Colors.grey.shade200,
+                                      width: isSelected ? 1.5 : 1.0,
+                                    ),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      CircleAvatar(
+                                        radius: rw(context, 14),
+                                        backgroundColor: isSelected
+                                            ? const Color(0xFF005596)
+                                            : Colors.grey.shade200,
+                                        child: Text(
+                                          model.visitorName.isNotEmpty
+                                              ? model.visitorName[0].toUpperCase()
+                                              : 'V',
+                                          style: TextStyle(
+                                            color: isSelected
+                                                ? Colors.white
+                                                : Colors.grey.shade700,
+                                            fontSize: rfs(context, 11),
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ),
+                                      hSpace(context, 8),
+                                      Text(
+                                        model.visitorName.isNotEmpty
+                                            ? model.visitorName
+                                            : 'Visitor ${index + 1}',
+                                        style: TextStyle(
+                                          fontSize: rfs(context, 12),
+                                          fontWeight: FontWeight.w700,
+                                          color: isSelected
+                                              ? const Color(0xFF005596)
+                                              : Colors.black87,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                      vSpace(context, 16),
+                    ],
+
                     // 1. Visitor Information
                     _section(context, 'Visitor Information'),
                     _grid(context, statusColor, [
                       _SheetField(
                         'Visitor Type',
-                        item.visitorTypeName.isEmpty
+                        selectedItem.visitorTypeName.isEmpty
                             ? '-'
-                            : item.visitorTypeName,
+                            : selectedItem.visitorTypeName,
                         Icons.badge_outlined,
                       ),
                       _SheetField(
                         'Visitor Role',
-                        item.visitorRole.isEmpty ? '-' : item.visitorRole,
+                        selectedItem.visitorRole.isEmpty ? '-' : selectedItem.visitorRole,
                         Icons.work_outline,
                       ),
                       _SheetField(
                         'Name',
-                        item.visitorName.isEmpty ? '-' : item.visitorName,
+                        selectedItem.visitorName.isEmpty ? '-' : selectedItem.visitorName,
                         Icons.person_outline,
                       ),
                       _SheetField(
                         'Email',
-                        item.visitorEmail.isEmpty ? '-' : item.visitorEmail,
+                        selectedItem.visitorEmail.isEmpty ? '-' : selectedItem.visitorEmail,
                         Icons.email_outlined,
                       ),
                       _SheetField(
                         'Phone',
-                        item.visitorPhone.isEmpty ? '-' : item.visitorPhone,
+                        selectedItem.visitorPhone.isEmpty ? '-' : selectedItem.visitorPhone,
                         Icons.phone_outlined,
                       ),
                       _SheetField(
                         'Organization',
-                        item.visitorOrganizationName.isEmpty
+                        selectedItem.visitorOrganizationName.isEmpty
                             ? '-'
-                            : item.visitorOrganizationName,
+                            : selectedItem.visitorOrganizationName,
                         Icons.business_outlined,
                       ),
-                      if (item.flow.toLowerCase() != 'quickaccessvisit')
+                      if (selectedItem.flow.toLowerCase() != 'quickaccessvisit')
                         _SheetField(
                           'Identity ID',
-                          item.visitorIdentityId.isEmpty
+                          selectedItem.visitorIdentityId.isEmpty
                               ? '-'
-                              : item.visitorIdentityId,
+                              : selectedItem.visitorIdentityId,
                           Icons.credit_card_outlined,
                         ),
                       _SheetField(
                         'Location',
                         _loadingSite
                             ? '...'
-                            : (_sitePlaceName.isEmpty ? '-' : _sitePlaceName),
+                            : (selectedItem.sitePlaceName.isNotEmpty
+                                ? selectedItem.sitePlaceName
+                                : (_sitePlaceName.isEmpty ? '-' : _sitePlaceName)),
                         Icons.location_on_outlined,
                       ),
-                    ], isExpired: isExpired),
-
-                    vSpace(context, 16),
-
-                    // 2. Invitation Information (tanpa "Type")
-                    _section(context, 'Invitation Information'),
-                    _grid(context, statusColor, [
                       _SheetField(
                         'Invitation Code',
-                        item.invitationCode.isEmpty ? '-' : item.invitationCode,
+                        selectedItem.invitationCode.isEmpty ? '-' : selectedItem.invitationCode,
                         Icons.confirmation_number_outlined,
                         isCode: true,
                       ),
                       _SheetField(
                         'Visitor Code',
-                        item.visitorCode.isEmpty ? '-' : item.visitorCode,
+                        selectedItem.visitorCode.isEmpty ? '-' : selectedItem.visitorCode,
                         Icons.pin_outlined,
                       ),
                       _SheetField(
                         'Group Name',
-                        item.groupName.isEmpty ? '-' : item.groupName,
+                        selectedItem.groupName.isEmpty ? '-' : selectedItem.groupName,
                         Icons.group_outlined,
                       ),
                       _SheetField(
                         'Visitor Status',
-                        item.visitorStatus.isEmpty
+                        selectedItem.visitorStatus.isEmpty
                             ? '-'
-                            : item.visitorStatus,
+                            : selectedItem.visitorStatus,
                         Icons.info_outline,
                         badgeColor: statusColor,
                       ),
                       _SheetField(
                         'Agenda',
-                        item.agenda.isEmpty ? '-' : item.agenda,
+                        selectedItem.agenda.isEmpty ? '-' : selectedItem.agenda,
                         Icons.event_note_outlined,
                       ),
-                      if (item.flow.toLowerCase() != 'quickaccessvisit')
+                      if (selectedItem.flow.toLowerCase() != 'quickaccessvisit')
                         _SheetField(
                           'Host',
-                          item.hostName.isEmpty ? '-' : item.hostName,
+                          selectedItem.hostName.isEmpty ? '-' : selectedItem.hostName,
                           Icons.person_outline,
                         ),
                       _SheetField(
                         'Vehicle Type',
-                        item.vehicleType.isEmpty ? '-' : item.vehicleType,
+                        selectedItem.vehicleType.isEmpty ? '-' : selectedItem.vehicleType,
                         Icons.directions_car_outlined,
                       ),
                       _SheetField(
                         'Vehicle Plate',
-                        item.vehiclePlateNumber.isEmpty
+                        selectedItem.vehiclePlateNumber.isEmpty
                             ? '-'
-                            : item.vehiclePlateNumber,
+                            : selectedItem.vehiclePlateNumber,
                         Icons.subtitles_outlined,
                       ),
-                      if (item.flow.toLowerCase() == 'quickaccessvisit') ...[
+                      if (selectedItem.flow.toLowerCase() == 'quickaccessvisit') ...[
                         _SheetField(
                           'Receiver Name',
-                          item.receiverName.isEmpty ? '-' : item.receiverName,
+                          selectedItem.receiverName.isEmpty ? '-' : selectedItem.receiverName,
                           Icons.person_outline,
                         ),
                         _SheetField(
                           'Receiver Phone',
-                          item.receiverPhone.isEmpty ? '-' : item.receiverPhone,
+                          selectedItem.receiverPhone.isEmpty ? '-' : selectedItem.receiverPhone,
                           Icons.phone_outlined,
                         ),
                         _SheetField(
                           'Receiver Email',
-                          item.receiverEmail.isEmpty ? '-' : item.receiverEmail,
+                          selectedItem.receiverEmail.isEmpty ? '-' : selectedItem.receiverEmail,
                           Icons.email_outlined,
                         ),
                       ],
@@ -1415,7 +1649,7 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
                                 Text(
                                   DateFormat(
                                     'dd MMM yyyy',
-                                  ).format(item.visitorPeriodStart),
+                                  ).format(selectedItem.visitorPeriodStart),
                                   style: TextStyle(
                                     fontSize: rfs(context, 12),
                                     fontWeight: FontWeight.w700,
@@ -1425,7 +1659,7 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
                                 Text(
                                   DateFormat(
                                     'HH:mm',
-                                  ).format(item.visitorPeriodStart),
+                                  ).format(selectedItem.visitorPeriodStart),
                                   style: TextStyle(
                                     fontSize: rfs(context, 12),
                                     color: Colors.grey.shade600,
@@ -1468,7 +1702,7 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
                                   Text(
                                     DateFormat(
                                       'dd MMM yyyy',
-                                    ).format(item.visitorPeriodEnd),
+                                    ).format(selectedItem.visitorPeriodEnd),
                                     style: TextStyle(
                                       fontSize: rfs(context, 12),
                                       fontWeight: FontWeight.w700,
@@ -1480,7 +1714,7 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
                                   Text(
                                     DateFormat(
                                       'HH:mm',
-                                    ).format(item.visitorPeriodEnd),
+                                    ).format(selectedItem.visitorPeriodEnd),
                                     style: TextStyle(
                                       fontSize: rfs(context, 12),
                                       color: isExpired
@@ -1716,63 +1950,6 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
   }
 }
 
-/// Single-row field for Registered Site with full-width bordered container
-class _SheetFieldRow extends StatelessWidget {
-  final BuildContext context;
-  final IconData icon;
-  final String label;
-  final String value;
-
-  const _SheetFieldRow({
-    required this.context,
-    required this.icon,
-    required this.label,
-    required this.value,
-  });
-
-  @override
-  Widget build(BuildContext ctx) {
-    return Container(
-      padding: EdgeInsets.symmetric(
-        horizontal: rw(ctx, 14),
-        vertical: rh(ctx, 12),
-      ),
-      decoration: BoxDecoration(
-        color: Colors.grey.shade50,
-        borderRadius: BorderRadius.circular(rw(ctx, 10)),
-        border: Border.all(color: Colors.grey.shade200),
-      ),
-      child: Row(
-        children: [
-          Icon(icon, size: rw(ctx, 16), color: Colors.grey.shade400),
-          hSpace(ctx, 10),
-          SizedBox(
-            width: rw(ctx, 100),
-            child: Text(
-              label,
-              style: TextStyle(
-                fontSize: rfs(ctx, 12),
-                color: Colors.grey.shade500,
-              ),
-            ),
-          ),
-          Expanded(
-            child: Text(
-              value,
-              textAlign: TextAlign.end,
-              style: TextStyle(
-                fontSize: rfs(ctx, 12),
-                fontWeight: FontWeight.w600,
-                color: Colors.black87,
-              ),
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
 
 // ─── _SheetField model ────────────────────────────────────────────────────────
 class _SheetField {

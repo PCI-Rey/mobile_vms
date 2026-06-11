@@ -13,6 +13,7 @@ class InvitationController extends GetxController {
   final HiveService _hive = HiveService();
 
   final RxList<AccessPassModel> allInvitations = <AccessPassModel>[].obs;
+  final RxList<AccessPassModel> allRawVisitors = <AccessPassModel>[].obs;
   final RxList<AccessPassModel> ongoingInvitations = <AccessPassModel>[].obs;
   final RxList<AccessPassModel> quickAccessInvitations =
       <AccessPassModel>[].obs;
@@ -32,7 +33,11 @@ class InvitationController extends GetxController {
   final Set<String> _resolvedTickets = {};
   final Set<String> _pendingFetches = {};
 
-  void startReminderTimer(int minutes, String ticketId, VoidCallback onTrigger) {
+  void startReminderTimer(
+    int minutes,
+    String ticketId,
+    VoidCallback onTrigger,
+  ) {
     postponedTicketIds.add(ticketId);
 
     if (_reminderTimer == null) {
@@ -225,33 +230,12 @@ class InvitationController extends GetxController {
       if (response.data['status'] == 'success' ||
           response.data['status_code'] == 200) {
         final collection = response.data['collection'] as List<dynamic>? ?? [];
-        
-        final List<AccessPassModel> allVisitors = [];
-        
-        // Fetch visitors for each transaction in parallel
-        await Future.wait(collection.map((trx) async {
-          final trxMap = trx as Map<String, dynamic>;
-          final trxId = trxMap['id']?.toString() ?? '';
-          if (trxId.isNotEmpty) {
-            final visitorsList = await fetchTransactionVisitors(trxId);
-            if (visitorsList.isEmpty) {
-              allVisitors.add(AccessPassModel.fromJson(trxMap));
-            } else {
-              final parentFlow = trxMap['flow']?.toString() ?? '';
-              final parentSiteId = trxMap['site_id']?.toString() ?? trxMap['site_place']?.toString() ?? '';
-              for (var visitor in visitorsList) {
-                final mutableVisitor = Map<String, dynamic>.from(visitor);
-                if ((mutableVisitor['flow']?.toString() ?? '').isEmpty) {
-                  mutableVisitor['flow'] = parentFlow;
-                }
-                if ((mutableVisitor['site_id']?.toString() ?? '').isEmpty && (mutableVisitor['site_place']?.toString() ?? '').isEmpty) {
-                  mutableVisitor['site_id'] = parentSiteId;
-                }
-                allVisitors.add(AccessPassModel.fromJson(mutableVisitor));
-              }
-            }
-          }
-        }));
+
+        final List<AccessPassModel> allVisitors = collection.map((trx) {
+          return AccessPassModel.fromJson(trx as Map<String, dynamic>);
+        }).toList();
+
+        allRawVisitors.assignAll(allVisitors);
 
         allInvitations.assignAll(allVisitors);
         _applyFilters();
@@ -596,19 +580,22 @@ class InvitationController extends GetxController {
 
     _pendingFetches.add(ticketId);
 
-    fetchTransactionVisitors(entityId).then((visitors) {
-      _pendingFetches.remove(ticketId);
-      if (visitors.isNotEmpty) {
-        final name = visitors.first['visitor_name']?.toString() ??
-            visitors.first['name']?.toString() ??
-            'Visitor';
-        ticketVisitorNames[ticketId] = name;
-        _resolvedTickets.add(ticketId);
-      }
-    }).catchError((e) {
-      _pendingFetches.remove(ticketId);
-      debugPrint('Error fetching visitor name for $ticketId: $e');
-    });
+    fetchTransactionVisitors(entityId)
+        .then((visitors) {
+          _pendingFetches.remove(ticketId);
+          if (visitors.isNotEmpty) {
+            final name =
+                visitors.first['visitor_name']?.toString() ??
+                visitors.first['name']?.toString() ??
+                'Visitor';
+            ticketVisitorNames[ticketId] = name;
+            _resolvedTickets.add(ticketId);
+          }
+        })
+        .catchError((e) {
+          _pendingFetches.remove(ticketId);
+          debugPrint('Error fetching visitor name for $ticketId: $e');
+        });
   }
 
   Future<void> fetchApprovalTickets({bool isSilent = false}) async {
@@ -626,14 +613,14 @@ class InvitationController extends GetxController {
         final newTickets = collection
             .map((e) => ApprovalTicketModel.fromJson(e as Map<String, dynamic>))
             .toList();
-        
+
         if (!isSilent) {
           _resolvedTickets.clear();
           _pendingFetches.clear();
         }
 
         approvalTickets.assignAll(newTickets);
-        
+
         for (final ticket in newTickets) {
           fetchVisitorNameForTicket(ticket);
         }
@@ -752,8 +739,15 @@ class InvitationController extends GetxController {
 
     try {
       final response = await _api.getTransactionVisitors(token, entityId);
+      if (response.statusCode != 200) {
+        debugPrint(
+          'fetchTransactionVisitors got status code ${response.statusCode}',
+        );
+        return [];
+      }
       final data = response.data;
-      if (data['status'] == 'success' || data['status_code'] == 200) {
+      if (data is Map &&
+          (data['status'] == 'success' || data['status_code'] == 200)) {
         final raw = data['collection'] ?? data['data'] ?? data['visitors'];
         if (raw is List) {
           return raw.whereType<Map<String, dynamic>>().toList();

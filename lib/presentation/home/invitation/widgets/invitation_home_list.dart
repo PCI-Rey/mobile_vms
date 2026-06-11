@@ -274,7 +274,7 @@ class _InvitationHomeListState extends State<InvitationHomeList> {
                   hSpace(context, 10),
                   Expanded(
                     child: Text(
-                      item.visitorName,
+                      item.agenda.isEmpty ? '-' : item.agenda,
                       style: TextStyle(
                         fontWeight: FontWeight.w700,
                         fontSize: rfs(context, 16),
