@@ -22,6 +22,7 @@ class InvitationController extends GetxController {
   final RxList<ApprovalTicketModel> approvalTickets =
       <ApprovalTicketModel>[].obs;
   final RxBool isApprovalLoading = false.obs;
+  bool hasShownPendingPopup = false;
 
   final Rx<DateTime?> startDate = Rx<DateTime?>(null);
   final Rx<DateTime?> endDate = Rx<DateTime?>(null);

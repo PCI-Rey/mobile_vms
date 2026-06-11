@@ -6,6 +6,7 @@ import 'login_controller.dart';
 import 'verification_code_controller.dart';
 import 'informasi_umum_controller.dart';
 import '../../home/controllers/guest_home_controller.dart';
+import '../../home/invitation/controller/invitation_controller.dart';
 import '../../../core/services/notification_service.dart';
 
 class UserController extends GetxController {
@@ -46,6 +47,7 @@ class UserController extends GetxController {
     Get.delete<VerificationCodeController>(force: true);
     Get.delete<InformasiUmumController>(force: true);
     Get.delete<GuestHomeController>(force: true);
+    Get.delete<InvitationController>(force: true);
 
     // Clear Hive dashboard data
     await _authDatasource.clearDashboardData();

@@ -18,6 +18,7 @@ import '../../core/core.dart';
 import 'access_pass/access_pass_page.dart';
 import 'approval/approval_page.dart';
 import 'invitation/controller/invitation_controller.dart';
+import '../../data/models/approval_ticket_model.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -37,6 +38,7 @@ class _HomePageState extends State<HomePage> {
   bool _isSelectingFromCalendar = false;
 
   Worker? _dateScrollWorker;
+  Worker? _approvalTicketsWorker;
 
   @override
   void initState() {
@@ -47,6 +49,7 @@ class _HomePageState extends State<HomePage> {
           invitationController.selectedDashboardDate.value,
           animate: false,
         );
+        _checkAndShowPendingPopup(invitationController.approvalTickets);
       }
       Future.delayed(const Duration(milliseconds: 300), () {
         if (mounted) {
@@ -69,13 +72,106 @@ class _HomePageState extends State<HomePage> {
         setState(() {});
       }
     });
+
+    _approvalTicketsWorker = ever(invitationController.approvalTickets, (tickets) {
+      if (mounted) {
+        _checkAndShowPendingPopup(tickets);
+      }
+    });
   }
 
   @override
   void dispose() {
     _dateScrollWorker?.dispose();
+    _approvalTicketsWorker?.dispose();
     _scrollController.dispose();
     super.dispose();
+  }
+
+  void _checkAndShowPendingPopup(List<ApprovalTicketModel> tickets) {
+    if (invitationController.hasShownPendingPopup) return;
+
+    final today = DateTime.now();
+    final pendingTickets = tickets.where((t) {
+      final isPending = (t.approvalActorStatus ?? '').toLowerCase() == 'pending' ||
+          (t.approvalStatus ?? '').toLowerCase() == 'pending';
+      if (!isPending) return false;
+
+      if (t.visitorPeriodStart == null) return false;
+      return t.visitorPeriodStart!.year == today.year &&
+          t.visitorPeriodStart!.month == today.month &&
+          t.visitorPeriodStart!.day == today.day;
+    }).toList();
+
+    if (pendingTickets.isNotEmpty) {
+      invitationController.hasShownPendingPopup = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          _showPendingWarningDialog(pendingTickets.length);
+        }
+      });
+    }
+  }
+
+  void _showPendingWarningDialog(int count) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogCtx) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(rw(context, 20)),
+        ),
+        icon: Icon(
+          Icons.pending_actions_rounded,
+          size: rw(context, 48),
+          color: const Color(0xFFE65100), // Orange
+        ),
+        title: Text(
+          'Pending Approval',
+          style: TextStyle(
+            fontSize: rfs(context, 18),
+            fontWeight: FontWeight.w800,
+            color: Colors.black87,
+          ),
+        ),
+        content: Text(
+          'You have $count pending visitor request${count > 1 ? 's' : ''} for today that require${count > 1 ? '' : 's'} your approval or rejection.',
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontSize: rfs(context, 14),
+            color: Colors.black54,
+            height: 1.4,
+          ),
+        ),
+        actionsAlignment: MainAxisAlignment.center,
+        actions: [
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: () => Navigator.of(dialogCtx).pop(),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary500,
+                foregroundColor: Colors.white,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(rw(context, 12)),
+                ),
+                padding: EdgeInsets.symmetric(
+                  vertical: rh(context, 12),
+                ),
+              ),
+              child: const Text(
+                'Yes, I Know',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   void _scrollToDate(DateTime date, {bool animate = true}) {
