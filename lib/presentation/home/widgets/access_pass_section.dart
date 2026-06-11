@@ -28,15 +28,7 @@ class AccessPassSection extends StatelessWidget {
           child: Obx(() {
             // Trigger rebuild when language changes
             LanguageController.to.selectedLang.value;
-            String title = 'access_pass'.tr;
-
-            if (guestCtrl.accessPasses.isNotEmpty &&
-                guestCtrl.selectedPassIndex.value <
-                    guestCtrl.accessPasses.length) {
-              final selectedItem =
-                  guestCtrl.accessPasses[guestCtrl.selectedPassIndex.value];
-              title = '${'access_pass'.tr} • ${selectedItem.agenda}';
-            }
+            final title = 'access_pass'.tr;
 
             return Text(
               title,
@@ -179,30 +171,7 @@ class AccessPassCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // "Guest Pass" badge
-                  Container(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: rw(context, 10),
-                      vertical: rh(context, 4),
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(rw(context, 20)),
-                      border: Border.all(
-                        color: Colors.white.withValues(alpha: 0.3),
-                      ),
-                    ),
-                    child: Text(
-                      'guest_pass'.tr,
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: rfs(context, 12),
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 0.5,
-                      ),
-                    ),
-                  ),
-                  vSpace(context, 10),
+
 
                   // Visitor name
                   Obx(() {
@@ -217,7 +186,7 @@ class AccessPassCard extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         color: Colors.white,
-                        fontSize: rfs(context, 22),
+                        fontSize: rfs(context, 18),
                         fontWeight: FontWeight.w800,
                         letterSpacing: -0.3,
                       ),
@@ -225,32 +194,22 @@ class AccessPassCard extends StatelessWidget {
                   }),
                   vSpace(context, 8),
 
-                  // Status dot + site name
+                  // Agenda Icon + Agenda Text
                   Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      Container(
-                        width: rw(context, 8),
-                        height: rw(context, 8),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF4ADE80),
-                          shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(
-                              color: const Color(0xFF4ADE80).withValues(
-                                alpha: 0.5,
-                              ),
-                              blurRadius: 4,
-                            ),
-                          ],
-                        ),
+                      Icon(
+                        Icons.event_note_outlined,
+                        color: Colors.white.withValues(alpha: 0.8),
+                        size: rw(context, 16),
                       ),
-                      hSpace(context, 7),
+                      hSpace(context, 6),
                       Expanded(
                         child: Text(
-                          '${_translateStatus(item.visitorStatus)} · ${item.sitePlaceName}',
+                          item.agenda,
                           style: TextStyle(
                             color: Colors.white.withValues(alpha: 0.8),
-                            fontSize: rfs(context, 13),
+                            fontSize: rfs(context, 16),
                             fontWeight: FontWeight.w500,
                           ),
                           maxLines: 1,
@@ -264,45 +223,28 @@ class AccessPassCard extends StatelessWidget {
             ),
             hSpace(context, 16),
 
-            // ── Right: photo stacked above QR ─────────────
-            Column(
-              children: [
-                CustomCircleImage(
-                  image: userCtrl.faceUrl != null
-                      ? Image.network(
-                          userCtrl.faceUrl!,
-                          fit: BoxFit.cover,
-                          errorBuilder: (_, _, _) =>
-                              Assets.images.avaPerson1.image(
-                            fit: BoxFit.cover,
-                          ),
-                        )
-                      : Assets.images.avaPerson1.image(fit: BoxFit.cover),
-                  size: rw(context, 52),
-                  borderWidth: 2,
-                ),
-                vSpace(context, 10),
-                Container(
-                  width: rw(context, 62),
-                  height: rw(context, 62),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(rw(context, 12)),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.15),
-                        blurRadius: 6,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
+            // ── Right: Barcode only centered ─────────────
+            Container(
+              width: rw(context, 76),
+              height: rw(context, 76),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(rw(context, 12)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.15),
+                    blurRadius: 6,
+                    offset: const Offset(0, 2),
                   ),
-                  padding: const EdgeInsets.all(4),
-                  child: QrImageView(
-                    data: item.visitorNumber,
-                    version: QrVersions.auto,
-                  ),
-                ),
-              ],
+                ],
+              ),
+              padding: const EdgeInsets.all(4),
+              child: QrImageView(
+                data: item.visitorNumber,
+                version: QrVersions.auto,
+                size: rw(context, 76),
+                padding: EdgeInsets.zero,
+              ),
             ),
           ],
         ),

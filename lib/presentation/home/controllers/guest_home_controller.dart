@@ -81,9 +81,6 @@ class GuestHomeController extends GetxController {
     if (!isSilent) isLoading.value = true;
     try {
       final response = await _api.getAccessPass(token);
-      debugPrint("===== GET ACCESS PASS RESPONSE =====");
-      debugPrint(response.data.toString());
-      debugPrint("====================================");
       if (response.data['status'] == 'success') {
         final collection = response.data['collection'] as List<dynamic>? ?? [];
         final now = DateTime.now();
@@ -156,9 +153,6 @@ class GuestHomeController extends GetxController {
 
     try {
       final response = await _api.getActiveVisits(token);
-      debugPrint("===== GET ACTIVE VISITS RESPONSE =====");
-      debugPrint(response.data.toString());
-      debugPrint("====================================");
       if (response.data['status'] == 'success') {
         final collection = response.data['collection'] as List<dynamic>? ?? [];
         final now = DateTime.now();

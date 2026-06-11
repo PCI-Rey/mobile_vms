@@ -5,6 +5,7 @@ import '../../../core/helper/responsive_helper.dart';
 import '../../auth/controller/language_controller.dart';
 import '../../auth/controller/user_controller.dart';
 import '../../profile/profile_page.dart';
+import '../../notification/notification_page.dart';
 
 class GuestHeader extends StatelessWidget {
   const GuestHeader({super.key});
@@ -21,14 +22,27 @@ class GuestHeader extends StatelessWidget {
           GestureDetector(
             onTap: () => Get.to(() => const ProfilePage()),
             child: CustomCircleImage(
-              image: userCtrl.faceUrl != null
+              image: userCtrl.faceUrl != null && userCtrl.faceUrl!.isNotEmpty
                   ? Image.network(
                       userCtrl.faceUrl!,
                       fit: BoxFit.cover,
-                      errorBuilder: (_, _, _) =>
-                          Assets.images.avaPerson1.image(fit: BoxFit.cover),
+                      errorBuilder: (_, _, _) => Container(
+                        color: const Color(0xFFE2E8F0),
+                        child: Icon(
+                          Icons.person,
+                          color: const Color(0xFF94A3B8),
+                          size: rw(context, 26),
+                        ),
+                      ),
                     )
-                  : Assets.images.avaPerson1.image(fit: BoxFit.cover),
+                  : Container(
+                      color: const Color(0xFFE2E8F0),
+                      child: Icon(
+                        Icons.person,
+                        color: const Color(0xFF94A3B8),
+                        size: rw(context, 26),
+                      ),
+                    ),
               size: rw(context, 48),
             ),
           ),
@@ -61,9 +75,54 @@ class GuestHeader extends StatelessWidget {
               ],
             ),
           ),
-          _buildLangSelector(context, langCtrl),
+          _buildActionButtons(context, langCtrl),
         ],
       ),
+    );
+  }
+
+  Widget _buildActionButtons(
+    BuildContext context,
+    LanguageController langCtrl,
+  ) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        _buildLangSelector(context, langCtrl),
+        hSpace(context, 12),
+        GestureDetector(
+          onTap: () => showNotificationDialog(context),
+          child: Container(
+            padding: EdgeInsets.all(rw(context, 9)),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.12),
+              shape: BoxShape.circle,
+              border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+            ),
+            child: Stack(
+              children: [
+                Icon(
+                  Icons.notifications_none_rounded,
+                  color: Colors.white,
+                  size: rw(context, 22),
+                ),
+                Positioned(
+                  right: 1,
+                  top: 1,
+                  child: Container(
+                    width: rw(context, 7),
+                    height: rw(context, 7),
+                    decoration: const BoxDecoration(
+                      color: Colors.redAccent,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
     );
   }
 

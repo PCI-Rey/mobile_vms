@@ -37,7 +37,16 @@ class VisitSummaryCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final String rawStatus = item.visitorStatus.toString().toLowerCase();
     final bool isCheckin = rawStatus == 'checkin';
+    final bool isPreregis =
+        rawStatus.contains('preregis') ||
+        rawStatus.contains('praregis') ||
+        (item.visitorStatus.toString().isEmpty && item.isPraregisterDone);
     final bool isDone = item.isPraregisterDone;
+
+    final String statusText =
+        (item.visitorStatus.toString().isEmpty && item.isPraregisterDone)
+        ? 'Preregis'
+        : _translateStatus(item.visitorStatus);
 
     return GestureDetector(
       onTap: isDone ? onTap : null,
@@ -86,7 +95,7 @@ class VisitSummaryCard extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         fontWeight: FontWeight.w600,
-                        fontSize: rfs(context, 14),
+                        fontSize: rfs(context, 16),
                       ),
                     ),
                     vSpace(context, 2),
@@ -94,7 +103,7 @@ class VisitSummaryCard extends StatelessWidget {
                       item.sitePlaceName,
                       style: TextStyle(
                         color: Colors.grey,
-                        fontSize: rfs(context, 12),
+                        fontSize: rfs(context, 14),
                       ),
                     ),
                   ],
@@ -105,10 +114,13 @@ class VisitSummaryCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Text(
-                    DateFormat('dd MMM').format(item.visitorPeriodStart),
+                    DateFormat(
+                      'dd MMMM yyyy',
+                      'en',
+                    ).format(item.visitorPeriodStart),
                     style: TextStyle(
                       fontWeight: FontWeight.w600,
-                      fontSize: rfs(context, 12),
+                      fontSize: rfs(context, 13),
                     ),
                   ),
                   vSpace(context, 2),
@@ -118,47 +130,24 @@ class VisitSummaryCard extends StatelessWidget {
                         DateFormat('HH:mm').format(item.visitorPeriodStart),
                         style: TextStyle(
                           color: Colors.grey,
-                          fontSize: rfs(context, 11),
+                          fontSize: rfs(context, 13),
                         ),
                       ),
                       Text(
                         ' – ',
                         style: TextStyle(
                           color: Colors.grey,
-                          fontSize: rfs(context, 11),
+                          fontSize: rfs(context, 13),
                         ),
                       ),
                       Text(
                         DateFormat('HH:mm').format(item.visitorPeriodEnd),
                         style: TextStyle(
                           color: Colors.grey,
-                          fontSize: rfs(context, 11),
+                          fontSize: rfs(context, 13),
                         ),
                       ),
                     ],
-                  ),
-                  vSpace(context, 4),
-                  Container(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: rw(context, 8),
-                      vertical: rh(context, 3),
-                    ),
-                    decoration: BoxDecoration(
-                      color: isCheckin
-                          ? const Color(0xFFDCFCE7)
-                          : AppColors.primary50,
-                      borderRadius: BorderRadius.circular(rw(context, 20)),
-                    ),
-                    child: Text(
-                      _translateStatus(item.visitorStatus),
-                      style: TextStyle(
-                        fontSize: rfs(context, 10),
-                        fontWeight: FontWeight.bold,
-                        color: isCheckin
-                            ? const Color(0xFF166534)
-                            : AppColors.primary500,
-                      ),
-                    ),
                   ),
                 ],
               ),

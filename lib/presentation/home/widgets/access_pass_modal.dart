@@ -15,22 +15,28 @@ class AccessPassModal {
   static void show(BuildContext context, dynamic item) {
     final startStr = DateFormat(
       'EEEE, dd MMMM yyyy, HH:mm',
-      'id',
+      'en',
     ).format(item.visitorPeriodStart);
     final endStr = DateFormat(
       'EEEE, dd MMMM yyyy, HH:mm',
-      'id',
+      'en',
     ).format(item.visitorPeriodEnd);
 
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
+      enableDrag: true,
       builder: (ctx) {
         final double topPadding = MediaQuery.of(ctx).padding.top;
-        return Padding(
-          padding: EdgeInsets.only(top: topPadding + 60),
-          child: Container(
+        return GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: () => Navigator.pop(ctx),
+          child: GestureDetector(
+            onTap: () {},
+            child: Padding(
+              padding: EdgeInsets.only(top: topPadding + 120),
+              child: Container(
             decoration: BoxDecoration(
               color: _bgPage,
               borderRadius: BorderRadius.vertical(
@@ -90,6 +96,21 @@ class AccessPassModal {
                           ),
                         ),
                         const Spacer(),
+                        GestureDetector(
+                          onTap: () => Navigator.pop(ctx),
+                          child: Container(
+                            padding: EdgeInsets.all(rw(ctx, 6)),
+                            decoration: BoxDecoration(
+                              color: Colors.grey.shade100,
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              Icons.close,
+                              color: Colors.grey.shade600,
+                              size: rw(ctx, 18),
+                            ),
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -235,22 +256,39 @@ class AccessPassModal {
                                             ],
                                           ),
                                           child: CustomCircleImage(
-                                            image: UserController
-                                                        .to.faceUrl !=
-                                                    null
+                                            image: UserController.to.faceUrl !=
+                                                        null &&
+                                                    UserController.to.faceUrl!
+                                                        .isNotEmpty
                                                 ? Image.network(
                                                     UserController.to.faceUrl!,
                                                     fit: BoxFit.cover,
-                                                    errorBuilder:
-                                                        (_, _, _) => Assets
-                                                            .images
-                                                            .avaPerson1
-                                                            .image(
-                                                              fit: BoxFit.cover,
-                                                            ),
+                                                    errorBuilder: (_, _, _) =>
+                                                        Container(
+                                                      color: const Color(
+                                                        0xFFE2E8F0,
+                                                      ),
+                                                      child: Icon(
+                                                        Icons.person,
+                                                        color: const Color(
+                                                          0xFF94A3B8,
+                                                        ),
+                                                        size: rw(ctx, 28),
+                                                      ),
+                                                    ),
                                                   )
-                                                : Assets.images.avaPerson1
-                                                    .image(fit: BoxFit.cover),
+                                                : Container(
+                                                    color: const Color(
+                                                      0xFFE2E8F0,
+                                                    ),
+                                                    child: Icon(
+                                                      Icons.person,
+                                                      color: const Color(
+                                                        0xFF94A3B8,
+                                                      ),
+                                                      size: rw(ctx, 28),
+                                                    ),
+                                                  ),
                                             size: rw(ctx, 52),
                                             borderWidth: 0,
                                           ),
@@ -389,7 +427,7 @@ class AccessPassModal {
                                         child: QrImageView(
                                           data: item.visitorNumber,
                                           version: QrVersions.auto,
-                                          size: rw(ctx, 140),
+                                          size: rw(ctx, 180),
                                         ),
                                       ),
                                       vSpace(ctx, 10),
@@ -627,48 +665,16 @@ class AccessPassModal {
                     ),
                   ),
 
-                  // ── Close Button ─────────────────────────────────
-                  Padding(
-                    padding: EdgeInsets.fromLTRB(
-                      rw(ctx, 16),
-                      0,
-                      rw(ctx, 16),
-                      rh(ctx, 12),
-                    ),
-                    child: SizedBox(
-                      width: double.infinity,
-                      height: rh(ctx, 46),
-                      child: ElevatedButton(
-                        onPressed: () => Navigator.pop(ctx),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.white,
-                          foregroundColor: Colors.black87,
-                          elevation: 0,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(rw(ctx, 14)),
-                            side: BorderSide(color: Colors.grey.shade300),
-                          ),
-                        ),
-                        child: Text(
-                          'CLOSE',
-                          style: TextStyle(
-                            fontSize: rfs(ctx, 13),
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: 2.0,
-                            color: Colors.black54,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                  vSpace(ctx, rh(ctx, 12)),
+                  vSpace(ctx, rh(ctx, 24)),
                 ],
               ),
             ),
           ),
-        );
-      },
+        ),
+      ),
     );
+  },
+);
   }
 
   static Widget _buildInfoTile(
@@ -704,7 +710,7 @@ class AccessPassModal {
             children: [
               Icon(
                 icon,
-                size: rfs(context, 12),
+                size: rfs(context, 14),
                 color: highlight
                     ? const Color(0xFF1976D2)
                     : Colors.grey.shade500,
@@ -713,7 +719,7 @@ class AccessPassModal {
               Text(
                 label.toUpperCase(),
                 style: TextStyle(
-                  fontSize: rfs(context, 10),
+                  fontSize: rfs(context, 14),
                   color: highlight
                       ? const Color(0xFF1976D2)
                       : Colors.grey.shade500,
@@ -729,7 +735,7 @@ class AccessPassModal {
             value,
             textAlign: TextAlign.center,
             style: TextStyle(
-              fontSize: rfs(context, 15),
+              fontSize: rfs(context, 12),
               fontWeight: FontWeight.w800,
               color: highlight
                   ? const Color(0xFF0D47A1)

@@ -53,14 +53,6 @@ class GuestMenuGrid extends StatelessWidget {
             onTap: () => Get.to(() => const GuestParkingPage()),
           ),
           GuestMenuItemModel(
-            label: 'notification'.tr,
-            icon: Icons.notifications_outlined,
-            bgColor: const Color(0xFFFBEAF0),
-            iconColor: const Color(0xFF993556),
-            onTap: () => showNotificationDialog(context),
-            badgeCount: 3,
-          ),
-          GuestMenuItemModel(
             label: 'profile'.tr,
             icon: Icons.person_outline_rounded,
             bgColor: const Color(0xFFE1F5EE),

@@ -70,7 +70,28 @@ class ProfilePage extends StatelessWidget {
                   child: Row(
                     children: [
                       CustomCircleImage(
-                        image: Assets.images.avaPerson1.image(fit: BoxFit.cover),
+                        image: UserController.to.faceUrl != null &&
+                                UserController.to.faceUrl!.isNotEmpty
+                            ? Image.network(
+                                UserController.to.faceUrl!,
+                                fit: BoxFit.cover,
+                                errorBuilder: (_, _, _) => Container(
+                                  color: const Color(0xFFE2E8F0),
+                                  child: Icon(
+                                    Icons.person,
+                                    color: const Color(0xFF94A3B8),
+                                    size: rw(context, 36),
+                                  ),
+                                ),
+                              )
+                            : Container(
+                                color: const Color(0xFFE2E8F0),
+                                child: Icon(
+                                  Icons.person,
+                                  color: const Color(0xFF94A3B8),
+                                  size: rw(context, 36),
+                                ),
+                              ),
                         size: rw(context, 65),
                         scale: 1.5,
                       ),
