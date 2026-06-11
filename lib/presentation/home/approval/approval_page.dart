@@ -442,9 +442,11 @@ class _PendingTabView extends StatelessWidget {
       children: [
         // ── Filter bar ──────────────────────────────────────────────────
         Padding(
-          padding: EdgeInsets.symmetric(
-            horizontal: rw(context, 20),
-            vertical: rh(context, 10),
+          padding: EdgeInsets.only(
+            left: rw(context, 20),
+            right: rw(context, 20),
+            top: rh(context, 12),
+            bottom: rh(context, 6),
           ),
           child: SingleChildScrollView(
             scrollDirection: Axis.horizontal,
@@ -562,9 +564,11 @@ class _ApprovedTabView extends StatelessWidget {
       children: [
         // ── Filter bar ────────────────────────────────────────────────
         Padding(
-          padding: EdgeInsets.symmetric(
-            horizontal: rw(context, 20),
-            vertical: rh(context, 10),
+          padding: EdgeInsets.only(
+            left: rw(context, 20),
+            right: rw(context, 20),
+            top: rh(context, 12),
+            bottom: rh(context, 6),
           ),
           child: SingleChildScrollView(
             scrollDirection: Axis.horizontal,
@@ -671,9 +675,11 @@ class _RejectedTabView extends StatelessWidget {
       children: [
         // ── Filter bar ────────────────────────────────────────────────
         Padding(
-          padding: EdgeInsets.symmetric(
-            horizontal: rw(context, 20),
-            vertical: rh(context, 10),
+          padding: EdgeInsets.only(
+            left: rw(context, 20),
+            right: rw(context, 20),
+            top: rh(context, 12),
+            bottom: rh(context, 6),
           ),
           child: SingleChildScrollView(
             scrollDirection: Axis.horizontal,
@@ -780,7 +786,7 @@ class _ListHeader extends StatelessWidget {
     return Padding(
       padding: EdgeInsets.fromLTRB(
         rw(context, 20),
-        rh(context, 16),
+        rh(context, 6),
         rw(context, 20),
         rh(context, 4),
       ),

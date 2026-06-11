@@ -1135,10 +1135,12 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     String title, {
     VoidCallback? onShowMoreTap,
   }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Row(
+          mainAxisSize: MainAxisSize.min,
           children: [
             Container(
               width: rw(context, 5),
@@ -1160,42 +1162,37 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
             ),
           ],
         ),
-        if (onShowMoreTap != null) ...[
-          vSpace(context, 6),
-          Align(
-            alignment: Alignment.centerRight,
-            child: TextButton(
-              onPressed: onShowMoreTap,
-              style: TextButton.styleFrom(
-                padding: EdgeInsets.symmetric(
-                  horizontal: rw(context, 4),
-                  vertical: rh(context, 2),
+        if (onShowMoreTap != null)
+          TextButton(
+            onPressed: onShowMoreTap,
+            style: TextButton.styleFrom(
+              padding: EdgeInsets.symmetric(
+                horizontal: rw(context, 4),
+                vertical: rh(context, 2),
+              ),
+              minimumSize: Size.zero,
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              foregroundColor: AppColors.primary500,
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'More',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: rfs(context, 13),
+                  ),
                 ),
-                minimumSize: Size.zero,
-                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                foregroundColor: AppColors.primary500,
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    'Show More',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w600,
-                      fontSize: rfs(context, 13),
-                    ),
-                  ),
-                  hSpace(context, 4),
-                  Icon(
-                    Icons.arrow_forward_rounded,
-                    size: rw(context, 14),
-                    color: AppColors.primary500,
-                  ),
-                ],
-              ),
+                hSpace(context, 4),
+                Icon(
+                  Icons.arrow_forward_rounded,
+                  size: rw(context, 14),
+                  color: AppColors.primary500,
+                ),
+              ],
             ),
           ),
-        ],
       ],
     );
   }

@@ -82,6 +82,20 @@ class InvitationController extends GetxController {
   final RxString selectedSiteName = ''.obs;
   final RxString selectedStatus = ''.obs;
 
+  // Share Link Tab filters
+  final Rx<DateTime?> startDateShare = Rx<DateTime?>(null);
+  final Rx<DateTime?> endDateShare = Rx<DateTime?>(null);
+  final RxString selectedSiteIdShare = ''.obs;
+  final RxString selectedSiteNameShare = ''.obs;
+  final RxString selectedStatusShare = ''.obs;
+
+  // Quick Access Tab filters
+  final Rx<DateTime?> startDateQuick = Rx<DateTime?>(null);
+  final Rx<DateTime?> endDateQuick = Rx<DateTime?>(null);
+  final RxString selectedSiteIdQuick = ''.obs;
+  final RxString selectedSiteNameQuick = ''.obs;
+  final RxString selectedStatusQuick = ''.obs;
+
   @override
   void onInit() {
     super.onInit();
@@ -109,6 +123,36 @@ class InvitationController extends GetxController {
     selectedSiteName.value = siteName ?? '';
     selectedStatus.value = status ?? '';
     _applyFilters();
+  }
+
+  void setQuickFilters({
+    DateTime? start,
+    DateTime? end,
+    String? siteId,
+    String? siteName,
+    String? status,
+  }) {
+    startDateQuick.value = start;
+    endDateQuick.value = end;
+    selectedSiteIdQuick.value = siteId ?? '';
+    selectedSiteNameQuick.value = siteName ?? '';
+    selectedStatusQuick.value = status ?? '';
+    _applyFilters();
+  }
+
+  void setShareFilters({
+    DateTime? start,
+    DateTime? end,
+    String? siteId,
+    String? siteName,
+    String? status,
+  }) {
+    startDateShare.value = start;
+    endDateShare.value = end;
+    selectedSiteIdShare.value = siteId ?? '';
+    selectedSiteNameShare.value = siteName ?? '';
+    selectedStatusShare.value = status ?? '';
+    _applyShareFilters();
   }
 
   void toggleSort() {
@@ -181,6 +225,52 @@ class InvitationController extends GetxController {
           .toList();
     }
 
+    // ─── Filter Quick Access (Lokal) ───
+    if (startDateQuick.value != null) {
+      quickAccess = quickAccess.where((item) {
+        final itemDate = item.visitorPeriodStart;
+        final start = DateTime(
+          startDateQuick.value!.year,
+          startDateQuick.value!.month,
+          startDateQuick.value!.day,
+        );
+        final date = DateTime(itemDate.year, itemDate.month, itemDate.day);
+        return date.isAtSameMomentAs(start) || date.isAfter(start);
+      }).toList();
+    }
+
+    if (endDateQuick.value != null) {
+      quickAccess = quickAccess.where((item) {
+        final itemDate = item.visitorPeriodStart;
+        final end = DateTime(
+          endDateQuick.value!.year,
+          endDateQuick.value!.month,
+          endDateQuick.value!.day,
+        );
+        final date = DateTime(itemDate.year, itemDate.month, itemDate.day);
+        return date.isAtSameMomentAs(end) || date.isBefore(end);
+      }).toList();
+    }
+
+    if (selectedSiteIdQuick.value.isNotEmpty || selectedSiteNameQuick.value.isNotEmpty) {
+      quickAccess = quickAccess.where((item) {
+        return (selectedSiteIdQuick.value.isNotEmpty &&
+                item.siteId.toLowerCase() ==
+                    selectedSiteIdQuick.value.toLowerCase()) ||
+            (selectedSiteNameQuick.value.isNotEmpty &&
+                item.sitePlaceName.toLowerCase() ==
+                    selectedSiteNameQuick.value.toLowerCase());
+      }).toList();
+    }
+
+    if (selectedStatusQuick.value.isNotEmpty) {
+      quickAccess = quickAccess.where((item) {
+        final isExpired = DateTime.now().isAfter(item.visitorPeriodEnd);
+        final uiStatus = isExpired ? 'Expired' : 'Active';
+        return uiStatus.toLowerCase() == selectedStatusQuick.value.toLowerCase();
+      }).toList();
+    }
+
     // 3. Sorting
     if (isNewestFirst.value) {
       filtered.sort(
@@ -212,6 +302,12 @@ class InvitationController extends GetxController {
       selectedSiteId.value = '';
       selectedSiteName.value = '';
       selectedStatus.value = '';
+
+      startDateQuick.value = null;
+      endDateQuick.value = null;
+      selectedSiteIdQuick.value = '';
+      selectedSiteNameQuick.value = '';
+      selectedStatusQuick.value = '';
     }
     final user = _hive.getUser();
     final token = user?.token;
@@ -364,8 +460,16 @@ class InvitationController extends GetxController {
   final RxInt shareLinkCurrentPage = 0.obs;
   final RxInt shareLinkPageSize = 10.obs;
   final RxInt shareLinkTotalRecords = 0.obs;
+  final RxList<dynamic> allShareLinks = <dynamic>[].obs;
 
-  Future<void> fetchShareLinks({bool resetPage = false}) async {
+  Future<void> fetchShareLinks({bool resetPage = false, bool clearFilters = false}) async {
+    if (clearFilters) {
+      startDateShare.value = null;
+      endDateShare.value = null;
+      selectedSiteIdShare.value = '';
+      selectedSiteNameShare.value = '';
+      selectedStatusShare.value = '';
+    }
     final user = _hive.getUser();
     final token = user?.token;
     if (token == null) return;
@@ -374,29 +478,23 @@ class InvitationController extends GetxController {
 
     isShareLinkLoading.value = true;
     try {
-      final start = shareLinkCurrentPage.value * shareLinkPageSize.value;
       final response = await _api.getShareLinkDt(
         token,
-        start: start,
-        length: shareLinkPageSize.value,
+        start: 0,
+        length: 500, // Fetch a large number of items so we can filter and paginate locally
         sortColumn: 'created_at',
         sortDir: 'desc',
       );
 
       if (response.data['status'] == 'success' ||
           response.data['status_code'] == 200) {
-        shareLinks.assignAll(
-          response.data['collection'] as List<dynamic>? ?? [],
-        );
-        // Gunakan RecordsFiltered untuk pagination karena ini jumlah data yang benar-benar tersedia
-        shareLinkTotalRecords.value =
-            response.data['RecordsFiltered'] ??
-            response.data['RecordsTotal'] ??
-            0;
+        final collection = response.data['collection'] as List<dynamic>? ?? [];
+        allShareLinks.assignAll(collection);
+        _applyShareFilters();
       } else if (response.data['status'] == 'not_found' ||
           response.data['status_code'] == 404) {
-        shareLinks.clear();
-        shareLinkTotalRecords.value = 0;
+        allShareLinks.clear();
+        _applyShareFilters();
       }
     } catch (e) {
       debugPrint('fetchShareLinks error: $e');
@@ -405,18 +503,127 @@ class InvitationController extends GetxController {
     }
   }
 
+  void _applyShareFilters() {
+    List<dynamic> filtered = List.from(allShareLinks);
+
+    // 1. Filter Berdasarkan Tanggal (Lokal)
+    if (startDateShare.value != null) {
+      filtered = filtered.where((item) {
+        final dateStr = item['visitor_period_start'];
+        if (dateStr == null) return false;
+        try {
+          String normalized = dateStr.toString();
+          if (!normalized.endsWith('Z') && !normalized.contains('+')) {
+            normalized = '${normalized.replaceFirst(' ', 'T')}Z';
+          }
+          final itemDate = DateTime.parse(normalized).toLocal();
+          final start = DateTime(
+            startDateShare.value!.year,
+            startDateShare.value!.month,
+            startDateShare.value!.day,
+          );
+          final date = DateTime(itemDate.year, itemDate.month, itemDate.day);
+          return date.isAtSameMomentAs(start) || date.isAfter(start);
+        } catch (e) {
+          return false;
+        }
+      }).toList();
+    }
+
+    if (endDateShare.value != null) {
+      filtered = filtered.where((item) {
+        final dateStr = item['visitor_period_start'];
+        if (dateStr == null) return false;
+        try {
+          String normalized = dateStr.toString();
+          if (!normalized.endsWith('Z') && !normalized.contains('+')) {
+            normalized = '${normalized.replaceFirst(' ', 'T')}Z';
+          }
+          final itemDate = DateTime.parse(normalized).toLocal();
+          final end = DateTime(
+            endDateShare.value!.year,
+            endDateShare.value!.month,
+            endDateShare.value!.day,
+          );
+          final date = DateTime(itemDate.year, itemDate.month, itemDate.day);
+          return date.isAtSameMomentAs(end) || date.isBefore(end);
+        } catch (e) {
+          return false;
+        }
+      }).toList();
+    }
+
+    // 2. Filter Berdasarkan Gedung (Lokal)
+    if (selectedSiteIdShare.value.isNotEmpty || selectedSiteNameShare.value.isNotEmpty) {
+      filtered = filtered.where((item) {
+        final itemSiteId = item['site_id']?.toString() ?? '';
+        final itemSiteName = item['site_place_name']?.toString() ?? '';
+        return (selectedSiteIdShare.value.isNotEmpty &&
+                itemSiteId.toLowerCase() ==
+                    selectedSiteIdShare.value.toLowerCase()) ||
+            (selectedSiteNameShare.value.isNotEmpty &&
+                itemSiteName.toLowerCase() ==
+                    selectedSiteNameShare.value.toLowerCase());
+      }).toList();
+    }
+
+    // 3. Filter Berdasarkan Status (Lokal - Active / Expired)
+    if (selectedStatusShare.value.isNotEmpty) {
+      filtered = filtered.where((item) {
+        final expiredAtStr = item['expired_at'];
+        DateTime? expiredAt;
+        if (expiredAtStr != null) {
+          String normalized = expiredAtStr.toString();
+          if (!normalized.endsWith('Z') && !normalized.contains('+')) {
+            normalized = '${normalized.replaceFirst(' ', 'T')}Z';
+          }
+          expiredAt = DateTime.tryParse(normalized)?.toLocal();
+        }
+
+        final int maxUsage = item['max_usage'] ?? 0;
+        final int currentUsage = item['current_usage'] ?? 0;
+        final bool isSingleUse = item['is_single_use'] == true;
+
+        bool isExpired = false;
+        if (expiredAt != null && expiredAt.isBefore(DateTime.now())) {
+          isExpired = true;
+        }
+        if ((maxUsage > 0 && currentUsage >= maxUsage) || (isSingleUse && currentUsage >= 1)) {
+          isExpired = true;
+        }
+
+        final String computedStatus = isExpired ? 'Expired' : 'Active';
+        return computedStatus.toLowerCase() == selectedStatusShare.value.toLowerCase();
+      }).toList();
+    }
+
+    // 4. Paginate
+    shareLinkTotalRecords.value = filtered.length;
+    final start = shareLinkCurrentPage.value * shareLinkPageSize.value;
+    
+    // Safety check start index
+    int safeStart = start;
+    if (safeStart >= filtered.length) {
+      safeStart = 0;
+      shareLinkCurrentPage.value = 0;
+    }
+    
+    final pagedList = filtered.skip(safeStart).take(shareLinkPageSize.value).toList();
+    shareLinks.assignAll(pagedList);
+  }
+
   void nextShareLinkPage() {
     if ((shareLinkCurrentPage.value + 1) * shareLinkPageSize.value <
         shareLinkTotalRecords.value) {
       shareLinkCurrentPage.value++;
-      fetchShareLinks();
+      _applyShareFilters();
     }
   }
 
   void prevShareLinkPage() {
     if (shareLinkCurrentPage.value > 0) {
       shareLinkCurrentPage.value--;
-      fetchShareLinks();
+      _applyShareFilters();
     }
   }
 

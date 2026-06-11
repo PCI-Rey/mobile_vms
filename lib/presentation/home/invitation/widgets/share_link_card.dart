@@ -369,32 +369,25 @@ class ShareLinkCard extends StatelessWidget {
                     ),
                   ),
                   hSpace(context, 16),
-                  GestureDetector(
-                    onTap: () {
-                      if (url.isNotEmpty) {
-                        _showBarcodeDialog(context, url);
-                      }
-                    },
-                    child: Container(
-                      width: rw(context, 64),
-                      height: rw(context, 64),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(rw(context, 12)),
-                        border: Border.all(color: Colors.grey.shade200),
+                  Container(
+                    width: rw(context, 64),
+                    height: rw(context, 64),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(rw(context, 12)),
+                      border: Border.all(color: Colors.grey.shade200),
+                    ),
+                    padding: const EdgeInsets.all(4),
+                    child: QrImageView(
+                      data: url.isNotEmpty ? url : 'no-url',
+                      version: QrVersions.auto,
+                      eyeStyle: const QrEyeStyle(
+                        eyeShape: QrEyeShape.square,
+                        color: Colors.black87,
                       ),
-                      padding: const EdgeInsets.all(4),
-                      child: QrImageView(
-                        data: url.isNotEmpty ? url : 'no-url',
-                        version: QrVersions.auto,
-                        eyeStyle: const QrEyeStyle(
-                          eyeShape: QrEyeShape.square,
-                          color: Colors.black87,
-                        ),
-                        dataModuleStyle: const QrDataModuleStyle(
-                          dataModuleShape: QrDataModuleShape.square,
-                          color: Colors.black87,
-                        ),
+                      dataModuleStyle: const QrDataModuleStyle(
+                        dataModuleShape: QrDataModuleShape.square,
+                        color: Colors.black87,
                       ),
                     ),
                   ),

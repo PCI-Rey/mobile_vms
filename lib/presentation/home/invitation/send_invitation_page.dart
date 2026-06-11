@@ -16,6 +16,8 @@ import 'widgets/create_share_link_dialog.dart';
 import 'widgets/share_link_card.dart';
 import 'widgets/share_link_detail_modal.dart';
 import 'widgets/create_quick_access_dialog.dart';
+import 'package:qr_flutter/qr_flutter.dart';
+import 'package:carousel_slider/carousel_slider.dart';
 
 class SendInvitationPage extends StatefulWidget {
   final int initialTab;
@@ -32,6 +34,14 @@ class _SendInvitationPageState extends State<SendInvitationPage>
   DateTime? endDate;
   String? selectedGedung;
   String? selectedStatus;
+
+  // Share Link filter variables (moved to ShareLinkListInline for self-containment)
+  
+  // Quick Access filter variables
+  DateTime? startDateQuick;
+  DateTime? endDateQuick;
+  String? selectedGedungQuick;
+  String? selectedStatusQuick;
 
   late TabController _tabController;
 
@@ -676,11 +686,131 @@ class _SendInvitationPageState extends State<SendInvitationPage>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // ── Filter bar ──
+        Padding(
+          padding: EdgeInsets.only(
+            left: rw(context, 20),
+            right: rw(context, 20),
+            top: rh(context, 16),
+            bottom: rh(context, 6),
+          ),
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                GestureDetector(
+                  onTap: () async {
+                    final inviteCtrl = Get.find<InvitationController>();
+                    final result =
+                        await showModalBottomSheet<Map<String, dynamic>>(
+                      context: context,
+                      enableDrag: true,
+                      isDismissible: true,
+                      isScrollControlled: true,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.vertical(
+                          top: Radius.circular(rw(context, 16)),
+                        ),
+                      ),
+                      builder: (context) => FilterBottomSheet(
+                        initialStartDate: startDateQuick,
+                        initialEndDate: endDateQuick,
+                        initialSiteId: inviteCtrl.selectedSiteIdQuick.value,
+                        initialStatus: selectedStatusQuick,
+                        showStatusFilter: false,
+                      ),
+                    );
+
+                    if (result != null) {
+                      setState(() {
+                        startDateQuick = result['startDate'];
+                        endDateQuick = result['endDate'];
+                        selectedGedungQuick = result['siteName'];
+                        selectedStatusQuick = result['status'];
+                      });
+                      inviteCtrl.setQuickFilters(
+                        start: startDateQuick,
+                        end: endDateQuick,
+                        siteId: result['siteId'],
+                        siteName: result['siteName'],
+                        status: result['status'],
+                      );
+                    }
+                  },
+                  child: _buildFilterChip(context, 'Filter'),
+                ),
+                if (selectedGedungQuick != null) ...[
+                  hSpace(context, 8),
+                  _buildFilterValueChip(
+                    context,
+                    selectedGedungQuick!,
+                    onClear: () {
+                      final inviteCtrl = Get.find<InvitationController>();
+                      setState(() => selectedGedungQuick = null);
+                      inviteCtrl.setQuickFilters(
+                        start: startDateQuick,
+                        end: endDateQuick,
+                        siteId: null,
+                        siteName: null,
+                        status: selectedStatusQuick,
+                      );
+                    },
+                  ),
+                ],
+                if (startDateQuick != null || endDateQuick != null) ...[
+                  hSpace(context, 8),
+                  _buildFilterValueChip(
+                    context,
+                    _formatDateRange(startDateQuick, endDateQuick),
+                    onClear: () {
+                      final inviteCtrl = Get.find<InvitationController>();
+                      setState(() {
+                        startDateQuick = null;
+                        endDateQuick = null;
+                      });
+                      inviteCtrl.setQuickFilters(
+                        start: null,
+                        end: null,
+                        siteId: inviteCtrl.selectedSiteIdQuick.value,
+                        siteName: inviteCtrl.selectedSiteNameQuick.value,
+                        status: selectedStatusQuick,
+                      );
+                    },
+                  ),
+                ],
+                if (selectedStatusQuick != null && selectedStatusQuick!.isNotEmpty) ...[
+                  hSpace(context, 8),
+                  _buildFilterValueChip(
+                    context,
+                    'Status: $selectedStatusQuick',
+                    onClear: () {
+                      final inviteCtrl = Get.find<InvitationController>();
+                      setState(() => selectedStatusQuick = null);
+                      inviteCtrl.setQuickFilters(
+                        start: startDateQuick,
+                        end: endDateQuick,
+                        siteId: inviteCtrl.selectedSiteIdQuick.value,
+                        siteName: inviteCtrl.selectedSiteNameQuick.value,
+                        status: null,
+                      );
+                    },
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
         Expanded(
           child: RefreshIndicator(
             onRefresh: () async {
               final inviteCtrl = Get.find<InvitationController>();
-              await inviteCtrl.fetchOngoingInvitations();
+              setState(() {
+                startDateQuick = null;
+                endDateQuick = null;
+                selectedGedungQuick = null;
+                selectedStatusQuick = null;
+              });
+              await inviteCtrl.fetchOngoingInvitations(clearFilters: true);
             },
             child: SingleChildScrollView(
               physics: const AlwaysScrollableScrollPhysics(),
@@ -991,80 +1121,82 @@ class _SendInvitationPageState extends State<SendInvitationPage>
     showInvitationDetailSheet(context, item);
   }
 
-  Widget _buildFilterChip(BuildContext context, String label) {
-    return Container(
-      height: rh(context, 32),
-      padding: EdgeInsets.symmetric(horizontal: rw(context, 14)),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border.all(color: Colors.grey.shade300),
-        borderRadius: BorderRadius.circular(rw(context, 50)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            label,
-            style: TextStyle(fontSize: rfs(context, 12), color: Colors.black87),
-          ),
-          hSpace(context, 6),
-          Icon(
-            FontAwesomeIcons.chevronDown,
-            size: rw(context, 12),
-            color: Colors.grey,
-          ),
-        ],
-      ),
-    );
-  }
+}
 
-  Widget _buildFilterValueChip(
-    BuildContext context,
-    String label, {
-    required VoidCallback onClear,
-  }) {
-    return Container(
-      height: rh(context, 32),
-      padding: EdgeInsets.symmetric(horizontal: rw(context, 10)),
-      decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey.shade300),
-        borderRadius: BorderRadius.circular(rw(context, 50)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            label.trim(),
-            style: TextStyle(fontSize: rfs(context, 12), color: Colors.black87),
-          ),
-          hSpace(context, 6),
-          InkWell(
-            onTap: onClear,
-            borderRadius: BorderRadius.circular(rw(context, 10)),
-            child: Padding(
-              padding: EdgeInsets.all(rw(context, 2)),
-              child: Icon(
-                Icons.close,
-                size: rw(context, 14),
-                color: Colors.grey,
-              ),
+// ─── Filter UI and Formatting Helpers (Top-Level) ────────────────────────────
+Widget _buildFilterChip(BuildContext context, String label) {
+  return Container(
+    height: rh(context, 32),
+    padding: EdgeInsets.symmetric(horizontal: rw(context, 14)),
+    decoration: BoxDecoration(
+      color: Colors.white,
+      border: Border.all(color: Colors.grey.shade300),
+      borderRadius: BorderRadius.circular(rw(context, 50)),
+    ),
+    child: Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          label,
+          style: TextStyle(fontSize: rfs(context, 12), color: Colors.black87),
+        ),
+        hSpace(context, 6),
+        Icon(
+          FontAwesomeIcons.chevronDown,
+          size: rw(context, 12),
+          color: Colors.grey,
+        ),
+      ],
+    ),
+  );
+}
+
+Widget _buildFilterValueChip(
+  BuildContext context,
+  String label, {
+  required VoidCallback onClear,
+}) {
+  return Container(
+    height: rh(context, 32),
+    padding: EdgeInsets.symmetric(horizontal: rw(context, 10)),
+    decoration: BoxDecoration(
+      border: Border.all(color: Colors.grey.shade300),
+      borderRadius: BorderRadius.circular(rw(context, 50)),
+    ),
+    child: Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          label.trim(),
+          style: TextStyle(fontSize: rfs(context, 12), color: Colors.black87),
+        ),
+        hSpace(context, 6),
+        InkWell(
+          onTap: onClear,
+          borderRadius: BorderRadius.circular(rw(context, 10)),
+          child: Padding(
+            padding: EdgeInsets.all(rw(context, 2)),
+            child: Icon(
+              Icons.close,
+              size: rw(context, 14),
+              color: Colors.grey,
             ),
           ),
-        ],
-      ),
-    );
-  }
+        ),
+      ],
+    ),
+  );
+}
 
-  String _formatDateRange(DateTime? start, DateTime? end) {
-    if (start == null && end == null) return '';
-    final format = DateFormat('dd/MM/yyyy');
-    if (start != null && end != null) {
-      return '${format.format(start)} - ${format.format(end)}';
-    } else if (start != null) {
-      return 'Dari ${format.format(start)}';
-    } else {
-      return 'Sampai ${format.format(end!)}';
-    }
+String _formatDateRange(DateTime? start, DateTime? end) {
+  if (start == null && end == null) return '';
+  final format = DateFormat('dd/MM/yyyy');
+  if (start != null && end != null) {
+    return '${format.format(start)} - ${format.format(end)}';
+  } else if (start != null) {
+    return 'Dari ${format.format(start)}';
+  } else {
+    return 'Sampai ${format.format(end!)}';
   }
 }
 
@@ -1081,7 +1213,12 @@ void showInvitationDetailSheet(BuildContext context, AccessPassModel item) {
 // ─── InvitationDetailSheet ─────────────────────────────────────────────────
 class InvitationDetailSheet extends StatefulWidget {
   final AccessPassModel item;
-  const InvitationDetailSheet({super.key, required this.item});
+  final bool isFullDetail;
+  const InvitationDetailSheet({
+    super.key,
+    required this.item,
+    this.isFullDetail = false,
+  });
 
   @override
   State<InvitationDetailSheet> createState() => InvitationDetailSheetState();
@@ -1094,6 +1231,8 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
   bool _loadingGroupVisitors = false;
   List<AccessPassModel> _groupVisitorModels = [];
   AccessPassModel? _selectedGroupVisitor;
+  int _currentBarcodeIndex = 0;
+  final CarouselSliderController _barcodeCarouselController = CarouselSliderController();
 
   @override
   void initState() {
@@ -1264,6 +1403,30 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
     }
   }
 
+  String _displayStatus(String status) {
+    final lowerStatus = status.toLowerCase().trim();
+    if (lowerStatus == 'available') {
+      return 'Available';
+    } else if (lowerStatus == 'pending' || lowerStatus == 'waiting') {
+      return 'Pending';
+    } else if (lowerStatus == 'undercreated') {
+      return 'Under Created';
+    } else if (lowerStatus == 'checkin') {
+      return 'Checkin';
+    } else if (lowerStatus == 'checkout') {
+      return 'Checkout';
+    } else if (lowerStatus == 'reject' || lowerStatus == 'rejected' || lowerStatus == 'denied' || lowerStatus == 'deny') {
+      return 'Rejected';
+    } else if (lowerStatus == 'preregis' || lowerStatus == 'praregis' || lowerStatus == 'praregister') {
+      return 'Praregis';
+    } else if (lowerStatus == 'quickaccess') {
+      return 'Quick Access';
+    } else if (status.isNotEmpty) {
+      return status[0].toUpperCase() + status.substring(1);
+    }
+    return '';
+  }
+
   @override
   Widget build(BuildContext context) {
     final item = widget.item;
@@ -1358,7 +1521,7 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
                           borderRadius: BorderRadius.circular(rw(context, 20)),
                         ),
                         child: Text(
-                          selectedItem.visitorStatus,
+                          _displayStatus(selectedItem.visitorStatus),
                           style: TextStyle(
                             fontSize: rfs(context, 12),
                             fontWeight: FontWeight.w700,
@@ -1402,16 +1565,18 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
                     vertical: rh(context, 16),
                   ),
                   children: [
-                    if (_loadingGroupVisitors)
-                      const Center(
-                        child: Padding(
-                          padding: EdgeInsets.all(16.0),
-                          child: CircularProgressIndicator(),
-                        ),
-                      )
-                    else if (_groupVisitorModels.length > 1) ...[
-                      _section(context, 'Group Members'),
-                      vSpace(context, 8),
+                    // Group Members selector at the top (only shown in full detail view)
+                    if (widget.isFullDetail) ...[
+                      if (_loadingGroupVisitors)
+                        const Center(
+                          child: Padding(
+                            padding: EdgeInsets.all(16.0),
+                            child: CircularProgressIndicator(),
+                          ),
+                        )
+                      else if (_groupVisitorModels.length > 1) ...[
+                        _section(context, 'Invitation Visitor'),
+                        vSpace(context, 8),
                         Container(
                           height: rh(context, 55),
                           child: ListView.separated(
@@ -1486,132 +1651,237 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
                             },
                           ),
                         ),
-                      vSpace(context, 16),
+                        vSpace(context, 16),
+                      ],
                     ],
 
                     // 1. Visitor Information
-                    _section(context, 'Visitor Information'),
-                    _grid(context, statusColor, [
-                      _SheetField(
-                        'Visitor Type',
-                        selectedItem.visitorTypeName.isEmpty
-                            ? '-'
-                            : selectedItem.visitorTypeName,
-                        Icons.badge_outlined,
-                      ),
-                      _SheetField(
-                        'Visitor Role',
-                        selectedItem.visitorRole.isEmpty ? '-' : selectedItem.visitorRole,
-                        Icons.work_outline,
-                      ),
-                      _SheetField(
-                        'Name',
-                        selectedItem.visitorName.isEmpty ? '-' : selectedItem.visitorName,
-                        Icons.person_outline,
-                      ),
-                      _SheetField(
-                        'Email',
-                        selectedItem.visitorEmail.isEmpty ? '-' : selectedItem.visitorEmail,
-                        Icons.email_outlined,
-                      ),
-                      _SheetField(
-                        'Phone',
-                        selectedItem.visitorPhone.isEmpty ? '-' : selectedItem.visitorPhone,
-                        Icons.phone_outlined,
-                      ),
-                      _SheetField(
-                        'Organization',
-                        selectedItem.visitorOrganizationName.isEmpty
-                            ? '-'
-                            : selectedItem.visitorOrganizationName,
-                        Icons.business_outlined,
-                      ),
-                      if (selectedItem.flow.toLowerCase() != 'quickaccessvisit')
-                        _SheetField(
-                          'Identity ID',
-                          selectedItem.visitorIdentityId.isEmpty
-                              ? '-'
-                              : selectedItem.visitorIdentityId,
-                          Icons.credit_card_outlined,
-                        ),
-                      _SheetField(
-                        'Location',
-                        _loadingSite
-                            ? '...'
-                            : (selectedItem.sitePlaceName.isNotEmpty
-                                ? selectedItem.sitePlaceName
-                                : (_sitePlaceName.isEmpty ? '-' : _sitePlaceName)),
-                        Icons.location_on_outlined,
-                      ),
-                      _SheetField(
-                        'Invitation Code',
-                        selectedItem.invitationCode.isEmpty ? '-' : selectedItem.invitationCode,
-                        Icons.confirmation_number_outlined,
-                        isCode: true,
-                      ),
-                      _SheetField(
-                        'Visitor Code',
-                        selectedItem.visitorCode.isEmpty ? '-' : selectedItem.visitorCode,
-                        Icons.pin_outlined,
-                      ),
-                      _SheetField(
-                        'Group Name',
-                        selectedItem.groupName.isEmpty ? '-' : selectedItem.groupName,
-                        Icons.group_outlined,
-                      ),
-                      _SheetField(
-                        'Visitor Status',
-                        selectedItem.visitorStatus.isEmpty
-                            ? '-'
-                            : selectedItem.visitorStatus,
-                        Icons.info_outline,
-                        badgeColor: statusColor,
-                      ),
-                      _SheetField(
-                        'Agenda',
-                        selectedItem.agenda.isEmpty ? '-' : selectedItem.agenda,
-                        Icons.event_note_outlined,
-                      ),
-                      if (selectedItem.flow.toLowerCase() != 'quickaccessvisit')
-                        _SheetField(
-                          'Host',
-                          selectedItem.hostName.isEmpty ? '-' : selectedItem.hostName,
-                          Icons.person_outline,
-                        ),
-                      _SheetField(
-                        'Vehicle Type',
-                        selectedItem.vehicleType.isEmpty ? '-' : selectedItem.vehicleType,
-                        Icons.directions_car_outlined,
-                      ),
-                      _SheetField(
-                        'Vehicle Plate',
-                        selectedItem.vehiclePlateNumber.isEmpty
-                            ? '-'
-                            : selectedItem.vehiclePlateNumber,
-                        Icons.subtitles_outlined,
-                      ),
-                      if (selectedItem.flow.toLowerCase() == 'quickaccessvisit') ...[
-                        _SheetField(
-                          'Receiver Name',
-                          selectedItem.receiverName.isEmpty ? '-' : selectedItem.receiverName,
-                          Icons.person_outline,
-                        ),
-                        _SheetField(
-                          'Receiver Phone',
-                          selectedItem.receiverPhone.isEmpty ? '-' : selectedItem.receiverPhone,
-                          Icons.phone_outlined,
-                        ),
-                        _SheetField(
-                          'Receiver Email',
-                          selectedItem.receiverEmail.isEmpty ? '-' : selectedItem.receiverEmail,
-                          Icons.email_outlined,
-                        ),
-                      ],
-                    ], isExpired: isExpired),
+                    _section(
+                      context,
+                      'Visitor Information',
+                      trailing: widget.isFullDetail
+                          ? null
+                          : GestureDetector(
+                              onTap: () {
+                                showModalBottomSheet(
+                                  context: context,
+                                  isScrollControlled: true,
+                                  backgroundColor: Colors.transparent,
+                                  builder: (ctx) => InvitationDetailSheet(
+                                    item: widget.item,
+                                    isFullDetail: true,
+                                  ),
+                                );
+                              },
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    'More',
+                                    style: TextStyle(
+                                      fontSize: rfs(context, 12),
+                                      fontWeight: FontWeight.bold,
+                                      color: const Color(0xFF005596),
+                                    ),
+                                  ),
+                                  hSpace(context, 4),
+                                  Icon(
+                                    Icons.arrow_forward_rounded,
+                                    size: rw(context, 16),
+                                    color: const Color(0xFF005596),
+                                  ),
+                                ],
+                              ),
+                            ),
+                    ),
+                    _grid(
+                      context,
+                      statusColor,
+                      widget.isFullDetail
+                          ? [
+                              _SheetField(
+                                'Visitor Type',
+                                selectedItem.visitorTypeName.isEmpty
+                                    ? '-'
+                                    : selectedItem.visitorTypeName,
+                                Icons.badge_outlined,
+                              ),
+                              _SheetField(
+                                'Visitor Role',
+                                selectedItem.visitorRole.isEmpty
+                                    ? '-'
+                                    : selectedItem.visitorRole,
+                                Icons.work_outline,
+                              ),
+                              _SheetField(
+                                'Name',
+                                selectedItem.visitorName.isEmpty
+                                    ? '-'
+                                    : selectedItem.visitorName,
+                                Icons.person_outline,
+                              ),
+                              _SheetField(
+                                'Email',
+                                selectedItem.visitorEmail.isEmpty
+                                    ? '-'
+                                    : selectedItem.visitorEmail,
+                                Icons.email_outlined,
+                              ),
+                              _SheetField(
+                                'Phone',
+                                selectedItem.visitorPhone.isEmpty
+                                    ? '-'
+                                    : selectedItem.visitorPhone,
+                                Icons.phone_outlined,
+                              ),
+                              _SheetField(
+                                'Organization',
+                                selectedItem.visitorOrganizationName.isEmpty
+                                    ? '-'
+                                    : selectedItem.visitorOrganizationName,
+                                Icons.business_outlined,
+                              ),
+                              if (selectedItem.flow.toLowerCase() !=
+                                  'quickaccessvisit')
+                                _SheetField(
+                                  'Identity ID',
+                                  selectedItem.visitorIdentityId.isEmpty
+                                      ? '-'
+                                      : selectedItem.visitorIdentityId,
+                                  Icons.credit_card_outlined,
+                                ),
+                              _SheetField(
+                                'Location',
+                                _loadingSite
+                                    ? '...'
+                                    : (selectedItem.sitePlaceName.isNotEmpty
+                                        ? selectedItem.sitePlaceName
+                                        : (_sitePlaceName.isEmpty
+                                            ? '-'
+                                            : _sitePlaceName)),
+                                Icons.location_on_outlined,
+                              ),
+                              _SheetField(
+                                'Invitation Code',
+                                selectedItem.invitationCode.isEmpty
+                                    ? '-'
+                                    : selectedItem.invitationCode,
+                                Icons.confirmation_number_outlined,
+                                isCode: true,
+                              ),
+                              _SheetField(
+                                'Visitor Number',
+                                selectedItem.visitorCode.isEmpty
+                                    ? '-'
+                                    : selectedItem.visitorCode,
+                                Icons.pin_outlined,
+                              ),
+                              _SheetField(
+                                'Group Name',
+                                selectedItem.groupName.isEmpty
+                                    ? '-'
+                                    : selectedItem.groupName,
+                                Icons.group_outlined,
+                              ),
+                              if (selectedItem.flow.toLowerCase() !=
+                                  'quickaccessvisit')
+                                _SheetField(
+                                  'Host',
+                                  selectedItem.hostName.isEmpty
+                                      ? '-'
+                                      : selectedItem.hostName,
+                                  Icons.person_outline,
+                                ),
+                              _SheetField(
+                                'Vehicle Type',
+                                selectedItem.vehicleType.isEmpty
+                                    ? '-'
+                                    : selectedItem.vehicleType,
+                                Icons.directions_car_outlined,
+                              ),
+                              _SheetField(
+                                'Vehicle Plate',
+                                selectedItem.vehiclePlateNumber.isEmpty
+                                    ? '-'
+                                    : selectedItem.vehiclePlateNumber,
+                                Icons.subtitles_outlined,
+                              ),
+                              if (selectedItem.flow.toLowerCase() ==
+                                  'quickaccessvisit') ...[
+                                _SheetField(
+                                  'Receiver Name',
+                                  selectedItem.receiverName.isEmpty
+                                      ? '-'
+                                      : selectedItem.receiverName,
+                                  Icons.person_outline,
+                                ),
+                                _SheetField(
+                                  'Receiver Phone',
+                                  selectedItem.receiverPhone.isEmpty
+                                      ? '-'
+                                      : selectedItem.receiverPhone,
+                                  Icons.phone_outlined,
+                                ),
+                                _SheetField(
+                                  'Receiver Email',
+                                  selectedItem.receiverEmail.isEmpty
+                                      ? '-'
+                                      : selectedItem.receiverEmail,
+                                  Icons.email_outlined,
+                                ),
+                              ],
+                            ]
+                          : [
+                              _SheetField(
+                                'Visitor Type',
+                                selectedItem.visitorTypeName.isEmpty
+                                    ? '-'
+                                    : selectedItem.visitorTypeName,
+                                Icons.badge_outlined,
+                              ),
+                              if (selectedItem.flow.toLowerCase() !=
+                                  'quickaccessvisit')
+                                _SheetField(
+                                  'Visitor Role',
+                                  selectedItem.visitorRole.isEmpty
+                                      ? '-'
+                                      : selectedItem.visitorRole,
+                                  Icons.work_outline,
+                                ),
+                              _SheetField(
+                                'Location',
+                                _loadingSite
+                                    ? '...'
+                                    : (selectedItem.sitePlaceName.isNotEmpty
+                                        ? selectedItem.sitePlaceName
+                                        : (_sitePlaceName.isEmpty
+                                            ? '-'
+                                            : _sitePlaceName)),
+                                Icons.location_on_outlined,
+                              ),
+                              _SheetField(
+                                'Group Name',
+                                selectedItem.groupName.isEmpty
+                                    ? '-'
+                                    : selectedItem.groupName,
+                                Icons.group_outlined,
+                              ),
+                              if (selectedItem.flow.toLowerCase() !=
+                                  'quickaccessvisit')
+                                _SheetField(
+                                  'Host',
+                                  selectedItem.hostName.isEmpty
+                                      ? '-'
+                                      : selectedItem.hostName,
+                                  Icons.person_outline,
+                                ),
+                            ],
+                      isExpired: isExpired,
+                    ),
 
                     vSpace(context, 16),
 
-                    // 3. Visit Period
+                    // 2. Visit Period
                     _section(context, 'Visit Period'),
 
                     // Start / End
@@ -1731,6 +2001,307 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
                     ),
 
                     vSpace(context, 24),
+
+                    if (!widget.isFullDetail &&
+                        widget.item.flow.toLowerCase() != 'quickaccessvisit' &&
+                        (_loadingGroupVisitors || _groupVisitorModels.length > 1)) ...[
+                      _section(
+                        context,
+                        'Others Visitor',
+                        trailing: GestureDetector(
+                          onTap: () {
+                            showModalBottomSheet(
+                              context: context,
+                              isScrollControlled: true,
+                              backgroundColor: Colors.transparent,
+                              builder: (ctx) => InvitationDetailSheet(
+                                item: widget.item,
+                                isFullDetail: true,
+                              ),
+                            );
+                          },
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                'More',
+                                style: TextStyle(
+                                  fontSize: rfs(context, 12),
+                                  fontWeight: FontWeight.bold,
+                                  color: const Color(0xFF005596),
+                                ),
+                              ),
+                              hSpace(context, 4),
+                              Icon(
+                                Icons.arrow_forward_rounded,
+                                size: rw(context, 16),
+                                color: const Color(0xFF005596),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      vSpace(context, 8),
+                      if (_loadingGroupVisitors)
+                        const Center(
+                          child: Padding(
+                            padding: EdgeInsets.all(8.0),
+                            child: CircularProgressIndicator(),
+                          ),
+                        )
+                      else
+                        Container(
+                          height: rh(context, 80),
+                          child: ListView.separated(
+                            scrollDirection: Axis.horizontal,
+                            itemCount: _groupVisitorModels.length > 7 ? 7 : _groupVisitorModels.length,
+                            separatorBuilder: (context, index) => hSpace(context, 12),
+                            itemBuilder: (context, index) {
+                              final model = _groupVisitorModels[index];
+                              final isSelected = _selectedGroupVisitor == model;
+                              
+                              return GestureDetector(
+                                onTap: () {
+                                  // No-op in simple view: "ketika pencet pencet lingkaran ini, dia gabisa keganti yaa, jadi datanya ga keganti. khusus di depan saja, kalau pas klik more baru bisa"
+                                },
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    CircleAvatar(
+                                      radius: rw(context, 26),
+                                      backgroundColor: isSelected
+                                          ? const Color(0xFF005596)
+                                          : Colors.grey.shade300,
+                                      child: CircleAvatar(
+                                        radius: rw(context, 24),
+                                        backgroundColor: isSelected
+                                            ? const Color(0xFFE8F1FD)
+                                            : Colors.white,
+                                        child: Text(
+                                          model.visitorName.isNotEmpty
+                                              ? model.visitorName[0].toUpperCase()
+                                              : 'V',
+                                          style: TextStyle(
+                                            color: isSelected
+                                                ? const Color(0xFF005596)
+                                                : Colors.grey.shade700,
+                                            fontSize: rfs(context, 15),
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    vSpace(context, 4),
+                                    Container(
+                                      width: rw(context, 62),
+                                      child: Text(
+                                        model.visitorName.isNotEmpty
+                                            ? model.visitorName.trim().split(' ').first
+                                            : 'Visitor',
+                                        textAlign: TextAlign.center,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: TextStyle(
+                                          fontSize: rfs(context, 11),
+                                          fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                                          color: isSelected
+                                              ? const Color(0xFF005596)
+                                              : Colors.black87,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                      vSpace(context, 16),
+                    ],
+
+                    if (!widget.isFullDetail &&
+                        widget.item.flow.toLowerCase() != 'quickaccessvisit') ...[
+                      _section(context, 'Barcode'),
+                      vSpace(context, 8),
+                      (() {
+                        final barcodeItems = _groupVisitorModels.isNotEmpty
+                            ? _groupVisitorModels
+                            : [selectedItem];
+                        
+                        return Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            CarouselSlider.builder(
+                              itemCount: barcodeItems.length,
+                              carouselController: _barcodeCarouselController,
+                              options: CarouselOptions(
+                                height: rh(context, 340),
+                                autoPlay: false,
+                                enlargeCenterPage: barcodeItems.length > 1,
+                                enlargeFactor: 0.15,
+                                viewportFraction: barcodeItems.length > 1 ? 0.82 : 1.0,
+                                enableInfiniteScroll: barcodeItems.length > 1,
+                                scrollDirection: Axis.horizontal,
+                                onPageChanged: (index, reason) {
+                                  setState(() {
+                                    _currentBarcodeIndex = index;
+                                  });
+                                },
+                              ),
+                              itemBuilder: (context, index, realIndex) {
+                                final model = barcodeItems[index];
+                                return Container(
+                                  width: double.infinity,
+                                  margin: EdgeInsets.symmetric(
+                                    horizontal: barcodeItems.length > 1 ? rw(context, 6) : 0,
+                                    vertical: rh(context, 4),
+                                  ),
+                                  padding: EdgeInsets.all(rw(context, 16)),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(rw(context, 16)),
+                                    border: Border.all(color: Colors.grey.shade200),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withValues(alpha: 0.04),
+                                        blurRadius: 8,
+                                        offset: const Offset(0, 4),
+                                      ),
+                                    ],
+                                  ),
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      // Title row
+                                      Row(
+                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Text(
+                                            'Access Pass',
+                                            style: TextStyle(
+                                              fontSize: rfs(context, 16),
+                                              fontWeight: FontWeight.w800,
+                                              color: Colors.black87,
+                                            ),
+                                          ),
+                                          Container(
+                                            padding: EdgeInsets.symmetric(
+                                              horizontal: rw(context, 8),
+                                              vertical: rh(context, 3),
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: Colors.green.shade50,
+                                              borderRadius: BorderRadius.circular(rw(context, 12)),
+                                              border: Border.all(color: Colors.green.shade200),
+                                            ),
+                                            child: Text(
+                                              'download',
+                                              style: TextStyle(
+                                                color: Colors.green.shade700,
+                                                fontSize: rfs(context, 10),
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      vSpace(context, 12),
+                                      
+                                      // QR Code Box
+                                      Container(
+                                        padding: EdgeInsets.all(rw(context, 10)),
+                                        decoration: BoxDecoration(
+                                          color: Colors.white,
+                                          borderRadius: BorderRadius.circular(rw(context, 10)),
+                                          border: Border.all(color: Colors.grey.shade200),
+                                        ),
+                                        child: QrImageView(
+                                          data: model.visitorNumber.isNotEmpty ? model.visitorNumber : 'N/A',
+                                          version: QrVersions.auto,
+                                          size: rw(context, 130),
+                                        ),
+                                      ),
+                                      vSpace(context, 12),
+                                      
+                                      // Tracked / Low Battery Row
+                                      Row(
+                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Text(
+                                            'Tracked',
+                                            style: TextStyle(
+                                              color: Colors.red.shade600,
+                                              fontSize: rfs(context, 11),
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                          Text(
+                                            'Low Battery',
+                                            style: TextStyle(
+                                              color: Colors.red.shade600,
+                                              fontSize: rfs(context, 11),
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      vSpace(context, 10),
+                                      
+                                      // Show this while visiting
+                                      Text(
+                                        'Show this while visiting',
+                                        style: TextStyle(
+                                          fontSize: rfs(context, 12),
+                                          fontWeight: FontWeight.w600,
+                                          color: Colors.black87,
+                                        ),
+                                      ),
+                                      vSpace(context, 2),
+                                      
+                                      // ID
+                                      Text(
+                                        'ID : ${model.visitorNumber.isNotEmpty ? model.visitorNumber : '-'}',
+                                        style: TextStyle(
+                                          fontSize: rfs(context, 13),
+                                          fontWeight: FontWeight.w800,
+                                          color: Colors.black87,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              },
+                            ),
+                            if (barcodeItems.length > 1) ...[
+                              vSpace(context, 8),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: barcodeItems.asMap().entries.map((entry) {
+                                  final isActive = _currentBarcodeIndex == entry.key;
+                                  return GestureDetector(
+                                    onTap: () => _barcodeCarouselController.animateToPage(entry.key),
+                                    child: AnimatedContainer(
+                                      duration: const Duration(milliseconds: 300),
+                                      curve: Curves.easeInOut,
+                                      width: isActive ? rw(context, 20.0) : rw(context, 6.0),
+                                      height: rw(context, 6.0),
+                                      margin: EdgeInsets.symmetric(horizontal: rw(context, 3.0)),
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(3.0),
+                                        color: isActive 
+                                          ? const Color(0xFF005596)
+                                          : const Color(0xFF005596).withValues(alpha: 0.3),
+                                      ),
+                                    ),
+                                  );
+                                }).toList(),
+                              ),
+                            ],
+                          ],
+                        );
+                      })(),
+                      vSpace(context, 16),
+                    ],
                   ],
                 ),
               ),
@@ -1772,7 +2343,7 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
     );
   }
 
-  Widget _section(BuildContext context, String title) {
+  Widget _section(BuildContext context, String title, {Widget? trailing}) {
     return Padding(
       padding: EdgeInsets.only(bottom: rh(context, 10)),
       child: Row(
@@ -1786,14 +2357,17 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
             ),
           ),
           hSpace(context, 8),
-          Text(
-            title,
-            style: TextStyle(
-              fontWeight: FontWeight.w700,
-              fontSize: rfs(context, 14),
-              color: Colors.black87,
+          Expanded(
+            child: Text(
+              title,
+              style: TextStyle(
+                fontWeight: FontWeight.w700,
+                fontSize: rfs(context, 14),
+                color: Colors.black87,
+              ),
             ),
           ),
+          if (trailing != null) trailing,
         ],
       ),
     );
@@ -1986,6 +2560,12 @@ class _ShareLinkListInlineState extends State<ShareLinkListInline> {
   Timer? _timer;
   Worker? _listWorker;
 
+  // Local Share Link filter state
+  DateTime? startDateShare;
+  DateTime? endDateShare;
+  String? selectedGedungShare;
+  String? selectedStatusShare;
+
   @override
   void initState() {
     super.initState();
@@ -2031,110 +2611,236 @@ class _ShareLinkListInlineState extends State<ShareLinkListInline> {
         return const Center(child: CircularProgressIndicator());
       }
 
+      Widget listWidget;
       if (controller.shareLinks.isEmpty) {
-        return Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                Icons.link_off,
-                size: rw(context, 64),
-                color: Colors.grey.shade300,
-              ),
-              vSpace(context, 16),
-              Text(
-                'No share links found',
-                style: TextStyle(
-                  color: Colors.grey.shade500,
-                  fontSize: rfs(context, 14),
+        listWidget = Center(
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.link_off,
+                  size: rw(context, 64),
+                  color: Colors.grey.shade300,
                 ),
-              ),
-            ],
+                vSpace(context, 16),
+                Text(
+                  'No share links found',
+                  style: TextStyle(
+                    color: Colors.grey.shade500,
+                    fontSize: rfs(context, 14),
+                  ),
+                ),
+              ],
+            ),
           ),
+        );
+      } else {
+        listWidget = ListView.separated(
+          controller: _scrollController,
+          padding: EdgeInsets.all(rw(context, 16)),
+          physics: const AlwaysScrollableScrollPhysics(),
+          itemCount: controller.shareLinks.length,
+          separatorBuilder: (_, index) => vSpace(context, 12),
+          itemBuilder: (context, index) {
+            final item = controller.shareLinks[index];
+            return _SlidableDeleteCard(
+              onDelete: () async {
+                bool deleteConfirmed = false;
+                await showDialog(
+                  context: context,
+                  builder: (dialogCtx) => AlertDialog(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    title: const Text('Delete Share Link'),
+                    content: const Text(
+                      'Are you sure you want to delete this share link?',
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () {
+                          Navigator.pop(dialogCtx);
+                          deleteConfirmed = false;
+                        },
+                        child: const Text('Cancel'),
+                      ),
+                      TextButton(
+                        onPressed: () {
+                          Navigator.pop(dialogCtx);
+                          deleteConfirmed = true;
+                        },
+                        child: const Text(
+                          'Delete',
+                          style: TextStyle(color: Colors.red),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+
+                if (deleteConfirmed) {
+                  final success = await controller.deleteShareLinkAction(
+                    item['id']?.toString() ?? '',
+                  );
+                  if (success) {
+                    Get.snackbar(
+                      'Success',
+                      'Share link deleted successfully',
+                      backgroundColor: Colors.green,
+                      colorText: Colors.white,
+                    );
+                  } else {
+                    Get.snackbar(
+                      'Error',
+                      'Failed to delete share link',
+                      backgroundColor: Colors.red,
+                      colorText: Colors.white,
+                    );
+                  }
+                }
+              },
+              child: ShareLinkCard(
+                item: item,
+                no:
+                    index +
+                    1 +
+                    (controller.shareLinkCurrentPage.value *
+                        controller.shareLinkPageSize.value),
+                onTap: () => ShareLinkDetailModal.show(context, item),
+              ),
+            );
+          },
         );
       }
 
       return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(
-            child: RefreshIndicator(
-              onRefresh: () => controller.fetchShareLinks(resetPage: true),
-              child: ListView.separated(
-                controller: _scrollController,
-                padding: EdgeInsets.all(rw(context, 16)),
-                physics: const AlwaysScrollableScrollPhysics(),
-                itemCount: controller.shareLinks.length,
-                separatorBuilder: (_, index) => vSpace(context, 12),
-                itemBuilder: (context, index) {
-                  final item = controller.shareLinks[index];
-                  return _SlidableDeleteCard(
-                    onDelete: () async {
-                      bool deleteConfirmed = false;
-                      await showDialog(
+          // ── Filter bar ──
+          Padding(
+            padding: EdgeInsets.only(
+              left: rw(context, 20),
+              right: rw(context, 20),
+              top: rh(context, 16),
+              bottom: rh(context, 6),
+            ),
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  GestureDetector(
+                    onTap: () async {
+                      final result =
+                          await showModalBottomSheet<Map<String, dynamic>>(
                         context: context,
-                        builder: (dialogCtx) => AlertDialog(
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
+                        enableDrag: true,
+                        isDismissible: true,
+                        isScrollControlled: true,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.vertical(
+                            top: Radius.circular(rw(context, 16)),
                           ),
-                          title: const Text('Delete Share Link'),
-                          content: const Text(
-                            'Are you sure you want to delete this share link?',
-                          ),
-                          actions: [
-                            TextButton(
-                              onPressed: () {
-                                Navigator.pop(dialogCtx);
-                                deleteConfirmed = false;
-                              },
-                              child: const Text('Cancel'),
-                            ),
-                            TextButton(
-                              onPressed: () {
-                                Navigator.pop(dialogCtx);
-                                deleteConfirmed = true;
-                              },
-                              child: const Text(
-                                'Delete',
-                                style: TextStyle(color: Colors.red),
-                              ),
-                            ),
-                          ],
+                        ),
+                        builder: (context) => FilterBottomSheet(
+                          initialStartDate: startDateShare,
+                          initialEndDate: endDateShare,
+                          initialSiteId: controller.selectedSiteIdShare.value,
+                          initialStatus: selectedStatusShare,
+                          showStatusFilter: false,
+                          showSiteFilter: false,
                         ),
                       );
 
-                      if (deleteConfirmed) {
-                        final success = await controller.deleteShareLinkAction(
-                          item['id']?.toString() ?? '',
+                      if (result != null) {
+                        setState(() {
+                          startDateShare = result['startDate'];
+                          endDateShare = result['endDate'];
+                          selectedGedungShare = result['siteName'];
+                          selectedStatusShare = result['status'];
+                        });
+                        controller.setShareFilters(
+                          start: startDateShare,
+                          end: endDateShare,
+                          siteId: result['siteId'],
+                          siteName: result['siteName'],
+                          status: result['status'],
                         );
-                        if (success) {
-                          Get.snackbar(
-                            'Success',
-                            'Share link deleted successfully',
-                            backgroundColor: Colors.green,
-                            colorText: Colors.white,
-                          );
-                        } else {
-                          Get.snackbar(
-                            'Error',
-                            'Failed to delete share link',
-                            backgroundColor: Colors.red,
-                            colorText: Colors.white,
-                          );
-                        }
                       }
                     },
-                    child: ShareLinkCard(
-                      item: item,
-                      no:
-                          index +
-                          1 +
-                          (controller.shareLinkCurrentPage.value *
-                              controller.shareLinkPageSize.value),
-                      onTap: () => ShareLinkDetailModal.show(context, item),
+                    child: _buildFilterChip(context, 'Filter'),
+                  ),
+                  if (selectedGedungShare != null) ...[
+                    hSpace(context, 8),
+                    _buildFilterValueChip(
+                      context,
+                      selectedGedungShare!,
+                      onClear: () {
+                        setState(() => selectedGedungShare = null);
+                        controller.setShareFilters(
+                          start: startDateShare,
+                          end: endDateShare,
+                          siteId: null,
+                          siteName: null,
+                          status: selectedStatusShare,
+                        );
+                      },
                     ),
-                  );
-                },
+                  ],
+                  if (startDateShare != null || endDateShare != null) ...[
+                    hSpace(context, 8),
+                    _buildFilterValueChip(
+                      context,
+                      _formatDateRange(startDateShare, endDateShare),
+                      onClear: () {
+                        setState(() {
+                          startDateShare = null;
+                          endDateShare = null;
+                        });
+                        controller.setShareFilters(
+                          start: null,
+                          end: null,
+                          siteId: controller.selectedSiteIdShare.value,
+                          siteName: controller.selectedSiteNameShare.value,
+                          status: selectedStatusShare,
+                        );
+                      },
+                    ),
+                  ],
+                  if (selectedStatusShare != null && selectedStatusShare!.isNotEmpty) ...[
+                    hSpace(context, 8),
+                    _buildFilterValueChip(
+                      context,
+                      'Status: $selectedStatusShare',
+                      onClear: () {
+                        setState(() => selectedStatusShare = null);
+                        controller.setShareFilters(
+                          start: startDateShare,
+                          end: endDateShare,
+                          siteId: controller.selectedSiteIdShare.value,
+                          siteName: controller.selectedSiteNameShare.value,
+                          status: null,
+                        );
+                      },
+                    ),
+                  ],
+                ],
               ),
+            ),
+          ),
+          Expanded(
+            child: RefreshIndicator(
+              onRefresh: () async {
+                setState(() {
+                  startDateShare = null;
+                  endDateShare = null;
+                  selectedGedungShare = null;
+                  selectedStatusShare = null;
+                });
+                await controller.fetchShareLinks(resetPage: true, clearFilters: true);
+              },
+              child: listWidget,
             ),
           ),
           if (controller.isShareLinkLoading.value &&

@@ -12,6 +12,8 @@ class FilterBottomSheet extends StatefulWidget {
   final String? initialSiteId;
   final String? initialStatus;
   final bool showStatusFilter;
+  final bool showSiteFilter;
+  final List<String>? customStatusList;
 
   const FilterBottomSheet({
     super.key,
@@ -20,6 +22,8 @@ class FilterBottomSheet extends StatefulWidget {
     this.initialSiteId,
     this.initialStatus,
     this.showStatusFilter = false,
+    this.showSiteFilter = true,
+    this.customStatusList,
   });
 
   @override
@@ -31,7 +35,7 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
   DateTime? endDate;
   String? selectedGedung;
   String? selectedStatus;
-  final List<String> statusList = ['Praregis', 'Checkin', 'Checkout'];
+  late final List<String> statusList;
   final List<Map<String, String>> gedungList = [];
   bool isLoadingGedung = false;
 
@@ -43,6 +47,7 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
     endDate = widget.initialEndDate;
     selectedGedung = widget.initialSiteId;
     selectedStatus = widget.initialStatus;
+    statusList = widget.customStatusList ?? ['Praregis', 'Checkin', 'Checkout'];
     _fetchGedung();
   }
 
@@ -277,50 +282,52 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
             vSpace(context, 16),
 
             // Searchable Dropdown Gedung
-            isLoadingGedung
-                ? const Center(child: CircularProgressIndicator())
-                : GestureDetector(
-                    onTap: () => _showGedungSelection(context),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text("Gedung", style: TextStyles.subtitle2),
-                        vSpace(context, 6),
-                        Container(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: rw(context, 12),
-                            vertical: rh(context, 16),
-                          ),
-                          decoration: BoxDecoration(
-                            color: const Color(0xffF2F8FD),
-                            borderRadius: BorderRadius.circular(rw(context, 8)),
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                gedungList.firstWhereOrNull(
-                                      (e) => e['id'] == selectedGedung,
-                                    )?['name'] ??
-                                    'Pilih Gedung',
-                                style: TextStyle(
-                                  color: selectedGedung == null ||
-                                          selectedGedung!.isEmpty
-                                      ? Colors.grey
-                                      : Colors.black,
-                                  fontSize: rfs(context, 14),
+            if (widget.showSiteFilter) ...[
+              isLoadingGedung
+                  ? const Center(child: CircularProgressIndicator())
+                  : GestureDetector(
+                      onTap: () => _showGedungSelection(context),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text("Gedung", style: TextStyles.subtitle2),
+                          vSpace(context, 6),
+                          Container(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: rw(context, 12),
+                              vertical: rh(context, 16),
+                            ),
+                            decoration: BoxDecoration(
+                              color: const Color(0xffF2F8FD),
+                              borderRadius: BorderRadius.circular(rw(context, 8)),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                               Text(
+                                  gedungList.firstWhereOrNull(
+                                        (e) => e['id'] == selectedGedung,
+                                      )?['name'] ??
+                                      'Pilih Gedung',
+                                  style: TextStyle(
+                                    color: selectedGedung == null ||
+                                            selectedGedung!.isEmpty
+                                        ? Colors.grey
+                                        : Colors.black,
+                                    fontSize: rfs(context, 14),
+                                  ),
                                 ),
-                              ),
-                              const Icon(
-                                Icons.keyboard_arrow_down,
-                                color: Colors.grey,
-                              ),
-                            ],
+                                const Icon(
+                                  Icons.keyboard_arrow_down,
+                                  color: Colors.grey,
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
+            ],
 
             if (widget.showStatusFilter) ...[
               vSpace(context, 16),
@@ -454,14 +461,14 @@ class FilterDateBox extends StatelessWidget {
           children: [
             Text(
               title,
-              style: TextStyle(color: Colors.grey, fontSize: rfs(context, 12)),
+              style: TextStyles.subtitle2,
             ),
             if (isRequired)
               Text(
                 ' *',
                 style: TextStyle(
                   color: Colors.red,
-                  fontSize: rfs(context, 12),
+                  fontSize: rfs(context, 14),
                   fontWeight: FontWeight.bold,
                 ),
               ),
