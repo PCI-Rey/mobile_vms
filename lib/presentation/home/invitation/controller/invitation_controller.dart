@@ -29,6 +29,8 @@ class InvitationController extends GetxController {
   final RxInt reminderCountdown = 0.obs;
   final RxSet<String> postponedTicketIds = <String>{}.obs;
   final RxMap<String, String> ticketVisitorNames = <String, String>{}.obs;
+  final Set<String> _resolvedTickets = {};
+  final Set<String> _pendingFetches = {};
 
   void startReminderTimer(int minutes, String ticketId, VoidCallback onTrigger) {
     postponedTicketIds.add(ticketId);
@@ -110,11 +112,18 @@ class InvitationController extends GetxController {
   }
 
   void _applyFilters() {
+    // Split based on `flow` field from new /visitor/transaction/dt API:
+    // flow == 'QuickAccessVisit' → Quick Access tab
+    // everything else (Invitation, Praregister, etc.) → Invitation tab
     List<AccessPassModel> filtered = List.from(
-      allInvitations.where((item) => item.visitorStatus != 'QuickAccess'),
+      allInvitations.where(
+        (item) => item.flow.toLowerCase() != 'quickaccessvisit',
+      ),
     );
     List<AccessPassModel> quickAccess = List.from(
-      allInvitations.where((item) => item.visitorStatus == 'QuickAccess'),
+      allInvitations.where(
+        (item) => item.flow.toLowerCase() == 'quickaccessvisit',
+      ),
     );
 
     // 1. Filter Berdasarkan Tanggal (Lokal)
@@ -216,11 +225,35 @@ class InvitationController extends GetxController {
       if (response.data['status'] == 'success' ||
           response.data['status_code'] == 200) {
         final collection = response.data['collection'] as List<dynamic>? ?? [];
-        final newPasses = collection
-            .map((e) => AccessPassModel.fromJson(e as Map<String, dynamic>))
-            .toList();
+        
+        final List<AccessPassModel> allVisitors = [];
+        
+        // Fetch visitors for each transaction in parallel
+        await Future.wait(collection.map((trx) async {
+          final trxMap = trx as Map<String, dynamic>;
+          final trxId = trxMap['id']?.toString() ?? '';
+          if (trxId.isNotEmpty) {
+            final visitorsList = await fetchTransactionVisitors(trxId);
+            if (visitorsList.isEmpty) {
+              allVisitors.add(AccessPassModel.fromJson(trxMap));
+            } else {
+              final parentFlow = trxMap['flow']?.toString() ?? '';
+              final parentSiteId = trxMap['site_id']?.toString() ?? trxMap['site_place']?.toString() ?? '';
+              for (var visitor in visitorsList) {
+                final mutableVisitor = Map<String, dynamic>.from(visitor);
+                if ((mutableVisitor['flow']?.toString() ?? '').isEmpty) {
+                  mutableVisitor['flow'] = parentFlow;
+                }
+                if ((mutableVisitor['site_id']?.toString() ?? '').isEmpty && (mutableVisitor['site_place']?.toString() ?? '').isEmpty) {
+                  mutableVisitor['site_id'] = parentSiteId;
+                }
+                allVisitors.add(AccessPassModel.fromJson(mutableVisitor));
+              }
+            }
+          }
+        }));
 
-        allInvitations.assignAll(newPasses);
+        allInvitations.assignAll(allVisitors);
         _applyFilters();
       }
     } catch (e) {
@@ -553,19 +586,27 @@ class InvitationController extends GetxController {
     final entityId = ticket.entityId;
     final ticketId = ticket.approvalTicketId ?? ticket.ticketId;
     if (entityId == null || ticketId == null) return;
-    if (ticketVisitorNames.containsKey(ticketId)) return;
+    if (_resolvedTickets.contains(ticketId)) return;
+    if (_pendingFetches.contains(ticketId)) return;
 
-    // Use placeholder first
-    ticketVisitorNames[ticketId] = ticket.hostName ?? 'Visitor';
+    // Use placeholder first if not already set
+    if (!ticketVisitorNames.containsKey(ticketId)) {
+      ticketVisitorNames[ticketId] = ticket.hostName ?? 'Visitor';
+    }
+
+    _pendingFetches.add(ticketId);
 
     fetchTransactionVisitors(entityId).then((visitors) {
+      _pendingFetches.remove(ticketId);
       if (visitors.isNotEmpty) {
         final name = visitors.first['visitor_name']?.toString() ??
             visitors.first['name']?.toString() ??
             'Visitor';
         ticketVisitorNames[ticketId] = name;
+        _resolvedTickets.add(ticketId);
       }
     }).catchError((e) {
+      _pendingFetches.remove(ticketId);
       debugPrint('Error fetching visitor name for $ticketId: $e');
     });
   }
@@ -585,6 +626,12 @@ class InvitationController extends GetxController {
         final newTickets = collection
             .map((e) => ApprovalTicketModel.fromJson(e as Map<String, dynamic>))
             .toList();
+        
+        if (!isSilent) {
+          _resolvedTickets.clear();
+          _pendingFetches.clear();
+        }
+
         approvalTickets.assignAll(newTickets);
         
         for (final ticket in newTickets) {

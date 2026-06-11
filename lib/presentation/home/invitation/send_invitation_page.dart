@@ -589,7 +589,7 @@ class _SendInvitationPageState extends State<SendInvitationPage>
                                   ),
                                   child: Column(
                                     children: [
-                                      // Row 1: Visitor Type + Invitation Code
+                                      // Row 1: Visitor Type + Host
                                       Row(
                                         children: [
                                           Expanded(
@@ -606,82 +606,6 @@ class _SendInvitationPageState extends State<SendInvitationPage>
                                           Expanded(
                                             child: _buildCardField(
                                               context,
-                                              Icons
-                                                  .confirmation_number_outlined,
-                                              'Invitation Code',
-                                              item.invitationCode.isEmpty
-                                                  ? '-'
-                                                  : item.invitationCode,
-                                              color: const Color(0xFF005596),
-                                              trailing: GestureDetector(
-                                                onTap: () {
-                                                  if (isExpired) {
-                                                    Get.snackbar(
-                                                      'Info',
-                                                      'Invitation has expired, code cannot be copied.',
-                                                      snackPosition:
-                                                          SnackPosition.TOP,
-                                                      backgroundColor:
-                                                          Colors.red.shade600,
-                                                      colorText: Colors.white,
-                                                    );
-                                                    return;
-                                                  }
-                                                  if (item
-                                                      .invitationCode
-                                                      .isNotEmpty) {
-                                                    Clipboard.setData(
-                                                      ClipboardData(
-                                                        text:
-                                                            item.invitationCode,
-                                                      ),
-                                                    );
-                                                    Get.snackbar(
-                                                      'Copied',
-                                                      'Invitation Code copied to clipboard',
-                                                      snackPosition:
-                                                          SnackPosition.TOP,
-                                                      backgroundColor:
-                                                          Colors.green,
-                                                      colorText: Colors.white,
-                                                      duration: const Duration(
-                                                        seconds: 1,
-                                                      ),
-                                                    );
-                                                  }
-                                                },
-                                                child: Icon(
-                                                  Icons.copy,
-                                                  size: rw(context, 14),
-                                                  color: isExpired
-                                                      ? Colors.grey.shade400
-                                                      : const Color(0xFF005596),
-                                                ),
-                                              ),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                      vSpace(context, 8),
-                                      // Row 2: Organization + Host
-                                      Row(
-                                        children: [
-                                          Expanded(
-                                            child: _buildCardField(
-                                              context,
-                                              Icons.business_outlined,
-                                              'Organization',
-                                              item
-                                                      .visitorOrganizationName
-                                                      .isEmpty
-                                                  ? '-'
-                                                  : item.visitorOrganizationName,
-                                            ),
-                                          ),
-                                          hSpace(context, 8),
-                                          Expanded(
-                                            child: _buildCardField(
-                                              context,
                                               Icons.person_outline,
                                               'Host',
                                               item.hostName.isEmpty
@@ -691,8 +615,8 @@ class _SendInvitationPageState extends State<SendInvitationPage>
                                           ),
                                         ],
                                       ),
-                                      vSpace(context, 8),
-                                      // Row 3: Period Start + Period End
+                                      vSpace(context, 6),
+                                      // Row 2: Period Start + Period End
                                       Row(
                                         children: [
                                           Expanded(
@@ -952,13 +876,11 @@ class _SendInvitationPageState extends State<SendInvitationPage>
                                           Expanded(
                                             child: _buildCardField(
                                               context,
-                                              Icons.business_outlined,
-                                              'Organization',
-                                              item
-                                                      .visitorOrganizationName
-                                                      .isEmpty
+                                              Icons.person_outline,
+                                              'Host',
+                                              item.hostName.isEmpty
                                                   ? '-'
-                                                  : item.visitorOrganizationName,
+                                                  : item.hostName,
                                             ),
                                           ),
                                         ],
@@ -1365,7 +1287,7 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
                             : item.visitorOrganizationName,
                         Icons.business_outlined,
                       ),
-                      if (item.visitorStatus.toLowerCase() != 'quickaccess')
+                      if (item.flow.toLowerCase() != 'quickaccessvisit')
                         _SheetField(
                           'Identity ID',
                           item.visitorIdentityId.isEmpty
@@ -1407,9 +1329,7 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
                         'Visitor Status',
                         item.visitorStatus.isEmpty
                             ? '-'
-                            : (item.visitorStatus.toLowerCase() == 'quickaccess'
-                                  ? 'Quick Access'
-                                  : item.visitorStatus),
+                            : item.visitorStatus,
                         Icons.info_outline,
                         badgeColor: statusColor,
                       ),
@@ -1418,7 +1338,7 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
                         item.agenda.isEmpty ? '-' : item.agenda,
                         Icons.event_note_outlined,
                       ),
-                      if (item.visitorStatus.toLowerCase() != 'quickaccess')
+                      if (item.flow.toLowerCase() != 'quickaccessvisit')
                         _SheetField(
                           'Host',
                           item.hostName.isEmpty ? '-' : item.hostName,
@@ -1436,8 +1356,7 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
                             : item.vehiclePlateNumber,
                         Icons.subtitles_outlined,
                       ),
-                      if (item.visitorStatus.toLowerCase() ==
-                          'quickaccess') ...[
+                      if (item.flow.toLowerCase() == 'quickaccessvisit') ...[
                         _SheetField(
                           'Receiver Name',
                           item.receiverName.isEmpty ? '-' : item.receiverName,

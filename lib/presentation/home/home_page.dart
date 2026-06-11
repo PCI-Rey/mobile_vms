@@ -19,6 +19,7 @@ import 'access_pass/access_pass_page.dart';
 import 'approval/approval_page.dart';
 import 'invitation/controller/invitation_controller.dart';
 import '../../data/models/approval_ticket_model.dart';
+import '../dashboard.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -381,7 +382,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                                     setState(() {
                                       hasPressedRemindMe = true;
                                       invitationController.startReminderTimer(
-                                        3,
+                                        30,
                                         ticketId,
                                         () {
                                           invitationController.fetchApprovalTickets();
@@ -469,11 +470,14 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                     child: GestureDetector(
                       behavior: HitTestBehavior.opaque,
                       onTap: () {
+                        final isHomeTab = Dashboard.selectedIndex == 0;
                         this.setState(() {
                           _showBellRedDot = true;
                         });
                         Navigator.of(dialogCtx).pop();
-                        _bellAnimationController.forward(from: 0.0);
+                        if (isHomeTab) {
+                          _bellAnimationController.forward(from: 0.0);
+                        }
                       },
                       child: Container(
                         width: rw(context, 32),
@@ -507,8 +511,25 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   }
 
   void _runFlyingAnimation({required bool setRedDot}) {
+    final isHomeTab = Dashboard.selectedIndex == 0;
+    if (!isHomeTab) {
+      if (setRedDot) {
+        setState(() {
+          _showBellRedDot = true;
+        });
+      }
+      return;
+    }
+
     final renderBox = _bellKey.currentContext?.findRenderObject() as RenderBox?;
-    if (renderBox == null) return;
+    if (renderBox == null) {
+      if (setRedDot) {
+        setState(() {
+          _showBellRedDot = true;
+        });
+      }
+      return;
+    }
 
     final bellPosition = renderBox.localToGlobal(Offset.zero);
     final bellSize = renderBox.size;

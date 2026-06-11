@@ -120,7 +120,7 @@ class _QuickAccessHomeListState extends State<QuickAccessHomeList> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(
-            height: rh(context, 220),
+            height: rh(context, 150),
             child: PageView.builder(
               controller: _pageController,
               physics: list.length <= 1
@@ -316,59 +316,6 @@ class _QuickAccessHomeListState extends State<QuickAccessHomeList> {
                           Icons.badge_outlined,
                           'Visitor Type',
                           item.visitorTypeName.isEmpty ? '-' : item.visitorTypeName,
-                        ),
-                      ),
-                      hSpace(context, 8),
-                      Expanded(
-                        child: _buildCardField(
-                          context,
-                          Icons.confirmation_number_outlined,
-                          'Invitation Code',
-                          item.invitationCode.isEmpty ? '-' : item.invitationCode,
-                          color: const Color(0xFF005596),
-                          trailing: GestureDetector(
-                            onTap: () {
-                              if (isExpired) {
-                                Get.snackbar(
-                                  'Info',
-                                  'Invitation has expired, code cannot be copied.',
-                                  snackPosition: SnackPosition.TOP,
-                                  backgroundColor: Colors.red.shade600,
-                                  colorText: Colors.white,
-                                );
-                                return;
-                              }
-                              if (item.invitationCode.isNotEmpty) {
-                                Clipboard.setData(ClipboardData(text: item.invitationCode));
-                                Get.snackbar(
-                                  'Copied',
-                                  'Invitation Code copied to clipboard',
-                                  snackPosition: SnackPosition.TOP,
-                                  backgroundColor: Colors.green,
-                                  colorText: Colors.white,
-                                  duration: const Duration(seconds: 1),
-                                );
-                              }
-                            },
-                            child: Icon(
-                              Icons.copy,
-                              size: rw(context, 14),
-                              color: isExpired ? Colors.grey.shade400 : const Color(0xFF005596),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  vSpace(context, 6),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _buildCardField(
-                          context,
-                          Icons.business_outlined,
-                          'Organization',
-                          item.visitorOrganizationName.isEmpty ? '-' : item.visitorOrganizationName,
                         ),
                       ),
                       hSpace(context, 8),

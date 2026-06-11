@@ -152,8 +152,7 @@ class _NotificationDialogState extends State<NotificationDialog> {
       result = [...gen, ...alr];
     }
 
-    // Tampilkan 3 data saja yang paling atas
-    return result.take(3).toList();
+    return result;
   }
 
   Widget _buildEmptyState() {
@@ -398,57 +397,7 @@ class _NotificationDialogState extends State<NotificationDialog> {
                         ),
                       ),
                       vSpace(context, 12),
-                    ],
-
-                    // More button row
-                    Padding(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: rw(context, 20),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        children: [
-                          GestureDetector(
-                            onTap: () {
-                              if (isGuest) {
-                                int initialTab = 0;
-                                if (selectedType == 'general') {
-                                  initialTab = 1;
-                                } else if (selectedType == 'alarm') {
-                                  initialTab = 2;
-                                }
-                                context.push(
-                                  AlarmListPage(initialTab: initialTab),
-                                );
-                              } else {
-                                context.push(const AlarmListPage());
-                              }
-                            },
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  'More',
-                                  style: TextStyle(
-                                    color: AppColors.primary500,
-                                    fontWeight: FontWeight.w700,
-                                    fontSize: rfs(context, 14),
-                                  ),
-                                ),
-                                hSpace(context, 4),
-                                Icon(
-                                  Icons.arrow_forward_ios,
-                                  size: rw(context, 12),
-                                  color: AppColors.primary500,
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    vSpace(context, 12),
+                  ],
 
                     // Notification list
                     Expanded(
@@ -515,8 +464,7 @@ class _NotificationDialogState extends State<NotificationDialog> {
                             return _buildEmptyState();
                           }
 
-                          // Take max 3 for dialog space limit
-                          final displayList = pendingTickets.take(3).toList();
+                          final displayList = pendingTickets;
 
                           return ListView.separated(
                             padding: EdgeInsets.fromLTRB(

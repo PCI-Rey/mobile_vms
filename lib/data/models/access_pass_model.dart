@@ -25,11 +25,15 @@ class AccessPassModel {
   final String visitorName;
   final bool isPraregisterDone;
   final String visitorRole;
-  // Fields from /visitor/dt
+  // Fields from /visitor/transaction/dt
   final String approvalStatus;
   final String visitorTypeName;
+  final String visitorTypeId;
   final String transactionVisitorId;
   final String invitedByName;
+  final String invitedBy;
+  final String hostOrganizationName;
+  final String flow;
   final String visitorOrganizationName;
   final String visitorPhone;
   final String visitorEmail;
@@ -65,8 +69,12 @@ class AccessPassModel {
     required this.visitorRole,
     this.approvalStatus = '',
     this.visitorTypeName = '',
+    this.visitorTypeId = '',
     this.transactionVisitorId = '',
     this.invitedByName = '',
+    this.invitedBy = '',
+    this.hostOrganizationName = '',
+    this.flow = '',
     this.visitorOrganizationName = '',
     this.visitorPhone = '',
     this.visitorEmail = '',
@@ -116,10 +124,11 @@ class AccessPassModel {
             )
           : DateTime.now(),
       visitorNumber: json['visitor_number']?.toString() ?? '',
-      visitorCode: json['visitor_code']?.toString() ?? '',
-      invitationCode: json['invitation_code']?.toString() ?? '',
-      visitorStatus: json['visitor_status']?.toString() ?? '',
-      sitePlaceName: json['site_place_name']?.toString() ?? '',
+      visitorCode: json['visitor_code']?.toString() ?? json['initial_trx_code']?.toString() ?? '',
+      invitationCode: json['invitation_code']?.toString() ?? json['initial_trx_code']?.toString() ?? '',
+      // Support both old visitor_status and new transaction_status field
+      visitorStatus: (json['transaction_status'] ?? json['visitor_status'])?.toString() ?? '',
+      sitePlaceName: (json['site_place_name'] ?? json['host_organization_name'])?.toString() ?? '',
       hostName: json['host_name']?.toString() ?? '',
       parkingSlot: json['parking_slot']?.toString() ?? '',
       parkingArea: json['parking_area']?.toString() ?? '',
@@ -135,8 +144,12 @@ class AccessPassModel {
       visitorRole: json['visitor_role']?.toString() ?? '',
       approvalStatus: json['approval_status']?.toString() ?? '',
       visitorTypeName: json['visitor_type_name']?.toString() ?? '',
+      visitorTypeId: (json['visitor_type_id'] ?? json['visitor_type'])?.toString() ?? '',
       transactionVisitorId: json['transaction_visitor_id']?.toString() ?? '',
       invitedByName: json['invited_by_name']?.toString() ?? '',
+      invitedBy: json['invited_by']?.toString() ?? '',
+      hostOrganizationName: json['host_organization_name']?.toString() ?? '',
+      flow: json['flow']?.toString() ?? '',
       visitorOrganizationName:
           json['visitor_organization_name']?.toString() ?? '',
       visitorPhone: json['visitor_phone']?.toString() ?? '',
@@ -175,8 +188,12 @@ class AccessPassModel {
     'visitor_role': visitorRole,
     'approval_status': approvalStatus,
     'visitor_type_name': visitorTypeName,
+    'visitor_type_id': visitorTypeId,
     'transaction_visitor_id': transactionVisitorId,
     'invited_by_name': invitedByName,
+    'invited_by': invitedBy,
+    'host_organization_name': hostOrganizationName,
+    'flow': flow,
     'visitor_organization_name': visitorOrganizationName,
     'visitor_phone': visitorPhone,
     'visitor_email': visitorEmail,

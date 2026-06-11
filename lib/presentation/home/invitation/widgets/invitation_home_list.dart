@@ -120,7 +120,7 @@ class _InvitationHomeListState extends State<InvitationHomeList> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(
-            height: rh(context, 220),
+            height: rh(context, 150),
             child: PageView.builder(
               controller: _pageController,
               physics: list.length <= 1
@@ -181,38 +181,49 @@ class _InvitationHomeListState extends State<InvitationHomeList> {
     final String jenis;
     final Color jenisColor;
 
-    if (item.visitorStatus.isEmpty) {
-      jenis = item.isPraregisterDone ? 'Praregis' : 'Invitation';
-      jenisColor = item.isPraregisterDone ? const Color(0xFF00B0FF) : const Color(0xFF6D4C41);
+    if (item.visitorStatus.isEmpty && item.flow.isEmpty) {
+      jenis = 'Invitation';
+      jenisColor = const Color(0xFF6D4C41);
     } else {
-      final lowerStatus = item.visitorStatus.toLowerCase();
-      if (lowerStatus.contains('preregis') || lowerStatus.contains('praregis')) {
-        jenis = 'Praregis';
-        jenisColor = const Color(0xFF00B0FF);
-      } else if (lowerStatus == 'available') {
-        jenis = 'Available';
-        jenisColor = const Color(0xFF8E24AA);
-      } else if (lowerStatus == 'checkin') {
-        jenis = 'Checkin';
-        jenisColor = const Color(0xFF00897B);
-      } else if (lowerStatus == 'checkout') {
-        jenis = 'Checkout';
-        jenisColor = const Color(0xFF3949AB);
-      } else if (lowerStatus == 'waiting') {
-        jenis = 'Waiting';
-        jenisColor = const Color(0xFFFB8C00);
-      } else if (lowerStatus == 'denied') {
-        jenis = 'Denied';
-        jenisColor = const Color(0xFFE53935);
-      } else if (lowerStatus == 'quickaccess') {
+      // Use flow field to determine type badge
+      final lowerFlow = item.flow.toLowerCase();
+      if (lowerFlow == 'quickaccessvisit') {
         jenis = 'Quick Access';
         jenisColor = const Color(0xFFD81B60);
-      } else if (lowerStatus == 'invitation') {
+      } else if (lowerFlow == 'praregister') {
+        jenis = 'Praregis';
+        jenisColor = const Color(0xFF00B0FF);
+      } else if (lowerFlow == 'invitation') {
         jenis = 'Invitation';
         jenisColor = const Color(0xFF6D4C41);
       } else {
-        jenis = item.visitorStatus[0].toUpperCase() + item.visitorStatus.substring(1);
-        jenisColor = const Color(0xFF546E7A);
+        // Fallback to transaction_status
+        final lowerStatus = item.visitorStatus.toLowerCase();
+        if (lowerStatus == 'available') {
+          jenis = 'Available';
+          jenisColor = const Color(0xFF8E24AA);
+        } else if (lowerStatus == 'pending') {
+          jenis = 'Pending';
+          jenisColor = const Color(0xFFFB8C00);
+        } else if (lowerStatus == 'undercreated') {
+          jenis = 'Under Created';
+          jenisColor = const Color(0xFF546E7A);
+        } else if (lowerStatus == 'checkin') {
+          jenis = 'Checkin';
+          jenisColor = const Color(0xFF00897B);
+        } else if (lowerStatus == 'checkout') {
+          jenis = 'Checkout';
+          jenisColor = const Color(0xFF3949AB);
+        } else if (lowerStatus == 'reject' || lowerStatus == 'rejected' || lowerStatus == 'denied') {
+          jenis = 'Rejected';
+          jenisColor = const Color(0xFFE53935);
+        } else if (item.visitorStatus.isNotEmpty) {
+          jenis = item.visitorStatus[0].toUpperCase() + item.visitorStatus.substring(1);
+          jenisColor = const Color(0xFF546E7A);
+        } else {
+          jenis = 'Invitation';
+          jenisColor = const Color(0xFF6D4C41);
+        }
       }
     }
 
@@ -336,59 +347,6 @@ class _InvitationHomeListState extends State<InvitationHomeList> {
                           Icons.badge_outlined,
                           'Visitor Type',
                           item.visitorTypeName.isEmpty ? '-' : item.visitorTypeName,
-                        ),
-                      ),
-                      hSpace(context, 8),
-                      Expanded(
-                        child: _buildCardField(
-                          context,
-                          Icons.confirmation_number_outlined,
-                          'Invitation Code',
-                          item.invitationCode.isEmpty ? '-' : item.invitationCode,
-                          color: const Color(0xFF005596),
-                          trailing: GestureDetector(
-                            onTap: () {
-                              if (isExpired) {
-                                Get.snackbar(
-                                  'Info',
-                                  'Invitation has expired, code cannot be copied.',
-                                  snackPosition: SnackPosition.TOP,
-                                  backgroundColor: Colors.red.shade600,
-                                  colorText: Colors.white,
-                                );
-                                return;
-                              }
-                              if (item.invitationCode.isNotEmpty) {
-                                Clipboard.setData(ClipboardData(text: item.invitationCode));
-                                Get.snackbar(
-                                  'Copied',
-                                  'Invitation Code copied to clipboard',
-                                  snackPosition: SnackPosition.TOP,
-                                  backgroundColor: Colors.green,
-                                  colorText: Colors.white,
-                                  duration: const Duration(seconds: 1),
-                                );
-                              }
-                            },
-                            child: Icon(
-                              Icons.copy,
-                              size: rw(context, 14),
-                              color: isExpired ? Colors.grey.shade400 : const Color(0xFF005596),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  vSpace(context, 6),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _buildCardField(
-                          context,
-                          Icons.business_outlined,
-                          'Organization',
-                          item.visitorOrganizationName.isEmpty ? '-' : item.visitorOrganizationName,
                         ),
                       ),
                       hSpace(context, 8),

@@ -19,6 +19,8 @@ import 'auth/controller/language_controller.dart';
 class Dashboard extends StatefulWidget {
   const Dashboard({super.key});
 
+  static int selectedIndex = 0;
+
   @override
   State<Dashboard> createState() => _DashboardState();
 }
@@ -39,6 +41,7 @@ class _DashboardState extends State<Dashboard>
     var fcm = NotificationService.instance;
     // ini bisa diganti dengan visitor id
     fcm.subscribeToUserTopic("testtopics");
+    Dashboard.selectedIndex = 0;
     super.initState();
     _loadRoleAndSetup();
 
@@ -136,7 +139,10 @@ class _DashboardState extends State<Dashboard>
 
     setState(() {
       _widgets = widgets;
-      if (_selectedIndex >= _widgets.length) _selectedIndex = 0;
+      if (_selectedIndex >= _widgets.length) {
+        _selectedIndex = 0;
+        Dashboard.selectedIndex = 0;
+      }
     });
   }
 
@@ -437,7 +443,10 @@ class _DashboardState extends State<Dashboard>
                 ),
                 child: BottomNavigationBar(
                   currentIndex: _selectedIndex,
-                  onTap: (value) => setState(() => _selectedIndex = value),
+                  onTap: (value) => setState(() {
+                    _selectedIndex = value;
+                    Dashboard.selectedIndex = value;
+                  }),
                   type: BottomNavigationBarType.fixed,
                   backgroundColor: Colors.transparent,
                   elevation: 0,

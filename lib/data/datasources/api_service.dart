@@ -435,22 +435,24 @@ class ApiService {
     }
   }
 
-  /// GET /api/visitor/dt
+  /// GET /api/visitor/transaction/dt
   /// Datatable endpoint — returns all visitor transactions (including history).
   Future<Response> getVisitorDt(
     String token, {
     int draw = 1,
     int start = 0,
-    int length = 500,
+    int length = 50000,
     String search = '',
+    String sortDir = 'desc',
   }) async {
     try {
       final response = await _dio.get(
-        '/$pathApi/visitor/dt',
+        '/$pathApi/visitor/transaction/dt',
         queryParameters: {
           'draw': draw,
           'start': start,
           'length': length,
+          'sort_dir': sortDir,
           'search[value]': search,
         },
         options: Options(headers: {'Authorization': 'Bearer $token'}),
