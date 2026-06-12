@@ -238,7 +238,7 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                       isRequired: endDate != null,
                       value: startDate != null
                           ? DateFormat(
-                              'dd MMM yyyy',
+                              'dd MMMM yyyy',
                               'id_ID',
                             ).format(startDate!)
                           : "Pilih tanggal",
@@ -268,7 +268,7 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                         isRequired: startDate != null,
                         value: endDate != null
                             ? DateFormat(
-                                'dd MMM yyyy',
+                                'dd MMMM yyyy',
                                 'id_ID',
                               ).format(endDate!)
                             : "Pilih tanggal",

@@ -171,7 +171,7 @@ class ShareLinkCard extends StatelessWidget {
           normalized = '${normalized.replaceFirst(' ', 'T')}Z';
         }
         final date = DateTime.parse(normalized).toLocal();
-        return DateFormat('dd MMM yy HH:mm').format(date);
+        return DateFormat('dd MMMM yyyy, HH:mm').format(date);
       } catch (e) {
         return dateStr;
       }
@@ -191,7 +191,7 @@ class ShareLinkCard extends StatelessWidget {
         final start = DateTime.parse(normStart).toLocal();
         final end = DateTime.parse(normEnd).toLocal();
 
-        final dateFmt = DateFormat('dd MMM yy');
+        final dateFmt = DateFormat('dd MMMM yyyy');
         final timeFmt = DateFormat('HH:mm');
 
         if (start.year == end.year && start.month == end.month && start.day == end.day) {

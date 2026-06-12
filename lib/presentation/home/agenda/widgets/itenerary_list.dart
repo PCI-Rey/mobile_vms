@@ -295,10 +295,10 @@ class _IteneraryListState extends State<IteneraryList> {
     final start = ticket.visitorPeriodStart;
     final end = ticket.visitorPeriodEnd;
     final startStr = start != null
-        ? DateFormat('dd MMM yy HH:mm').format(start)
+        ? DateFormat('dd MMMM yyyy, HH:mm').format(start)
         : '-';
     final endStr = end != null
-        ? DateFormat('dd MMM yy HH:mm').format(end)
+        ? DateFormat('dd MMMM yyyy, HH:mm').format(end)
         : '-';
 
     final isPending =
@@ -597,7 +597,7 @@ class _IteneraryListState extends State<IteneraryList> {
                    vertical: rh(context, 10),
                  ),
                  child: Text(
-                   'Disetujui: ${DateFormat('dd MMM yyyy, HH:mm').format(ticket.approvedAt!)}',
+                   'Disetujui: ${DateFormat('dd MMMM yyyy, HH:mm').format(ticket.approvedAt!)}',
                    style: TextStyle(
                      fontSize: rfs(context, 13),
                      color: const Color(0xFF2E7D32),
@@ -612,7 +612,7 @@ class _IteneraryListState extends State<IteneraryList> {
                    vertical: rh(context, 10),
                  ),
                  child: Text(
-                   'Ditolak: ${DateFormat('dd MMM yyyy, HH:mm').format(ticket.approvedAt!)}',
+                   'Ditolak: ${DateFormat('dd MMMM yyyy, HH:mm').format(ticket.approvedAt!)}',
                    style: TextStyle(
                      fontSize: rfs(context, 13),
                      color: const Color(0xFFC62828),

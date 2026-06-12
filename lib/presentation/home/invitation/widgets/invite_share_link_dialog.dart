@@ -145,7 +145,9 @@ class _InviteShareLinkDialogState extends State<InviteShareLinkDialog>
           normalized = '${normalized.replaceFirst(' ', 'T')}Z';
         }
         expiredAt = DateTime.parse(normalized).toLocal();
-        formattedExpire = DateFormat('dd MMM yyyy, HH:mm').format(expiredAt);
+        if (expiredAt != null) {
+          formattedExpire = DateFormat('dd MMMM yyyy, HH:mm').format(expiredAt);
+        }
       } catch (e) {
         debugPrint('Error parsing expired_at: $e');
         formattedExpire = expiredAtStr;
@@ -424,7 +426,10 @@ class _InviteShareLinkDialogState extends State<InviteShareLinkDialog>
                     normalized = '${normalized.replaceFirst(' ', 'T')}Z';
                   }
                   final date = DateTime.parse(normalized).toLocal();
-                  return DateFormat('dd MMM yyyy, HH:mm').format(date);
+                  if (date != null) {
+                    return DateFormat('dd MMMM yyyy, HH:mm').format(date);
+                  }
+                  return dateStr;
                 } catch (e) {
                   return dateStr;
                 }

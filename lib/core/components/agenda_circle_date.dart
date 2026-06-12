@@ -14,7 +14,7 @@ class AgendaCircleDate extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final day = DateFormat('E', 'id_ID').format(date); // contoh: "Sen"
+    final day = DateFormat('E', 'en').format(date); // contoh: "Sen"
     final dayNumber = DateFormat('d').format(date); // contoh: "30"
 
     return Container(

@@ -248,7 +248,7 @@ class _AlarmListPageState extends State<AlarmListPage>
   ) {
     final start = ticket.visitorPeriodStart;
     final startStr = start != null
-        ? DateFormat('dd MMM, HH:mm').format(start)
+        ? DateFormat('dd MMMM yyyy, HH:mm').format(start)
         : '-';
 
     final isPending =

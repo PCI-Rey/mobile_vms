@@ -665,7 +665,7 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
     required VoidCallback onTap,
   }) {
     final displayValue = value != null
-        ? DateFormat('EEEE, dd MMMM yyyy, HH:mm', 'id').format(value.toLocal())
+        ? DateFormat('EEEE, dd MMMM yyyy, HH:mm', 'en').format(value.toLocal())
         : '';
     final controller = TextEditingController(text: displayValue);
 

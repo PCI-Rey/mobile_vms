@@ -272,7 +272,7 @@ class InformasiUmumController extends GetxController {
         normalized = '${normalized}Z';
       }
       final utcDt = DateTime.parse(normalized).toLocal();
-      return DateFormat('EEEE, dd MMMM yyyy, HH:mm', 'id').format(utcDt);
+      return DateFormat('EEEE, dd MMMM yyyy, HH:mm', 'en').format(utcDt);
     } catch (_) {
       return utcString; // fallback: tampilkan raw jika parse gagal
     }

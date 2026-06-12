@@ -60,8 +60,8 @@ class _HistoryPageState extends State<HistoryPage> {
         'host': 'Endru',
         'organization': 'Kantor A',
         'flow': 'Praregis',
-        'periodStart': '14 Jul 25 10:00',
-        'periodEnd': '14 Jul 25 12:00',
+        'periodStart': '14 July 2025, 10:00',
+        'periodEnd': '14 July 2025, 12:00',
       },
       {
         'agenda': 'Meeting',
@@ -70,8 +70,8 @@ class _HistoryPageState extends State<HistoryPage> {
         'host': 'Budi',
         'organization': 'Kantor B',
         'flow': 'Invitation',
-        'periodStart': '15 Jul 25 13:00',
-        'periodEnd': '15 Jul 25 15:00',
+        'periodStart': '15 July 2025, 13:00',
+        'periodEnd': '15 July 2025, 15:00',
       },
       {
         'agenda': 'Interview',
@@ -80,8 +80,8 @@ class _HistoryPageState extends State<HistoryPage> {
         'host': 'Andi',
         'organization': 'Kantor C',
         'flow': 'Praregis',
-        'periodStart': '16 Jul 25 09:00',
-        'periodEnd': '16 Jul 25 11:00',
+        'periodStart': '16 July 2025, 09:00',
+        'periodEnd': '16 July 2025, 11:00',
       },
       {
         'agenda': 'Training',
@@ -90,8 +90,8 @@ class _HistoryPageState extends State<HistoryPage> {
         'host': 'Rina',
         'organization': 'Kantor D',
         'flow': 'Invitation',
-        'periodStart': '17 Jul 25 08:00',
-        'periodEnd': '17 Jul 25 10:00',
+        'periodStart': '17 July 2025, 08:00',
+        'periodEnd': '17 July 2025, 10:00',
       },
     ];
 

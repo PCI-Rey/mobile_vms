@@ -200,7 +200,7 @@ class _AccessPassDialogState extends State<AccessPassDialog> {
                               itemBuilder: (context, index, realIndex) {
                                 final item = widget.items[index];
                                 final startStr = DateFormat(
-                                  'EEE, dd MMM yyyy • HH:mm',
+                                  'EEEE, dd MMMM yyyy • HH:mm',
                                   'en',
                                 ).format(item.visitorPeriodStart);
                                 final endStr = DateFormat(

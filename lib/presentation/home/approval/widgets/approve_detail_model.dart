@@ -250,7 +250,7 @@ class _ApprovalDetailModalState extends State<ApprovalDetailModal> {
                                   vSpace(context, 4),
                                   Text(
                                     ticket.visitorPeriodStart != null
-                                        ? DateFormat('dd MMM yyyy').format(ticket.visitorPeriodStart!)
+                                        ? DateFormat('dd MMMM yyyy').format(ticket.visitorPeriodStart!)
                                         : '-',
                                     style: TextStyle(
                                       fontSize: rfs(context, 12),
@@ -300,7 +300,7 @@ class _ApprovalDetailModalState extends State<ApprovalDetailModal> {
                                     vSpace(context, 4),
                                     Text(
                                       ticket.visitorPeriodEnd != null
-                                          ? DateFormat('dd MMM yyyy').format(ticket.visitorPeriodEnd!)
+                                          ? DateFormat('dd MMMM yyyy').format(ticket.visitorPeriodEnd!)
                                           : '-',
                                       style: TextStyle(
                                         fontSize: rfs(context, 12),

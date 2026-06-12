@@ -40,7 +40,7 @@ class ShareLinkDetailModal {
           normalized = '${normalized.replaceFirst(' ', 'T')}Z';
         }
         final date = DateTime.parse(normalized).toLocal();
-        return DateFormat('dd MMM yyyy, HH:mm').format(date);
+        return DateFormat('dd MMMM yyyy, HH:mm').format(date);
       } catch (e) {
         return dateStr;
       }

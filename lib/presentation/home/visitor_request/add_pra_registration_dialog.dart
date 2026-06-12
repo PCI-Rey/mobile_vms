@@ -2512,9 +2512,9 @@ class _FormFieldWidget extends StatelessWidget {
 
   String _formatDisplay(DateTime dt, bool withTime) {
     if (withTime) {
-      return DateFormat('EEEE, dd MMMM yyyy, HH:mm', 'id').format(dt);
+      return DateFormat('EEEE, dd MMMM yyyy, HH:mm', 'en').format(dt);
     }
-    return DateFormat('EEEE, dd MMMM yyyy', 'id').format(dt);
+    return DateFormat('EEEE, dd MMMM yyyy', 'en').format(dt);
   }
 }
 

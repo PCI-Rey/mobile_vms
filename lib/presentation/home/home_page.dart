@@ -1379,7 +1379,7 @@ class HorizontalDatePicker extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Text(
-                          DateFormat("MMM").format(date).toUpperCase(),
+                          DateFormat("MMMM").format(date).toUpperCase(),
                           style: TextStyle(
                             fontSize: rfs(context, 10),
                             fontWeight: FontWeight.w600,

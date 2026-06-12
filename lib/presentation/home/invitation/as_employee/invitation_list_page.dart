@@ -159,8 +159,8 @@ class _InvitationListPageState extends State<InvitationListPage> {
   }
 
   String _formatDateRange(DateTime? start, DateTime? end) {
-    if (start == null && end == null) return '';
-    final format = DateFormat('dd/MM/yyyy');
+  if (start == null && end == null) return '';
+  final format = DateFormat('dd MMMM yyyy');
     if (start != null && end != null) {
       return '${format.format(start)} - ${format.format(end)}';
     } else if (start != null) {

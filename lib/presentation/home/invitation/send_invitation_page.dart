@@ -643,7 +643,7 @@ class _SendInvitationPageState extends State<SendInvitationPage>
                                               Icons.login_outlined,
                                               'Period Start',
                                               DateFormat(
-                                                'dd MMM yy HH:mm',
+                                                'dd MMMM yyyy, HH:mm',
                                               ).format(item.visitorPeriodStart),
                                             ),
                                           ),
@@ -654,7 +654,7 @@ class _SendInvitationPageState extends State<SendInvitationPage>
                                               Icons.logout_outlined,
                                               'Period End',
                                               DateFormat(
-                                                'dd MMM yy HH:mm',
+                                                'dd MMMM yyyy, HH:mm',
                                               ).format(item.visitorPeriodEnd),
                                               color: isExpired
                                                   ? Colors.red.shade600
@@ -1033,7 +1033,7 @@ class _SendInvitationPageState extends State<SendInvitationPage>
                                               Icons.login_outlined,
                                               'Period Start',
                                               DateFormat(
-                                                'dd MMM yy HH:mm',
+                                                'dd MMMM yyyy, HH:mm',
                                               ).format(item.visitorPeriodStart),
                                             ),
                                           ),
@@ -1044,7 +1044,7 @@ class _SendInvitationPageState extends State<SendInvitationPage>
                                               Icons.logout_outlined,
                                               'Period End',
                                               DateFormat(
-                                                'dd MMM yy HH:mm',
+                                                'dd MMMM yyyy, HH:mm',
                                               ).format(item.visitorPeriodEnd),
                                               color: isExpired
                                                   ? Colors.red.shade600
@@ -1194,7 +1194,7 @@ Widget _buildFilterValueChip(
 
 String _formatDateRange(DateTime? start, DateTime? end) {
   if (start == null && end == null) return '';
-  final format = DateFormat('dd/MM/yyyy');
+  final format = DateFormat('dd MMMM yyyy');
   if (start != null && end != null) {
     return '${format.format(start)} - ${format.format(end)}';
   } else if (start != null) {
@@ -2012,7 +2012,7 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
                                 vSpace(context, 4),
                                 Text(
                                   DateFormat(
-                                    'dd MMM yyyy',
+                                    'dd MMMM yyyy',
                                   ).format(selectedItem.visitorPeriodStart),
                                   style: TextStyle(
                                     fontSize: rfs(context, 12),
@@ -2065,7 +2065,7 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
                                   vSpace(context, 4),
                                   Text(
                                     DateFormat(
-                                      'dd MMM yyyy',
+                                      'dd MMMM yyyy',
                                     ).format(selectedItem.visitorPeriodEnd),
                                     style: TextStyle(
                                       fontSize: rfs(context, 12),
