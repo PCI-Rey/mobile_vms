@@ -33,6 +33,13 @@ class InvitationController extends GetxController {
   final Set<String> _resolvedTickets = {};
   final Set<String> _pendingFetches = {};
 
+  // Cache for fetchAllVisitors result to avoid repeated API calls
+  List<AccessPassModel>? _cachedAllVisitors;
+  Future<List<AccessPassModel>>? _allVisitorsFuture;
+
+  /// Read-only access to the cache (null if not yet fetched).
+  List<AccessPassModel>? get cachedAllVisitors => _cachedAllVisitors;
+
   void startReminderTimer(
     int minutes,
     String ticketId,
@@ -1007,6 +1014,161 @@ class InvitationController extends GetxController {
       debugPrint('fetchTransactionVisitors error: $e');
       return [];
     }
+  }
+
+  /// Fetch ALL individual non-QuickAccess visitors for "Others Visitor" section.
+  ///
+  /// Strategy:
+  /// 1. GET /visitor/transaction/dt dengan length=1 → baca RecordsFiltered (total count)
+  /// 2. GET /visitor/transaction/dt dengan length=total → dapat semua transaction IDs
+  /// 3. Filter non-quickaccess
+  /// 4. Batch call /visitor/transaction/{id}/visitors per 20 request paralel
+  /// 5. Gabungkan + deduplicate by visitorNumber
+  /// Returns cached visitors immediately on subsequent calls.
+  Future<List<AccessPassModel>> fetchAllVisitors({bool forceRefresh = false}) async {
+    final user = _hive.getUser();
+    final token = user?.token;
+    if (token == null) return [];
+
+    // Return cache immediately if available and no force refresh
+    if (!forceRefresh && _cachedAllVisitors != null) {
+      return _cachedAllVisitors!;
+    }
+
+    // If already fetching, wait for that future instead of starting a new one
+    if (_allVisitorsFuture != null) {
+      return _allVisitorsFuture!;
+    }
+
+    _allVisitorsFuture = _doFetchAllVisitors(token);
+    try {
+      final result = await _allVisitorsFuture!;
+      _cachedAllVisitors = result;
+      return result;
+    } finally {
+      _allVisitorsFuture = null;
+    }
+  }
+
+  Future<List<AccessPassModel>> _doFetchAllVisitors(String token) async {
+    try {
+      // Step 1: Ambil total count
+      final countResponse = await _api.getVisitorDt(token, length: 1);
+      if (countResponse.statusCode != 200) return [];
+      final countData = countResponse.data;
+      if (countData is! Map) return [];
+
+      final totalCount = (countData['RecordsFiltered'] ??
+              countData['records_filtered'] ??
+              countData['recordsFiltered'] ??
+              50)
+          as int;
+
+      debugPrint('fetchAllVisitors: total transactions = $totalCount');
+
+      // Step 2: Fetch semua transaksi
+      final dtResponse = await _api.getVisitorDt(
+        token,
+        length: totalCount,
+        sortDir: 'desc',
+      );
+      if (dtResponse.statusCode != 200) return [];
+      final dtData = dtResponse.data;
+      if (dtData is! Map) return [];
+      if (dtData['status'] != 'success' && dtData['status_code'] != 200) {
+        return [];
+      }
+
+      final rawTransactions = dtData['collection'] ?? dtData['data'];
+      if (rawTransactions is! List) return [];
+
+      // Step 3: Filter hanya non-quickaccess
+      final transactions = rawTransactions
+          .whereType<Map<String, dynamic>>()
+          .where((t) =>
+              (t['flow']?.toString() ?? '').toLowerCase() != 'quickaccessvisit')
+          .toList();
+
+      debugPrint(
+        'fetchAllVisitors: ${transactions.length} non-quickaccess transactions',
+      );
+
+      // Step 4: Batch resolve visitor names (20 per batch)
+      const batchSize = 20;
+      final List<AccessPassModel> allVisitors = [];
+      final Set<String> seen = {};
+
+      for (int i = 0; i < transactions.length; i += batchSize) {
+        final batch = transactions.skip(i).take(batchSize).toList();
+
+        final batchResults = await Future.wait(
+          batch.map((trx) async {
+            final trxId =
+                (trx['transaction_visitor_id'] ?? trx['id'])?.toString() ?? '';
+            if (trxId.isEmpty) return <Map<String, dynamic>>[];
+
+            try {
+              final visitors = await fetchTransactionVisitors(trxId);
+              final parentFlow = trx['flow']?.toString() ?? '';
+              final parentSitePlaceName =
+                  (trx['site_place_name'] ?? trx['host_organization_name'])
+                          ?.toString() ??
+                      '';
+              final parentAgenda = trx['agenda']?.toString() ?? '';
+              final parentHostName = trx['host_name']?.toString() ?? '';
+
+              // Inject parent fields ke setiap visitor jika kosong
+              for (final v in visitors) {
+                if ((v['flow']?.toString() ?? '').isEmpty) {
+                  v['flow'] = parentFlow;
+                }
+                if ((v['site_place_name']?.toString() ?? '').isEmpty) {
+                  v['site_place_name'] = parentSitePlaceName;
+                }
+                if ((v['agenda']?.toString() ?? '').isEmpty) {
+                  v['agenda'] = parentAgenda;
+                }
+                if ((v['host_name']?.toString() ?? '').isEmpty) {
+                  v['host_name'] = parentHostName;
+                }
+              }
+              return visitors;
+            } catch (e) {
+              debugPrint(
+                'fetchAllVisitors - error for trxId $trxId: $e',
+              );
+              return <Map<String, dynamic>>[];
+            }
+          }),
+        );
+
+        // Step 5: Flatten + deduplicate
+        for (final visitorMaps in batchResults) {
+          for (final v in visitorMaps) {
+            final model = AccessPassModel.fromJson(v);
+            final key = model.visitorNumber.isNotEmpty
+                ? model.visitorNumber
+                : '${model.visitorName}_${model.visitorEmail}';
+            if (key.isNotEmpty && !seen.contains(key)) {
+              seen.add(key);
+              allVisitors.add(model);
+            }
+          }
+        }
+      }
+
+      debugPrint('fetchAllVisitors: resolved ${allVisitors.length} visitors');
+      return allVisitors;
+    } catch (e) {
+      debugPrint('fetchAllVisitors error: $e');
+      return [];
+    }
+  }
+
+  /// Clear the cached visitor list (e.g., on pull-to-refresh).
+  void clearAllVisitorsCache() {
+    _cachedAllVisitors = null;
+    _allVisitorsFuture = null;
   }
 
   /// POST approve-meetinghost. Returns true on success (no snackbar — caller handles UI).

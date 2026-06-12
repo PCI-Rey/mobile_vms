@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'package:dio/dio.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
@@ -65,6 +66,8 @@ class _SendInvitationPageState extends State<SendInvitationPage>
       }
       setState(() {});
     });
+    // Pre-warm the Others Visitor cache so it's ready when a detail sheet is opened
+    controller.fetchAllVisitors();
   }
 
   @override
@@ -101,6 +104,10 @@ class _SendInvitationPageState extends State<SendInvitationPage>
                     selectedGedung = null;
                   });
                   controller.fetchOngoingInvitations(clearFilters: true);
+                  // Invalidate cache so new visitor shows up in Others Visitor
+                  controller.clearAllVisitorsCache();
+                  // Re-warm the cache in background
+                  controller.fetchAllVisitors();
                 }
               },
               icon: Container(
@@ -1239,11 +1246,16 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
   int _currentBarcodeIndex = 0;
   final CarouselSliderController _barcodeCarouselController = CarouselSliderController();
 
+  // Others Visitor — all visitors from /visitor/dt
+  bool _loadingAllVisitors = false;
+  List<AccessPassModel> _allVisitorModels = [];
+
   @override
   void initState() {
     super.initState();
     _fetchSiteDetail();
     _fetchGroupVisitors();
+    _fetchAllVisitors();
   }
 
   Future<void> _fetchGroupVisitors() async {
@@ -1352,6 +1364,159 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
     }
   }
 
+  /// Fetch all visitors from /visitor/dt for the Others Visitor section.
+  Future<void> _fetchAllVisitors() async {
+    final controller = Get.isRegistered<InvitationController>()
+        ? Get.find<InvitationController>()
+        : Get.put(InvitationController());
+
+    // If cache already has data, populate immediately (no loading spinner)
+    if (controller.cachedAllVisitors != null) {
+      final cached = controller.cachedAllVisitors!;
+      if (mounted) {
+        setState(() {
+          _allVisitorModels = cached
+              .where((v) => v.flow.toLowerCase() != 'quickaccessvisit')
+              .toList();
+          _loadingAllVisitors = false;
+        });
+      }
+      return;
+    }
+
+    // Cache not ready yet — show spinner and wait
+    if (mounted) setState(() => _loadingAllVisitors = true);
+    try {
+      final visitors = await controller.fetchAllVisitors();
+      if (mounted) {
+        setState(() {
+          _allVisitorModels = visitors
+              .where((v) => v.flow.toLowerCase() != 'quickaccessvisit')
+              .toList();
+          _loadingAllVisitors = false;
+        });
+      }
+    } catch (e) {
+      debugPrint('_fetchAllVisitors error: $e');
+      if (mounted) setState(() => _loadingAllVisitors = false);
+    }
+  }
+
+  /// Show a brief visitor profile bottom sheet (name, email, phone).
+  void _showVisitorProfilePopup(BuildContext context, AccessPassModel model) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (ctx) {
+        return Container(
+          margin: EdgeInsets.symmetric(horizontal: rw(context, 16), vertical: rh(context, 16)),
+          padding: EdgeInsets.all(rw(context, 20)),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(rw(context, 20)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Handle
+              Container(
+                width: rw(context, 40),
+                height: rh(context, 4),
+                margin: EdgeInsets.only(bottom: rh(context, 16)),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(rw(context, 2)),
+                ),
+              ),
+              // Avatar
+              CircleAvatar(
+                radius: rw(context, 32),
+                backgroundColor: const Color(0xFF005596).withValues(alpha: 0.12),
+                child: Text(
+                  model.visitorName.isNotEmpty ? model.visitorName[0].toUpperCase() : 'V',
+                  style: TextStyle(
+                    fontSize: rfs(context, 24),
+                    fontWeight: FontWeight.bold,
+                    color: const Color(0xFF005596),
+                  ),
+                ),
+              ),
+              vSpace(context, 12),
+              Text(
+                model.visitorName.isNotEmpty ? model.visitorName : 'Visitor',
+                style: TextStyle(
+                  fontSize: rfs(context, 16),
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              vSpace(context, 16),
+              // Info rows
+              _profileInfoRow(context, Icons.email_outlined, 'Email',
+                  model.visitorEmail.isNotEmpty ? model.visitorEmail : '-'),
+              vSpace(context, 8),
+              _profileInfoRow(context, Icons.phone_outlined, 'Phone',
+                  model.visitorPhone.isNotEmpty ? model.visitorPhone : '-'),
+              vSpace(context, 8),
+              _profileInfoRow(context, Icons.confirmation_number_outlined, 'Invitation Code',
+                  model.invitationCode.isNotEmpty ? model.invitationCode : '-'),
+              vSpace(context, 8),
+              _profileInfoRow(context, Icons.pin_outlined, 'Visitor Number',
+                  model.visitorNumber.isNotEmpty ? model.visitorNumber : '-'),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _profileInfoRow(
+    BuildContext context,
+    IconData icon,
+    String label,
+    String value,
+  ) {
+    return Row(
+      children: [
+        Container(
+          width: rw(context, 36),
+          height: rw(context, 36),
+          decoration: BoxDecoration(
+            color: Colors.grey.shade100,
+            borderRadius: BorderRadius.circular(rw(context, 8)),
+          ),
+          child: Icon(icon, size: rw(context, 18), color: Colors.grey.shade600),
+        ),
+        hSpace(context, 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: rfs(context, 11),
+                  color: Colors.grey.shade500,
+                ),
+              ),
+              Text(
+                value,
+                style: TextStyle(
+                  fontSize: rfs(context, 13),
+                  fontWeight: FontWeight.w600,
+                  color: Colors.black87,
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
   Future<void> _fetchSiteDetail() async {
     try {
       final api = ApiService();
@@ -1374,6 +1539,11 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
           });
           return;
         }
+      }
+    } on DioException catch (e) {
+      // 404 is expected when the visitor's id belongs to the transaction endpoint, not /visitor/{id}
+      if (e.response?.statusCode != 404) {
+        debugPrint('fetchSiteDetail error: ${e.message}');
       }
     } catch (e) {
       debugPrint('fetchSiteDetail error: $e');
@@ -2270,45 +2440,49 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
 
                     if (!widget.isFullDetail &&
                         widget.item.flow.toLowerCase() != 'quickaccessvisit' &&
-                        (_loadingGroupVisitors || _groupVisitorModels.length > 1)) ...[
+                        (_loadingAllVisitors || _allVisitorModels.isNotEmpty)) ...[
                       _section(
                         context,
                         'Others Visitor',
-                        trailing: GestureDetector(
-                          onTap: () {
-                            showModalBottomSheet(
-                              context: context,
-                              isScrollControlled: true,
-                              backgroundColor: Colors.transparent,
-                              builder: (ctx) => InvitationDetailSheet(
-                                item: widget.item,
-                                isFullDetail: true,
-                              ),
-                            );
-                          },
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                'More',
-                                style: TextStyle(
-                                  fontSize: rfs(context, 12),
-                                  fontWeight: FontWeight.bold,
-                                  color: const Color(0xFF005596),
+                        trailing: _allVisitorModels.isNotEmpty
+                            ? GestureDetector(
+                                onTap: () {
+                                  // Show full list in a scrollable bottom sheet
+                                  showModalBottomSheet(
+                                    context: context,
+                                    isScrollControlled: true,
+                                    backgroundColor: Colors.transparent,
+                                    builder: (ctx) => _AllVisitorsSheet(
+                                      visitors: _allVisitorModels,
+                                      onTapVisitor: (c, model) =>
+                                          _showVisitorProfilePopup(c, model),
+                                    ),
+                                  );
+                                },
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      'More',
+                                      style: TextStyle(
+                                        fontSize: rfs(context, 12),
+                                        fontWeight: FontWeight.bold,
+                                        color: const Color(0xFF005596),
+                                      ),
+                                    ),
+                                    hSpace(context, 4),
+                                    Icon(
+                                      Icons.arrow_forward_rounded,
+                                      size: rw(context, 16),
+                                      color: const Color(0xFF005596),
+                                    ),
+                                  ],
                                 ),
-                              ),
-                              hSpace(context, 4),
-                              Icon(
-                                Icons.arrow_forward_rounded,
-                                size: rw(context, 16),
-                                color: const Color(0xFF005596),
-                              ),
-                            ],
-                          ),
-                        ),
+                              )
+                            : null,
                       ),
                       vSpace(context, 8),
-                      if (_loadingGroupVisitors)
+                      if (_loadingAllVisitors)
                         const Center(
                           child: Padding(
                             padding: EdgeInsets.all(8.0),
@@ -2316,63 +2490,67 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
                           ),
                         )
                       else
-                        Container(
-                          height: rh(context, 80),
+                        SizedBox(
+                          height: rh(context, 88),
                           child: ListView.separated(
                             scrollDirection: Axis.horizontal,
-                            itemCount: _groupVisitorModels.length > 7 ? 7 : _groupVisitorModels.length,
-                            separatorBuilder: (context, index) => hSpace(context, 12),
+                            itemCount: _allVisitorModels.length > 7
+                                ? 7
+                                : _allVisitorModels.length,
+                            separatorBuilder: (context, index) =>
+                                hSpace(context, 12),
                             itemBuilder: (context, index) {
-                              final model = _groupVisitorModels[index];
-                              final isSelected = _selectedGroupVisitor == model;
-                              
+                              final model = _allVisitorModels[index];
+                              final initials = model.visitorName.isNotEmpty
+                                  ? model.visitorName[0].toUpperCase()
+                                  : 'V';
+                              final colors = [
+                                const Color(0xFF1565C0),
+                                const Color(0xFF00695C),
+                                const Color(0xFFAD1457),
+                                const Color(0xFF6A1B9A),
+                                const Color(0xFF37474F),
+                                const Color(0xFFE65100),
+                                const Color(0xFF2E7D32),
+                              ];
+                              final avatarColor = colors[index % colors.length];
+
                               return GestureDetector(
-                                onTap: () {
-                                  // No-op in simple view: "ketika pencet pencet lingkaran ini, dia gabisa keganti yaa, jadi datanya ga keganti. khusus di depan saja, kalau pas klik more baru bisa"
-                                },
+                                onTap: () =>
+                                    _showVisitorProfilePopup(context, model),
                                 child: Column(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
                                     CircleAvatar(
-                                      radius: rw(context, 26),
-                                      backgroundColor: isSelected
-                                          ? const Color(0xFF005596)
-                                          : Colors.grey.shade300,
-                                      child: CircleAvatar(
-                                        radius: rw(context, 24),
-                                        backgroundColor: isSelected
-                                            ? const Color(0xFFE8F1FD)
-                                            : Colors.white,
-                                        child: Text(
-                                          model.visitorName.isNotEmpty
-                                              ? model.visitorName[0].toUpperCase()
-                                              : 'V',
-                                          style: TextStyle(
-                                            color: isSelected
-                                                ? const Color(0xFF005596)
-                                                : Colors.grey.shade700,
-                                            fontSize: rfs(context, 15),
-                                            fontWeight: FontWeight.bold,
-                                          ),
+                                      radius: rw(context, 28),
+                                      backgroundColor:
+                                          avatarColor.withValues(alpha: 0.15),
+                                      child: Text(
+                                        initials,
+                                        style: TextStyle(
+                                          color: avatarColor,
+                                          fontSize: rfs(context, 15),
+                                          fontWeight: FontWeight.bold,
                                         ),
                                       ),
                                     ),
                                     vSpace(context, 4),
-                                    Container(
+                                    SizedBox(
                                       width: rw(context, 62),
                                       child: Text(
                                         model.visitorName.isNotEmpty
-                                            ? model.visitorName.trim().split(' ').first
+                                            ? model.visitorName
+                                                .trim()
+                                                .split(' ')
+                                                .first
                                             : 'Visitor',
                                         textAlign: TextAlign.center,
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
                                         style: TextStyle(
                                           fontSize: rfs(context, 11),
-                                          fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                                          color: isSelected
-                                              ? const Color(0xFF005596)
-                                              : Colors.black87,
+                                          fontWeight: FontWeight.w500,
+                                          color: Colors.black87,
                                         ),
                                       ),
                                     ),
@@ -2570,6 +2748,79 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
                           ],
                         );
                       })(),
+                      vSpace(context, 16),
+                    ],
+
+                    // ── Digital Invitation Card section ───────────────────
+                    if (!widget.isFullDetail) ...[
+                      _section(context, 'Digital Invitation Card'),
+                      vSpace(context, 8),
+                      StatefulBuilder(
+                        builder: (context, setCardState) {
+                          final cardItems = _groupVisitorModels.isNotEmpty
+                              ? _groupVisitorModels
+                              : [selectedItem];
+                          int cardIndex = 0;
+                          return Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              CarouselSlider.builder(
+                                itemCount: cardItems.length,
+                                options: CarouselOptions(
+                                  height: rh(context, 190),
+                                  autoPlay: false,
+                                  enlargeCenterPage: false,
+                                  viewportFraction: 1.0,
+                                  enableInfiniteScroll: cardItems.length > 1,
+                                  onPageChanged: (index, reason) {
+                                    setCardState(() => cardIndex = index);
+                                  },
+                                ),
+                                itemBuilder: (context, index, realIndex) {
+                                  final model = cardItems[index];
+                                  return Padding(
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: rw(context, 20),
+                                    ),
+                                    child: _DigitalInvitationCard(
+                                      name: model.visitorName.isNotEmpty
+                                          ? model.visitorName
+                                          : '-',
+                                      visitorNumber: model.visitorNumber.isNotEmpty
+                                          ? model.visitorNumber
+                                          : '-',
+                                    ),
+                                  );
+                                },
+                              ),
+                              if (cardItems.length > 1) ...[
+                                vSpace(context, 8),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: cardItems.asMap().entries.map((entry) {
+                                    final isActive = cardIndex == entry.key;
+                                    return GestureDetector(
+                                      child: AnimatedContainer(
+                                        duration: const Duration(milliseconds: 300),
+                                        curve: Curves.easeInOut,
+                                        width: isActive ? rw(context, 20.0) : rw(context, 6.0),
+                                        height: rw(context, 6.0),
+                                        margin: EdgeInsets.symmetric(horizontal: rw(context, 3.0)),
+                                        decoration: BoxDecoration(
+                                          borderRadius: BorderRadius.circular(3.0),
+                                          color: isActive
+                                              ? const Color(0xFF005596)
+                                              : const Color(0xFF005596).withValues(alpha: 0.3),
+                                        ),
+                                      ),
+                                    );
+                                  }).toList(),
+                                ),
+                              ],
+                            ],
+                          );
+                        },
+                      ),
                       vSpace(context, 16),
                     ],
                   ],
@@ -3250,4 +3501,486 @@ class _SlidableDeleteCardState extends State<_SlidableDeleteCard> {
       ),
     );
   }
+}
+
+// ─── All Visitors Full-List Sheet ─────────────────────────────────────────────
+class _AllVisitorsSheet extends StatefulWidget {
+  final List<AccessPassModel> visitors;
+  final void Function(BuildContext, AccessPassModel) onTapVisitor;
+  const _AllVisitorsSheet({
+    required this.visitors,
+    required this.onTapVisitor,
+  });
+
+  @override
+  State<_AllVisitorsSheet> createState() => _AllVisitorsSheetState();
+}
+
+class _AllVisitorsSheetState extends State<_AllVisitorsSheet> {
+  final TextEditingController _searchCtrl = TextEditingController();
+  List<AccessPassModel> _filtered = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _filtered = List.from(widget.visitors);
+    _searchCtrl.addListener(_onSearch);
+  }
+
+  void _onSearch() {
+    final q = _searchCtrl.text.trim().toLowerCase();
+    setState(() {
+      _filtered = widget.visitors.where((v) {
+        return v.visitorName.toLowerCase().contains(q);
+      }).toList();
+    });
+  }
+
+  @override
+  void dispose() {
+    _searchCtrl.removeListener(_onSearch);
+    _searchCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = [
+      const Color(0xFF1565C0),
+      const Color(0xFF00695C),
+      const Color(0xFFAD1457),
+      const Color(0xFF6A1B9A),
+      const Color(0xFF37474F),
+      const Color(0xFFE65100),
+      const Color(0xFF2E7D32),
+    ];
+
+    return DraggableScrollableSheet(
+      initialChildSize: 0.85,
+      minChildSize: 0.5,
+      maxChildSize: 0.97,
+      expand: false,
+      builder: (context, scrollController) {
+        return Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(rw(context, 20)),
+              topRight: Radius.circular(rw(context, 20)),
+            ),
+          ),
+          child: Column(
+            children: [
+              // Drag handle
+              Padding(
+                padding: EdgeInsets.only(top: rh(context, 12), bottom: rh(context, 8)),
+                child: Container(
+                  width: rw(context, 40),
+                  height: rh(context, 4),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade300,
+                    borderRadius: BorderRadius.circular(rw(context, 2)),
+                  ),
+                ),
+              ),
+              // Header
+              Padding(
+                padding: EdgeInsets.symmetric(
+                  horizontal: rw(context, 20),
+                  vertical: rh(context, 8),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: EdgeInsets.all(rw(context, 8)),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF005596).withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(rw(context, 8)),
+                      ),
+                      child: const Icon(
+                        Icons.people_outline_rounded,
+                        color: Color(0xFF005596),
+                      ),
+                    ),
+                    hSpace(context, 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Others Visitor',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w800,
+                              fontSize: rfs(context, 16),
+                              color: Colors.black87,
+                            ),
+                          ),
+                          Text(
+                            '${widget.visitors.length} visitor',
+                            style: TextStyle(
+                              fontSize: rfs(context, 12),
+                              color: Colors.grey.shade500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Divider(height: 1, color: Colors.grey.shade100),
+              // Search bar
+              Padding(
+                padding: EdgeInsets.symmetric(
+                  horizontal: rw(context, 16),
+                  vertical: rh(context, 10),
+                ),
+                child: TextField(
+                  controller: _searchCtrl,
+                  decoration: InputDecoration(
+                    hintText: 'Search visitor...',
+                    hintStyle: TextStyle(
+                      fontSize: rfs(context, 13),
+                      color: Colors.grey.shade400,
+                    ),
+                    prefixIcon: Icon(Icons.search, color: Colors.grey.shade400),
+                    filled: true,
+                    fillColor: Colors.grey.shade100,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(rw(context, 12)),
+                      borderSide: BorderSide.none,
+                    ),
+                    contentPadding: EdgeInsets.symmetric(
+                      vertical: rh(context, 10),
+                      horizontal: rw(context, 12),
+                    ),
+                  ),
+                  style: TextStyle(fontSize: rfs(context, 13)),
+                ),
+              ),
+              // List
+              Expanded(
+                child: _filtered.isEmpty
+                    ? Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.person_off_outlined,
+                                size: rw(context, 48), color: Colors.grey.shade300),
+                            vSpace(context, 8),
+                            Text(
+                              'Tidak ada visitor ditemukan',
+                              style: TextStyle(
+                                color: Colors.grey.shade500,
+                                fontSize: rfs(context, 13),
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                    : ListView.separated(
+                        controller: scrollController,
+                        padding: EdgeInsets.symmetric(
+                          horizontal: rw(context, 16),
+                          vertical: rh(context, 8),
+                        ),
+                        itemCount: _filtered.length,
+                        separatorBuilder: (_, __) => vSpace(context, 8),
+                        itemBuilder: (context, index) {
+                          final v = _filtered[index];
+                          final avatarColor = colors[index % colors.length];
+                          final initials = v.visitorName.isNotEmpty
+                              ? v.visitorName[0].toUpperCase()
+                              : 'V';
+
+                          return GestureDetector(
+                            onTap: () {
+                              widget.onTapVisitor(context, v);
+                            },
+                            child: Container(
+                              padding: EdgeInsets.symmetric(
+                                horizontal: rw(context, 14),
+                                vertical: rh(context, 12),
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(rw(context, 12)),
+                                border: Border.all(color: Colors.grey.shade100),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withValues(alpha: 0.04),
+                                    blurRadius: rw(context, 6),
+                                    offset: Offset(0, rh(context, 2)),
+                                  ),
+                                ],
+                              ),
+                              child: Row(
+                                children: [
+                                  // Avatar
+                                  CircleAvatar(
+                                    radius: rw(context, 24),
+                                    backgroundColor:
+                                        avatarColor.withValues(alpha: 0.14),
+                                    child: Text(
+                                      initials,
+                                      style: TextStyle(
+                                        color: avatarColor,
+                                        fontSize: rfs(context, 16),
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                  hSpace(context, 12),
+                                  // Info
+                                  Expanded(
+                                    child: Text(
+                                      v.visitorName.isNotEmpty
+                                          ? v.visitorName
+                                          : 'Visitor',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.w700,
+                                        fontSize: rfs(context, 14),
+                                        color: Colors.black87,
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Digital Invitation Card Widget
+// Data source: same as Barcode — from /visitor/transaction/{id}/visitors
+// Displayed fields: visitorName, visitorNumber
+// ─────────────────────────────────────────────────────────────────────────────
+class _DigitalInvitationCard extends StatelessWidget {
+  final String name;
+  final String visitorNumber;
+
+  const _DigitalInvitationCard({
+    required this.name,
+    required this.visitorNumber,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(rw(context, 20)),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF005596).withValues(alpha: 0.35),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(rw(context, 20)),
+        child: SizedBox(
+          width: double.infinity,
+          height: rh(context, 190),
+          child: Stack(
+            children: [
+              // ── Base gradient background ────────────────────────────────
+              Positioned.fill(
+                child: CustomPaint(
+                  painter: _CardGeometricPainter(),
+                ),
+              ),
+
+              // ── Logo / brand chip top-left ──────────────────────────────
+              Positioned(
+                top: rh(context, 18),
+                left: rw(context, 20),
+                child: Container(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: rw(context, 10),
+                    vertical: rh(context, 4),
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.18),
+                    borderRadius: BorderRadius.circular(rw(context, 6)),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.4),
+                      width: 1,
+                    ),
+                  ),
+                  child: Text(
+                    'VISITOR CARD',
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.9),
+                      fontSize: rfs(context, 9),
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 1.5,
+                    ),
+                  ),
+                ),
+              ),
+
+              // ── Chip icon top-right ─────────────────────────────────────
+              Positioned(
+                top: rh(context, 18),
+                right: rw(context, 20),
+                child: Icon(
+                  Icons.credit_card_rounded,
+                  color: Colors.white.withValues(alpha: 0.5),
+                  size: rw(context, 22),
+                ),
+              ),
+
+              // ── Visitor Name ────────────────────────────────────────────
+              Positioned(
+                bottom: rh(context, 42),
+                left: rw(context, 20),
+                right: rw(context, 20),
+                child: Text(
+                  name,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: rfs(context, 20),
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 0.3,
+                    shadows: [
+                      Shadow(
+                        color: Colors.black.withValues(alpha: 0.2),
+                        blurRadius: 4,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+
+              // ── Visitor Number ──────────────────────────────────────────
+              Positioned(
+                bottom: rh(context, 20),
+                left: rw(context, 20),
+                right: rw(context, 20),
+                child: Text(
+                  visitorNumber,
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.88),
+                    fontSize: rfs(context, 13),
+                    fontWeight: FontWeight.w500,
+                    letterSpacing: 1.2,
+                  ),
+                ),
+              ),
+
+              // ── NFC / wave icon bottom-right ────────────────────────────
+              Positioned(
+                bottom: rh(context, 18),
+                right: rw(context, 20),
+                child: Icon(
+                  Icons.wifi_rounded,
+                  color: Colors.white.withValues(alpha: 0.55),
+                  size: rw(context, 22),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _CardGeometricPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    // ── Background base ───────────────────────────────────────────────────
+    final bgPaint = Paint()
+      ..shader = LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [
+          const Color(0xFF005596),
+          const Color(0xFF1976D2),
+          const Color(0xFF0D47A1),
+        ],
+        stops: const [0.0, 0.55, 1.0],
+      ).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        Rect.fromLTWH(0, 0, size.width, size.height),
+        const Radius.circular(20),
+      ),
+      bgPaint,
+    );
+
+    // ── Large diagonal accent strip (top-right, like BPJS green) ─────────
+    final stripPaint = Paint()
+      ..shader = LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [
+          const Color(0xFF42A5F5).withValues(alpha: 0.5),
+          const Color(0xFF1565C0).withValues(alpha: 0.15),
+        ],
+      ).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
+
+    final stripPath = Path()
+      ..moveTo(size.width * 0.42, 0)
+      ..lineTo(size.width, 0)
+      ..lineTo(size.width, size.height * 0.62)
+      ..lineTo(size.width * 0.18, size.height)
+      ..lineTo(size.width * 0.0, size.height * 0.55)
+      ..close();
+    canvas.drawPath(stripPath, stripPaint);
+
+    // ── Secondary accent stripe (yellow-ish tint, like BPJS right edge) ──
+    final accentPaint = Paint()
+      ..color = const Color(0xFF64B5F6).withValues(alpha: 0.25);
+    final accentPath = Path()
+      ..moveTo(size.width * 0.70, 0)
+      ..lineTo(size.width, 0)
+      ..lineTo(size.width, size.height * 0.35)
+      ..close();
+    canvas.drawPath(accentPath, accentPaint);
+
+    // ── Bottom-left darker strip ──────────────────────────────────────────
+    final darkPaint = Paint()
+      ..color = const Color(0xFF003D6E).withValues(alpha: 0.55);
+    final darkPath = Path()
+      ..moveTo(0, size.height * 0.65)
+      ..lineTo(size.width * 0.52, size.height)
+      ..lineTo(0, size.height)
+      ..close();
+    canvas.drawPath(darkPath, darkPaint);
+
+    // ── Subtle circle shimmer top-right ───────────────────────────────────
+    final shimmerPaint = Paint()
+      ..shader = RadialGradient(
+        colors: [
+          Colors.white.withValues(alpha: 0.12),
+          Colors.white.withValues(alpha: 0.0),
+        ],
+      ).createShader(Rect.fromCircle(
+        center: Offset(size.width * 0.82, size.height * 0.2),
+        radius: size.width * 0.35,
+      ));
+    canvas.drawCircle(
+      Offset(size.width * 0.82, size.height * 0.2),
+      size.width * 0.35,
+      shimmerPaint,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
