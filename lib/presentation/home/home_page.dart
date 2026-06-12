@@ -18,6 +18,7 @@ import '../../core/core.dart';
 import 'access_pass/access_pass_page.dart';
 import 'approval/approval_page.dart';
 import 'invitation/controller/invitation_controller.dart';
+import '../../data/models/access_pass_model.dart';
 import '../../data/models/approval_ticket_model.dart';
 import '../dashboard.dart';
 
@@ -900,21 +901,133 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
           'icon': Icons.badge_outlined,
           'bgColor': const Color(0xFFE8F1FD),
           'iconColor': const Color(0xFF1976D2),
-          'onTap': () => showAccessPassDialog(
-            context: context,
-            name: UserController.to.fullName,
-            date: 'Mon, 19 Jul 2025',
-            time: '10:00 - 13:00',
-            invitationCode: '729038',
-            cardNumber: '6789209930',
-            vehiclePlateNo: 'B1245K',
-            parkingSlot: 'Slot A1',
-            buildingName: 'Gedung HQ',
-            visitorId: '7E20A56D62B',
-            profileImagePath: 'assets/images/Endru.png',
-            isTracked: true,
-            isLowBattery: true,
-          ),
+          'onTap': () {
+            // Show loading overlay
+            showDialog(
+              context: context,
+              barrierDismissible: false,
+              builder: (loadingCtx) => const Center(
+                child: CircularProgressIndicator(),
+              ),
+            );
+
+            Future.microtask(() async {
+              try {
+                // Ensure parent transactions list is populated
+                if (invitationController.allRawVisitors.isEmpty) {
+                  await invitationController.fetchOngoingInvitations(isSilent: true);
+                }
+
+                final String currentUserName = UserController.to.fullName.toLowerCase().trim();
+                final List<AccessPassModel> employeePasses = [];
+                final DateTime now = DateTime.now();
+
+                // Filter parent transactions that are not expired yet
+                final activeParents = invitationController.allRawVisitors.where((parent) {
+                  return parent.visitorPeriodEnd.isAfter(now);
+                }).toList();
+
+                // Fetch sub-visitors in parallel for active parent transactions
+                final List<Future<void>> fetchFutures = activeParents.map((parent) async {
+                  final String parentId = parent.transactionVisitorId.isNotEmpty ? parent.transactionVisitorId : parent.id;
+                  if (parentId.isEmpty) return;
+
+                  final visitorsList = await invitationController.fetchTransactionVisitors(parentId);
+                  for (var visitorMap in visitorsList) {
+                    final visitorName = (visitorMap['visitor_name'] ?? '').toString().toLowerCase().trim();
+                    if (visitorName.isNotEmpty && (visitorName.contains('endru') || (currentUserName.isNotEmpty && visitorName.contains(currentUserName)))) {
+                      final model = AccessPassModel.fromJson(visitorMap);
+
+                      // Merge sub-visitor details with parent transaction details
+                      final mergedModel = AccessPassModel(
+                        id: model.id.isEmpty ? parent.id : model.id,
+                        agenda: model.agenda.isEmpty ? parent.agenda : model.agenda,
+                        initialTrxCode: model.initialTrxCode.isEmpty ? parent.initialTrxCode : model.initialTrxCode,
+                        host: model.host.isEmpty ? parent.host : model.host,
+                        isGroup: parent.isGroup,
+                        groupName: model.groupName.isEmpty ? parent.groupName : model.groupName,
+                        groupCode: parent.groupCode,
+                        visitorPeriodStart: parent.visitorPeriodStart,
+                        visitorPeriodEnd: parent.visitorPeriodEnd,
+                        visitorNumber: model.visitorNumber.isNotEmpty ? model.visitorNumber : parent.visitorNumber,
+                        visitorCode: model.visitorCode.isEmpty ? parent.visitorCode : model.visitorCode,
+                        invitationCode: model.invitationCode.isEmpty ? parent.invitationCode : model.invitationCode,
+                        visitorStatus: model.visitorStatus.isEmpty ? parent.visitorStatus : model.visitorStatus,
+                        sitePlaceName: model.sitePlaceName.isEmpty ? parent.sitePlaceName : model.sitePlaceName,
+                        hostName: model.hostName.isEmpty ? parent.hostName : model.hostName,
+                        parkingSlot: model.parkingSlot.isEmpty ? parent.parkingSlot : model.parkingSlot,
+                        parkingArea: model.parkingArea.isEmpty ? parent.parkingArea : model.parkingArea,
+                        vehiclePlateNumber: model.vehiclePlateNumber.isEmpty ? parent.vehiclePlateNumber : model.vehiclePlateNumber,
+                        vehicleType: model.vehicleType.isEmpty ? parent.vehicleType : model.vehicleType,
+                        isDriving: model.isDriving,
+                        tz: model.tz.isEmpty ? parent.tz : model.tz,
+                        siteId: model.siteId.isEmpty ? parent.siteId : model.siteId,
+                        visitorName: (visitorMap['visitor_name'] ?? '').toString().isNotEmpty ? (visitorMap['visitor_name'] ?? '').toString() : UserController.to.fullName,
+                        isPraregisterDone: model.isPraregisterDone,
+                        visitorRole: model.visitorRole.isEmpty ? parent.visitorRole : model.visitorRole,
+                        approvalStatus: model.approvalStatus.isEmpty ? parent.approvalStatus : model.approvalStatus,
+                        visitorTypeName: model.visitorTypeName.isEmpty ? parent.visitorTypeName : model.visitorTypeName,
+                        visitorTypeId: model.visitorTypeId.isEmpty ? parent.visitorTypeId : model.visitorTypeId,
+                        invitedByName: model.invitedByName.isEmpty ? parent.invitedByName : model.invitedByName,
+                        invitedBy: model.invitedBy.isEmpty ? parent.invitedBy : model.invitedBy,
+                        hostOrganizationName: model.hostOrganizationName.isEmpty ? parent.hostOrganizationName : model.hostOrganizationName,
+                        flow: model.flow.isEmpty ? parent.flow : model.flow,
+                        visitorOrganizationName: model.visitorOrganizationName.isEmpty ? parent.visitorOrganizationName : model.visitorOrganizationName,
+                        visitorPhone: model.visitorPhone.isEmpty ? parent.visitorPhone : model.visitorPhone,
+                        visitorEmail: model.visitorEmail.isEmpty ? parent.visitorEmail : model.visitorEmail,
+                        visitorIdentityId: model.visitorIdentityId.isEmpty ? parent.visitorIdentityId : model.visitorIdentityId,
+                        receiverName: model.receiverName.isEmpty ? parent.receiverName : model.receiverName,
+                        receiverEmail: model.receiverEmail.isEmpty ? parent.receiverEmail : model.receiverEmail,
+                        receiverPhone: model.receiverPhone.isEmpty ? parent.receiverPhone : model.receiverPhone,
+                      );
+
+                      if (!employeePasses.any((item) => item.id == mergedModel.id)) {
+                        employeePasses.add(mergedModel);
+                      }
+                    }
+                  }
+                }).toList();
+
+                await Future.wait(fetchFutures);
+
+                // Sort employeePasses so that active passes are first, and sorted by visitorPeriodStart descending (newest first)
+                employeePasses.sort((a, b) {
+                  final bool aExpired = now.isAfter(a.visitorPeriodEnd);
+                  final bool bExpired = now.isAfter(b.visitorPeriodEnd);
+                  if (aExpired != bExpired) {
+                    return aExpired ? 1 : -1;
+                  }
+                  return b.visitorPeriodStart.compareTo(a.visitorPeriodStart);
+                });
+
+                // Dismiss loading overlay
+                if (context.mounted && Navigator.of(context).canPop()) {
+                  Navigator.of(context).pop();
+                }
+
+                if (employeePasses.isEmpty) {
+                  Get.snackbar(
+                    'Access Pass',
+                    'No active access pass found for this employee.',
+                    backgroundColor: Colors.redAccent,
+                    colorText: Colors.white,
+                    snackPosition: SnackPosition.BOTTOM,
+                  );
+                } else {
+                  showAccessPassDialog(
+                    context: context,
+                    items: employeePasses,
+                  );
+                }
+              } catch (e) {
+                // Dismiss loading overlay on error
+                if (context.mounted && Navigator.of(context).canPop()) {
+                  Navigator.of(context).pop();
+                }
+                debugPrint('Error loading access passes: $e');
+              }
+            });
+          },
         },
         {
           'label': 'invitation'.tr,

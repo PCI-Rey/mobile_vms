@@ -3,39 +3,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'dart:ui' as ui;
 import 'package:gal/gal.dart';
-
+import 'package:carousel_slider/carousel_slider.dart';
+import 'package:intl/intl.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 import '../../../core/core.dart';
 import '../../../core/helper/responsive_helper.dart';
+import '../../../data/models/access_pass_model.dart';
 
 class AccessPassDialog extends StatefulWidget {
-  final String name;
-  final String date;
-  final String time;
-  final String invitationCode;
-  final String cardNumber;
-  final String vehiclePlateNo;
-  final String parkingSlot;
-  final String buildingName;
-  final String visitorId;
-  final String? profileImagePath;
-  final bool isTracked;
-  final bool isLowBattery;
+  final List<AccessPassModel> items;
 
-  const AccessPassDialog({
-    super.key,
-    required this.name,
-    required this.date,
-    required this.time,
-    required this.invitationCode,
-    required this.cardNumber,
-    required this.vehiclePlateNo,
-    required this.parkingSlot,
-    required this.buildingName,
-    required this.visitorId,
-    this.profileImagePath,
-    this.isTracked = false,
-    this.isLowBattery = false,
-  });
+  const AccessPassDialog({super.key, required this.items});
 
   @override
   State<AccessPassDialog> createState() => _AccessPassDialogState();
@@ -44,6 +22,9 @@ class AccessPassDialog extends StatefulWidget {
 class _AccessPassDialogState extends State<AccessPassDialog> {
   final GlobalKey _accessPassKey = GlobalKey();
   bool _isCapturing = false; // State untuk hide/show download button
+  int _currentIndex = 0;
+  final CarouselSliderController _carouselController =
+      CarouselSliderController();
 
   @override
   Widget build(BuildContext context) {
@@ -129,310 +110,577 @@ class _AccessPassDialogState extends State<AccessPassDialog> {
                               ],
                             ),
                           ),
+                          if (widget.items.isNotEmpty) ...[
+                            hSpace(context, 8),
+                            (() {
+                              final item = widget.items[_currentIndex];
+                              final String badgeText;
+                              if (item.flow.isNotEmpty) {
+                                badgeText = item.flow.toLowerCase() == 'praregister' ? 'Praregis' : (item.flow.toLowerCase() == 'quickaccessvisit' ? 'Quick Access' : item.flow);
+                              } else {
+                                badgeText = item.visitorStatus.isNotEmpty ? item.visitorStatus : 'Invitation';
+                              }
+                              
+                              final String cleanText = badgeText[0].toUpperCase() + badgeText.substring(1);
+                              final Color badgeColor = _statusColor(badgeText);
+                              
+                              return Container(
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: rw(context, 10),
+                                  vertical: rh(context, 5),
+                                ),
+                                decoration: BoxDecoration(
+                                  color: badgeColor,
+                                  borderRadius: BorderRadius.circular(rw(context, 20)),
+                                ),
+                                child: Text(
+                                  cleanText,
+                                  style: TextStyle(
+                                    fontSize: rfs(context, 11),
+                                    fontWeight: FontWeight.w700,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              );
+                            })(),
+                            hSpace(context, 6),
+                            (() {
+                              final item = widget.items[_currentIndex];
+                              final isExpired = item.visitorPeriodEnd.isBefore(DateTime.now());
+                              return Container(
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: rw(context, 10),
+                                  vertical: rh(context, 5),
+                                ),
+                                decoration: BoxDecoration(
+                                  color: isExpired
+                                      ? const Color(0xFFE53935)
+                                      : const Color(0xFF43A047),
+                                  borderRadius: BorderRadius.circular(rw(context, 20)),
+                                ),
+                                child: Text(
+                                  isExpired ? 'Expired' : 'Active',
+                                  style: TextStyle(
+                                    fontSize: rfs(context, 11),
+                                    fontWeight: FontWeight.w700,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              );
+                            })(),
+                          ],
                         ],
                       ),
                     ),
                     Container(height: 1, color: Colors.grey.shade100),
 
-                    // Content - Scrollable Body
+                    // Content - Carousel Body
                     Flexible(
-                      child: SingleChildScrollView(
-                        child: RepaintBoundary(
-                          key: _accessPassKey,
-                          child: Container(
-                            width: double.infinity,
-                            color: Colors.white,
-                            padding: EdgeInsets.only(
-                              left: rw(context, 24),
-                              right: rw(context, 24),
-                              top: rh(context, 16),
-                            ),
-                            child: Column(
-                              children: [
-                                // User info section
-                                Row(
-                                  children: [
-                                    // Profile picture with border
-                                    Container(
-                                      width: rw(context, 52),
-                                      height: rw(context, 52),
-                                      decoration: BoxDecoration(
-                                        shape: BoxShape.circle,
-                                        border: Border.all(
-                                          color: const Color(0xFFE2E8F0),
-                                          width: 2,
-                                        ),
-                                        color: AppColors.grey200,
-                                      ),
-                                      child: widget.profileImagePath != null
-                                          ? ClipOval(
-                                              child: Image.asset(
-                                                widget.profileImagePath!,
-                                                width: rw(context, 52),
-                                                height: rw(context, 52),
-                                                fit: BoxFit.cover,
-                                              ),
-                                            )
-                                          : Icon(
-                                              Icons.person,
-                                              size: rw(context, 32),
-                                              color: AppColors.grey600,
-                                            ),
-                                    ),
-                                    hSpace(context, 12),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Flexible(
+                            child: CarouselSlider.builder(
+                              itemCount: widget.items.length,
+                              carouselController: _carouselController,
+                              options: CarouselOptions(
+                                height: rh(context, 550),
+                                autoPlay: false,
+                                enlargeCenterPage: true,
+                                enlargeFactor: 0.15,
+                                viewportFraction: 0.9,
+                                enableInfiniteScroll: widget.items.length > 1,
+                                scrollDirection: Axis.horizontal,
+                                onPageChanged: (index, reason) {
+                                  setState(() {
+                                    _currentIndex = index;
+                                  });
+                                },
+                              ),
+                              itemBuilder: (context, index, realIndex) {
+                                final item = widget.items[index];
+                                final startStr = DateFormat(
+                                  'EEE, dd MMM yyyy • HH:mm',
+                                  'en',
+                                ).format(item.visitorPeriodStart);
+                                final endStr = DateFormat(
+                                  'HH:mm',
+                                  'en',
+                                ).format(item.visitorPeriodEnd);
 
-                                    // User details
-                                    Expanded(
+                                return SingleChildScrollView(
+                                  child: RepaintBoundary(
+                                    key: index == _currentIndex
+                                        ? _accessPassKey
+                                        : null,
+                                    child: Container(
+                                      width: double.infinity,
+                                      color: Colors.white,
+                                      padding: EdgeInsets.only(
+                                        left: rw(context, 24),
+                                        right: rw(context, 24),
+                                        top: rh(context, 16),
+                                      ),
                                       child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
                                         children: [
-                                          Text(
-                                            widget.name,
-                                            style: TextStyle(
-                                              fontSize: rfs(context, 18),
-                                              fontWeight: FontWeight.w800,
-                                              color: const Color(0xFF0F172A),
-                                              letterSpacing: -0.4,
-                                            ),
-                                          ),
-                                          vSpace(context, 4),
+                                          // User info section
                                           Row(
                                             children: [
-                                              Icon(
-                                                Icons.access_time,
-                                                size: rw(context, 13),
-                                                color: const Color(0xFF64748B),
-                                              ),
-                                              hSpace(context, 4),
-                                              Expanded(
-                                                child: Text(
-                                                  '${widget.date} • ${widget.time}',
-                                                  style: TextStyle(
-                                                    fontSize: rfs(context, 12),
-                                                    fontWeight: FontWeight.w500,
-                                                    color: const Color(0xFF64748B),
+                                              // Profile picture with border
+                                              Container(
+                                                width: rw(context, 52),
+                                                height: rw(context, 52),
+                                                decoration: BoxDecoration(
+                                                  shape: BoxShape.circle,
+                                                  border: Border.all(
+                                                    color: const Color(
+                                                      0xFFE2E8F0,
+                                                    ),
+                                                    width: 2,
                                                   ),
-                                                  maxLines: 1,
-                                                  overflow: TextOverflow.ellipsis,
+                                                  color: AppColors.grey200,
+                                                ),
+                                                child:
+                                                    item.visitorName
+                                                        .toLowerCase()
+                                                        .contains('endru')
+                                                    ? ClipOval(
+                                                        child: Image.asset(
+                                                          'assets/images/Endru.png',
+                                                          width: rw(
+                                                            context,
+                                                            52,
+                                                          ),
+                                                          height: rw(
+                                                            context,
+                                                            52,
+                                                          ),
+                                                          fit: BoxFit.cover,
+                                                        ),
+                                                      )
+                                                    : Icon(
+                                                        Icons.person,
+                                                        size: rw(context, 32),
+                                                        color:
+                                                            AppColors.grey600,
+                                                      ),
+                                              ),
+                                              hSpace(context, 12),
+
+                                              // User details
+                                              Expanded(
+                                                child: Column(
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment.start,
+                                                  children: [
+                                                    Text(
+                                                      item.visitorName,
+                                                      style: TextStyle(
+                                                        fontSize: rfs(
+                                                          context,
+                                                          18,
+                                                        ),
+                                                        fontWeight:
+                                                            FontWeight.w800,
+                                                        color: const Color(
+                                                          0xFF0F172A,
+                                                        ),
+                                                        letterSpacing: -0.4,
+                                                      ),
+                                                    ),
+                                                    vSpace(context, 4),
+                                                    Row(
+                                                      children: [
+                                                        Icon(
+                                                          Icons.access_time,
+                                                          size: rw(context, 13),
+                                                          color: const Color(
+                                                            0xFF64748B,
+                                                          ),
+                                                        ),
+                                                        hSpace(context, 4),
+                                                        Expanded(
+                                                          child: Text(
+                                                            '$startStr - $endStr',
+                                                            style: TextStyle(
+                                                              fontSize: rfs(
+                                                                context,
+                                                                12,
+                                                              ),
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .w500,
+                                                              color:
+                                                                  const Color(
+                                                                    0xFF64748B,
+                                                                  ),
+                                                            ),
+                                                            maxLines: 1,
+                                                            overflow:
+                                                                TextOverflow
+                                                                    .ellipsis,
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+
+                                              // Download button - Hidden saat capturing
+                                              AnimatedOpacity(
+                                                opacity: _isCapturing
+                                                    ? 0.0
+                                                    : 1.0,
+                                                duration: const Duration(
+                                                  milliseconds: 200,
+                                                ),
+                                                child: GestureDetector(
+                                                  onTap: _isCapturing
+                                                      ? null
+                                                      : _downloadAccessPass,
+                                                  child: Container(
+                                                    width: rw(context, 42),
+                                                    height: rw(context, 42),
+                                                    decoration: BoxDecoration(
+                                                      color: _isCapturing
+                                                          ? Colors.transparent
+                                                          : const Color(
+                                                              0xFFE8F1FB,
+                                                            ),
+                                                      shape: BoxShape.circle,
+                                                    ),
+                                                    child: _isCapturing
+                                                        ? const SizedBox.shrink()
+                                                        : const Icon(
+                                                            Icons
+                                                                .download_rounded,
+                                                            size: 20,
+                                                            color: Color(
+                                                              0xFF1976D2,
+                                                            ),
+                                                          ),
+                                                  ),
                                                 ),
                                               ),
                                             ],
                                           ),
+
+                                          vSpace(context, 20),
+
+                                          // Structured Info Card Grid
+                                          Container(
+                                            padding: EdgeInsets.symmetric(
+                                              horizontal: rw(context, 16),
+                                              vertical: rh(context, 16),
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: const Color(0xFFF8FAFC),
+                                              borderRadius:
+                                                  BorderRadius.circular(
+                                                    rw(context, 16),
+                                                  ),
+                                              border: Border.all(
+                                                color: const Color(0xFFF1F5F9),
+                                              ),
+                                            ),
+                                            child: Column(
+                                              children: [
+                                                Row(
+                                                  children: [
+                                                    Expanded(
+                                                      child: Padding(
+                                                        padding: EdgeInsets.only(
+                                                          right: rw(context, 8),
+                                                        ),
+                                                        child: _buildInfoCard(
+                                                          item.invitationCode,
+                                                          'Invitation Code',
+                                                          Icons
+                                                              .confirmation_number_outlined,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                    Container(
+                                                      width: 1,
+                                                      height: rh(context, 36),
+                                                      color: const Color(
+                                                        0xFFE2E8F0,
+                                                      ),
+                                                    ),
+                                                    Expanded(
+                                                      child: Padding(
+                                                        padding: EdgeInsets.only(
+                                                          left: rw(context, 8),
+                                                        ),
+                                                        child: _buildInfoCard(
+                                                          item.agenda,
+                                                          'Agenda',
+                                                          Icons
+                                                              .event_note_outlined,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                                Divider(
+                                                  color: const Color(
+                                                    0xFFE2E8F0,
+                                                  ),
+                                                  height: rh(context, 24),
+                                                  thickness: 1,
+                                                ),
+                                                Row(
+                                                  children: [
+                                                    Expanded(
+                                                      child: Padding(
+                                                        padding: EdgeInsets.only(
+                                                          right: rw(context, 8),
+                                                        ),
+                                                        child: _buildInfoCard(
+                                                          item.sitePlaceName.isNotEmpty ? item.sitePlaceName : '-',
+                                                          'Location',
+                                                          Icons.location_on_outlined,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                    Container(
+                                                      width: 1,
+                                                      height: rh(context, 36),
+                                                      color: const Color(
+                                                        0xFFE2E8F0,
+                                                      ),
+                                                    ),
+                                                    Expanded(
+                                                      child: Padding(
+                                                        padding: EdgeInsets.only(
+                                                          left: rw(context, 8),
+                                                        ),
+                                                        child: _buildInfoCard(
+                                                          item
+                                                                  .visitorPhone
+                                                                  .isNotEmpty
+                                                              ? item.visitorPhone
+                                                              : (item
+                                                                        .receiverPhone
+                                                                        .isNotEmpty
+                                                                    ? item.receiverPhone
+                                                                    : '08123456789'),
+                                                          'Phone',
+                                                          Icons.phone_outlined,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+
+                                          vSpace(context, 20),
+
+                                          // QR Access Pass Card Container
+                                          Container(
+                                            width: double.infinity,
+                                            padding: EdgeInsets.all(
+                                              rw(context, 16),
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: Colors.white,
+                                              borderRadius:
+                                                  BorderRadius.circular(
+                                                    rw(context, 16),
+                                                  ),
+                                              border: Border.all(
+                                                color: Colors.grey.shade200,
+                                              ),
+                                              boxShadow: [
+                                                BoxShadow(
+                                                  color: Colors.black
+                                                      .withValues(alpha: 0.04),
+                                                  blurRadius: 8,
+                                                  offset: const Offset(0, 4),
+                                                ),
+                                              ],
+                                            ),
+                                            child: Column(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                Center(
+                                                  child: Text(
+                                                    'Access Pass',
+                                                    style: TextStyle(
+                                                      fontSize: rfs(
+                                                        context,
+                                                        18,
+                                                      ),
+                                                      fontWeight:
+                                                          FontWeight.w800,
+                                                      color: Colors.black87,
+                                                    ),
+                                                  ),
+                                                ),
+                                                vSpace(context, 12),
+
+                                                Container(
+                                                  width: rw(context, 195),
+                                                  height: rw(context, 195),
+                                                  padding: EdgeInsets.all(
+                                                    rw(context, 10),
+                                                  ),
+                                                  decoration: BoxDecoration(
+                                                    color: Colors.white,
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          rw(context, 10),
+                                                        ),
+                                                    border: Border.all(
+                                                      color:
+                                                          Colors.grey.shade200,
+                                                    ),
+                                                  ),
+                                                  child:
+                                                      _buildQRCodePlaceholder(
+                                                        item
+                                                                .visitorNumber
+                                                                .isNotEmpty
+                                                            ? item.visitorNumber
+                                                            : item.id,
+                                                      ),
+                                                ),
+                                                vSpace(context, 12),
+
+                                                if (item.visitorStatus
+                                                        .toLowerCase()
+                                                        .contains('track') ||
+                                                    item.visitorStatus
+                                                        .toLowerCase()
+                                                        .contains('low')) ...[
+                                                  Row(
+                                                    mainAxisAlignment:
+                                                        MainAxisAlignment
+                                                            .center,
+                                                    children: [
+                                                      if (item.visitorStatus
+                                                          .toLowerCase()
+                                                          .contains('track'))
+                                                        Text(
+                                                          'Tracked',
+                                                          style: TextStyle(
+                                                            color: Colors
+                                                                .red
+                                                                .shade600,
+                                                            fontSize: rfs(
+                                                              context,
+                                                              11,
+                                                            ),
+                                                            fontWeight:
+                                                                FontWeight.bold,
+                                                          ),
+                                                        ),
+                                                      if (item.visitorStatus
+                                                              .toLowerCase()
+                                                              .contains(
+                                                                'track',
+                                                              ) &&
+                                                          item.visitorStatus
+                                                              .toLowerCase()
+                                                              .contains('low'))
+                                                        hSpace(context, 16),
+                                                      if (item.visitorStatus
+                                                          .toLowerCase()
+                                                          .contains('low'))
+                                                        Text(
+                                                          'Low Battery',
+                                                          style: TextStyle(
+                                                            color: Colors
+                                                                .red
+                                                                .shade600,
+                                                            fontSize: rfs(
+                                                              context,
+                                                              11,
+                                                            ),
+                                                            fontWeight:
+                                                                FontWeight.bold,
+                                                          ),
+                                                        ),
+                                                    ],
+                                                  ),
+                                                  vSpace(context, 10),
+                                                ],
+
+                                                Text(
+                                                  'Show this while visiting',
+                                                  style: TextStyle(
+                                                    fontSize: rfs(context, 12),
+                                                    fontWeight: FontWeight.w600,
+                                                    color: Colors.black87,
+                                                  ),
+                                                ),
+                                                vSpace(context, 2),
+
+                                                Text(
+                                                  'ID : ${item.visitorNumber.isNotEmpty ? item.visitorNumber : item.id}',
+                                                  style: TextStyle(
+                                                    fontSize: rfs(context, 13),
+                                                    fontWeight: FontWeight.w800,
+                                                    color: Colors.black87,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                          vSpace(context, 24),
                                         ],
                                       ),
                                     ),
-
-                                    // Download button - Hidden saat capturing
-                                    AnimatedOpacity(
-                                      opacity: _isCapturing ? 0.0 : 1.0,
-                                      duration: const Duration(milliseconds: 200),
-                                      child: GestureDetector(
-                                        onTap: _isCapturing ? null : _downloadAccessPass,
-                                        child: Container(
-                                          width: rw(context, 42),
-                                          height: rw(context, 42),
-                                          decoration: BoxDecoration(
-                                            color: _isCapturing
-                                                ? Colors.transparent
-                                                : const Color(0xFFE8F1FB),
-                                            shape: BoxShape.circle,
-                                          ),
-                                          child: _isCapturing
-                                              ? const SizedBox.shrink()
-                                              : const Icon(
-                                                  Icons.download_rounded,
-                                                  size: 20,
-                                                  color: Color(0xFF1976D2),
-                                                ),
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-
-                                vSpace(context, 20),
-
-                                // Structured Info Card Grid
-                                Container(
-                                  padding: EdgeInsets.symmetric(
-                                    horizontal: rw(context, 16),
-                                    vertical: rh(context, 16),
                                   ),
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFFF8FAFC),
-                                    borderRadius: BorderRadius.circular(rw(context, 16)),
-                                    border: Border.all(color: const Color(0xFFF1F5F9)),
-                                  ),
-                                  child: Column(
-                                    children: [
-                                      Row(
-                                        children: [
-                                          Expanded(
-                                            child: _buildInfoCard(
-                                              widget.invitationCode,
-                                              'Invitation Code',
-                                              Icons.confirmation_number_outlined,
-                                            ),
-                                          ),
-                                          Container(
-                                            width: 1,
-                                            height: rh(context, 36),
-                                            color: const Color(0xFFE2E8F0),
-                                          ),
-                                          Expanded(
-                                            child: Padding(
-                                              padding: EdgeInsets.only(left: rw(context, 16)),
-                                              child: _buildInfoCard(
-                                                widget.cardNumber,
-                                                'Card',
-                                                Icons.credit_card_outlined,
-                                              ),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                      Divider(
-                                        color: const Color(0xFFE2E8F0),
-                                        height: rh(context, 24),
-                                        thickness: 1,
-                                      ),
-                                      Row(
-                                        children: [
-                                          Expanded(
-                                            child: _buildInfoCard(
-                                              widget.vehiclePlateNo,
-                                              'Vehicle Plate No.',
-                                              Icons.directions_car_outlined,
-                                            ),
-                                          ),
-                                          Container(
-                                            width: 1,
-                                            height: rh(context, 36),
-                                            color: const Color(0xFFE2E8F0),
-                                          ),
-                                          Expanded(
-                                            child: Padding(
-                                              padding: EdgeInsets.only(left: rw(context, 16)),
-                                              child: _buildInfoCard(
-                                                widget.parkingSlot,
-                                                'Parking Slot',
-                                                Icons.local_parking_outlined,
-                                              ),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ],
-                                  ),
-                                ),
-
-                                vSpace(context, 20),
-
-                                // QR Access Pass Card Container
-                                Container(
-                                  width: double.infinity,
-                                  padding: EdgeInsets.all(rw(context, 16)),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white,
-                                    borderRadius: BorderRadius.circular(rw(context, 16)),
-                                    border: Border.all(color: Colors.grey.shade200),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Colors.black.withValues(alpha: 0.04),
-                                        blurRadius: 8,
-                                        offset: const Offset(0, 4),
-                                      ),
-                                    ],
-                                  ),
-                                  child: Column(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      // Access Pass Title (Centered)
-                                      Center(
-                                        child: Text(
-                                          'Access Pass',
-                                          style: TextStyle(
-                                            fontSize: rfs(context, 18),
-                                            fontWeight: FontWeight.w800,
-                                            color: Colors.black87,
-                                          ),
-                                        ),
-                                      ),
-                                      vSpace(context, 12),
-
-                                      // QR Code Box (Enlarged)
-                                      Container(
-                                        width: rw(context, 195),
-                                        height: rw(context, 195),
-                                        padding: EdgeInsets.all(rw(context, 10)),
-                                        decoration: BoxDecoration(
-                                          color: Colors.white,
-                                          borderRadius: BorderRadius.circular(rw(context, 10)),
-                                          border: Border.all(color: Colors.grey.shade200),
-                                        ),
-                                        child: _buildQRCodePlaceholder(),
-                                      ),
-                                      vSpace(context, 12),
-
-                                      // Tracked / Low Battery Row (Centered)
-                                      if (widget.isTracked || widget.isLowBattery) ...[
-                                        Row(
-                                          mainAxisAlignment: MainAxisAlignment.center,
-                                          children: [
-                                            if (widget.isTracked)
-                                              Text(
-                                                'Tracked',
-                                                style: TextStyle(
-                                                  color: Colors.red.shade600,
-                                                  fontSize: rfs(context, 11),
-                                                  fontWeight: FontWeight.bold,
-                                                ),
-                                              ),
-                                            if (widget.isTracked && widget.isLowBattery)
-                                              hSpace(context, 16),
-                                            if (widget.isLowBattery)
-                                              Text(
-                                                'Low Battery',
-                                                style: TextStyle(
-                                                  color: Colors.red.shade600,
-                                                  fontSize: rfs(context, 11),
-                                                  fontWeight: FontWeight.bold,
-                                                ),
-                                              ),
-                                          ],
-                                        ),
-                                        vSpace(context, 10),
-                                      ],
-
-                                      // Show this while visiting
-                                      Text(
-                                        'Show this while visiting',
-                                        style: TextStyle(
-                                          fontSize: rfs(context, 12),
-                                          fontWeight: FontWeight.w600,
-                                          color: Colors.black87,
-                                        ),
-                                      ),
-                                      vSpace(context, 2),
-
-                                      // ID
-                                      Text(
-                                        'ID : ${widget.visitorId.isNotEmpty ? widget.visitorId : '-'}',
-                                        style: TextStyle(
-                                          fontSize: rfs(context, 13),
-                                          fontWeight: FontWeight.w800,
-                                          color: Colors.black87,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-
-                                vSpace(context, 24),
-                              ],
+                                );
+                              },
                             ),
                           ),
-                        ),
+                          if (widget.items.length > 1) ...[
+                            vSpace(context, 8),
+                            SingleChildScrollView(
+                              scrollDirection: Axis.horizontal,
+                              physics: const BouncingScrollPhysics(),
+                              child: Padding(
+                                padding: EdgeInsets.symmetric(horizontal: rw(context, 20)),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: widget.items.asMap().entries.map((
+                                    entry,
+                                  ) {
+                                    final isActive = _currentIndex == entry.key;
+                                    return GestureDetector(
+                                      onTap: () => _carouselController
+                                          .animateToPage(entry.key),
+                                      child: AnimatedContainer(
+                                        duration: const Duration(milliseconds: 300),
+                                        curve: Curves.easeInOut,
+                                        width: isActive
+                                            ? rw(context, 20.0)
+                                            : rw(context, 6.0),
+                                        height: rw(context, 6.0),
+                                        margin: EdgeInsets.symmetric(
+                                          horizontal: rw(context, 3.0),
+                                        ),
+                                        decoration: BoxDecoration(
+                                          borderRadius: BorderRadius.circular(3.0),
+                                          color: isActive
+                                              ? const Color(0xFF005596)
+                                              : const Color(
+                                                  0xFF005596,
+                                                ).withValues(alpha: 0.3),
+                                        ),
+                                      ),
+                                    );
+                                  }).toList(),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
                       ),
                     ),
 
@@ -454,7 +702,9 @@ class _AccessPassDialogState extends State<AccessPassDialog> {
                             foregroundColor: Colors.white,
                             elevation: 0,
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(rw(context, 14)),
+                              borderRadius: BorderRadius.circular(
+                                rw(context, 14),
+                              ),
                             ),
                           ),
                           child: Text(
@@ -480,9 +730,10 @@ class _AccessPassDialogState extends State<AccessPassDialog> {
 
   Widget _buildInfoCard(String value, String label, IconData icon) {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Row(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(icon, size: rw(context, 13), color: const Color(0xFF64748B)),
             hSpace(context, 6),
@@ -499,23 +750,31 @@ class _AccessPassDialogState extends State<AccessPassDialog> {
         vSpace(context, 4),
         Text(
           value.isEmpty ? '-' : value,
+          maxLines: 3,
+          overflow: TextOverflow.ellipsis,
+          textAlign: TextAlign.center,
           style: TextStyle(
-            fontSize: rfs(context, 14),
+            fontSize: rfs(context, 13),
             fontWeight: FontWeight.w800,
             color: const Color(0xFF0F172A),
-            letterSpacing: -0.2,
+            letterSpacing: -0.4,
           ),
         ),
       ],
     );
   }
 
-  Widget _buildQRCodePlaceholder() {
+  Widget _buildQRCodePlaceholder(String qrData) {
     return Container(
       width: double.infinity,
       height: double.infinity,
       color: Colors.white,
-      child: CustomPaint(painter: QRCodePainter()),
+      child: QrImageView(
+        data: qrData.isNotEmpty ? qrData : 'N/A',
+        version: QrVersions.auto,
+        size: double.infinity,
+        padding: EdgeInsets.zero,
+      ),
     );
   }
 
@@ -664,6 +923,37 @@ class _AccessPassDialogState extends State<AccessPassDialog> {
       }
     }
   }
+
+  Color _statusColor(String status) {
+    switch (status.toLowerCase().trim()) {
+      case 'checkin':
+      case 'approved':
+      case 'approve':
+      case 'success':
+        return const Color(0xFF00897B);
+      case 'checkout':
+        return const Color(0xFF3949AB);
+      case 'available':
+        return const Color(0xFF8E24AA);
+      case 'waiting':
+      case 'pending':
+        return const Color(0xFFFB8C00);
+      case 'denied':
+      case 'deny':
+      case 'rejected':
+      case 'reject':
+        return const Color(0xFFE53935);
+      case 'quickaccess':
+      case 'quickaccessvisit':
+        return const Color(0xFFD81B60);
+      case 'preregis':
+      case 'praregister':
+      case 'praregis':
+        return const Color(0xFF00B0FF);
+      default:
+        return const Color(0xFF546E7A);
+    }
+  }
 }
 
 // Custom painter untuk QR Code placeholder
@@ -719,38 +1009,13 @@ class QRCodePainter extends CustomPainter {
 // Helper function to show the access pass bottom sheet
 void showAccessPassDialog({
   required BuildContext context,
-  required String name,
-  required String date,
-  required String time,
-  required String invitationCode,
-  required String cardNumber,
-  required String vehiclePlateNo,
-  required String parkingSlot,
-  required String buildingName,
-  required String visitorId,
-  String? profileImagePath,
-  bool isTracked = false,
-  bool isLowBattery = false,
+  required List<AccessPassModel> items,
 }) {
   showModalBottomSheet(
     context: context,
     isScrollControlled: true,
     backgroundColor: Colors.transparent,
     enableDrag: true,
-    builder: (context) => AccessPassDialog(
-      name: name,
-      date: date,
-      time: time,
-      invitationCode: invitationCode,
-      cardNumber: cardNumber,
-      vehiclePlateNo: vehiclePlateNo,
-      parkingSlot: parkingSlot,
-      buildingName: buildingName,
-      visitorId: visitorId,
-      profileImagePath: profileImagePath,
-      isTracked: isTracked,
-      isLowBattery: isLowBattery,
-    ),
+    builder: (context) => AccessPassDialog(items: items),
   );
 }
-

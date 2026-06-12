@@ -391,7 +391,7 @@ class _ApprovalPageState extends State<ApprovalPage>
 
   String _formatDateRange(DateTime? start, DateTime? end) {
     if (start == null && end == null) return '';
-    final fmt = DateFormat('dd/MM/yy');
+    final fmt = DateFormat('dd MMMM yyyy');
     if (start != null && end != null) {
       return '${fmt.format(start)} - ${fmt.format(end)}';
     } else if (start != null) {

@@ -2228,12 +2228,17 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
                               _downloadBarcodePdf(activeVisitor.visitorNumber);
                             }
                           },
-                          child: Text(
-                            'Download',
-                            style: TextStyle(
-                              fontSize: rfs(context, 12),
-                              fontWeight: FontWeight.bold,
-                              color: const Color(0xFF005596),
+                          child: Container(
+                            width: rw(context, 32),
+                            height: rw(context, 32),
+                            decoration: const BoxDecoration(
+                              color: Color(0xFFE8F1FB),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.download_rounded,
+                              size: 16,
+                              color: Color(0xFF1976D2),
                             ),
                           ),
                         ),
