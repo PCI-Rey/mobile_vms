@@ -1742,20 +1742,29 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
       
       String? path;
       final visitorNumber = model.visitorNumber.isNotEmpty ? model.visitorNumber : 'N_A';
+      bool saveSuccess = false;
+
       if (Platform.isAndroid) {
-        final dir = Directory('/storage/emulated/0/Download');
-        if (await dir.exists()) {
-          path = '${dir.path}/access_pass_$visitorNumber.pdf';
+        try {
+          final dir = Directory('/storage/emulated/0/Download');
+          if (await dir.exists()) {
+            final testPath = '${dir.path}/access_pass_$visitorNumber.pdf';
+            final file = File(testPath);
+            await file.writeAsBytes(bytes);
+            path = testPath;
+            saveSuccess = true;
+          }
+        } catch (e) {
+          debugPrint('Failed to save barcode PDF to public Download folder: $e');
         }
       }
       
-      if (path == null) {
+      if (!saveSuccess) {
         final dir = await getApplicationDocumentsDirectory();
         path = '${dir.path}/access_pass_$visitorNumber.pdf';
+        final file = File(path);
+        await file.writeAsBytes(bytes);
       }
-
-      final file = File(path);
-      await file.writeAsBytes(bytes);
 
       Get.snackbar(
         'Success',
@@ -2787,19 +2796,29 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
                                   : 'invitation_card';
 
                               String? path;
+                              bool saveSuccess = false;
+
                               if (Platform.isAndroid) {
-                                final dir = Directory('/storage/emulated/0/Download');
-                                if (await dir.exists()) {
-                                  path = '${dir.path}/visitor_card_$visitorNum.png';
+                                try {
+                                  final dir = Directory('/storage/emulated/0/Download');
+                                  if (await dir.exists()) {
+                                    final testPath = '${dir.path}/visitor_card_$visitorNum.png';
+                                    final file = File(testPath);
+                                    await file.writeAsBytes(pngBytes);
+                                    path = testPath;
+                                    saveSuccess = true;
+                                  }
+                                } catch (e) {
+                                  debugPrint('Failed to save visitor card PNG to public Download folder: $e');
                                 }
                               }
-                              if (path == null) {
+                              
+                              if (!saveSuccess) {
                                 final dir = await getApplicationDocumentsDirectory();
                                 path = '${dir.path}/visitor_card_$visitorNum.png';
+                                final file = File(path);
+                                await file.writeAsBytes(pngBytes);
                               }
-
-                              final file = File(path);
-                              await file.writeAsBytes(pngBytes);
 
                               Get.snackbar(
                                 'Success',

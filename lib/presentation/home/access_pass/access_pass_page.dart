@@ -863,20 +863,29 @@ class _AccessPassDialogState extends State<AccessPassDialog> {
       String? path;
       final activeItem = widget.items[_currentIndex];
       final visitorNumber = activeItem.visitorNumber.isNotEmpty ? activeItem.visitorNumber : 'N_A';
+      bool saveSuccess = false;
+
       if (Platform.isAndroid) {
-        final dir = Directory('/storage/emulated/0/Download');
-        if (await dir.exists()) {
-          path = '${dir.path}/access_pass_$visitorNumber.pdf';
+        try {
+          final dir = Directory('/storage/emulated/0/Download');
+          if (await dir.exists()) {
+            final testPath = '${dir.path}/access_pass_$visitorNumber.pdf';
+            final file = File(testPath);
+            await file.writeAsBytes(pdfBytes);
+            path = testPath;
+            saveSuccess = true;
+          }
+        } catch (e) {
+          debugPrint('Failed to save access pass PDF to public Download folder: $e');
         }
       }
       
-      if (path == null) {
+      if (!saveSuccess) {
         final dir = await getApplicationDocumentsDirectory();
         path = '${dir.path}/access_pass_$visitorNumber.pdf';
+        final file = File(path);
+        await file.writeAsBytes(pdfBytes);
       }
-
-      final file = File(path);
-      await file.writeAsBytes(pdfBytes);
 
       Get.snackbar(
         'Success',
