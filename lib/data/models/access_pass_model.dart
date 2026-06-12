@@ -42,6 +42,8 @@ class AccessPassModel {
   final String receiverEmail;
   final String receiverPhone;
   final String groupCode;
+  final bool? canTrackBle;
+  final bool? canAccess;
 
   AccessPassModel({
     required this.id,
@@ -84,6 +86,8 @@ class AccessPassModel {
     this.receiverEmail = '',
     this.receiverPhone = '',
     this.groupCode = '',
+    this.canTrackBle = false,
+    this.canAccess = false,
   });
 
   factory AccessPassModel.fromRawJson(String str) =>
@@ -166,6 +170,12 @@ class AccessPassModel {
       receiverEmail: json['receiver_email']?.toString() ?? '',
       receiverPhone: json['receiver_phone']?.toString() ?? '',
       groupCode: json['group_code']?.toString() ?? '',
+      canTrackBle: json['can_track_ble'] == true ||
+          json['can_track_ble'] == 1 ||
+          json['can_track_ble']?.toString() == 'true',
+      canAccess: json['can_access'] == true ||
+          json['can_access'] == 1 ||
+          json['can_access']?.toString() == 'true',
     );
   }
 
@@ -210,6 +220,8 @@ class AccessPassModel {
     'receiver_email': receiverEmail,
     'receiver_phone': receiverPhone,
     'group_code': groupCode,
+    'can_track_ble': canTrackBle,
+    'can_access': canAccess,
   };
 
   /// Parse a datetime string from the API as UTC and convert to device local time.

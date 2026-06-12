@@ -6,6 +6,7 @@ import 'package:pdf/widgets.dart' as pw;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
+import 'package:open_filex/open_filex.dart';
 import 'controller/invitation_controller.dart';
 import '../../../../presentation/home/visitor_request/add_pra_registration_dialog.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -1328,6 +1329,8 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
             receiverName: model.receiverName,
             receiverEmail: model.receiverEmail,
             receiverPhone: model.receiverPhone,
+            canTrackBle: model.canTrackBle,
+            canAccess: model.canAccess,
           );
           models.add(finalModel);
         }
@@ -1378,51 +1381,181 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
     if (mounted) setState(() => _loadingSite = false);
   }
 
-  Future<void> _downloadBarcodePdf(String visitorNumber) async {
+  Future<void> _downloadBarcodePdf(AccessPassModel model) async {
     try {
       final pdf = pw.Document();
+      
+      pw.Widget pdfField(String label, String value) {
+        return pw.Padding(
+          padding: const pw.EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+          child: pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
+            children: [
+              pw.Text(
+                label,
+                style: pw.TextStyle(
+                  fontSize: 9,
+                  color: PdfColors.grey500,
+                ),
+              ),
+              pw.SizedBox(height: 2),
+              pw.Text(
+                value,
+                style: pw.TextStyle(
+                  fontSize: 11,
+                  fontWeight: pw.FontWeight.bold,
+                  color: PdfColors.black,
+                ),
+              ),
+            ],
+          ),
+        );
+      }
+
       pdf.addPage(
         pw.Page(
           pageFormat: PdfPageFormat.a4,
           build: (pw.Context context) {
             return pw.Center(
               child: pw.Container(
-                width: 300,
-                padding: const pw.EdgeInsets.all(24),
+                width: 320,
+                padding: const pw.EdgeInsets.all(20),
                 decoration: pw.BoxDecoration(
+                  color: PdfColors.white,
                   border: pw.Border.all(color: PdfColors.grey300, width: 1),
                   borderRadius: const pw.BorderRadius.all(pw.Radius.circular(16)),
                 ),
                 child: pw.Column(
                   mainAxisSize: pw.MainAxisSize.min,
+                  crossAxisAlignment: pw.CrossAxisAlignment.center,
                   children: [
+                    // Title
+                    pw.Text(
+                      model.visitorName.isNotEmpty ? model.visitorName : 'Visitor',
+                      style: pw.TextStyle(
+                        fontSize: 18,
+                        fontWeight: pw.FontWeight.bold,
+                        color: PdfColors.black,
+                      ),
+                      textAlign: pw.TextAlign.center,
+                    ),
+                    pw.SizedBox(height: 4),
+                    pw.Text(
+                      DateFormat('EEEE, d MMMM yyyy').format(model.visitorPeriodStart),
+                      style: const pw.TextStyle(
+                        fontSize: 11,
+                        color: PdfColors.grey700,
+                      ),
+                      textAlign: pw.TextAlign.center,
+                    ),
+                    pw.SizedBox(height: 2),
+                    pw.Text(
+                      '${DateFormat('HH:mm').format(model.visitorPeriodStart)} - ${DateFormat('HH:mm').format(model.visitorPeriodEnd)}',
+                      style: const pw.TextStyle(
+                        fontSize: 11,
+                        color: PdfColors.grey700,
+                      ),
+                      textAlign: pw.TextAlign.center,
+                    ),
+                    pw.SizedBox(height: 16),
+
+                    // Grid details
+                    pw.Container(
+                      decoration: pw.BoxDecoration(
+                        color: PdfColors.grey50,
+                        borderRadius: const pw.BorderRadius.all(pw.Radius.circular(10)),
+                        border: pw.Border.all(color: PdfColors.grey200, width: 1),
+                      ),
+                      child: pw.Column(
+                        children: [
+                          pw.Row(
+                            children: [
+                              pw.Expanded(child: pdfField('Invitation Code', model.invitationCode.isEmpty ? '-' : model.invitationCode)),
+                              pw.Container(width: 1, height: 42, color: PdfColors.grey200),
+                              pw.Expanded(child: pdfField('Agenda', model.agenda.isEmpty ? '-' : model.agenda)),
+                            ],
+                          ),
+                          pw.Container(height: 1, color: PdfColors.grey200),
+                          pw.Row(
+                            children: [
+                              pw.Expanded(child: pdfField('Location', model.sitePlaceName.isEmpty ? '-' : model.sitePlaceName)),
+                              pw.Container(width: 1, height: 42, color: PdfColors.grey200),
+                              pw.Expanded(child: pdfField('Phone', model.visitorPhone.isNotEmpty ? model.visitorPhone : (model.receiverPhone.isNotEmpty ? model.receiverPhone : '-'))),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    pw.SizedBox(height: 20),
+
                     pw.Text(
                       'Access Pass',
                       style: pw.TextStyle(
-                        fontSize: 22,
-                        fontWeight: pw.FontWeight.bold,
-                      ),
-                    ),
-                    pw.SizedBox(height: 24),
-                    pw.Container(
-                      width: 180,
-                      height: 180,
-                      child: pw.BarcodeWidget(
-                        barcode: pw.Barcode.qrCode(),
-                        data: visitorNumber.isNotEmpty ? visitorNumber : 'N/A',
-                      ),
-                    ),
-                    pw.SizedBox(height: 24),
-                    pw.Text(
-                      'Show this while visiting',
-                      style: const pw.TextStyle(fontSize: 12),
-                    ),
-                    pw.SizedBox(height: 6),
-                    pw.Text(
-                      'ID : ${visitorNumber.isNotEmpty ? visitorNumber : '-'}',
-                      style: pw.TextStyle(
                         fontSize: 16,
                         fontWeight: pw.FontWeight.bold,
+                        color: PdfColors.black,
+                      ),
+                    ),
+                    pw.SizedBox(height: 10),
+
+                    // QR Code
+                    pw.Container(
+                      padding: const pw.EdgeInsets.all(10),
+                      decoration: pw.BoxDecoration(
+                        borderRadius: const pw.BorderRadius.all(pw.Radius.circular(10)),
+                        border: pw.Border.all(color: PdfColors.grey200, width: 1),
+                      ),
+                      child: pw.Container(
+                        width: 150,
+                        height: 150,
+                        child: pw.BarcodeWidget(
+                          barcode: pw.Barcode.qrCode(),
+                          data: model.visitorNumber.isNotEmpty ? model.visitorNumber : 'N/A',
+                        ),
+                      ),
+                    ),
+                    pw.SizedBox(height: 12),
+
+                    // Status
+                    pw.Row(
+                      mainAxisAlignment: pw.MainAxisAlignment.center,
+                      children: [
+                        pw.Text(
+                          model.canTrackBle == true ? 'Tracked' : 'Not Tracked',
+                          style: pw.TextStyle(
+                            fontSize: 10,
+                            fontWeight: pw.FontWeight.bold,
+                            color: model.canTrackBle == true ? PdfColors.green700 : PdfColors.red700,
+                          ),
+                        ),
+                        pw.SizedBox(width: 16),
+                        pw.Text(
+                          model.canAccess == true ? 'Accessible' : 'Not Accessible',
+                          style: pw.TextStyle(
+                            fontSize: 10,
+                            fontWeight: pw.FontWeight.bold,
+                            color: model.canAccess == true ? PdfColors.green700 : PdfColors.red700,
+                          ),
+                        ),
+                      ],
+                    ),
+                    pw.SizedBox(height: 10),
+
+                    pw.Text(
+                      'Show this while visiting',
+                      style: pw.TextStyle(
+                        fontSize: 11,
+                        fontWeight: pw.FontWeight.bold,
+                        color: PdfColors.black,
+                      ),
+                    ),
+                    pw.SizedBox(height: 2),
+                    pw.Text(
+                      'ID : ${model.visitorNumber.isNotEmpty ? model.visitorNumber : '-'}',
+                      style: pw.TextStyle(
+                        fontSize: 12,
+                        fontWeight: pw.FontWeight.bold,
+                        color: PdfColors.black,
                       ),
                     ),
                   ],
@@ -1436,6 +1569,7 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
       final bytes = await pdf.save();
       
       String? path;
+      final visitorNumber = model.visitorNumber.isNotEmpty ? model.visitorNumber : 'N_A';
       if (Platform.isAndroid) {
         final dir = Directory('/storage/emulated/0/Download');
         if (await dir.exists()) {
@@ -1453,15 +1587,52 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
 
       Get.snackbar(
         'Success',
-        'PDF downloaded successfully to:\n$path',
+        'PDF Access Pass berhasil diunduh!',
+        messageText: const Text(
+          'PDF Access Pass berhasil diunduh!',
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
+        titleText: const SizedBox.shrink(),
+        snackPosition: SnackPosition.TOP,
         backgroundColor: Colors.green,
         colorText: Colors.white,
-        duration: const Duration(seconds: 5),
+        duration: const Duration(seconds: 6),
+        mainButton: TextButton(
+          onPressed: () {
+            OpenFilex.open(path!);
+          },
+          style: TextButton.styleFrom(
+            padding: EdgeInsets.zero,
+            minimumSize: Size.zero,
+            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          ),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+            margin: const EdgeInsets.only(right: 8),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: const Text(
+              'BUKA',
+              style: TextStyle(
+                color: Colors.green,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ),
       );
     } catch (e) {
       Get.snackbar(
         'Error',
-        'Failed to download PDF: $e',
+        'Gagal mengunduh PDF Access Pass',
+        messageText: const Text(
+          'Gagal mengunduh PDF Access Pass',
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
+        titleText: const SizedBox.shrink(),
+        snackPosition: SnackPosition.TOP,
         backgroundColor: Colors.red,
         colorText: Colors.white,
       );
@@ -1604,7 +1775,8 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
                       ),
                     ),
                     hSpace(context, 8),
-                    if (selectedItem.visitorStatus.isNotEmpty) ...[
+                    if (selectedItem.visitorStatus.isNotEmpty &&
+                        selectedItem.visitorStatus.toLowerCase().trim() != 'quickaccess') ...[
                       Container(
                         padding: EdgeInsets.symmetric(
                           horizontal: rw(context, 10),
@@ -2213,8 +2385,7 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
                       vSpace(context, 16),
                     ],
 
-                    if (!widget.isFullDetail &&
-                        widget.item.flow.toLowerCase() != 'quickaccessvisit') ...[
+                    if (!widget.isFullDetail) ...[
                       _section(
                         context,
                         'Barcode',
@@ -2225,7 +2396,7 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
                                 : [selectedItem];
                             if (_currentBarcodeIndex < barcodeItems.length) {
                               final activeVisitor = barcodeItems[_currentBarcodeIndex];
-                              _downloadBarcodePdf(activeVisitor.visitorNumber);
+                              _downloadBarcodePdf(activeVisitor);
                             }
                           },
                           child: Container(
@@ -2326,18 +2497,18 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
                                         mainAxisAlignment: MainAxisAlignment.center,
                                         children: [
                                           Text(
-                                            'Tracked',
+                                            model.canTrackBle == true ? 'Tracked' : 'Not Tracked',
                                             style: TextStyle(
-                                              color: Colors.red.shade600,
+                                              color: model.canTrackBle == true ? const Color(0xFF43A047) : const Color(0xFFE53935),
                                               fontSize: rfs(context, 11),
                                               fontWeight: FontWeight.bold,
                                             ),
                                           ),
                                           hSpace(context, 16),
                                           Text(
-                                            'Low Battery',
+                                            model.canAccess == true ? 'Accessible' : 'Not Accessible',
                                             style: TextStyle(
-                                              color: Colors.red.shade600,
+                                              color: model.canAccess == true ? const Color(0xFF43A047) : const Color(0xFFE53935),
                                               fontSize: rfs(context, 11),
                                               fontWeight: FontWeight.bold,
                                             ),

@@ -979,6 +979,8 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                         receiverName: model.receiverName.isEmpty ? parent.receiverName : model.receiverName,
                         receiverEmail: model.receiverEmail.isEmpty ? parent.receiverEmail : model.receiverEmail,
                         receiverPhone: model.receiverPhone.isEmpty ? parent.receiverPhone : model.receiverPhone,
+                        canTrackBle: model.canTrackBle,
+                        canAccess: model.canAccess,
                       );
 
                       if (!employeePasses.any((item) => item.id == mergedModel.id)) {

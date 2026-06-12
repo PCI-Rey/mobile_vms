@@ -1,11 +1,17 @@
+import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'dart:ui' as ui;
+import 'package:get/get.dart';
+import 'package:open_filex/open_filex.dart';
 import 'package:gal/gal.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:intl/intl.dart';
 import 'package:qr_flutter/qr_flutter.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
 import '../../../core/core.dart';
 import '../../../core/helper/responsive_helper.dart';
 import '../../../data/models/access_pass_model.dart';
@@ -94,7 +100,7 @@ class _AccessPassDialogState extends State<AccessPassDialog> {
                                   'Your Access Pass',
                                   style: TextStyle(
                                     fontWeight: FontWeight.w800,
-                                    fontSize: rfs(context, 16),
+                                    fontSize: rfs(context, 18),
                                     color: Colors.black87,
                                   ),
                                 ),
@@ -199,14 +205,11 @@ class _AccessPassDialogState extends State<AccessPassDialog> {
                               ),
                               itemBuilder: (context, index, realIndex) {
                                 final item = widget.items[index];
-                                final startStr = DateFormat(
-                                  'EEEE, dd MMMM yyyy • HH:mm',
+                                final dateStr = DateFormat(
+                                  'EEEE, dd MMMM yyyy',
                                   'en',
                                 ).format(item.visitorPeriodStart);
-                                final endStr = DateFormat(
-                                  'HH:mm',
-                                  'en',
-                                ).format(item.visitorPeriodEnd);
+                                final timeStr = '${DateFormat('HH:mm', 'en').format(item.visitorPeriodStart)} - ${DateFormat('HH:mm', 'en').format(item.visitorPeriodEnd)}';
 
                                 return SingleChildScrollView(
                                   child: RepaintBoundary(
@@ -278,7 +281,7 @@ class _AccessPassDialogState extends State<AccessPassDialog> {
                                                       style: TextStyle(
                                                         fontSize: rfs(
                                                           context,
-                                                          18,
+                                                          16,
                                                         ),
                                                         fontWeight:
                                                             FontWeight.w800,
@@ -287,6 +290,41 @@ class _AccessPassDialogState extends State<AccessPassDialog> {
                                                         ),
                                                         letterSpacing: -0.4,
                                                       ),
+                                                    ),
+                                                    vSpace(context, 4),
+                                                    Row(
+                                                      children: [
+                                                        Icon(
+                                                          Icons.calendar_today_outlined,
+                                                          size: rw(context, 13),
+                                                          color: const Color(
+                                                            0xFF64748B,
+                                                          ),
+                                                        ),
+                                                        hSpace(context, 4),
+                                                        Expanded(
+                                                          child: Text(
+                                                            dateStr,
+                                                            style: TextStyle(
+                                                              fontSize: rfs(
+                                                                context,
+                                                                12,
+                                                              ),
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .w500,
+                                                              color:
+                                                                  const Color(
+                                                                    0xFF64748B,
+                                                                  ),
+                                                            ),
+                                                            maxLines: 1,
+                                                            overflow:
+                                                                TextOverflow
+                                                                    .ellipsis,
+                                                          ),
+                                                        ),
+                                                      ],
                                                     ),
                                                     vSpace(context, 4),
                                                     Row(
@@ -301,7 +339,7 @@ class _AccessPassDialogState extends State<AccessPassDialog> {
                                                         hSpace(context, 4),
                                                         Expanded(
                                                           child: Text(
-                                                            '$startStr - $endStr',
+                                                            timeStr,
                                                             style: TextStyle(
                                                               fontSize: rfs(
                                                                 context,
@@ -550,64 +588,46 @@ class _AccessPassDialogState extends State<AccessPassDialog> {
                                                 ),
                                                 vSpace(context, 12),
 
-                                                if (item.visitorStatus
-                                                        .toLowerCase()
-                                                        .contains('track') ||
-                                                    item.visitorStatus
-                                                        .toLowerCase()
-                                                        .contains('low')) ...[
-                                                  Row(
-                                                    mainAxisAlignment:
-                                                        MainAxisAlignment
-                                                            .center,
-                                                    children: [
-                                                      if (item.visitorStatus
-                                                          .toLowerCase()
-                                                          .contains('track'))
-                                                        Text(
-                                                          'Tracked',
-                                                          style: TextStyle(
-                                                            color: Colors
-                                                                .red
-                                                                .shade600,
-                                                            fontSize: rfs(
-                                                              context,
-                                                              11,
-                                                            ),
-                                                            fontWeight:
-                                                                FontWeight.bold,
-                                                          ),
+                                                Row(
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment.center,
+                                                  children: [
+                                                    Text(
+                                                      item.canTrackBle == true
+                                                          ? 'Tracked'
+                                                          : 'Not Tracked',
+                                                      style: TextStyle(
+                                                        color: item.canTrackBle == true
+                                                            ? const Color(0xFF43A047)
+                                                            : const Color(0xFFE53935),
+                                                        fontSize: rfs(
+                                                          context,
+                                                          11,
                                                         ),
-                                                      if (item.visitorStatus
-                                                              .toLowerCase()
-                                                              .contains(
-                                                                'track',
-                                                              ) &&
-                                                          item.visitorStatus
-                                                              .toLowerCase()
-                                                              .contains('low'))
-                                                        hSpace(context, 16),
-                                                      if (item.visitorStatus
-                                                          .toLowerCase()
-                                                          .contains('low'))
-                                                        Text(
-                                                          'Low Battery',
-                                                          style: TextStyle(
-                                                            color: Colors
-                                                                .red
-                                                                .shade600,
-                                                            fontSize: rfs(
-                                                              context,
-                                                              11,
-                                                            ),
-                                                            fontWeight:
-                                                                FontWeight.bold,
-                                                          ),
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                      ),
+                                                    ),
+                                                    hSpace(context, 16),
+                                                    Text(
+                                                      item.canAccess == true
+                                                          ? 'Accessible'
+                                                          : 'Not Accessible',
+                                                      style: TextStyle(
+                                                        color: item.canAccess == true
+                                                            ? const Color(0xFF43A047)
+                                                            : const Color(0xFFE53935),
+                                                        fontSize: rfs(
+                                                          context,
+                                                          11,
                                                         ),
-                                                    ],
-                                                  ),
-                                                  vSpace(context, 10),
-                                                ],
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                                vSpace(context, 10),
 
                                                 Text(
                                                   'Show this while visiting',
@@ -780,25 +800,6 @@ class _AccessPassDialogState extends State<AccessPassDialog> {
 
   Future<void> _downloadAccessPass() async {
     try {
-      // Check if Gal has access to photos
-      final hasAccess = await Gal.hasAccess();
-      if (!hasAccess) {
-        final requestGranted = await Gal.requestAccess();
-        if (!requestGranted) {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text(
-                  "Permission diperlukan untuk menyimpan gambar ke galeri",
-                ),
-                backgroundColor: Colors.red,
-              ),
-            );
-          }
-          return;
-        }
-      }
-
       // Show loading indicator
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -814,7 +815,7 @@ class _AccessPassDialogState extends State<AccessPassDialog> {
                   ),
                 ),
                 hSpace(context, 16),
-                const Text("Menyimpan Access Pass..."),
+                const Text("Mengunduh PDF Access Pass..."),
               ],
             ),
             duration: const Duration(seconds: 2),
@@ -841,79 +842,94 @@ class _AccessPassDialogState extends State<AccessPassDialog> {
       );
       Uint8List pngBytes = byteData!.buffer.asUint8List();
 
-      // Simpan ke galeri menggunakan Gal
-      await Gal.putImageBytes(
-        pngBytes,
-        name: "access_pass_${DateTime.now().millisecondsSinceEpoch}.png",
+      // Simpan sebagai PDF file
+      final pdf = pw.Document();
+      final pdfImage = pw.MemoryImage(pngBytes);
+      pdf.addPage(
+        pw.Page(
+          pageFormat: PdfPageFormat.a4,
+          build: (pw.Context context) {
+            return pw.Center(
+              child: pw.Container(
+                width: 320,
+                child: pw.Image(pdfImage),
+              ),
+            );
+          },
+        ),
       );
 
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                const Icon(Icons.check_circle, color: Colors.white),
-                hSpace(context, 16),
-                const Text("Access Pass berhasil disimpan ke galeri"),
-              ],
-            ),
-            backgroundColor: Colors.green,
-          ),
-        );
-      }
-    } on GalException catch (e) {
-      debugPrint(
-        "Gal error while saving access pass: ${e.type} - ${e.platformException}",
-      );
-      if (mounted) {
-        String errorMessage = "Gagal menyimpan Access Pass ke galeri";
-
-        switch (e.type) {
-          case GalExceptionType.accessDenied:
-            errorMessage =
-                "Akses ditolak. Mohon berikan izin untuk menyimpan gambar.";
-            break;
-          case GalExceptionType.notEnoughSpace:
-            errorMessage = "Ruang penyimpanan tidak cukup.";
-            break;
-          case GalExceptionType.notSupportedFormat:
-            errorMessage = "Format gambar tidak didukung.";
-            break;
-          case GalExceptionType.unexpected:
-            errorMessage = "Terjadi kesalahan tak terduga.";
-            break;
+      final pdfBytes = await pdf.save();
+      String? path;
+      final activeItem = widget.items[_currentIndex];
+      final visitorNumber = activeItem.visitorNumber.isNotEmpty ? activeItem.visitorNumber : 'N_A';
+      if (Platform.isAndroid) {
+        final dir = Directory('/storage/emulated/0/Download');
+        if (await dir.exists()) {
+          path = '${dir.path}/access_pass_$visitorNumber.pdf';
         }
+      }
+      
+      if (path == null) {
+        final dir = await getApplicationDocumentsDirectory();
+        path = '${dir.path}/access_pass_$visitorNumber.pdf';
+      }
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                const Icon(Icons.error, color: Colors.white),
-                hSpace(context, 16),
-                Expanded(child: Text(errorMessage)),
-              ],
-            ),
-            backgroundColor: Colors.red,
-            duration: const Duration(seconds: 4),
+      final file = File(path);
+      await file.writeAsBytes(pdfBytes);
+
+      Get.snackbar(
+        'Success',
+        'PDF Access Pass berhasil diunduh!',
+        messageText: const Text(
+          'PDF Access Pass berhasil diunduh!',
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
+        titleText: const SizedBox.shrink(),
+        snackPosition: SnackPosition.TOP,
+        backgroundColor: Colors.green,
+        colorText: Colors.white,
+        duration: const Duration(seconds: 6),
+        mainButton: TextButton(
+          onPressed: () {
+            OpenFilex.open(path!);
+          },
+          style: TextButton.styleFrom(
+            padding: EdgeInsets.zero,
+            minimumSize: Size.zero,
+            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
           ),
-        );
-      }
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+            margin: const EdgeInsets.only(right: 8),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: const Text(
+              'BUKA',
+              style: TextStyle(
+                color: Colors.green,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ),
+      );
     } catch (e) {
-      debugPrint("Unexpected error while saving access pass: $e");
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                const Icon(Icons.error, color: Colors.white),
-                hSpace(context, 16),
-                const Text("Gagal menyimpan Access Pass ke galeri"),
-              ],
-            ),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
+      debugPrint("Unexpected error while saving access pass PDF: $e");
+      Get.snackbar(
+        'Error',
+        'Gagal mengunduh PDF Access Pass',
+        messageText: const Text(
+          'Gagal mengunduh PDF Access Pass',
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
+        titleText: const SizedBox.shrink(),
+        snackPosition: SnackPosition.TOP,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
     } finally {
       // Reset capturing state - Show download button again
       if (mounted) {
