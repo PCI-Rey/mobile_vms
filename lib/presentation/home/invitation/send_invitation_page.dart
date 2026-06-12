@@ -1,5 +1,7 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:ui' as ui;
+import 'package:flutter/rendering.dart';
 import 'package:dio/dio.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:pdf/pdf.dart';
@@ -2753,17 +2755,129 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
 
                     // ── Digital Invitation Card section ───────────────────
                     if (!widget.isFullDetail) ...[
-                      _section(context, 'Digital Invitation Card'),
-                      vSpace(context, 8),
                       StatefulBuilder(
                         builder: (context, setCardState) {
                           final cardItems = _groupVisitorModels.isNotEmpty
                               ? _groupVisitorModels
                               : [selectedItem];
                           int cardIndex = 0;
+                          // One GlobalKey per card for RepaintBoundary capture
+                          final cardKeys = List.generate(
+                            cardItems.length,
+                            (_) => GlobalKey(),
+                          );
+
+                          Future<void> downloadActiveCard() async {
+                            try {
+                              final key = cardKeys[cardIndex];
+                              final boundary = key.currentContext
+                                  ?.findRenderObject() as RenderRepaintBoundary?;
+                              if (boundary == null) return;
+
+                              final image = await boundary.toImage(pixelRatio: 3.0);
+                              final byteData = await image.toByteData(
+                                format: ui.ImageByteFormat.png,
+                              );
+                              if (byteData == null) return;
+                              final pngBytes = byteData.buffer.asUint8List();
+
+                              final model = cardItems[cardIndex];
+                              final visitorNum = model.visitorNumber.isNotEmpty
+                                  ? model.visitorNumber
+                                  : 'invitation_card';
+
+                              String? path;
+                              if (Platform.isAndroid) {
+                                final dir = Directory('/storage/emulated/0/Download');
+                                if (await dir.exists()) {
+                                  path = '${dir.path}/visitor_card_$visitorNum.png';
+                                }
+                              }
+                              if (path == null) {
+                                final dir = await getApplicationDocumentsDirectory();
+                                path = '${dir.path}/visitor_card_$visitorNum.png';
+                              }
+
+                              final file = File(path);
+                              await file.writeAsBytes(pngBytes);
+
+                              Get.snackbar(
+                                'Success',
+                                'Visitor Card berhasil diunduh!',
+                                messageText: const Text(
+                                  'Visitor Card berhasil diunduh!',
+                                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                                ),
+                                titleText: const SizedBox.shrink(),
+                                snackPosition: SnackPosition.TOP,
+                                backgroundColor: Colors.green,
+                                colorText: Colors.white,
+                                duration: const Duration(seconds: 6),
+                                mainButton: TextButton(
+                                  onPressed: () => OpenFilex.open(path!),
+                                  style: TextButton.styleFrom(
+                                    padding: EdgeInsets.zero,
+                                    minimumSize: Size.zero,
+                                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                  ),
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                                    margin: const EdgeInsets.only(right: 8),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(6),
+                                    ),
+                                    child: const Text(
+                                      'BUKA',
+                                      style: TextStyle(
+                                        color: Colors.green,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              );
+                            } catch (e) {
+                              Get.snackbar(
+                                'Error',
+                                'Gagal mengunduh Visitor Card',
+                                messageText: const Text(
+                                  'Gagal mengunduh Visitor Card',
+                                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                                ),
+                                titleText: const SizedBox.shrink(),
+                                snackPosition: SnackPosition.TOP,
+                                backgroundColor: Colors.red,
+                                colorText: Colors.white,
+                              );
+                            }
+                          }
+
                           return Column(
                             mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
+                               _section(
+                                context,
+                                'Digital Invitation Card',
+                                trailing: GestureDetector(
+                                  onTap: downloadActiveCard,
+                                  child: Container(
+                                    width: rw(context, 32),
+                                    height: rw(context, 32),
+                                    decoration: const BoxDecoration(
+                                      color: Color(0xFFE8F1FB),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: const Icon(
+                                      Icons.download_rounded,
+                                      size: 16,
+                                      color: Color(0xFF1976D2),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              // Carousel
                               CarouselSlider.builder(
                                 itemCount: cardItems.length,
                                 options: CarouselOptions(
@@ -2782,36 +2896,38 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
                                     padding: EdgeInsets.symmetric(
                                       horizontal: rw(context, 20),
                                     ),
-                                    child: _DigitalInvitationCard(
-                                      name: model.visitorName.isNotEmpty
-                                          ? model.visitorName
-                                          : '-',
-                                      visitorNumber: model.visitorNumber.isNotEmpty
-                                          ? model.visitorNumber
-                                          : '-',
+                                    child: RepaintBoundary(
+                                      key: cardKeys[index],
+                                      child: _DigitalInvitationCard(
+                                        name: model.visitorName.isNotEmpty
+                                            ? model.visitorName
+                                            : '-',
+                                        visitorNumber: model.visitorNumber.isNotEmpty
+                                            ? model.visitorNumber
+                                            : '-',
+                                      ),
                                     ),
                                   );
                                 },
                               ),
+                              // Dot indicators
                               if (cardItems.length > 1) ...[
                                 vSpace(context, 8),
                                 Row(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: cardItems.asMap().entries.map((entry) {
                                     final isActive = cardIndex == entry.key;
-                                    return GestureDetector(
-                                      child: AnimatedContainer(
-                                        duration: const Duration(milliseconds: 300),
-                                        curve: Curves.easeInOut,
-                                        width: isActive ? rw(context, 20.0) : rw(context, 6.0),
-                                        height: rw(context, 6.0),
-                                        margin: EdgeInsets.symmetric(horizontal: rw(context, 3.0)),
-                                        decoration: BoxDecoration(
-                                          borderRadius: BorderRadius.circular(3.0),
-                                          color: isActive
-                                              ? const Color(0xFF005596)
-                                              : const Color(0xFF005596).withValues(alpha: 0.3),
-                                        ),
+                                    return AnimatedContainer(
+                                      duration: const Duration(milliseconds: 300),
+                                      curve: Curves.easeInOut,
+                                      width: isActive ? rw(context, 20.0) : rw(context, 6.0),
+                                      height: rw(context, 6.0),
+                                      margin: EdgeInsets.symmetric(horizontal: rw(context, 3.0)),
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(3.0),
+                                        color: isActive
+                                            ? const Color(0xFF005596)
+                                            : const Color(0xFF005596).withValues(alpha: 0.3),
                                       ),
                                     );
                                   }).toList(),
