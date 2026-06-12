@@ -136,8 +136,17 @@ class _IteneraryListState extends State<IteneraryList> {
             ticket.visitorPeriodStart!.day == selectedDate.day;
       }).toList();
 
-      // Sort descending by visitorPeriodStart (newest first on that date)
+      // Sort: Pending first, then descending by visitorPeriodStart
       filteredTickets.sort((a, b) {
+        final aPending = a.approvalActorStatus?.toLowerCase() == 'pending' ||
+            a.approvalStatus?.toLowerCase() == 'pending';
+        final bPending = b.approvalActorStatus?.toLowerCase() == 'pending' ||
+            b.approvalStatus?.toLowerCase() == 'pending';
+
+        if (aPending != bPending) {
+          return aPending ? -1 : 1; // Pending comes first
+        }
+
         if (a.visitorPeriodStart == null && b.visitorPeriodStart == null) return 0;
         if (a.visitorPeriodStart == null) return 1;
         if (b.visitorPeriodStart == null) return -1;

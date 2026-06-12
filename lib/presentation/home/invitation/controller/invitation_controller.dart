@@ -166,12 +166,14 @@ class InvitationController extends GetxController {
     // everything else (Invitation, Praregister, etc.) → Invitation tab
     List<AccessPassModel> filtered = List.from(
       allInvitations.where(
-        (item) => item.flow.toLowerCase() != 'quickaccessvisit',
+        (item) => item.flow.toLowerCase() != 'quickaccessvisit' &&
+                  !(item.agenda.isEmpty && item.hostName.isEmpty && item.visitorTypeName.isEmpty),
       ),
     );
     List<AccessPassModel> quickAccess = List.from(
       allInvitations.where(
-        (item) => item.flow.toLowerCase() == 'quickaccessvisit',
+        (item) => item.flow.toLowerCase() == 'quickaccessvisit' &&
+                  !(item.agenda.isEmpty && item.hostName.isEmpty && item.visitorTypeName.isEmpty),
       ),
     );
 
@@ -272,21 +274,20 @@ class InvitationController extends GetxController {
     }
 
     // 3. Sorting
-    if (isNewestFirst.value) {
-      filtered.sort(
-        (a, b) => b.visitorPeriodStart.compareTo(a.visitorPeriodStart),
-      );
-      quickAccess.sort(
-        (a, b) => b.visitorPeriodStart.compareTo(a.visitorPeriodStart),
-      );
-    } else {
-      filtered.sort(
-        (a, b) => a.visitorPeriodStart.compareTo(b.visitorPeriodStart),
-      );
-      quickAccess.sort(
-        (a, b) => a.visitorPeriodStart.compareTo(b.visitorPeriodStart),
-      );
+    final now = DateTime.now();
+    int compareAccessPass(AccessPassModel a, AccessPassModel b) {
+      final aExpired = now.isAfter(a.visitorPeriodEnd);
+      final bExpired = now.isAfter(b.visitorPeriodEnd);
+      if (aExpired != bExpired) {
+        return aExpired ? 1 : -1;
+      }
+      return isNewestFirst.value
+          ? b.visitorPeriodStart.compareTo(a.visitorPeriodStart)
+          : a.visitorPeriodStart.compareTo(b.visitorPeriodStart);
     }
+
+    filtered.sort(compareAccessPass);
+    quickAccess.sort(compareAccessPass);
 
     ongoingInvitations.assignAll(filtered);
     quickAccessInvitations.assignAll(quickAccess);
@@ -596,6 +597,47 @@ class InvitationController extends GetxController {
         return computedStatus.toLowerCase() == selectedStatusShare.value.toLowerCase();
       }).toList();
     }
+
+    // Sort: Active first, then by visitor_period_start / created_at / expired_at descending
+    filtered.sort((a, b) {
+      final aMap = Map<String, dynamic>.from(a as Map);
+      final bMap = Map<String, dynamic>.from(b as Map);
+      
+      bool isExpiredLink(Map<String, dynamic> item) {
+        final expiredAtStr = item['expired_at'];
+        DateTime? expiredAt;
+        if (expiredAtStr != null) {
+          String normalized = expiredAtStr.toString();
+          if (!normalized.endsWith('Z') && !normalized.contains('+')) {
+            normalized = '${normalized.replaceFirst(' ', 'T')}Z';
+          }
+          expiredAt = DateTime.tryParse(normalized)?.toLocal();
+        }
+        final int maxUsage = item['max_usage'] ?? 0;
+        final int currentUsage = item['current_usage'] ?? 0;
+        final bool isSingleUse = item['is_single_use'] == true;
+        if (expiredAt != null && expiredAt.isBefore(DateTime.now())) return true;
+        if ((maxUsage > 0 && currentUsage >= maxUsage) || (isSingleUse && currentUsage >= 1)) return true;
+        return false;
+      }
+
+      final aExpired = isExpiredLink(aMap);
+      final bExpired = isExpiredLink(bMap);
+      if (aExpired != bExpired) {
+        return aExpired ? 1 : -1;
+      }
+
+      final dateStrA = aMap['visitor_period_start']?.toString() ??
+          aMap['created_at']?.toString() ??
+          aMap['expired_at']?.toString();
+      final dateStrB = bMap['visitor_period_start']?.toString() ??
+          bMap['created_at']?.toString() ??
+          bMap['expired_at']?.toString();
+      if (dateStrA == null && dateStrB == null) return 0;
+      if (dateStrA == null) return 1;
+      if (dateStrB == null) return -1;
+      return dateStrB.compareTo(dateStrA);
+    });
 
     // 4. Paginate
     shareLinkTotalRecords.value = filtered.length;

@@ -121,14 +121,41 @@ class _ShareLinkHomeListState extends State<ShareLinkHomeList> {
             date.day == selectedDate.day;
       }).toList();
 
-      // Sort descending by date (newest first on that date)
+      // Sort: Active first, then descending by date
       filteredShareLinks.sort((a, b) {
-        final dateStrA = a['visitor_period_start']?.toString() ??
-            a['created_at']?.toString() ??
-            a['expired_at']?.toString();
-        final dateStrB = b['visitor_period_start']?.toString() ??
-            b['created_at']?.toString() ??
-            b['expired_at']?.toString();
+        final aMap = Map<String, dynamic>.from(a as Map);
+        final bMap = Map<String, dynamic>.from(b as Map);
+        
+        bool isExpiredLink(Map<String, dynamic> item) {
+          final expiredAtStr = item['expired_at'];
+          DateTime? expiredAt;
+          if (expiredAtStr != null) {
+            String normalized = expiredAtStr.toString();
+            if (!normalized.endsWith('Z') && !normalized.contains('+')) {
+              normalized = '${normalized.replaceFirst(' ', 'T')}Z';
+            }
+            expiredAt = DateTime.tryParse(normalized)?.toLocal();
+          }
+          final int maxUsage = item['max_usage'] ?? 0;
+          final int currentUsage = item['current_usage'] ?? 0;
+          final bool isSingleUse = item['is_single_use'] == true;
+          if (expiredAt != null && expiredAt.isBefore(DateTime.now())) return true;
+          if ((maxUsage > 0 && currentUsage >= maxUsage) || (isSingleUse && currentUsage >= 1)) return true;
+          return false;
+        }
+
+        final aExpired = isExpiredLink(aMap);
+        final bExpired = isExpiredLink(bMap);
+        if (aExpired != bExpired) {
+          return aExpired ? 1 : -1;
+        }
+
+        final dateStrA = aMap['visitor_period_start']?.toString() ??
+            aMap['created_at']?.toString() ??
+            aMap['expired_at']?.toString();
+        final dateStrB = bMap['visitor_period_start']?.toString() ??
+            bMap['created_at']?.toString() ??
+            bMap['expired_at']?.toString();
         final dateA = _parseShareLinkDate(dateStrA);
         final dateB = _parseShareLinkDate(dateStrB);
         if (dateA == null && dateB == null) return 0;

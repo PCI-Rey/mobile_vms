@@ -77,8 +77,16 @@ class _QuickAccessHomeListState extends State<QuickAccessHomeList> {
             item.visitorPeriodStart.day == selectedDate.day;
       }).toList();
 
-      // Sort newest first
-      filtered.sort((a, b) => b.visitorPeriodStart.compareTo(a.visitorPeriodStart));
+      // Sort Active first, then newest first
+      final now = DateTime.now();
+      filtered.sort((a, b) {
+        final aExpired = now.isAfter(a.visitorPeriodEnd);
+        final bExpired = now.isAfter(b.visitorPeriodEnd);
+        if (aExpired != bExpired) {
+          return aExpired ? 1 : -1;
+        }
+        return b.visitorPeriodStart.compareTo(a.visitorPeriodStart);
+      });
 
       final list = filtered.length > 3 ? filtered.take(3).toList() : filtered;
 
