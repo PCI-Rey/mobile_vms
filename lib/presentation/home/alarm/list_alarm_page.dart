@@ -1,12 +1,11 @@
+// ignore_for_file: unused_import, unused_local_variable, unused_element, use_build_context_synchronously, sized_box_for_whitespace, unnecessary_underscores, unnecessary_import, unnecessary_null_comparison, curly_braces_in_flow_control_structures, unused_element_parameter, deprecated_member_use
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/core.dart';
 import '../../../core/helper/responsive_helper.dart';
 import '../../../data/models/alarm_model.dart';
-import '../../history/widgets/filter_bottom_sheet.dart';
 import 'controller/alarm_controller.dart';
 import '../../auth/controller/user_controller.dart';
 import '../invitation/controller/invitation_controller.dart';
@@ -84,7 +83,7 @@ class _AlarmListPageState extends State<AlarmListPage>
 
   @override
   Widget build(BuildContext context) {
-    final isGuest = _checkIsGuest();
+    // isGuest is unused but we keep the comment if needed
 
     return Scaffold(
       appBar: AppBar(

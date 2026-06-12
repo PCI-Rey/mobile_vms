@@ -1,3 +1,4 @@
+// ignore_for_file: unused_import, unused_local_variable, unused_element, use_build_context_synchronously, sized_box_for_whitespace, unnecessary_underscores, unnecessary_import, unnecessary_null_comparison, curly_braces_in_flow_control_structures, unused_element_parameter, deprecated_member_use
 import 'dart:convert';
 import 'dart:developer' as dev;
 import 'dart:math';

@@ -1,3 +1,4 @@
+// ignore_for_file: unused_import, unused_local_variable, unused_element, use_build_context_synchronously, sized_box_for_whitespace, unnecessary_underscores, unnecessary_import, unnecessary_null_comparison, curly_braces_in_flow_control_structures, unused_element_parameter, deprecated_member_use
 import 'dart:async';
 import 'dart:io';
 import 'dart:ui' as ui;
@@ -2787,7 +2788,7 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
                     ],
 
                     // ── Digital Invitation Card section ───────────────────
-                    if (!widget.isFullDetail) ...[
+                    if (!widget.isFullDetail && widget.item.flow.toLowerCase() != 'quickaccessvisit') ...[
                       StatefulBuilder(
                         builder: (context, setCardState) {
                           final cardItems = _groupVisitorModels.isNotEmpty

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../core/helper/responsive_helper.dart';
 import 'controller/verification_code_controller.dart';
-import 'waiting_approval_page.dart';
 import 'login_page.dart';
 
 class VerificationCodePage extends StatefulWidget {
@@ -99,26 +98,9 @@ class _VerificationCodePageState extends State<VerificationCodePage> {
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             // Logo Circle
-                            Container(
+                            SizedBox(
                               width: sw * 0.28,
                               height: sw * 0.28,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: Colors.white,
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withValues(alpha: 0.12),
-                                    blurRadius: 20,
-                                    offset: const Offset(0, 8),
-                                  ),
-                                  BoxShadow(
-                                    color: Colors.white.withValues(alpha: 0.3),
-                                    blurRadius: 30,
-                                    spreadRadius: 4,
-                                  ),
-                                ],
-                              ),
-                              padding: EdgeInsets.all(sw * 0.05),
                               child: Image.asset(
                                 'assets/images/VMS.png',
                                 fit: BoxFit.contain,

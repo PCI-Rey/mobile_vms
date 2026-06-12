@@ -5,7 +5,6 @@ import 'package:flutter/rendering.dart';
 import 'dart:ui' as ui;
 import 'package:get/get.dart';
 import 'package:open_filex/open_filex.dart';
-import 'package:gal/gal.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:intl/intl.dart';
 import 'package:qr_flutter/qr_flutter.dart';

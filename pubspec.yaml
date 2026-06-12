@@ -70,6 +70,7 @@ flutter_gen:
 flutter_launcher_icons:
   android: true
   ios: true
-  image_path: "assets/images/vms.png"
-  adaptive_icon_foreground: "assets/images/vms.png"
+  image_path: "assets/images/icon_ios.png"
+  adaptive_icon_foreground: "assets/images/icon_android_fg.png"
+  adaptive_icon_background: "#1976D2"
   min_sdk_android: 21

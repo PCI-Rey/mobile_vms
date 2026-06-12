@@ -148,26 +148,9 @@ class _SplashscreenState extends State<Splashscreen>
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         // Logo circle
-                        Container(
-                          width: sw * 0.30,
-                          height: sw * 0.30,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: Colors.white,
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.12),
-                                blurRadius: 20,
-                                offset: const Offset(0, 8),
-                              ),
-                              BoxShadow(
-                                color: Colors.white.withValues(alpha: 0.3),
-                                blurRadius: 30,
-                                spreadRadius: 4,
-                              ),
-                            ],
-                          ),
-                          padding: EdgeInsets.all(sw * 0.05),
+                        SizedBox(
+                          width: sw * 0.28,
+                          height: sw * 0.28,
                           child: Image.asset(
                             'assets/images/VMS.png',
                             fit: BoxFit.contain,
