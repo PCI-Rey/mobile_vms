@@ -403,7 +403,10 @@ class _SendInvitationPageState extends State<SendInvitationPage>
                     if (listToShow.isEmpty) {
                       return Center(
                         child: Padding(
-                          padding: EdgeInsets.all(rw(context, 40.0)),
+                          padding: EdgeInsets.symmetric(
+                            horizontal: rw(context, 20.0),
+                            vertical: rw(context, 40.0),
+                          ),
                           child: Column(
                             children: [
                               Icon(
@@ -417,7 +420,16 @@ class _SendInvitationPageState extends State<SendInvitationPage>
                                 style: TextStyle(
                                   color: Colors.grey[600],
                                   fontSize: rfs(context, 16),
-                                  fontWeight: FontWeight.w500,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                              vSpace(context, 8),
+                              Text(
+                                "Tap the '+' button at the top right to create a new invitation",
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  color: Colors.grey[500],
+                                  fontSize: rfs(context, 13),
                                 ),
                               ),
                             ],
@@ -872,7 +884,10 @@ class _SendInvitationPageState extends State<SendInvitationPage>
                     if (listToShow.isEmpty) {
                       return Center(
                         child: Padding(
-                          padding: EdgeInsets.all(rw(context, 40.0)),
+                          padding: EdgeInsets.symmetric(
+                            horizontal: rw(context, 20.0),
+                            vertical: rw(context, 40.0),
+                          ),
                           child: Column(
                             children: [
                               Icon(
@@ -886,7 +901,16 @@ class _SendInvitationPageState extends State<SendInvitationPage>
                                 style: TextStyle(
                                   color: Colors.grey[600],
                                   fontSize: rfs(context, 16),
-                                  fontWeight: FontWeight.w500,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                              vSpace(context, 8),
+                              Text(
+                                "Tap the '+' button at the top right to create a new quick access",
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  color: Colors.grey[500],
+                                  fontSize: rfs(context, 13),
                                 ),
                               ),
                             ],
@@ -3272,23 +3296,36 @@ class _ShareLinkListInlineState extends State<ShareLinkListInline> {
         listWidget = Center(
           child: SingleChildScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.link_off,
-                  size: rw(context, 64),
-                  color: Colors.grey.shade300,
-                ),
-                vSpace(context, 16),
-                Text(
-                  'No share links found',
-                  style: TextStyle(
-                    color: Colors.grey.shade500,
-                    fontSize: rfs(context, 14),
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: rw(context, 20.0)),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.link_off,
+                    size: rw(context, 64),
+                    color: Colors.grey.shade300,
                   ),
-                ),
-              ],
+                  vSpace(context, 16),
+                  Text(
+                    'No Share Links Found',
+                    style: TextStyle(
+                      color: Colors.grey.shade600,
+                      fontSize: rfs(context, 16),
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  vSpace(context, 8),
+                  Text(
+                    "Tap the '+' button at the top right to create a new share link",
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: Colors.grey.shade500,
+                      fontSize: rfs(context, 13),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         );
