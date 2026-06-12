@@ -47,462 +47,431 @@ class _AccessPassDialogState extends State<AccessPassDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return Dialog(
-      backgroundColor: Colors.transparent,
-      insetPadding: EdgeInsets.all(rw(context, 20)),
-      child: Container(
-        constraints: BoxConstraints(maxWidth: rw(context, 400)),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(rw(context, 24)),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.08),
-              blurRadius: 24,
-              offset: const Offset(0, 8),
+    final double topPadding = MediaQuery.of(context).padding.top;
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () => Navigator.of(context).pop(),
+      child: GestureDetector(
+        onTap: () {},
+        child: Padding(
+          padding: EdgeInsets.only(top: topPadding + 60),
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.vertical(
+                top: Radius.circular(rw(context, 28)),
+              ),
             ),
-          ],
-        ),
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Header
-              Container(
-                width: double.infinity,
-                padding: EdgeInsets.only(
-                  top: rh(context, 24),
-                  bottom: rh(context, 12),
-                  left: rw(context, 24),
-                  right: rw(context, 24),
-                ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.vertical(
+                top: Radius.circular(rw(context, 28)),
+              ),
+              child: SafeArea(
+                top: false,
                 child: Column(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    Container(
-                      width: rw(context, 40),
-                      height: rh(context, 4),
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade200,
-                        borderRadius: BorderRadius.circular(2),
+                    // Drag handle
+                    Padding(
+                      padding: EdgeInsets.only(top: rh(context, 12)),
+                      child: Container(
+                        width: rw(context, 40),
+                        height: rh(context, 4),
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade300,
+                          borderRadius: BorderRadius.circular(rw(context, 2)),
+                        ),
                       ),
                     ),
-                    vSpace(context, 16),
-                    Text(
-                      'Your Access Pass',
-                      style: TextStyle(
-                        fontSize: rfs(context, 20),
-                        fontWeight: FontWeight.w800,
-                        color: const Color(0xFF0F172A),
-                        letterSpacing: -0.5,
+
+                    // Header
+                    Padding(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: rw(context, 20),
+                        vertical: rh(context, 14),
                       ),
-                      textAlign: TextAlign.center,
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: EdgeInsets.all(rw(context, 10)),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF005596).withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(rw(context, 10)),
+                            ),
+                            child: const Icon(
+                              Icons.badge_outlined,
+                              color: Color(0xFF005596),
+                            ),
+                          ),
+                          hSpace(context, 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  'Your Access Pass',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w800,
+                                    fontSize: rfs(context, 16),
+                                    color: Colors.black87,
+                                  ),
+                                ),
+                                vSpace(context, 2),
+                                Text(
+                                  'Show this pass at the gate',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w500,
+                                    fontSize: rfs(context, 13),
+                                    color: Colors.grey.shade600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Container(height: 1, color: Colors.grey.shade100),
+
+                    // Content - Scrollable Body
+                    Flexible(
+                      child: SingleChildScrollView(
+                        child: RepaintBoundary(
+                          key: _accessPassKey,
+                          child: Container(
+                            width: double.infinity,
+                            color: Colors.white,
+                            padding: EdgeInsets.only(
+                              left: rw(context, 24),
+                              right: rw(context, 24),
+                              top: rh(context, 16),
+                            ),
+                            child: Column(
+                              children: [
+                                // User info section
+                                Row(
+                                  children: [
+                                    // Profile picture with border
+                                    Container(
+                                      width: rw(context, 52),
+                                      height: rw(context, 52),
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        border: Border.all(
+                                          color: const Color(0xFFE2E8F0),
+                                          width: 2,
+                                        ),
+                                        color: AppColors.grey200,
+                                      ),
+                                      child: widget.profileImagePath != null
+                                          ? ClipOval(
+                                              child: Image.asset(
+                                                widget.profileImagePath!,
+                                                width: rw(context, 52),
+                                                height: rw(context, 52),
+                                                fit: BoxFit.cover,
+                                              ),
+                                            )
+                                          : Icon(
+                                              Icons.person,
+                                              size: rw(context, 32),
+                                              color: AppColors.grey600,
+                                            ),
+                                    ),
+                                    hSpace(context, 12),
+
+                                    // User details
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            widget.name,
+                                            style: TextStyle(
+                                              fontSize: rfs(context, 18),
+                                              fontWeight: FontWeight.w800,
+                                              color: const Color(0xFF0F172A),
+                                              letterSpacing: -0.4,
+                                            ),
+                                          ),
+                                          vSpace(context, 4),
+                                          Row(
+                                            children: [
+                                              Icon(
+                                                Icons.access_time,
+                                                size: rw(context, 13),
+                                                color: const Color(0xFF64748B),
+                                              ),
+                                              hSpace(context, 4),
+                                              Expanded(
+                                                child: Text(
+                                                  '${widget.date} • ${widget.time}',
+                                                  style: TextStyle(
+                                                    fontSize: rfs(context, 12),
+                                                    fontWeight: FontWeight.w500,
+                                                    color: const Color(0xFF64748B),
+                                                  ),
+                                                  maxLines: 1,
+                                                  overflow: TextOverflow.ellipsis,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+
+                                    // Download button - Hidden saat capturing
+                                    AnimatedOpacity(
+                                      opacity: _isCapturing ? 0.0 : 1.0,
+                                      duration: const Duration(milliseconds: 200),
+                                      child: GestureDetector(
+                                        onTap: _isCapturing ? null : _downloadAccessPass,
+                                        child: Container(
+                                          width: rw(context, 42),
+                                          height: rw(context, 42),
+                                          decoration: BoxDecoration(
+                                            color: _isCapturing
+                                                ? Colors.transparent
+                                                : const Color(0xFFE8F1FB),
+                                            shape: BoxShape.circle,
+                                          ),
+                                          child: _isCapturing
+                                              ? const SizedBox.shrink()
+                                              : const Icon(
+                                                  Icons.download_rounded,
+                                                  size: 20,
+                                                  color: Color(0xFF1976D2),
+                                                ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+
+                                vSpace(context, 20),
+
+                                // Structured Info Card Grid
+                                Container(
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: rw(context, 16),
+                                    vertical: rh(context, 16),
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFF8FAFC),
+                                    borderRadius: BorderRadius.circular(rw(context, 16)),
+                                    border: Border.all(color: const Color(0xFFF1F5F9)),
+                                  ),
+                                  child: Column(
+                                    children: [
+                                      Row(
+                                        children: [
+                                          Expanded(
+                                            child: _buildInfoCard(
+                                              widget.invitationCode,
+                                              'Invitation Code',
+                                              Icons.confirmation_number_outlined,
+                                            ),
+                                          ),
+                                          Container(
+                                            width: 1,
+                                            height: rh(context, 36),
+                                            color: const Color(0xFFE2E8F0),
+                                          ),
+                                          Expanded(
+                                            child: Padding(
+                                              padding: EdgeInsets.only(left: rw(context, 16)),
+                                              child: _buildInfoCard(
+                                                widget.cardNumber,
+                                                'Card',
+                                                Icons.credit_card_outlined,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      Divider(
+                                        color: const Color(0xFFE2E8F0),
+                                        height: rh(context, 24),
+                                        thickness: 1,
+                                      ),
+                                      Row(
+                                        children: [
+                                          Expanded(
+                                            child: _buildInfoCard(
+                                              widget.vehiclePlateNo,
+                                              'Vehicle Plate No.',
+                                              Icons.directions_car_outlined,
+                                            ),
+                                          ),
+                                          Container(
+                                            width: 1,
+                                            height: rh(context, 36),
+                                            color: const Color(0xFFE2E8F0),
+                                          ),
+                                          Expanded(
+                                            child: Padding(
+                                              padding: EdgeInsets.only(left: rw(context, 16)),
+                                              child: _buildInfoCard(
+                                                widget.parkingSlot,
+                                                'Parking Slot',
+                                                Icons.local_parking_outlined,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                ),
+
+                                vSpace(context, 20),
+
+                                // QR Access Pass Card Container
+                                Container(
+                                  width: double.infinity,
+                                  padding: EdgeInsets.all(rw(context, 16)),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(rw(context, 16)),
+                                    border: Border.all(color: Colors.grey.shade200),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withValues(alpha: 0.04),
+                                        blurRadius: 8,
+                                        offset: const Offset(0, 4),
+                                      ),
+                                    ],
+                                  ),
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      // Access Pass Title (Centered)
+                                      Center(
+                                        child: Text(
+                                          'Access Pass',
+                                          style: TextStyle(
+                                            fontSize: rfs(context, 18),
+                                            fontWeight: FontWeight.w800,
+                                            color: Colors.black87,
+                                          ),
+                                        ),
+                                      ),
+                                      vSpace(context, 12),
+
+                                      // QR Code Box (Enlarged)
+                                      Container(
+                                        width: rw(context, 195),
+                                        height: rw(context, 195),
+                                        padding: EdgeInsets.all(rw(context, 10)),
+                                        decoration: BoxDecoration(
+                                          color: Colors.white,
+                                          borderRadius: BorderRadius.circular(rw(context, 10)),
+                                          border: Border.all(color: Colors.grey.shade200),
+                                        ),
+                                        child: _buildQRCodePlaceholder(),
+                                      ),
+                                      vSpace(context, 12),
+
+                                      // Tracked / Low Battery Row (Centered)
+                                      if (widget.isTracked || widget.isLowBattery) ...[
+                                        Row(
+                                          mainAxisAlignment: MainAxisAlignment.center,
+                                          children: [
+                                            if (widget.isTracked)
+                                              Text(
+                                                'Tracked',
+                                                style: TextStyle(
+                                                  color: Colors.red.shade600,
+                                                  fontSize: rfs(context, 11),
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
+                                            if (widget.isTracked && widget.isLowBattery)
+                                              hSpace(context, 16),
+                                            if (widget.isLowBattery)
+                                              Text(
+                                                'Low Battery',
+                                                style: TextStyle(
+                                                  color: Colors.red.shade600,
+                                                  fontSize: rfs(context, 11),
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
+                                          ],
+                                        ),
+                                        vSpace(context, 10),
+                                      ],
+
+                                      // Show this while visiting
+                                      Text(
+                                        'Show this while visiting',
+                                        style: TextStyle(
+                                          fontSize: rfs(context, 12),
+                                          fontWeight: FontWeight.w600,
+                                          color: Colors.black87,
+                                        ),
+                                      ),
+                                      vSpace(context, 2),
+
+                                      // ID
+                                      Text(
+                                        'ID : ${widget.visitorId.isNotEmpty ? widget.visitorId : '-'}',
+                                        style: TextStyle(
+                                          fontSize: rfs(context, 13),
+                                          fontWeight: FontWeight.w800,
+                                          color: Colors.black87,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+
+                                vSpace(context, 24),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    // Close button (Unified Blue color)
+                    Padding(
+                      padding: EdgeInsets.fromLTRB(
+                        rw(context, 24),
+                        rh(context, 8),
+                        rw(context, 24),
+                        rh(context, 24),
+                      ),
+                      child: SizedBox(
+                        width: double.infinity,
+                        height: rh(context, 50),
+                        child: ElevatedButton(
+                          onPressed: () => Navigator.of(context).pop(),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF005596),
+                            foregroundColor: Colors.white,
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(rw(context, 14)),
+                            ),
+                          ),
+                          child: Text(
+                            'Close',
+                            style: TextStyle(
+                              fontSize: rfs(context, 16),
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: 0.2,
+                            ),
+                          ),
+                        ),
+                      ),
                     ),
                   ],
                 ),
               ),
-
-              // Content - Wrapped with RepaintBoundary for screenshot
-              RepaintBoundary(
-                key: _accessPassKey,
-                child: Container(
-                  width: double.infinity,
-                  color: Colors.white,
-                  padding: EdgeInsets.only(
-                    left: rw(context, 24),
-                    right: rw(context, 24),
-                    top: rh(context, 16),
-                  ),
-                  child: Column(
-                    children: [
-                      // User info section
-                      Row(
-                        children: [
-                          // Profile picture with border
-                          Container(
-                            width: rw(context, 52),
-                            height: rw(context, 52),
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                color: const Color(0xFFE2E8F0),
-                                width: 2,
-                              ),
-                              color: AppColors.grey200,
-                            ),
-                            child: widget.profileImagePath != null
-                                ? ClipOval(
-                                    child: Image.asset(
-                                      widget.profileImagePath!,
-                                      width: rw(context, 52),
-                                      height: rw(context, 52),
-                                      fit: BoxFit.cover,
-                                    ),
-                                  )
-                                : Icon(
-                                    Icons.person,
-                                    size: rw(context, 32),
-                                    color: AppColors.grey600,
-                                  ),
-                          ),
-                          hSpace(context, 12),
-
-                          // User details
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  widget.name,
-                                  style: TextStyle(
-                                    fontSize: rfs(context, 18),
-                                    fontWeight: FontWeight.w800,
-                                    color: const Color(0xFF0F172A),
-                                    letterSpacing: -0.4,
-                                  ),
-                                ),
-                                vSpace(context, 4),
-                                Row(
-                                  children: [
-                                    Icon(
-                                      Icons.access_time,
-                                      size: rw(context, 13),
-                                      color: const Color(0xFF64748B),
-                                    ),
-                                    hSpace(context, 4),
-                                    Expanded(
-                                      child: Text(
-                                        '${widget.date} • ${widget.time}',
-                                        style: TextStyle(
-                                          fontSize: rfs(context, 12),
-                                          fontWeight: FontWeight.w500,
-                                          color: const Color(0xFF64748B),
-                                        ),
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
-
-                          // Download button - Hidden saat capturing
-                          AnimatedOpacity(
-                            opacity: _isCapturing ? 0.0 : 1.0,
-                            duration: const Duration(milliseconds: 200),
-                            child: GestureDetector(
-                              onTap: _isCapturing ? null : _downloadAccessPass,
-                              child: Container(
-                                width: rw(context, 42),
-                                height: rw(context, 42),
-                                decoration: BoxDecoration(
-                                  color: _isCapturing
-                                      ? Colors.transparent
-                                      : const Color(0xFFE8F1FB),
-                                  shape: BoxShape.circle,
-                                ),
-                                child: _isCapturing
-                                    ? const SizedBox.shrink()
-                                    : const Icon(
-                                        Icons.download_rounded,
-                                        size: 20,
-                                        color: Color(0xFF1976D2),
-                                      ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-
-                      vSpace(context, 20),
-
-                      // Structured Info Card Grid
-                      Container(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: rw(context, 16),
-                          vertical: rh(context, 16),
-                        ),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFF8FAFC),
-                          borderRadius: BorderRadius.circular(rw(context, 16)),
-                          border: Border.all(color: const Color(0xFFF1F5F9)),
-                        ),
-                        child: Column(
-                          children: [
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: _buildInfoCard(
-                                    widget.invitationCode,
-                                    'Invitation Code',
-                                    Icons.confirmation_number_outlined,
-                                  ),
-                                ),
-                                Container(
-                                  width: 1,
-                                  height: rh(context, 36),
-                                  color: const Color(0xFFE2E8F0),
-                                ),
-                                Expanded(
-                                  child: Padding(
-                                    padding: EdgeInsets.only(left: rw(context, 16)),
-                                    child: _buildInfoCard(
-                                      widget.cardNumber,
-                                      'Card',
-                                      Icons.credit_card_outlined,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            Divider(
-                              color: const Color(0xFFE2E8F0),
-                              height: rh(context, 24),
-                              thickness: 1,
-                            ),
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: _buildInfoCard(
-                                    widget.vehiclePlateNo,
-                                    'Vehicle Plate No.',
-                                    Icons.directions_car_outlined,
-                                  ),
-                                ),
-                                Container(
-                                  width: 1,
-                                  height: rh(context, 36),
-                                  color: const Color(0xFFE2E8F0),
-                                ),
-                                Expanded(
-                                  child: Padding(
-                                    padding: EdgeInsets.only(left: rw(context, 16)),
-                                    child: _buildInfoCard(
-                                      widget.parkingSlot,
-                                      'Parking Slot',
-                                      Icons.local_parking_outlined,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-
-                      vSpace(context, 20),
-
-                      // Building name with icon
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(
-                            Icons.location_on_rounded,
-                            size: 20,
-                            color: Color(0xFF1976D2),
-                          ),
-                          hSpace(context, 6),
-                          Text(
-                            widget.buildingName,
-                            style: TextStyle(
-                              fontSize: rfs(context, 18),
-                              fontWeight: FontWeight.w800,
-                              color: const Color(0xFF0F172A),
-                              letterSpacing: -0.4,
-                            ),
-                          ),
-                        ],
-                      ),
-
-                      vSpace(context, 20),
-
-                      // QR Code section
-                      Container(
-                        width: rw(context, 220),
-                        height: rw(context, 220),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(rw(context, 20)),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.06),
-                              blurRadius: 16,
-                              offset: const Offset(0, 4),
-                            ),
-                          ],
-                          border: Border.all(color: const Color(0xFFF1F5F9)),
-                        ),
-                        child: Padding(
-                          padding: EdgeInsets.all(rw(context, 16)),
-                          child: _buildQRCodePlaceholder(),
-                        ),
-                      ),
-
-                      // Status indicators (Pill badges)
-                      if (widget.isTracked || widget.isLowBattery) ...[
-                        vSpace(context, 18),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            if (widget.isTracked)
-                              Container(
-                                padding: EdgeInsets.symmetric(
-                                  horizontal: rw(context, 12),
-                                  vertical: rh(context, 6),
-                                ),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFFEF2F2),
-                                  borderRadius: BorderRadius.circular(rw(context, 30)),
-                                  border: Border.all(color: const Color(0xFFFEE2E2)),
-                                ),
-                                child: Row(
-                                  children: [
-                                    Container(
-                                      width: 6,
-                                      height: 6,
-                                      decoration: const BoxDecoration(
-                                        color: Color(0xFFEF4444),
-                                        shape: BoxShape.circle,
-                                      ),
-                                    ),
-                                    hSpace(context, 6),
-                                    Text(
-                                      'Tracked',
-                                      style: TextStyle(
-                                        fontSize: rfs(context, 12),
-                                        color: const Color(0xFFB91C1C),
-                                        fontWeight: FontWeight.w700,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            if (widget.isTracked && widget.isLowBattery)
-                              hSpace(context, 12),
-                            if (widget.isLowBattery)
-                              Container(
-                                padding: EdgeInsets.symmetric(
-                                  horizontal: rw(context, 12),
-                                  vertical: rh(context, 6),
-                                ),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFFFF7ED),
-                                  borderRadius: BorderRadius.circular(rw(context, 30)),
-                                  border: Border.all(color: const Color(0xFFFFEDD5)),
-                                ),
-                                child: Row(
-                                  children: [
-                                    Container(
-                                      width: 6,
-                                      height: 6,
-                                      decoration: const BoxDecoration(
-                                        color: Color(0xFFF97316),
-                                        shape: BoxShape.circle,
-                                      ),
-                                    ),
-                                    hSpace(context, 6),
-                                    Text(
-                                      'Low Battery',
-                                      style: TextStyle(
-                                        fontSize: rfs(context, 12),
-                                        color: const Color(0xFFC2410C),
-                                        fontWeight: FontWeight.w700,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                          ],
-                        ),
-                      ],
-
-                      vSpace(context, 20),
-
-                      // Instructions
-                      Text(
-                        'Show this while visiting',
-                        style: TextStyle(
-                          fontSize: rfs(context, 12),
-                          color: const Color(0xFF64748B),
-                          fontWeight: FontWeight.w600,
-                          letterSpacing: 0.2,
-                        ),
-                      ),
-                      vSpace(context, 8),
-                      Container(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: rw(context, 16),
-                          vertical: rh(context, 8),
-                        ),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFF8FAFC),
-                          borderRadius: BorderRadius.circular(rw(context, 30)),
-                          border: Border.all(color: const Color(0xFFE2E8F0)),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              'ID: ',
-                              style: TextStyle(
-                                fontSize: rfs(context, 13),
-                                fontWeight: FontWeight.w600,
-                                color: const Color(0xFF64748B),
-                              ),
-                            ),
-                            Text(
-                              widget.visitorId,
-                              style: TextStyle(
-                                fontSize: rfs(context, 13),
-                                fontWeight: FontWeight.w800,
-                                color: const Color(0xFF0F172A),
-                                letterSpacing: 0.5,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-
-                      vSpace(context, 24),
-                    ],
-                  ),
-                ),
-              ),
-
-              // Close button (Unified Blue color)
-              Padding(
-                padding: EdgeInsets.fromLTRB(
-                  rw(context, 24),
-                  0,
-                  rw(context, 24),
-                  rh(context, 24),
-                ),
-                child: SizedBox(
-                  width: double.infinity,
-                  height: rh(context, 50),
-                  child: ElevatedButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF005596),
-                      foregroundColor: Colors.white,
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(rw(context, 14)),
-                      ),
-                    ),
-                    child: Text(
-                      'Close',
-                      style: TextStyle(
-                        fontSize: rfs(context, 16),
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 0.2,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ],
+            ),
           ),
         ),
       ),
@@ -747,7 +716,7 @@ class QRCodePainter extends CustomPainter {
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
-// Helper function to show the dialog
+// Helper function to show the access pass bottom sheet
 void showAccessPassDialog({
   required BuildContext context,
   required String name,
@@ -763,9 +732,11 @@ void showAccessPassDialog({
   bool isTracked = false,
   bool isLowBattery = false,
 }) {
-  showDialog(
+  showModalBottomSheet(
     context: context,
-    barrierDismissible: true,
+    isScrollControlled: true,
+    backgroundColor: Colors.transparent,
+    enableDrag: true,
     builder: (context) => AccessPassDialog(
       name: name,
       date: date,
