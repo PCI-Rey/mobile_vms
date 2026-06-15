@@ -78,6 +78,11 @@ class _ApprovalDetailModalState extends State<ApprovalDetailModal> {
         (ticket.approvalActorStatus ?? '').toLowerCase() == 'pending';
     final isApproved =
         (ticket.approvalActorStatus ?? '').toLowerCase() == 'approved';
+    final isRejected =
+        (ticket.approvalActorStatus ?? '').toLowerCase() == 'rejected' ||
+        (ticket.approvalActorStatus ?? '').toLowerCase() == 'denied' ||
+        (ticket.approvalActorStatus ?? '').toLowerCase() == 'reject' ||
+        (ticket.approvalActorStatus ?? '').toLowerCase() == 'deny';
 
     Color statusBgColor;
     if (isPending) {
@@ -190,7 +195,7 @@ class _ApprovalDetailModalState extends State<ApprovalDetailModal> {
                         ),
                         if (ticket.visitorTypeName != null)
                           _SheetField(
-                            'Tipe Visitor',
+                            'Visitor Type',
                             ticket.visitorTypeName!,
                             Icons.badge_outlined,
                           ),
@@ -201,16 +206,22 @@ class _ApprovalDetailModalState extends State<ApprovalDetailModal> {
                             Icons.timeline_outlined,
                           ),
                         _SheetField(
-                          'Status Transaksi',
+                          'Transaction Status',
                           ticket.transactionStatus ?? '-',
                           Icons.info_outline,
                           badgeColor: _statusColor(ticket.transactionStatus ?? ''),
                         ),
                         if (isApproved && ticket.approvedAt != null)
                           _SheetField(
-                            'Disetujui',
+                            'Approved',
                             DateFormat('dd MMM yyyy, HH:mm').format(ticket.approvedAt!),
                             Icons.done_all_outlined,
+                          ),
+                        if (isRejected && ticket.approvedAt != null)
+                          _SheetField(
+                            'Rejected',
+                            DateFormat('dd MMM yyyy, HH:mm').format(ticket.approvedAt!),
+                            Icons.cancel_outlined,
                           ),
                       ]),
 
@@ -328,7 +339,10 @@ class _ApprovalDetailModalState extends State<ApprovalDetailModal> {
                       vSpace(context, 16),
 
                       // 3. Daftar Visitor
-                      _section(context, 'Daftar Visitor'),
+                      _section(
+                        context,
+                        _visitors.length > 1 ? 'List Visitors' : 'List Visitor',
+                      ),
                       if (_loading)
                         const Center(
                           child: Padding(
