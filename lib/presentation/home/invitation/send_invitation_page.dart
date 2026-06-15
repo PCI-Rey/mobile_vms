@@ -181,26 +181,30 @@ class _SendInvitationPageState extends State<SendInvitationPage>
           // ── Tab Bar ───────────────────────────────────────────────
           Container(
             color: Colors.white,
-            child: TabBar(
-              controller: _tabController,
-              dividerColor: Colors.transparent,
-              labelColor: AppColors.primary600,
-              unselectedLabelColor: Colors.grey.shade500,
-              indicatorColor: AppColors.primary600,
-              indicatorWeight: 2.5,
-              labelStyle: TextStyle(
-                fontSize: rfs(context, 16),
-                fontWeight: FontWeight.w700,
+            child: MediaQuery(
+              data: MediaQuery.of(context).copyWith(textScaler: TextScaler.noScaling),
+              child: TabBar(
+                controller: _tabController,
+                dividerColor: Colors.transparent,
+                labelColor: AppColors.primary600,
+                unselectedLabelColor: Colors.grey.shade500,
+                indicatorColor: AppColors.primary600,
+                indicatorWeight: 2.5,
+                labelPadding: EdgeInsets.zero,
+                labelStyle: TextStyle(
+                  fontSize: rfs(context, 18),
+                  fontWeight: FontWeight.w700,
+                ),
+                unselectedLabelStyle: TextStyle(
+                  fontSize: rfs(context, 18),
+                  fontWeight: FontWeight.w500,
+                ),
+                tabs: const [
+                  Tab(text: 'Invitation'),
+                  Tab(text: 'Share Link'),
+                  Tab(text: 'Quick Access'),
+                ],
               ),
-              unselectedLabelStyle: TextStyle(
-                fontSize: rfs(context, 16),
-                fontWeight: FontWeight.w500,
-              ),
-              tabs: const [
-                Tab(text: 'Invitation'),
-                Tab(text: 'Share Link'),
-                Tab(text: 'Quick Access'),
-              ],
             ),
           ),
 
@@ -1574,7 +1578,7 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
 
       pw.Widget pdfField(String label, String value) {
         return pw.Padding(
-          padding: const pw.EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+          padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 3),
           child: pw.Column(
             crossAxisAlignment: pw.CrossAxisAlignment.start,
             children: [
@@ -1582,11 +1586,11 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
                 label,
                 style: pw.TextStyle(fontSize: 8, color: PdfColors.grey500),
               ),
-              pw.SizedBox(height: 2),
+              pw.SizedBox(height: 1),
               pw.Text(
                 value.isEmpty ? '-' : value,
                 style: pw.TextStyle(
-                  fontSize: 10,
+                  fontSize: 9,
                   fontWeight: pw.FontWeight.bold,
                   color: PdfColors.black,
                 ),
@@ -1598,19 +1602,19 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
 
       pw.Widget sectionHeader(String title) {
         return pw.Padding(
-          padding: const pw.EdgeInsets.only(top: 14, bottom: 6),
+          padding: const pw.EdgeInsets.only(top: 8, bottom: 4),
           child: pw.Row(
             children: [
               pw.Container(
                 width: 3,
-                height: 12,
+                height: 10,
                 color: const PdfColor(0.0, 0.333, 0.588),
               ),
-              pw.SizedBox(width: 6),
+              pw.SizedBox(width: 5),
               pw.Text(
                 title,
                 style: pw.TextStyle(
-                  fontSize: 12,
+                  fontSize: 10,
                   fontWeight: pw.FontWeight.bold,
                   color: PdfColors.black,
                 ),
@@ -1623,9 +1627,9 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
       pw.Widget buildPdfDigitalCard(AccessPassModel model) {
         return pw.Container(
           width: double.infinity,
-          padding: const pw.EdgeInsets.all(16),
+          padding: const pw.EdgeInsets.symmetric(horizontal: 16, vertical: 10),
           decoration: const pw.BoxDecoration(
-            borderRadius: pw.BorderRadius.all(pw.Radius.circular(16)),
+            borderRadius: pw.BorderRadius.all(pw.Radius.circular(12)),
             gradient: pw.LinearGradient(
               begin: pw.Alignment.topLeft,
               end: pw.Alignment.bottomRight,
@@ -1644,13 +1648,13 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
                 children: [
                   pw.Container(
                     padding: const pw.EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 3,
+                      horizontal: 6,
+                      vertical: 2,
                     ),
                     decoration: pw.BoxDecoration(
                       color: const PdfColor(1.0, 1.0, 1.0, 0.18),
                       borderRadius: const pw.BorderRadius.all(
-                        pw.Radius.circular(4),
+                        pw.Radius.circular(3),
                       ),
                       border: pw.Border.all(
                         color: const PdfColor(1.0, 1.0, 1.0, 0.4),
@@ -1661,28 +1665,28 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
                       'VISITOR CARD',
                       style: pw.TextStyle(
                         color: PdfColors.white,
-                        fontSize: 8,
+                        fontSize: 7,
                         fontWeight: pw.FontWeight.bold,
                       ),
                     ),
                   ),
                 ],
               ),
-              pw.SizedBox(height: 24),
+              pw.SizedBox(height: 12),
               pw.Text(
                 model.visitorName.toUpperCase(),
                 style: pw.TextStyle(
                   color: PdfColors.white,
-                  fontSize: 16,
+                  fontSize: 14,
                   fontWeight: pw.FontWeight.bold,
                 ),
               ),
-              pw.SizedBox(height: 4),
+              pw.SizedBox(height: 2),
               pw.Text(
                 model.visitorNumber,
                 style: pw.TextStyle(
                   color: const PdfColor(1.0, 1.0, 1.0, 0.88),
-                  fontSize: 10,
+                  fontSize: 9,
                   fontWeight: pw.FontWeight.bold,
                 ),
               ),
@@ -1727,7 +1731,7 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
               children: [
                 pw.Expanded(child: pdfField(f1.key, f1.value)),
                 if (hasSecond) ...[
-                  pw.Container(width: 1, height: 36, color: PdfColors.grey200),
+                  pw.Container(width: 1, height: 24, color: PdfColors.grey200),
                   pw.Expanded(child: pdfField(f2!.key, f2.value)),
                 ] else
                   pw.Expanded(child: pw.SizedBox()),
@@ -1742,13 +1746,13 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
         pdf.addPage(
           pw.MultiPage(
             pageFormat: PdfPageFormat.a4,
-            margin: const pw.EdgeInsets.all(30),
+            margin: const pw.EdgeInsets.symmetric(horizontal: 24, vertical: 16),
             build: (pw.Context context) {
               return [
                 // Header banner
                 pw.Container(
                   width: double.infinity,
-                  padding: const pw.EdgeInsets.only(bottom: 8),
+                  padding: const pw.EdgeInsets.only(bottom: 6),
                   decoration: const pw.BoxDecoration(
                     border: pw.Border(
                       bottom: pw.BorderSide(color: PdfColors.grey300, width: 1),
@@ -1760,7 +1764,7 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
                       pw.Text(
                         'VISITOR ACCESS PASS',
                         style: pw.TextStyle(
-                          fontSize: 16,
+                          fontSize: 14,
                           fontWeight: pw.FontWeight.bold,
                           color: const PdfColor(0.0, 0.333, 0.588),
                         ),
@@ -1768,14 +1772,14 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
                       pw.Text(
                         DateFormat('dd MMM yyyy').format(DateTime.now()),
                         style: const pw.TextStyle(
-                          fontSize: 10,
+                          fontSize: 9,
                           color: PdfColors.grey600,
                         ),
                       ),
                     ],
                   ),
                 ),
-                pw.SizedBox(height: 8),
+                pw.SizedBox(height: 6),
 
                 // 1. Visitor Information
                 sectionHeader('Visitor Information'),
@@ -1783,13 +1787,13 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
                   decoration: pw.BoxDecoration(
                     color: PdfColors.grey50,
                     borderRadius: const pw.BorderRadius.all(
-                      pw.Radius.circular(10),
+                      pw.Radius.circular(8),
                     ),
                     border: pw.Border.all(color: PdfColors.grey200, width: 1),
                   ),
                   child: pw.Column(children: rows),
                 ),
-                pw.SizedBox(height: 8),
+                pw.SizedBox(height: 6),
 
                 // 2. Visit Period
                 sectionHeader('Visit Period'),
@@ -1797,7 +1801,7 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
                   decoration: pw.BoxDecoration(
                     color: PdfColors.grey50,
                     borderRadius: const pw.BorderRadius.all(
-                      pw.Radius.circular(10),
+                      pw.Radius.circular(8),
                     ),
                     border: pw.Border.all(color: PdfColors.grey200, width: 1),
                   ),
@@ -1813,7 +1817,7 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
                       ),
                       pw.Container(
                         width: 1,
-                        height: 36,
+                        height: 24,
                         color: PdfColors.grey200,
                       ),
                       pw.Expanded(
@@ -1827,30 +1831,30 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
                     ],
                   ),
                 ),
-                pw.SizedBox(height: 8),
+                pw.SizedBox(height: 6),
 
                 // 3. Access Pass
                 sectionHeader('Access Pass'),
                 pw.Container(
                   width: double.infinity,
-                  padding: const pw.EdgeInsets.all(12),
+                  padding: const pw.EdgeInsets.all(8),
                   decoration: pw.BoxDecoration(
                     color: PdfColors.white,
                     borderRadius: const pw.BorderRadius.all(
-                      pw.Radius.circular(10),
+                      pw.Radius.circular(8),
                     ),
                     border: pw.Border.all(color: PdfColors.grey200, width: 1),
                   ),
                   child: pw.Column(
                     children: [
                       pw.Container(
-                        width: 120,
-                        height: 120,
-                        padding: const pw.EdgeInsets.all(6),
+                        width: 90,
+                        height: 90,
+                        padding: const pw.EdgeInsets.all(4),
                         decoration: pw.BoxDecoration(
                           color: PdfColors.white,
                           borderRadius: const pw.BorderRadius.all(
-                            pw.Radius.circular(8),
+                            pw.Radius.circular(6),
                           ),
                           border: pw.Border.all(
                             color: PdfColors.grey200,
@@ -1864,27 +1868,27 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
                               : 'N/A',
                         ),
                       ),
-                      pw.SizedBox(height: 6),
+                      pw.SizedBox(height: 4),
                       pw.Row(
                         mainAxisAlignment: pw.MainAxisAlignment.center,
                         children: [
                           pw.Text(
                             model.canTrackBle == true ? 'Tracked' : 'Not Tracked',
                             style: pw.TextStyle(
-                              fontSize: 9,
+                              fontSize: 8,
                               fontWeight: pw.FontWeight.bold,
                               color: model.canTrackBle == true
                                   ? PdfColors.green700
                                   : PdfColors.red700,
                             ),
                           ),
-                          pw.SizedBox(width: 16),
+                          pw.SizedBox(width: 12),
                           pw.Text(
                             model.canAccess == true
                                 ? 'Accessible'
                                 : 'Not Accessible',
                             style: pw.TextStyle(
-                              fontSize: 9,
+                              fontSize: 8,
                               fontWeight: pw.FontWeight.bold,
                               color: model.canAccess == true
                                   ? PdfColors.green700
@@ -1893,20 +1897,20 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
                           ),
                         ],
                       ),
-                      pw.SizedBox(height: 4),
+                      pw.SizedBox(height: 3),
                       pw.Text(
                         'Show this while visiting',
                         style: pw.TextStyle(
-                          fontSize: 9,
+                          fontSize: 8,
                           fontWeight: pw.FontWeight.bold,
                           color: PdfColors.black,
                         ),
                       ),
-                      pw.SizedBox(height: 2),
+                      pw.SizedBox(height: 1),
                       pw.Text(
                         'ID : ${model.visitorNumber.isNotEmpty ? model.visitorNumber : '-'}',
                         style: pw.TextStyle(
-                          fontSize: 10,
+                          fontSize: 9,
                           fontWeight: pw.FontWeight.bold,
                           color: PdfColors.black,
                         ),
@@ -1914,7 +1918,7 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
                     ],
                   ),
                 ),
-                pw.SizedBox(height: 8),
+                pw.SizedBox(height: 6),
 
                 // 4. Digital Invitation Card
                 sectionHeader('Digital Invitation Card'),
@@ -2163,7 +2167,7 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
                         final barcodeItems = _groupVisitorModels.isNotEmpty
                             ? _groupVisitorModels
                             : [selectedItem];
-                        _downloadBarcodePdf(barcodeItems);
+                        _downloadBarcodePdf([barcodeItems.first]);
                       },
                       child: Container(
                         width: rw(context, 32),

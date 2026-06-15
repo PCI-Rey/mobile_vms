@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import '../presentation/onboarding/language_selection_page.dart';
 import '../data/datasources/auth_datasource.dart';
 import '../presentation/dashboard.dart';
+import '../presentation/home/invitation/controller/invitation_controller.dart';
 
 class Splashscreen extends StatefulWidget {
   const Splashscreen({super.key});
@@ -54,11 +55,28 @@ class _SplashscreenState extends State<Splashscreen>
   }
 
   Future<void> _handleSplashFlow() async {
-    final authFuture = _checkAuthentication();
+    final isAuthenticated = await _checkAuthentication();
     final delayFuture = Future.delayed(_minSplashDuration);
 
-    final results = await Future.wait([authFuture, delayFuture]);
-    final isAuthenticated = results[0] as bool;
+    if (isAuthenticated) {
+      try {
+        final controller = Get.isRegistered<InvitationController>()
+            ? Get.find<InvitationController>()
+            : Get.put(InvitationController());
+
+        await Future.wait([
+          controller.fetchOngoingInvitations(isSilent: true),
+          controller.fetchApprovalTickets(isSilent: true),
+          controller.fetchMasterData(),
+          controller.fetchShareLinks(resetPage: true),
+          controller.fetchDashboardShareLinks(),
+        ]).timeout(const Duration(seconds: 15));
+      } catch (e) {
+        debugPrint('Splash prefetch error: $e');
+      }
+    }
+
+    await delayFuture;
 
     if (!mounted) return;
     _navigateToNextScreen(isAuthenticated);
