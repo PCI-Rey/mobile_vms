@@ -4,21 +4,21 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../core/helper/responsive_helper.dart';
 import '../../presentation/home/alarm/list_alarm_page.dart';
+import 'alarm/controller/alarm_controller.dart';
 import '../../presentation/notification/notification_page.dart';
 import '../../presentation/profile/profile_page.dart';
 
-import 'invitation/widgets/share_link_home_list.dart';
-import 'invitation/widgets/invitation_home_list.dart';
-import 'invitation/widgets/quick_access_home_list.dart';
 import '../../presentation/home/invitation/send_invitation_page.dart';
 import '../../presentation/auth/controller/language_controller.dart';
 import '../../presentation/auth/controller/user_controller.dart';
-import 'agenda/widgets/itenerary_list.dart';
 
 import '../../core/core.dart';
 import 'access_pass/access_pass_page.dart';
 import 'approval/approval_page.dart';
 import 'invitation/controller/invitation_controller.dart';
+import 'invitation/widgets/create_share_link_dialog.dart';
+import 'invitation/widgets/create_quick_access_dialog.dart';
+import 'visitor_request/add_pra_registration_dialog.dart';
 import '../../data/models/access_pass_model.dart';
 import '../../data/models/approval_ticket_model.dart';
 import '../dashboard.dart';
@@ -41,11 +41,8 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
       ? Get.find<InvitationController>()
       : Get.put(InvitationController());
 
-  final ScrollController _scrollController = ScrollController();
-  bool _isSelectingFromCalendar = false;
   bool _showBellRedDot = false;
 
-  Worker? _dateScrollWorker;
   Worker? _approvalTicketsWorker;
 
   @override
@@ -84,31 +81,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
-        _scrollToDate(
-          invitationController.selectedDashboardDate.value,
-          animate: false,
-        );
         _checkAndShowPendingPopup(invitationController.approvalTickets);
-      }
-      Future.delayed(const Duration(milliseconds: 300), () {
-        if (mounted) {
-          _scrollToDate(
-            invitationController.selectedDashboardDate.value,
-            animate: false,
-          );
-        }
-      });
-    });
-
-    _dateScrollWorker = ever(invitationController.selectedDashboardDate, (
-      date,
-    ) {
-      if (mounted) {
-        if (_isSelectingFromCalendar) {
-          _isSelectingFromCalendar = false;
-          _scrollToDate(date, animate: true);
-        }
-        setState(() {});
       }
     });
 
@@ -124,9 +97,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   @override
   void dispose() {
     _bellAnimationController.dispose();
-    _dateScrollWorker?.dispose();
     _approvalTicketsWorker?.dispose();
-    _scrollController.dispose();
     super.dispose();
   }
 
@@ -144,7 +115,8 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     if (invitationController.postponedTicketIds.isNotEmpty) {
       pendingTickets = pendingTickets.where((t) {
         final id = t.approvalTicketId ?? t.ticketId;
-        return id != null && invitationController.postponedTicketIds.contains(id);
+        return id != null &&
+            invitationController.postponedTicketIds.contains(id);
       }).toList();
     }
 
@@ -221,7 +193,9 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                           SizedBox(
                             height: rh(context, 145),
                             child: PageView.builder(
-                              key: ValueKey(currentTickets.length), // Rebuild PageView on item removal to avoid index mismatches
+                              key: ValueKey(
+                                currentTickets.length,
+                              ), // Rebuild PageView on item removal to avoid index mismatches
                               controller: pageController,
                               itemCount: currentTickets.length,
                               onPageChanged: (index) {
@@ -230,99 +204,135 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                                 });
                               },
                               itemBuilder: (context, index) {
-                                 final ticket = currentTickets[index];
-                                 invitationController.fetchVisitorNameForTicket(ticket);
-                                 final host = ticket.hostName ?? 'Unknown Host';
-                                 final agenda = ticket.agenda ?? 'Meeting';
-                                 final type = ticket.visitorTypeName ?? 'Visitor';
-                                 final start = ticket.visitorPeriodStart;
-                                 final startStr = start != null
-                                     ? DateFormat('dd MMMM yyyy, HH:mm').format(start)
-                                     : '-';
+                                final ticket = currentTickets[index];
+                                invitationController.fetchVisitorNameForTicket(
+                                  ticket,
+                                );
+                                final host = ticket.hostName ?? 'Unknown Host';
+                                final agenda = ticket.agenda ?? 'Meeting';
+                                final type =
+                                    ticket.visitorTypeName ?? 'Visitor';
+                                final start = ticket.visitorPeriodStart;
+                                final startStr = start != null
+                                    ? DateFormat(
+                                        'dd MMMM yyyy, HH:mm',
+                                      ).format(start)
+                                    : '-';
 
-                                 return Container(
-                                   margin: EdgeInsets.symmetric(horizontal: rw(context, 4)),
-                                   padding: EdgeInsets.symmetric(
-                                     horizontal: rw(context, 12),
-                                     vertical: rh(context, 12),
-                                   ),
-                                   decoration: BoxDecoration(
-                                     color: const Color(0xFFF5F7FB),
-                                     borderRadius: BorderRadius.circular(rw(context, 16)),
-                                     border: Border.all(color: Colors.grey.shade200),
-                                   ),
-                                   child: Row(
-                                     crossAxisAlignment: CrossAxisAlignment.center,
-                                     children: [
-                                       // TikTok style avatar / icon
-                                       Container(
-                                         width: rw(context, 46),
-                                         height: rw(context, 46),
-                                         decoration: const BoxDecoration(
-                                           color: AppColors.primary50,
-                                           shape: BoxShape.circle,
-                                         ),
-                                         child: Icon(
-                                           Icons.badge_outlined,
-                                           color: AppColors.primary500,
-                                           size: rw(context, 22),
-                                         ),
-                                       ),
-                                       hSpace(context, 12),
+                                return Container(
+                                  margin: EdgeInsets.symmetric(
+                                    horizontal: rw(context, 4),
+                                  ),
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: rw(context, 12),
+                                    vertical: rh(context, 12),
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFF5F7FB),
+                                    borderRadius: BorderRadius.circular(
+                                      rw(context, 16),
+                                    ),
+                                    border: Border.all(
+                                      color: Colors.grey.shade200,
+                                    ),
+                                  ),
+                                  child: Row(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.center,
+                                    children: [
+                                      // TikTok style avatar / icon
+                                      Container(
+                                        width: rw(context, 46),
+                                        height: rw(context, 46),
+                                        decoration: const BoxDecoration(
+                                          color: AppColors.primary50,
+                                          shape: BoxShape.circle,
+                                        ),
+                                        child: Icon(
+                                          Icons.badge_outlined,
+                                          color: AppColors.primary500,
+                                          size: rw(context, 22),
+                                        ),
+                                      ),
+                                      hSpace(context, 12),
 
-                                       // Content
-                                       Expanded(
-                                         child: Column(
-                                           crossAxisAlignment: CrossAxisAlignment.start,
-                                           mainAxisAlignment: MainAxisAlignment.center,
-                                           children: [
-                                             Obx(() {
-                                               final ticketId = ticket.approvalTicketId ?? ticket.ticketId ?? '';
-                                               final displayName = invitationController.ticketVisitorNames[ticketId] ?? host;
-                                               return RichText(
-                                                 maxLines: 2,
-                                                 overflow: TextOverflow.ellipsis,
-                                                 text: TextSpan(
-                                                   style: TextStyle(
-                                                     fontSize: rfs(context, 15),
-                                                     color: Colors.black87,
-                                                     height: 1.3,
-                                                   ),
-                                                   children: [
-                                                     TextSpan(
-                                                       text: displayName,
-                                                       style: TextStyle(
-                                                         fontSize: rfs(context, 15),
-                                                         fontWeight: FontWeight.bold,
-                                                         color: Colors.black,
-                                                       ),
-                                                     ),
-                                                     TextSpan(
-                                                       text: ' requested approval for ',
-                                                       style: TextStyle(
-                                                         fontSize: rfs(context, 15),
-                                                         color: Colors.black87,
-                                                       ),
-                                                     ),
-                                                     TextSpan(
-                                                       text: agenda,
-                                                       style: TextStyle(
-                                                         fontSize: rfs(context, 15),
-                                                         fontWeight: FontWeight.bold,
-                                                         color: Colors.black,
-                                                       ),
-                                                     ),
-                                                     TextSpan(
-                                                       text: '.',
-                                                       style: TextStyle(
-                                                         fontSize: rfs(context, 15),
-                                                         color: Colors.black87,
-                                                       ),
-                                                     ),
-                                                   ],
-                                                 ),
-                                               );
-                                             }),vSpace(context, 4),
+                                      // Content
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          children: [
+                                            Obx(() {
+                                              final ticketId =
+                                                  ticket.approvalTicketId ??
+                                                  ticket.ticketId ??
+                                                  '';
+                                              final displayName =
+                                                  invitationController
+                                                      .ticketVisitorNames[ticketId] ??
+                                                  host;
+                                              return RichText(
+                                                maxLines: 2,
+                                                overflow: TextOverflow.ellipsis,
+                                                text: TextSpan(
+                                                  style: TextStyle(
+                                                    fontSize: rfs(context, 15),
+                                                    color: Colors.black87,
+                                                    height: 1.3,
+                                                  ),
+                                                  children: [
+                                                    TextSpan(
+                                                      text: displayName,
+                                                      style: TextStyle(
+                                                        fontSize: rfs(
+                                                          context,
+                                                          15,
+                                                        ),
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                        color: Colors.black,
+                                                      ),
+                                                    ),
+                                                    TextSpan(
+                                                      text:
+                                                          ' requested approval for ',
+                                                      style: TextStyle(
+                                                        fontSize: rfs(
+                                                          context,
+                                                          15,
+                                                        ),
+                                                        color: Colors.black87,
+                                                      ),
+                                                    ),
+                                                    TextSpan(
+                                                      text: agenda,
+                                                      style: TextStyle(
+                                                        fontSize: rfs(
+                                                          context,
+                                                          15,
+                                                        ),
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                        color: Colors.black,
+                                                      ),
+                                                    ),
+                                                    TextSpan(
+                                                      text: '.',
+                                                      style: TextStyle(
+                                                        fontSize: rfs(
+                                                          context,
+                                                          15,
+                                                        ),
+                                                        color: Colors.black87,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              );
+                                            }),
+                                            vSpace(context, 4),
                                             Text(
                                               type,
                                               style: TextStyle(
@@ -357,7 +367,9 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                               children: List.generate(
                                 currentTickets.length,
                                 (index) => Container(
-                                  margin: const EdgeInsets.symmetric(horizontal: 3),
+                                  margin: const EdgeInsets.symmetric(
+                                    horizontal: 3,
+                                  ),
                                   width: currentPage == index ? 12 : 6,
                                   height: 6,
                                   decoration: BoxDecoration(
@@ -378,25 +390,32 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                                 child: OutlinedButton(
                                   onPressed: () {
                                     final ticket = currentTickets[currentPage];
-                                    final ticketId = ticket.approvalTicketId ?? ticket.ticketId ?? '';
+                                    final ticketId =
+                                        ticket.approvalTicketId ??
+                                        ticket.ticketId ??
+                                        '';
                                     _runFlyingAnimation(setRedDot: true);
-                                    
+
                                     setState(() {
                                       hasPressedRemindMe = true;
                                       invitationController.startReminderTimer(
                                         30,
                                         ticketId,
                                         () {
-                                          invitationController.fetchApprovalTickets();
+                                          invitationController
+                                              .fetchApprovalTickets();
                                         },
                                       );
 
                                       currentTickets.removeAt(currentPage);
-                                      if (currentPage >= currentTickets.length) {
+                                      if (currentPage >=
+                                          currentTickets.length) {
                                         currentPage = currentTickets.length - 1;
                                       }
                                       if (currentPage < 0) currentPage = 0;
-                                      pageController = PageController(initialPage: currentPage);
+                                      pageController = PageController(
+                                        initialPage: currentPage,
+                                      );
                                     });
 
                                     if (currentTickets.isEmpty) {
@@ -405,17 +424,26 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                                   },
                                   style: OutlinedButton.styleFrom(
                                     foregroundColor: AppColors.grey700,
-                                    side: const BorderSide(color: AppColors.grey400),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(rw(context, 12)),
+                                    side: const BorderSide(
+                                      color: AppColors.grey400,
                                     ),
-                                    padding: EdgeInsets.symmetric(vertical: rh(context, 10)),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(
+                                        rw(context, 12),
+                                      ),
+                                    ),
+                                    padding: EdgeInsets.symmetric(
+                                      vertical: rh(context, 10),
+                                    ),
                                   ),
                                   child: Text(
                                     'Remind me again',
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
-                                    style: TextStyle(fontSize: rfs(context, 13.5), fontWeight: FontWeight.bold),
+                                    style: TextStyle(
+                                      fontSize: rfs(context, 13.5),
+                                      fontWeight: FontWeight.bold,
+                                    ),
                                   ),
                                 ),
                               ),
@@ -427,17 +455,21 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
 
                                     setState(() {
                                       currentTickets.removeAt(currentPage);
-                                      if (currentPage >= currentTickets.length) {
+                                      if (currentPage >=
+                                          currentTickets.length) {
                                         currentPage = currentTickets.length - 1;
                                       }
                                       if (currentPage < 0) currentPage = 0;
-                                      pageController = PageController(initialPage: currentPage);
+                                      pageController = PageController(
+                                        initialPage: currentPage,
+                                      );
                                     });
 
                                     if (currentTickets.isEmpty) {
                                       Navigator.of(dialogCtx).pop();
                                       if (!hasPressedRemindMe) {
-                                        invitationController.cancelReminderTimer();
+                                        invitationController
+                                            .cancelReminderTimer();
                                       }
                                     }
                                   },
@@ -446,15 +478,22 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                                     foregroundColor: Colors.white,
                                     elevation: 0,
                                     shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(rw(context, 12)),
+                                      borderRadius: BorderRadius.circular(
+                                        rw(context, 12),
+                                      ),
                                     ),
-                                    padding: EdgeInsets.symmetric(vertical: rh(context, 10)),
+                                    padding: EdgeInsets.symmetric(
+                                      vertical: rh(context, 10),
+                                    ),
                                   ),
                                   child: Text(
                                     'Yes, I Know',
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
-                                    style: TextStyle(fontSize: rfs(context, 13.5), fontWeight: FontWeight.bold),
+                                    style: TextStyle(
+                                      fontSize: rfs(context, 13.5),
+                                      fontWeight: FontWeight.bold,
+                                    ),
                                   ),
                                 ),
                               ),
@@ -563,40 +602,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     Overlay.of(context).insert(entry);
   }
 
-  void _scrollToDate(DateTime date, {bool animate = true}) {
-    final startDate = DateTime(
-      DateTime.now().year,
-      DateTime.now().month,
-      DateTime.now().day,
-    ).subtract(const Duration(days: 60));
-
-    final index = date.difference(startDate).inDays;
-    if (index >= 0 && index < 1095) {
-      final itemWidth = rw(context, 62) + rw(context, 8);
-      final screenWidth = MediaQuery.of(context).size.width;
-      final calendarButtonWidth = rw(context, 46) + rw(context, 12);
-      final parentPadding = rw(context, 24) * 2;
-      final viewportWidth = screenWidth - parentPadding - calendarButtonWidth;
-      final targetOffset =
-          (index * itemWidth) - (viewportWidth / 2) + (itemWidth / 2);
-
-      if (_scrollController.hasClients) {
-        final maxScroll = _scrollController.position.maxScrollExtent;
-        final clampedOffset = targetOffset.clamp(0.0, maxScroll);
-
-        if (animate) {
-          _scrollController.animateTo(
-            clampedOffset,
-            duration: const Duration(milliseconds: 300),
-            curve: Curves.easeInOut,
-          );
-        } else {
-          _scrollController.jumpTo(clampedOffset);
-        }
-      }
-    }
-  }
-
   Future<void> _selectDateFromCalendar(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
       context: context,
@@ -619,11 +624,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     if (picked != null) {
       final normalized = DateTime(picked.year, picked.month, picked.day);
       if (normalized != invitationController.selectedDashboardDate.value) {
-        _isSelectingFromCalendar = true;
         invitationController.selectedDashboardDate.value = normalized;
-      } else {
-        _scrollToDate(normalized, animate: true);
-        setState(() {});
       }
     }
   }
@@ -767,7 +768,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
             setState(() {
               _showBellRedDot = false;
             });
-            showNotificationDialog(context);
+            Dashboard.state?.changeTab(2);
           },
           child: ScaleTransition(
             scale: _bellScaleAnimation,
@@ -789,8 +790,10 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                       color: Colors.white,
                       size: rw(context, 22),
                     ),
-                    if (_showBellRedDot)
-                      Positioned(
+                    Obx(() {
+                      final hasUnread = _showBellRedDot || invitationController.unreadTicketIds.isNotEmpty;
+                      if (!hasUnread) return const SizedBox.shrink();
+                      return Positioned(
                         right: 1,
                         top: 1,
                         child: Container(
@@ -801,7 +804,8 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                             shape: BoxShape.circle,
                           ),
                         ),
-                      ),
+                      );
+                    }),
                   ],
                 ),
               ),
@@ -907,84 +911,164 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
             showDialog(
               context: context,
               barrierDismissible: false,
-              builder: (loadingCtx) => const Center(
-                child: CircularProgressIndicator(),
-              ),
+              builder: (loadingCtx) =>
+                  const Center(child: CircularProgressIndicator()),
             );
 
             Future.microtask(() async {
               try {
                 // Ensure parent transactions list is populated
                 if (invitationController.allRawVisitors.isEmpty) {
-                  await invitationController.fetchOngoingInvitations(isSilent: true);
+                  await invitationController.fetchOngoingInvitations(
+                    isSilent: true,
+                  );
                 }
 
-                final String currentUserName = UserController.to.fullName.toLowerCase().trim();
+                final String currentUserName = UserController.to.fullName
+                    .toLowerCase()
+                    .trim();
                 final List<AccessPassModel> employeePasses = [];
                 final DateTime now = DateTime.now();
 
                 // Filter parent transactions that are not expired yet
-                final activeParents = invitationController.allRawVisitors.where((parent) {
-                  return parent.visitorPeriodEnd.isAfter(now);
-                }).toList();
+                final activeParents = invitationController.allRawVisitors.where(
+                  (parent) {
+                    return parent.visitorPeriodEnd.isAfter(now);
+                  },
+                ).toList();
 
                 // Fetch sub-visitors in parallel for active parent transactions
-                final List<Future<void>> fetchFutures = activeParents.map((parent) async {
-                  final String parentId = parent.transactionVisitorId.isNotEmpty ? parent.transactionVisitorId : parent.id;
+                final List<Future<void>> fetchFutures = activeParents.map((
+                  parent,
+                ) async {
+                  final String parentId = parent.transactionVisitorId.isNotEmpty
+                      ? parent.transactionVisitorId
+                      : parent.id;
                   if (parentId.isEmpty) return;
 
-                  final visitorsList = await invitationController.fetchTransactionVisitors(parentId);
+                  final visitorsList = await invitationController
+                      .fetchTransactionVisitors(parentId);
                   for (var visitorMap in visitorsList) {
-                    final visitorName = (visitorMap['visitor_name'] ?? '').toString().toLowerCase().trim();
-                    if (visitorName.isNotEmpty && (visitorName.contains('endru') || (currentUserName.isNotEmpty && visitorName.contains(currentUserName)))) {
+                    final visitorName = (visitorMap['visitor_name'] ?? '')
+                        .toString()
+                        .toLowerCase()
+                        .trim();
+                    if (visitorName.isNotEmpty &&
+                        (visitorName.contains('endru') ||
+                            (currentUserName.isNotEmpty &&
+                                visitorName.contains(currentUserName)))) {
                       final model = AccessPassModel.fromJson(visitorMap);
 
                       // Merge sub-visitor details with parent transaction details
                       final mergedModel = AccessPassModel(
                         id: model.id.isEmpty ? parent.id : model.id,
-                        agenda: model.agenda.isEmpty ? parent.agenda : model.agenda,
-                        initialTrxCode: model.initialTrxCode.isEmpty ? parent.initialTrxCode : model.initialTrxCode,
+                        agenda: model.agenda.isEmpty
+                            ? parent.agenda
+                            : model.agenda,
+                        initialTrxCode: model.initialTrxCode.isEmpty
+                            ? parent.initialTrxCode
+                            : model.initialTrxCode,
                         host: model.host.isEmpty ? parent.host : model.host,
                         isGroup: parent.isGroup,
-                        groupName: model.groupName.isEmpty ? parent.groupName : model.groupName,
+                        groupName: model.groupName.isEmpty
+                            ? parent.groupName
+                            : model.groupName,
                         groupCode: parent.groupCode,
                         visitorPeriodStart: parent.visitorPeriodStart,
                         visitorPeriodEnd: parent.visitorPeriodEnd,
-                        visitorNumber: model.visitorNumber.isNotEmpty ? model.visitorNumber : parent.visitorNumber,
-                        visitorCode: model.visitorCode.isEmpty ? parent.visitorCode : model.visitorCode,
-                        invitationCode: model.invitationCode.isEmpty ? parent.invitationCode : model.invitationCode,
-                        visitorStatus: model.visitorStatus.isEmpty ? parent.visitorStatus : model.visitorStatus,
-                        sitePlaceName: model.sitePlaceName.isEmpty ? parent.sitePlaceName : model.sitePlaceName,
-                        hostName: model.hostName.isEmpty ? parent.hostName : model.hostName,
-                        parkingSlot: model.parkingSlot.isEmpty ? parent.parkingSlot : model.parkingSlot,
-                        parkingArea: model.parkingArea.isEmpty ? parent.parkingArea : model.parkingArea,
-                        vehiclePlateNumber: model.vehiclePlateNumber.isEmpty ? parent.vehiclePlateNumber : model.vehiclePlateNumber,
-                        vehicleType: model.vehicleType.isEmpty ? parent.vehicleType : model.vehicleType,
+                        visitorNumber: model.visitorNumber.isNotEmpty
+                            ? model.visitorNumber
+                            : parent.visitorNumber,
+                        visitorCode: model.visitorCode.isEmpty
+                            ? parent.visitorCode
+                            : model.visitorCode,
+                        invitationCode: model.invitationCode.isEmpty
+                            ? parent.invitationCode
+                            : model.invitationCode,
+                        visitorStatus: model.visitorStatus.isEmpty
+                            ? parent.visitorStatus
+                            : model.visitorStatus,
+                        sitePlaceName: model.sitePlaceName.isEmpty
+                            ? parent.sitePlaceName
+                            : model.sitePlaceName,
+                        hostName: model.hostName.isEmpty
+                            ? parent.hostName
+                            : model.hostName,
+                        parkingSlot: model.parkingSlot.isEmpty
+                            ? parent.parkingSlot
+                            : model.parkingSlot,
+                        parkingArea: model.parkingArea.isEmpty
+                            ? parent.parkingArea
+                            : model.parkingArea,
+                        vehiclePlateNumber: model.vehiclePlateNumber.isEmpty
+                            ? parent.vehiclePlateNumber
+                            : model.vehiclePlateNumber,
+                        vehicleType: model.vehicleType.isEmpty
+                            ? parent.vehicleType
+                            : model.vehicleType,
                         isDriving: model.isDriving,
                         tz: model.tz.isEmpty ? parent.tz : model.tz,
-                        siteId: model.siteId.isEmpty ? parent.siteId : model.siteId,
-                        visitorName: (visitorMap['visitor_name'] ?? '').toString().isNotEmpty ? (visitorMap['visitor_name'] ?? '').toString() : UserController.to.fullName,
+                        siteId: model.siteId.isEmpty
+                            ? parent.siteId
+                            : model.siteId,
+                        visitorName:
+                            (visitorMap['visitor_name'] ?? '')
+                                .toString()
+                                .isNotEmpty
+                            ? (visitorMap['visitor_name'] ?? '').toString()
+                            : UserController.to.fullName,
                         isPraregisterDone: model.isPraregisterDone,
-                        visitorRole: model.visitorRole.isEmpty ? parent.visitorRole : model.visitorRole,
-                        approvalStatus: model.approvalStatus.isEmpty ? parent.approvalStatus : model.approvalStatus,
-                        visitorTypeName: model.visitorTypeName.isEmpty ? parent.visitorTypeName : model.visitorTypeName,
-                        visitorTypeId: model.visitorTypeId.isEmpty ? parent.visitorTypeId : model.visitorTypeId,
-                        invitedByName: model.invitedByName.isEmpty ? parent.invitedByName : model.invitedByName,
-                        invitedBy: model.invitedBy.isEmpty ? parent.invitedBy : model.invitedBy,
-                        hostOrganizationName: model.hostOrganizationName.isEmpty ? parent.hostOrganizationName : model.hostOrganizationName,
+                        visitorRole: model.visitorRole.isEmpty
+                            ? parent.visitorRole
+                            : model.visitorRole,
+                        approvalStatus: model.approvalStatus.isEmpty
+                            ? parent.approvalStatus
+                            : model.approvalStatus,
+                        visitorTypeName: model.visitorTypeName.isEmpty
+                            ? parent.visitorTypeName
+                            : model.visitorTypeName,
+                        visitorTypeId: model.visitorTypeId.isEmpty
+                            ? parent.visitorTypeId
+                            : model.visitorTypeId,
+                        invitedByName: model.invitedByName.isEmpty
+                            ? parent.invitedByName
+                            : model.invitedByName,
+                        invitedBy: model.invitedBy.isEmpty
+                            ? parent.invitedBy
+                            : model.invitedBy,
+                        hostOrganizationName: model.hostOrganizationName.isEmpty
+                            ? parent.hostOrganizationName
+                            : model.hostOrganizationName,
                         flow: model.flow.isEmpty ? parent.flow : model.flow,
-                        visitorOrganizationName: model.visitorOrganizationName.isEmpty ? parent.visitorOrganizationName : model.visitorOrganizationName,
-                        visitorPhone: model.visitorPhone.isEmpty ? parent.visitorPhone : model.visitorPhone,
-                        visitorEmail: model.visitorEmail.isEmpty ? parent.visitorEmail : model.visitorEmail,
-                        visitorIdentityId: model.visitorIdentityId.isEmpty ? parent.visitorIdentityId : model.visitorIdentityId,
-                        receiverName: model.receiverName.isEmpty ? parent.receiverName : model.receiverName,
-                        receiverEmail: model.receiverEmail.isEmpty ? parent.receiverEmail : model.receiverEmail,
-                        receiverPhone: model.receiverPhone.isEmpty ? parent.receiverPhone : model.receiverPhone,
+                        visitorOrganizationName:
+                            model.visitorOrganizationName.isEmpty
+                            ? parent.visitorOrganizationName
+                            : model.visitorOrganizationName,
+                        visitorPhone: model.visitorPhone.isEmpty
+                            ? parent.visitorPhone
+                            : model.visitorPhone,
+                        visitorEmail: model.visitorEmail.isEmpty
+                            ? parent.visitorEmail
+                            : model.visitorEmail,
+                        visitorIdentityId: model.visitorIdentityId.isEmpty
+                            ? parent.visitorIdentityId
+                            : model.visitorIdentityId,
+                        receiverName: model.receiverName.isEmpty
+                            ? parent.receiverName
+                            : model.receiverName,
+                        receiverEmail: model.receiverEmail.isEmpty
+                            ? parent.receiverEmail
+                            : model.receiverEmail,
+                        receiverPhone: model.receiverPhone.isEmpty
+                            ? parent.receiverPhone
+                            : model.receiverPhone,
                         canTrackBle: model.canTrackBle,
                         canAccess: model.canAccess,
                       );
 
-                      if (!employeePasses.any((item) => item.id == mergedModel.id)) {
+                      if (!employeePasses.any(
+                        (item) => item.id == mergedModel.id,
+                      )) {
                         employeePasses.add(mergedModel);
                       }
                     }
@@ -1017,10 +1101,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                     snackPosition: SnackPosition.TOP,
                   );
                 } else {
-                  showAccessPassDialog(
-                    context: context,
-                    items: employeePasses,
-                  );
+                  showAccessPassDialog(context: context, items: employeePasses);
                 }
               } catch (e) {
                 // Dismiss loading overlay on error
@@ -1118,6 +1199,20 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     );
   }
 
+  String _formatSelectedDate(DateTime date) {
+    final String lang = Get.isRegistered<LanguageController>()
+        ? LanguageController.to.selectedLang.value
+        : 'id';
+    try {
+      return DateFormat(
+        'EEEE, d MMMM yyyy',
+        lang == 'id' ? 'id_ID' : 'en_US',
+      ).format(date);
+    } catch (e) {
+      return DateFormat('EEEE, d MMMM yyyy').format(date);
+    }
+  }
+
   Widget _buildBottomContent(BuildContext context) {
     return Container(
       width: double.infinity,
@@ -1143,104 +1238,491 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 1. Date Selection (Moved to the very top)
+          // 1. Date Selection (New Premium Card with Left/Right navigation chevrons)
           Obx(() {
-            debugPrint(
-              "BUILD DatePicker: date=${invitationController.selectedDashboardDate.value}",
-            );
+            final date = invitationController.selectedDashboardDate.value;
+            final dateStr = _formatSelectedDate(date);
             return Row(
               children: [
-                Expanded(
-                  child: HorizontalDatePicker(
-                    startDate: DateTime(
-                      DateTime.now().year,
-                      DateTime.now().month,
-                      DateTime.now().day,
-                    ).subtract(const Duration(days: 60)),
-                    daysCount: 1095,
-                    selectedDate:
-                        invitationController.selectedDashboardDate.value,
-                    scrollController: _scrollController,
-                    onDateChange: (date) {
-                      invitationController.selectedDashboardDate.value =
-                          DateTime(date.year, date.month, date.day);
-                    },
+                // Left Arrow Button
+                GestureDetector(
+                  onTap: () {
+                    invitationController.selectedDashboardDate.value = date
+                        .subtract(const Duration(days: 1));
+                  },
+                  child: Container(
+                    padding: EdgeInsets.all(rw(context, 8)),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.white,
+                      border: Border.all(color: Colors.grey.shade200),
+                    ),
+                    child: Icon(
+                      Icons.chevron_left_rounded,
+                      color: Colors.grey.shade700,
+                      size: rw(context, 20),
+                    ),
                   ),
                 ),
                 hSpace(context, 12),
+                // Center Date Box
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () => _selectDateFromCalendar(context),
+                    child: Container(
+                      padding: EdgeInsets.symmetric(
+                        vertical: rh(context, 12),
+                        horizontal: rw(context, 16),
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(rw(context, 12)),
+                        border: Border.all(color: Colors.grey.shade200),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.02),
+                            blurRadius: 4,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.calendar_month_outlined,
+                            color: Colors.black87,
+                            size: rw(context, 18),
+                          ),
+                          hSpace(context, 8),
+                          Text(
+                            dateStr,
+                            style: TextStyle(
+                              fontSize: rfs(context, 14),
+                              fontWeight: FontWeight.w600,
+                              color: Colors.black87,
+                            ),
+                          ),
+                          hSpace(context, 4),
+                          Icon(
+                            Icons.keyboard_arrow_down_rounded,
+                            color: Colors.grey.shade500,
+                            size: rw(context, 16),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                hSpace(context, 12),
+                // Right Arrow Button
                 GestureDetector(
-                  onTap: () => _selectDateFromCalendar(context),
+                  onTap: () {
+                    invitationController.selectedDashboardDate.value = date.add(
+                      const Duration(days: 1),
+                    );
+                  },
                   child: Container(
-                    padding: EdgeInsets.all(rw(context, 12)),
+                    padding: EdgeInsets.all(rw(context, 8)),
                     decoration: BoxDecoration(
-                      color: AppColors.primary50,
-                      borderRadius: BorderRadius.circular(rw(context, 12)),
-                      border: Border.all(color: AppColors.primary100),
+                      shape: BoxShape.circle,
+                      color: Colors.white,
+                      border: Border.all(color: Colors.grey.shade200),
                     ),
                     child: Icon(
-                      Icons.calendar_month_outlined,
-                      color: AppColors.primary500,
-                      size: rw(context, 22),
+                      Icons.chevron_right_rounded,
+                      color: Colors.grey.shade700,
+                      size: rw(context, 20),
                     ),
                   ),
                 ),
               ],
             );
           }),
-
           vSpace(context, 24),
-
-          // 2. Section Header: Invitation
-          _buildSectionHeader(
-            context,
-            'Invitation',
-            onShowMoreTap: () => Get.to(() => const SendInvitationPage(initialTab: 0)),
-          ),
-          vSpace(context, 16),
-
-          // 3. Invitation Data List
-          const InvitationHomeList(),
-
+          _buildSummaryCards(context),
           vSpace(context, 24),
+          _buildQuickActions(context),
+        ],
+      ),
+    );
+  }
 
-          // 4. Section Header: Approval
-          _buildSectionHeader(
-            context,
-            'Approval',
-            onShowMoreTap: () => Get.to(() => const ApprovalPage()),
-          ),
+  Widget _buildSummaryCards(BuildContext context) {
+    return Obx(() {
+      final date = invitationController.selectedDashboardDate.value;
+
+      // 1. Today Summary
+      final todaySummaryCount = invitationController.visitorTodayCount.value;
+
+      // 2. Waiting Approval
+      final waitingApprovalCount = invitationController.approvalTickets.where((
+        t,
+      ) {
+        final isPending =
+            (t.approvalActorStatus ?? '').toLowerCase() == 'pending' ||
+            (t.approvalStatus ?? '').toLowerCase() == 'pending';
+        if (!isPending) return false;
+        final itemDate = t.visitorPeriodStart;
+        if (itemDate == null) return false;
+        return itemDate.year == date.year &&
+            itemDate.month == date.month &&
+            itemDate.day == date.day;
+      }).length;
+
+      // 3. Active Invitation
+      final activeInvitationCount = invitationController.allRawVisitors.where((
+        item,
+      ) {
+        if (item.flow.toLowerCase() == 'quickaccessvisit') return false;
+        if (item.agenda.isEmpty &&
+            item.hostName.isEmpty &&
+            item.visitorTypeName.isEmpty)
+          return false;
+        final itemDate = item.visitorPeriodStart;
+        if (itemDate.year != date.year ||
+            itemDate.month != date.month ||
+            itemDate.day != date.day)
+          return false;
+        if (item.visitorPeriodEnd.isBefore(DateTime.now())) return false;
+        return true;
+      }).length;
+
+      // 4. Active Notification
+      int notificationCount = 0;
+      final user = UserController.to.user.value;
+      bool isGuest = true;
+      if (user != null) {
+        final r = (user.roleAccess ?? 'guest').toLowerCase();
+        if (['operator', 'employee', 'admin', 'superadmin', 'staff'].contains(r)) {
+          isGuest = false;
+        }
+      }
+
+      if (isGuest) {
+        final alarmCtrl = Get.isRegistered<AlarmController>()
+            ? Get.find<AlarmController>()
+            : Get.put(AlarmController());
+        notificationCount = alarmCtrl.alarms.where((alarm) {
+          final itemDate = alarm.createdAt;
+          return itemDate.year == date.year &&
+              itemDate.month == date.month &&
+              itemDate.day == date.day;
+        }).length;
+      } else {
+        notificationCount = invitationController.approvalTickets.where((t) {
+          final isPending =
+              (t.approvalActorStatus ?? '').toLowerCase() == 'pending' ||
+              (t.approvalStatus ?? '').toLowerCase() == 'pending';
+          if (!isPending) return false;
+          final itemDate = t.visitorPeriodStart;
+          if (itemDate == null) return false;
+          return itemDate.year == date.year &&
+              itemDate.month == date.month &&
+              itemDate.day == date.day;
+        }).length;
+      }
+
+      return Column(
+        children: [
+          _buildSectionHeader(context, 'Today Summary'),
           vSpace(context, 16),
-
-          // 5. Approval Data List
-          const IteneraryList(),
-
-          vSpace(context, 24),
-
-          // 6. Section Header: Share Link
-          _buildSectionHeader(
-            context,
-            'Share Link',
-            onShowMoreTap: () => Get.to(() => const SendInvitationPage(initialTab: 1)),
+          Row(
+            children: [
+              Expanded(
+                child: _buildSummaryCard(
+                  context,
+                  title: 'Visitor Today',
+                  count: todaySummaryCount,
+                  unit: 'People',
+                  icon: Icons.people,
+                  color: const Color(0xFF1976D2),
+                  isLoading: invitationController.isVisitorTodayLoading.value && invitationController.visitorTodayCount.value == 0,
+                ),
+              ),
+              hSpace(context, 12),
+              Expanded(
+                child: _buildSummaryCard(
+                  context,
+                  title: 'Waiting Approval',
+                  count: waitingApprovalCount,
+                  unit: 'Request(s)',
+                  icon: Icons.access_time,
+                  color: const Color(0xFFF57C00),
+                ),
+              ),
+            ],
           ),
-          vSpace(context, 16),
-
-          // 7. Share Link Data List
-          const ShareLinkHomeList(),
-
-          vSpace(context, 24),
-
-          // 8. Section Header: Quick Access
-          _buildSectionHeader(
-            context,
-            'Quick Access',
-            onShowMoreTap: () => Get.to(() => const SendInvitationPage(initialTab: 2)),
+          vSpace(context, 12),
+          Row(
+            children: [
+              Expanded(
+                child: _buildSummaryCard(
+                  context,
+                  title: 'Active Invitation',
+                  count: activeInvitationCount,
+                  unit: 'Invitation(s)',
+                  icon: Icons.mail_outline,
+                  color: const Color(0xFF43A047),
+                ),
+              ),
+              hSpace(context, 12),
+              Expanded(
+                child: _buildSummaryCard(
+                  context,
+                  title: 'Active Notification',
+                  count: notificationCount,
+                  unit: 'Alarm(s)',
+                  icon: Icons.notifications_none_rounded,
+                  color: const Color(0xFFD32F2F),
+                ),
+              ),
+            ],
           ),
+        ],
+      );
+    });
+  }
+
+  Widget _buildQuickActions(BuildContext context) {
+    return Obx(() {
+      final isId = langCtrl.selectedLang.value == 'id';
+      final sectionTitle = isId ? 'Aksi Cepat' : 'Quick Action';
+
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildSectionHeader(context, sectionTitle),
           vSpace(context, 16),
+          Row(
+            children: [
+              Expanded(
+                child: _buildQuickActionItem(
+                  context,
+                  label: isId ? 'Buat Undangan' : 'Make Invitation',
+                  icon: Icons.calendar_month_outlined,
+                  iconColor: const Color(0xFF3B6D11),
+                  bgColor: const Color(0xFFEAF3DE),
+                  onTap: () async {
+                    if (!Get.isRegistered<InvitationController>()) {
+                      Get.put(InvitationController());
+                    }
+                    final result = await showAddPraRegistrationDialog(context);
+                    if (result == true) {
+                      invitationController.fetchOngoingInvitations(clearFilters: true);
+                    }
+                  },
+                ),
+              ),
+              hSpace(context, 10),
+              Expanded(
+                child: _buildQuickActionItem(
+                  context,
+                  label: 'Approve Request',
+                  icon: Icons.fact_check_outlined,
+                  iconColor: const Color(0xFFE65100),
+                  bgColor: const Color(0xFFFFF3E0),
+                  onTap: () {
+                    context.push(const ApprovalPage());
+                  },
+                ),
+              ),
+              hSpace(context, 10),
+              Expanded(
+                child: _buildQuickActionItem(
+                  context,
+                  label: isId ? 'Bagikan Tautan' : 'Share Link',
+                  icon: Icons.add_link,
+                  iconColor: const Color(0xFF534AB7),
+                  bgColor: const Color(0xFFF3EEFE),
+                  onTap: () {
+                    if (!Get.isRegistered<InvitationController>()) {
+                      Get.put(InvitationController());
+                    }
+                    showDialog(
+                      context: context,
+                      barrierDismissible: false,
+                      builder: (context) => const CreateShareLinkDialog(),
+                    );
+                  },
+                ),
+              ),
+              hSpace(context, 10),
+              Expanded(
+                child: _buildQuickActionItem(
+                  context,
+                  label: isId ? 'Daftarkan Visitor' : 'Quick Access',
+                  icon: Icons.flash_on_rounded,
+                  iconColor: const Color(0xFFFF9800),
+                  bgColor: const Color(0xFFFFF4E5),
+                  onTap: () {
+                    if (!Get.isRegistered<InvitationController>()) {
+                      Get.put(InvitationController());
+                    }
+                    showDialog(
+                      context: context,
+                      barrierDismissible: false,
+                      builder: (context) => const CreateQuickAccessDialog(),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        ],
+      );
+    });
+  }
 
-          // 9. Quick Access Data List
-          const QuickAccessHomeList(),
+  Widget _buildQuickActionItem(
+    BuildContext context, {
+    required String label,
+    required IconData icon,
+    required Color iconColor,
+    required Color bgColor,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: EdgeInsets.symmetric(
+          vertical: rh(context, 16),
+          horizontal: rw(context, 8),
+        ),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(rw(context, 16)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.04),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+          border: Border.all(color: Colors.grey.shade100),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: rw(context, 48),
+              height: rw(context, 48),
+              decoration: BoxDecoration(
+                color: bgColor,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                icon,
+                color: iconColor,
+                size: rw(context, 22),
+              ),
+            ),
+            vSpace(context, 10),
+            SizedBox(
+              height: rh(context, 32),
+              child: Center(
+                child: Text(
+                  label,
+                  textAlign: TextAlign.center,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: rfs(context, 11),
+                    fontWeight: FontWeight.w600,
+                    color: Colors.black87,
+                    height: 1.2,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
-          vSpace(context, 20),
+  Widget _buildSummaryCard(
+    BuildContext context, {
+    required String title,
+    required int count,
+    required String unit,
+    required IconData icon,
+    required Color color,
+    bool isLoading = false,
+  }) {
+    return Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: rw(context, 12),
+        vertical: rh(context, 16),
+      ),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(rw(context, 16)),
+        border: Border.all(color: Colors.grey.shade200),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.02),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Container(
+            padding: EdgeInsets.all(rw(context, 12)),
+            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+            child: Icon(icon, color: Colors.white, size: rw(context, 20)),
+          ),
+          hSpace(context, 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: rfs(context, 10),
+                    fontWeight: FontWeight.w600,
+                    color: Colors.grey.shade600,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                vSpace(context, 4),
+                isLoading
+                    ? SizedBox(
+                        height: rh(context, 20),
+                        width: rw(context, 20),
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: color,
+                        ),
+                      )
+                    : Text(
+                        count.toString(),
+                        style: TextStyle(
+                          fontSize: rfs(context, 20),
+                          fontWeight: FontWeight.w800,
+                          color: Colors.black87,
+                          height: 1.0,
+                        ),
+                      ),
+                vSpace(context, 4),
+                Text(
+                  unit,
+                  style: TextStyle(
+                    fontSize: rfs(context, 10),
+                    color: Colors.grey.shade500,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );

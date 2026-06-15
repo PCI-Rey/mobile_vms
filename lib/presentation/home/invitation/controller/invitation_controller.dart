@@ -29,6 +29,9 @@ class InvitationController extends GetxController {
 
   final RxList<AccessPassModel> allInvitations = <AccessPassModel>[].obs;
   final RxList<AccessPassModel> allRawVisitors = <AccessPassModel>[].obs;
+  final RxInt visitorTodayCount = 0.obs;
+  final RxBool isVisitorTodayLoading = false.obs;
+  int _visitorTodayFetchId = 0;
   final RxList<AccessPassModel> ongoingInvitations = <AccessPassModel>[].obs;
   final RxList<AccessPassModel> quickAccessInvitations =
       <AccessPassModel>[].obs;
@@ -45,6 +48,7 @@ class InvitationController extends GetxController {
   final RxInt reminderCountdown = 0.obs;
   final RxSet<String> postponedTicketIds = <String>{}.obs;
   final RxMap<String, String> ticketVisitorNames = <String, String>{}.obs;
+  final RxSet<String> unreadTicketIds = <String>{}.obs;
   final Set<String> _resolvedTickets = {};
   final Set<String> _pendingFetches = {};
 
@@ -116,6 +120,8 @@ class InvitationController extends GetxController {
   @override
   void onInit() {
     super.onInit();
+    ever(allRawVisitors, (_) => fetchVisitorTodayCount());
+    ever(selectedDashboardDate, (_) => fetchVisitorTodayCount());
     fetchOngoingInvitations();
     fetchApprovalTickets();
     fetchMasterData();
@@ -379,6 +385,7 @@ class InvitationController extends GetxController {
 
           allInvitations.assignAll(allVisitors);
           _applyFilters();
+          fetchVisitorTodayCount();
         }
       }
     } catch (e) {
@@ -1117,6 +1124,96 @@ class InvitationController extends GetxController {
     } catch (e) {
       debugPrint('fetchTransactionVisitors error: $e');
       return [];
+    }
+  }
+
+  Future<void> fetchVisitorTodayCount() async {
+    final date = selectedDashboardDate.value;
+    debugPrint('fetchVisitorTodayCount: called for date $date');
+    final user = _hive.getUser();
+    final token = user?.token;
+    if (token == null) {
+      debugPrint('fetchVisitorTodayCount: token is null');
+      visitorTodayCount.value = 0;
+      return;
+    }
+
+    final fetchId = ++_visitorTodayFetchId;
+    isVisitorTodayLoading.value = true;
+
+    debugPrint('fetchVisitorTodayCount: allRawVisitors length is ${allRawVisitors.length}');
+    final todayTransactions = allRawVisitors.where((item) {
+      final itemDate = item.visitorPeriodStart;
+      final isEmptyDraft = item.agenda.isEmpty &&
+          item.hostName.isEmpty &&
+          item.visitorTypeName.isEmpty;
+      return itemDate.year == date.year &&
+          itemDate.month == date.month &&
+          itemDate.day == date.day &&
+          !isEmptyDraft;
+    }).toList();
+
+    debugPrint('fetchVisitorTodayCount: todayTransactions on this day is ${todayTransactions.length}');
+
+    // Optimistic estimate: count 1 for single, parse visitorNumber for group
+    int localEstimate = todayTransactions.fold<int>(0, (sum, item) {
+      if (item.isGroup) {
+        final parsed = int.tryParse(item.visitorNumber) ?? 1;
+        return sum + (parsed > 0 ? parsed : 1);
+      }
+      return sum + 1;
+    });
+
+    visitorTodayCount.value = localEstimate;
+
+    if (todayTransactions.isEmpty) {
+      if (fetchId == _visitorTodayFetchId) {
+        isVisitorTodayLoading.value = false;
+      }
+      return;
+    }
+
+    try {
+      // Async fetch for all transactions
+      final tasks = todayTransactions.map((item) async {
+        final list = await fetchTransactionVisitors(item.id);
+        if (list.isNotEmpty) {
+          return {'count': list.length, 'isFallback': false};
+        } else {
+          // Fallback if empty/fails
+          if (item.isGroup) {
+            final parsed = int.tryParse(item.visitorNumber) ?? 1;
+            return {'count': parsed > 0 ? parsed : 1, 'isFallback': true};
+          }
+          return {'count': 1, 'isFallback': true};
+        }
+      });
+
+      final results = await Future.wait(tasks);
+
+      if (fetchId == _visitorTodayFetchId) {
+        final total = results.fold<int>(0, (sum, res) => sum + (res['count'] as int));
+        visitorTodayCount.value = total;
+        isVisitorTodayLoading.value = false;
+        
+        debugPrint('--- Visitor Today Calculation Log for Date: $date ---');
+        for (int i = 0; i < todayTransactions.length; i++) {
+          final tx = todayTransactions[i];
+          final res = results[i];
+          final c = res['count'];
+          final isFallback = res['isFallback'];
+          debugPrint('Tx #${i + 1}: ID=${tx.id}, Agenda="${tx.agenda}", Host="${tx.hostName}", CreatedAt="${tx.invitationCode}", Date=${tx.visitorPeriodStart}, Group=${tx.isGroup}, SubCount=$c, Status="${tx.visitorStatus}", IsFallback=$isFallback');
+        }
+        debugPrint('Total Visitor Today: $total');
+        debugPrint('----------------------------------------------------');
+      } else {
+        debugPrint('fetchVisitorTodayCount: fetchId $fetchId is obsolete, ignored');
+      }
+    } catch (e) {
+      debugPrint('fetchVisitorTodayCount async error: $e');
+      if (fetchId == _visitorTodayFetchId) {
+        isVisitorTodayLoading.value = false;
+      }
     }
   }
 
