@@ -45,7 +45,7 @@ class _SendInvitationPageState extends State<SendInvitationPage>
   String? selectedStatus;
 
   // Share Link filter variables (moved to ShareLinkListInline for self-containment)
-  
+
   // Quick Access filter variables
   DateTime? startDateQuick;
   DateTime? endDateQuick;
@@ -69,8 +69,6 @@ class _SendInvitationPageState extends State<SendInvitationPage>
       }
       setState(() {});
     });
-    // Pre-warm the Others Visitor cache so it's ready when a detail sheet is opened
-    controller.fetchAllVisitors();
   }
 
   @override
@@ -106,11 +104,6 @@ class _SendInvitationPageState extends State<SendInvitationPage>
                     endDate = null;
                     selectedGedung = null;
                   });
-                  controller.fetchOngoingInvitations(clearFilters: true);
-                  // Invalidate cache so new visitor shows up in Others Visitor
-                  controller.clearAllVisitorsCache();
-                  // Re-warm the cache in background
-                  controller.fetchAllVisitors();
                 }
               },
               icon: Container(
@@ -446,255 +439,253 @@ class _SendInvitationPageState extends State<SendInvitationPage>
 
                   final itemIndex = showTopLoading ? index - 1 : index;
                   final item = listToShow[itemIndex];
-                        final now = DateTime.now();
-                        final isExpired = item.visitorPeriodEnd.isBefore(now);
-                        final String jenis;
-                        final Color jenisColor;
+                  final now = DateTime.now();
+                  final isExpired = item.visitorPeriodEnd.isBefore(now);
+                  final String jenis;
+                  final Color jenisColor;
 
-                        if (item.visitorStatus.isEmpty && item.flow.isEmpty) {
-                          jenis = 'Invitation';
-                          jenisColor = const Color(0xFF6D4C41);
-                        } else {
-                          // Use flow field to determine type badge
-                          final lowerFlow = item.flow.toLowerCase();
-                          if (lowerFlow == 'quickaccessvisit') {
-                            jenis = 'Quick Access';
-                            jenisColor = const Color(0xFFD81B60);
-                          } else if (lowerFlow == 'praregister') {
-                            jenis = 'Praregis';
-                            jenisColor = const Color(0xFF00B0FF);
-                          } else if (lowerFlow == 'invitation') {
-                            jenis = 'Invitation';
-                            jenisColor = const Color(0xFF6D4C41);
-                          } else {
-                            // Fallback to transaction_status
-                            final lowerStatus = item.visitorStatus.toLowerCase();
-                            if (lowerStatus == 'available') {
-                              jenis = 'Available';
-                              jenisColor = const Color(0xFF8E24AA);
-                            } else if (lowerStatus == 'pending') {
-                              jenis = 'Pending';
-                              jenisColor = const Color(0xFFFB8C00);
-                            } else if (lowerStatus == 'undercreated') {
-                              jenis = 'Under Created';
-                              jenisColor = const Color(0xFF546E7A);
-                            } else if (lowerStatus == 'checkin') {
-                              jenis = 'Checkin';
-                              jenisColor = const Color(0xFF00897B);
-                            } else if (lowerStatus == 'checkout') {
-                              jenis = 'Checkout';
-                              jenisColor = const Color(0xFF3949AB);
-                            } else if (lowerStatus == 'reject' || lowerStatus == 'rejected' || lowerStatus == 'denied') {
-                              jenis = 'Rejected';
-                              jenisColor = const Color(0xFFE53935);
-                            } else if (item.visitorStatus.isNotEmpty) {
-                              jenis = item.visitorStatus[0].toUpperCase() + item.visitorStatus.substring(1);
-                              jenisColor = const Color(0xFF546E7A);
-                            } else {
-                              jenis = 'Invitation';
-                              jenisColor = const Color(0xFF6D4C41);
-                            }
-                          }
-                        }
+                  if (item.visitorStatus.isEmpty && item.flow.isEmpty) {
+                    jenis = 'Invitation';
+                    jenisColor = const Color(0xFF6D4C41);
+                  } else {
+                    // Use flow field to determine type badge
+                    final lowerFlow = item.flow.toLowerCase();
+                    if (lowerFlow == 'quickaccessvisit') {
+                      jenis = 'Quick Access';
+                      jenisColor = const Color(0xFFD81B60);
+                    } else if (lowerFlow == 'praregister') {
+                      jenis = 'Praregis';
+                      jenisColor = const Color(0xFF00B0FF);
+                    } else if (lowerFlow == 'invitation') {
+                      jenis = 'Invitation';
+                      jenisColor = const Color(0xFF6D4C41);
+                    } else {
+                      // Fallback to transaction_status
+                      final lowerStatus = item.visitorStatus.toLowerCase();
+                      if (lowerStatus == 'available') {
+                        jenis = 'Available';
+                        jenisColor = const Color(0xFF8E24AA);
+                      } else if (lowerStatus == 'pending') {
+                        jenis = 'Pending';
+                        jenisColor = const Color(0xFFFB8C00);
+                      } else if (lowerStatus == 'undercreated') {
+                        jenis = 'Under Created';
+                        jenisColor = const Color(0xFF546E7A);
+                      } else if (lowerStatus == 'checkin') {
+                        jenis = 'Checkin';
+                        jenisColor = const Color(0xFF00897B);
+                      } else if (lowerStatus == 'checkout') {
+                        jenis = 'Checkout';
+                        jenisColor = const Color(0xFF3949AB);
+                      } else if (lowerStatus == 'reject' ||
+                          lowerStatus == 'rejected' ||
+                          lowerStatus == 'denied') {
+                        jenis = 'Rejected';
+                        jenisColor = const Color(0xFFE53935);
+                      } else if (item.visitorStatus.isNotEmpty) {
+                        jenis =
+                            item.visitorStatus[0].toUpperCase() +
+                            item.visitorStatus.substring(1);
+                        jenisColor = const Color(0xFF546E7A);
+                      } else {
+                        jenis = 'Invitation';
+                        jenisColor = const Color(0xFF6D4C41);
+                      }
+                    }
+                  }
 
-                        return GestureDetector(
-                          onTap: () => _showInvitationDetailSheet(item),
-                          child: Container(
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(
-                                rw(context, 12),
-                              ),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.06),
-                                  blurRadius: rw(context, 10),
-                                  offset: Offset(0, rh(context, 3)),
-                                ),
-                              ],
-                              border: Border.all(color: Colors.grey.shade100),
+                  return GestureDetector(
+                    onTap: () => _showInvitationDetailSheet(item),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(rw(context, 12)),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.06),
+                            blurRadius: rw(context, 10),
+                            offset: Offset(0, rh(context, 3)),
+                          ),
+                        ],
+                        border: Border.all(color: Colors.grey.shade100),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // ── Top bar: No + badges ──────────────────
+                          Padding(
+                            padding: EdgeInsets.only(
+                              left: rw(context, 16),
+                              right: rw(context, 16),
+                              top: rh(context, 16),
+                              bottom: rh(context, 12),
                             ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
+                            child: Row(
                               children: [
-                                // ── Top bar: No + badges ──────────────────
-                                Padding(
-                                  padding: EdgeInsets.only(
-                                    left: rw(context, 16),
-                                    right: rw(context, 16),
-                                    top: rh(context, 16),
-                                    bottom: rh(context, 12),
+                                // No
+                                Container(
+                                  width: rw(context, 26),
+                                  height: rw(context, 26),
+                                  alignment: Alignment.center,
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF005596),
+                                    shape: BoxShape.circle,
                                   ),
-                                  child: Row(
-                                    children: [
-                                      // No
-                                      Container(
-                                        width: rw(context, 26),
-                                        height: rw(context, 26),
-                                        alignment: Alignment.center,
-                                        decoration: BoxDecoration(
-                                          color: const Color(0xFF005596),
-                                          shape: BoxShape.circle,
-                                        ),
-                                        child: Text(
-                                          '${index + 1}',
-                                          style: TextStyle(
-                                            color: Colors.white,
-                                            fontSize: rfs(context, 12),
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                      ),
-                                      hSpace(context, 10),
-                                      Expanded(
-                                        child: Text(
-                                          item.agenda.isEmpty ? '-' : item.agenda,
-                                          style: TextStyle(
-                                            fontWeight: FontWeight.w700,
-                                            fontSize: rfs(context, 16),
-                                            color: Colors.black87,
-                                          ),
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                      ),
-                                      hSpace(context, 6),
-                                      // Jenis badge
-                                      Container(
-                                        padding: EdgeInsets.symmetric(
-                                          horizontal: rw(context, 8),
-                                          vertical: rh(context, 4),
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: jenisColor.withValues(
-                                            alpha: 0.12,
-                                          ),
-                                          borderRadius: BorderRadius.circular(
-                                            rw(context, 20),
-                                          ),
-                                          border: Border.all(
-                                            color: jenisColor.withValues(
-                                              alpha: 0.4,
-                                            ),
-                                          ),
-                                        ),
-                                        child: Text(
-                                          jenis,
-                                          style: TextStyle(
-                                            fontSize: rfs(context, 12),
-                                            fontWeight: FontWeight.w600,
-                                            color: jenisColor,
-                                          ),
-                                        ),
-                                      ),
-                                      hSpace(context, 6),
-                                      // Expired badge
-                                      Container(
-                                        padding: EdgeInsets.symmetric(
-                                          horizontal: rw(context, 8),
-                                          vertical: rh(context, 4),
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: isExpired
-                                              ? const Color(0xFFE53935)
-                                              : const Color(0xFF43A047),
-                                          borderRadius: BorderRadius.circular(
-                                            rw(context, 20),
-                                          ),
-                                        ),
-                                        child: Text(
-                                          isExpired ? 'Expired' : 'Active',
-                                          style: TextStyle(
-                                            fontSize: rfs(context, 12),
-                                            fontWeight: FontWeight.w600,
-                                            color: Colors.white,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
+                                  child: Text(
+                                    '${index + 1}',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: rfs(context, 12),
+                                      fontWeight: FontWeight.bold,
+                                    ),
                                   ),
                                 ),
-
-                                Divider(
-                                  height: 1,
-                                  thickness: 1,
-                                  color: Colors.grey.shade100,
-                                ),
-
-                                // ── Body: info rows ───────────────────────
-                                Padding(
-                                  padding: EdgeInsets.only(
-                                    left: rw(context, 16),
-                                    right: rw(context, 16),
-                                    top: rh(context, 12),
-                                    bottom: rh(context, 16),
+                                hSpace(context, 10),
+                                Expanded(
+                                  child: Text(
+                                    item.agenda.isEmpty ? '-' : item.agenda,
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w700,
+                                      fontSize: rfs(context, 16),
+                                      color: Colors.black87,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
                                   ),
-                                  child: Column(
-                                    children: [
-                                      // Row 1: Visitor Type + Host
-                                      Row(
-                                        children: [
-                                          Expanded(
-                                            child: _buildCardField(
-                                              context,
-                                              Icons.badge_outlined,
-                                              'Visitor Type',
-                                              item.visitorTypeName.isEmpty
-                                                  ? '-'
-                                                  : item.visitorTypeName,
-                                            ),
-                                          ),
-                                          hSpace(context, 8),
-                                          Expanded(
-                                            child: _buildCardField(
-                                              context,
-                                              Icons.person_outline,
-                                              'Host',
-                                              item.hostName.isEmpty
-                                                  ? '-'
-                                                  : item.hostName,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                      vSpace(context, 6),
-                                      // Row 2: Period Start + Period End
-                                      Row(
-                                        children: [
-                                          Expanded(
-                                            child: _buildCardField(
-                                              context,
-                                              Icons.login_outlined,
-                                              'Period Start',
-                                              DateFormat(
-                                                'dd MMMM yyyy, HH:mm',
-                                              ).format(item.visitorPeriodStart),
-                                            ),
-                                          ),
-                                          hSpace(context, 8),
-                                          Expanded(
-                                            child: _buildCardField(
-                                              context,
-                                              Icons.logout_outlined,
-                                              'Period End',
-                                              DateFormat(
-                                                'dd MMMM yyyy, HH:mm',
-                                              ).format(item.visitorPeriodEnd),
-                                              color: isExpired
-                                                  ? Colors.red.shade600
-                                                  : null,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ],
+                                ),
+                                hSpace(context, 6),
+                                // Jenis badge
+                                Container(
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: rw(context, 8),
+                                    vertical: rh(context, 4),
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: jenisColor.withValues(alpha: 0.12),
+                                    borderRadius: BorderRadius.circular(
+                                      rw(context, 20),
+                                    ),
+                                    border: Border.all(
+                                      color: jenisColor.withValues(alpha: 0.4),
+                                    ),
+                                  ),
+                                  child: Text(
+                                    jenis,
+                                    style: TextStyle(
+                                      fontSize: rfs(context, 12),
+                                      fontWeight: FontWeight.w600,
+                                      color: jenisColor,
+                                    ),
+                                  ),
+                                ),
+                                hSpace(context, 6),
+                                // Expired badge
+                                Container(
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: rw(context, 8),
+                                    vertical: rh(context, 4),
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: isExpired
+                                        ? const Color(0xFFE53935)
+                                        : const Color(0xFF43A047),
+                                    borderRadius: BorderRadius.circular(
+                                      rw(context, 20),
+                                    ),
+                                  ),
+                                  child: Text(
+                                    isExpired ? 'Expired' : 'Active',
+                                    style: TextStyle(
+                                      fontSize: rfs(context, 12),
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.white,
+                                    ),
                                   ),
                                 ),
                               ],
                             ),
                           ),
-                        );
-                      },
-                    );
+
+                          Divider(
+                            height: 1,
+                            thickness: 1,
+                            color: Colors.grey.shade100,
+                          ),
+
+                          // ── Body: info rows ───────────────────────
+                          Padding(
+                            padding: EdgeInsets.only(
+                              left: rw(context, 16),
+                              right: rw(context, 16),
+                              top: rh(context, 12),
+                              bottom: rh(context, 16),
+                            ),
+                            child: Column(
+                              children: [
+                                // Row 1: Visitor Type + Host
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: _buildCardField(
+                                        context,
+                                        Icons.badge_outlined,
+                                        'Visitor Type',
+                                        item.visitorTypeName.isEmpty
+                                            ? '-'
+                                            : item.visitorTypeName,
+                                      ),
+                                    ),
+                                    hSpace(context, 8),
+                                    Expanded(
+                                      child: _buildCardField(
+                                        context,
+                                        Icons.person_outline,
+                                        'Host',
+                                        item.hostName.isEmpty
+                                            ? '-'
+                                            : item.hostName,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                vSpace(context, 6),
+                                // Row 2: Period Start + Period End
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: _buildCardField(
+                                        context,
+                                        Icons.login_outlined,
+                                        'Period Start',
+                                        DateFormat(
+                                          'dd MMMM yyyy, HH:mm',
+                                        ).format(item.visitorPeriodStart),
+                                      ),
+                                    ),
+                                    hSpace(context, 8),
+                                    Expanded(
+                                      child: _buildCardField(
+                                        context,
+                                        Icons.logout_outlined,
+                                        'Period End',
+                                        DateFormat(
+                                          'dd MMMM yyyy, HH:mm',
+                                        ).format(item.visitorPeriodEnd),
+                                        color: isExpired
+                                            ? Colors.red.shade600
+                                            : null,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              );
             }),
           ),
         ),
@@ -727,23 +718,23 @@ class _SendInvitationPageState extends State<SendInvitationPage>
                     final inviteCtrl = Get.find<InvitationController>();
                     final result =
                         await showModalBottomSheet<Map<String, dynamic>>(
-                      context: context,
-                      enableDrag: true,
-                      isDismissible: true,
-                      isScrollControlled: true,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.vertical(
-                          top: Radius.circular(rw(context, 16)),
-                        ),
-                      ),
-                      builder: (context) => FilterBottomSheet(
-                        initialStartDate: startDateQuick,
-                        initialEndDate: endDateQuick,
-                        initialSiteId: inviteCtrl.selectedSiteIdQuick.value,
-                        initialStatus: selectedStatusQuick,
-                        showStatusFilter: false,
-                      ),
-                    );
+                          context: context,
+                          enableDrag: true,
+                          isDismissible: true,
+                          isScrollControlled: true,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.vertical(
+                              top: Radius.circular(rw(context, 16)),
+                            ),
+                          ),
+                          builder: (context) => FilterBottomSheet(
+                            initialStartDate: startDateQuick,
+                            initialEndDate: endDateQuick,
+                            initialSiteId: inviteCtrl.selectedSiteIdQuick.value,
+                            initialStatus: selectedStatusQuick,
+                            showStatusFilter: false,
+                          ),
+                        );
 
                     if (result != null) {
                       setState(() {
@@ -802,7 +793,8 @@ class _SendInvitationPageState extends State<SendInvitationPage>
                     },
                   ),
                 ],
-                if (selectedStatusQuick != null && selectedStatusQuick!.isNotEmpty) ...[
+                if (selectedStatusQuick != null &&
+                    selectedStatusQuick!.isNotEmpty) ...[
                   hSpace(context, 8),
                   _buildFilterValueChip(
                     context,
@@ -923,175 +915,172 @@ class _SendInvitationPageState extends State<SendInvitationPage>
 
                   final itemIndex = showTopLoading ? index - 1 : index;
                   final item = listToShow[itemIndex];
-                        final isExpired = DateTime.now().isAfter(
-                          item.visitorPeriodEnd,
-                        );
+                  final isExpired = DateTime.now().isAfter(
+                    item.visitorPeriodEnd,
+                  );
 
-                        return GestureDetector(
-                          onTap: () => _showInvitationDetailSheet(item),
-                          child: Container(
-                            margin: EdgeInsets.only(bottom: rh(context, 16)),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(
-                                rw(context, 12),
-                              ),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.06),
-                                  blurRadius: rw(context, 10),
-                                  offset: Offset(0, rh(context, 3)),
-                                ),
-                              ],
-                              border: Border.all(color: Colors.grey.shade100),
+                  return GestureDetector(
+                    onTap: () => _showInvitationDetailSheet(item),
+                    child: Container(
+                      margin: EdgeInsets.only(bottom: rh(context, 16)),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(rw(context, 12)),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.06),
+                            blurRadius: rw(context, 10),
+                            offset: Offset(0, rh(context, 3)),
+                          ),
+                        ],
+                        border: Border.all(color: Colors.grey.shade100),
+                      ),
+                      child: Column(
+                        children: [
+                          // TOP ROW
+                          Padding(
+                            padding: EdgeInsets.only(
+                              left: rw(context, 16),
+                              right: rw(context, 16),
+                              top: rh(context, 16),
+                              bottom: rh(context, 12),
                             ),
-                            child: Column(
+                            child: Row(
                               children: [
-                                // TOP ROW
-                                Padding(
-                                  padding: EdgeInsets.only(
-                                    left: rw(context, 16),
-                                    right: rw(context, 16),
-                                    top: rh(context, 16),
-                                    bottom: rh(context, 12),
+                                Container(
+                                  width: rw(context, 26),
+                                  height: rw(context, 26),
+                                  alignment: Alignment.center,
+                                  decoration: const BoxDecoration(
+                                    color: Color(0xFF005596),
+                                    shape: BoxShape.circle,
                                   ),
-                                  child: Row(
-                                    children: [
-                                      Container(
-                                        width: rw(context, 26),
-                                        height: rw(context, 26),
-                                        alignment: Alignment.center,
-                                        decoration: const BoxDecoration(
-                                          color: Color(0xFF005596),
-                                          shape: BoxShape.circle,
-                                        ),
-                                        child: Text(
-                                          '${index + 1}',
-                                          style: TextStyle(
-                                            color: Colors.white,
-                                            fontSize: rfs(context, 12),
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                      ),
-                                      hSpace(context, 10),
-                                      Expanded(
-                                        child: Text(
-                                          item.agenda.isEmpty ? '-' : item.agenda,
-                                          style: TextStyle(
-                                            fontWeight: FontWeight.w700,
-                                            fontSize: rfs(context, 16),
-                                            color: Colors.black87,
-                                          ),
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                      ),
-                                      hSpace(context, 6),
-                                      Container(
-                                        padding: EdgeInsets.symmetric(
-                                          horizontal: rw(context, 8),
-                                          vertical: rh(context, 4),
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: isExpired
-                                              ? const Color(0xFFE53935)
-                                              : const Color(0xFF43A047),
-                                          borderRadius: BorderRadius.circular(
-                                            rw(context, 20),
-                                          ),
-                                        ),
-                                        child: Text(
-                                          isExpired ? 'Expired' : 'Active',
-                                          style: TextStyle(
-                                            fontSize: rfs(context, 12),
-                                            fontWeight: FontWeight.w600,
-                                            color: Colors.white,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
+                                  child: Text(
+                                    '${index + 1}',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: rfs(context, 12),
+                                      fontWeight: FontWeight.bold,
+                                    ),
                                   ),
                                 ),
-                                Divider(
-                                  height: 1,
-                                  thickness: 1,
-                                  color: Colors.grey.shade100,
-                                ),
-                                // DETAILS
-                                Padding(
-                                  padding: EdgeInsets.only(
-                                    left: rw(context, 16),
-                                    right: rw(context, 16),
-                                    top: rh(context, 12),
-                                    bottom: rh(context, 16),
+                                hSpace(context, 10),
+                                Expanded(
+                                  child: Text(
+                                    item.agenda.isEmpty ? '-' : item.agenda,
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w700,
+                                      fontSize: rfs(context, 16),
+                                      color: Colors.black87,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
                                   ),
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      // Row 1: Visitor Name + Org
-                                      Row(
-                                        children: [
-                                          Expanded(
-                                            child: _buildCardField(
-                                              context,
-                                              Icons.badge_outlined,
-                                              'Visitor Type',
-                                              item.visitorTypeName.isEmpty
-                                                  ? '-'
-                                                  : item.visitorTypeName,
-                                            ),
-                                          ),
-                                          hSpace(context, 8),
-                                          Expanded(
-                                            child: _buildCardField(
-                                              context,
-                                              Icons.person_outline,
-                                              'Host',
-                                              item.hostName.isEmpty
-                                                  ? '-'
-                                                  : item.hostName,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                      vSpace(context, 8),
-                                      // Row 2: Period Start + Period End
-                                      Row(
-                                        children: [
-                                          Expanded(
-                                            child: _buildCardField(
-                                              context,
-                                              Icons.login_outlined,
-                                              'Period Start',
-                                              DateFormat(
-                                                'dd MMMM yyyy, HH:mm',
-                                              ).format(item.visitorPeriodStart),
-                                            ),
-                                          ),
-                                          hSpace(context, 8),
-                                          Expanded(
-                                            child: _buildCardField(
-                                              context,
-                                              Icons.logout_outlined,
-                                              'Period End',
-                                              DateFormat(
-                                                'dd MMMM yyyy, HH:mm',
-                                              ).format(item.visitorPeriodEnd),
-                                              color: isExpired
-                                                  ? Colors.red.shade600
-                                                  : null,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ],
+                                ),
+                                hSpace(context, 6),
+                                Container(
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: rw(context, 8),
+                                    vertical: rh(context, 4),
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: isExpired
+                                        ? const Color(0xFFE53935)
+                                        : const Color(0xFF43A047),
+                                    borderRadius: BorderRadius.circular(
+                                      rw(context, 20),
+                                    ),
+                                  ),
+                                  child: Text(
+                                    isExpired ? 'Expired' : 'Active',
+                                    style: TextStyle(
+                                      fontSize: rfs(context, 12),
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.white,
+                                    ),
                                   ),
                                 ),
                               ],
                             ),
                           ),
-                        );
+                          Divider(
+                            height: 1,
+                            thickness: 1,
+                            color: Colors.grey.shade100,
+                          ),
+                          // DETAILS
+                          Padding(
+                            padding: EdgeInsets.only(
+                              left: rw(context, 16),
+                              right: rw(context, 16),
+                              top: rh(context, 12),
+                              bottom: rh(context, 16),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                // Row 1: Visitor Name + Org
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: _buildCardField(
+                                        context,
+                                        Icons.badge_outlined,
+                                        'Visitor Type',
+                                        item.visitorTypeName.isEmpty
+                                            ? '-'
+                                            : item.visitorTypeName,
+                                      ),
+                                    ),
+                                    hSpace(context, 8),
+                                    Expanded(
+                                      child: _buildCardField(
+                                        context,
+                                        Icons.person_outline,
+                                        'Host',
+                                        item.hostName.isEmpty
+                                            ? '-'
+                                            : item.hostName,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                vSpace(context, 8),
+                                // Row 2: Period Start + Period End
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: _buildCardField(
+                                        context,
+                                        Icons.login_outlined,
+                                        'Period Start',
+                                        DateFormat(
+                                          'dd MMMM yyyy, HH:mm',
+                                        ).format(item.visitorPeriodStart),
+                                      ),
+                                    ),
+                                    hSpace(context, 8),
+                                    Expanded(
+                                      child: _buildCardField(
+                                        context,
+                                        Icons.logout_outlined,
+                                        'Period End',
+                                        DateFormat(
+                                          'dd MMMM yyyy, HH:mm',
+                                        ).format(item.visitorPeriodEnd),
+                                        color: isExpired
+                                            ? Colors.red.shade600
+                                            : null,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
                 },
               );
             }),
@@ -1153,7 +1142,6 @@ class _SendInvitationPageState extends State<SendInvitationPage>
   void _showInvitationDetailSheet(AccessPassModel item) {
     showInvitationDetailSheet(context, item);
   }
-
 }
 
 // ─── Filter UI and Formatting Helpers (Top-Level) ────────────────────────────
@@ -1209,11 +1197,7 @@ Widget _buildFilterValueChip(
           borderRadius: BorderRadius.circular(rw(context, 10)),
           child: Padding(
             padding: EdgeInsets.all(rw(context, 2)),
-            child: Icon(
-              Icons.close,
-              size: rw(context, 14),
-              color: Colors.grey,
-            ),
+            child: Icon(Icons.close, size: rw(context, 14), color: Colors.grey),
           ),
         ),
       ],
@@ -1264,19 +1248,12 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
   bool _loadingGroupVisitors = false;
   List<AccessPassModel> _groupVisitorModels = [];
   AccessPassModel? _selectedGroupVisitor;
-  int _currentBarcodeIndex = 0;
-  final CarouselSliderController _barcodeCarouselController = CarouselSliderController();
-
-  // Others Visitor — all visitors from /visitor/dt
-  bool _loadingAllVisitors = false;
-  List<AccessPassModel> _allVisitorModels = [];
 
   @override
   void initState() {
     super.initState();
     _fetchSiteDetail();
     _fetchGroupVisitors();
-    _fetchAllVisitors();
   }
 
   Future<void> _fetchGroupVisitors() async {
@@ -1288,85 +1265,119 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
 
       final List<AccessPassModel> models = [];
       // 1. Fetch group members directly from API (Dynamic as requested)
-      final String fetchId = widget.item.transactionVisitorId.isNotEmpty 
-          ? widget.item.transactionVisitorId 
+      final String fetchId = widget.item.transactionVisitorId.isNotEmpty
+          ? widget.item.transactionVisitorId
           : widget.item.id;
       final list = await controller.fetchTransactionVisitors(fetchId);
-        
-        final parentFlow = widget.item.flow;
-        final parentSiteId = widget.item.siteId;
-        final parentSitePlaceName = widget.item.sitePlaceName;
-        final parentPeriodStart = widget.item.visitorPeriodStart;
-        final parentPeriodEnd = widget.item.visitorPeriodEnd;
-        final parentAgenda = widget.item.agenda;
-        final parentHostName = widget.item.hostName;
-        final parentVisitorTypeName = widget.item.visitorTypeName;
-        final parentVisitorTypeId = widget.item.visitorTypeId;
-        final parentGCode = widget.item.groupCode.isNotEmpty
-            ? widget.item.groupCode
-            : (widget.item.invitationCode.contains('-') ? widget.item.invitationCode.split('-').first : '');
 
+      final parentFlow = widget.item.flow;
+      final parentSiteId = widget.item.siteId;
+      final parentSitePlaceName = widget.item.sitePlaceName;
+      final parentPeriodStart = widget.item.visitorPeriodStart;
+      final parentPeriodEnd = widget.item.visitorPeriodEnd;
+      final parentAgenda = widget.item.agenda;
+      final parentHostName = widget.item.hostName;
+      final parentVisitorTypeName = widget.item.visitorTypeName;
+      final parentVisitorTypeId = widget.item.visitorTypeId;
+      final parentGCode = widget.item.groupCode.isNotEmpty
+          ? widget.item.groupCode
+          : (widget.item.invitationCode.contains('-')
+                ? widget.item.invitationCode.split('-').first
+                : '');
 
-        for (var visitor in list) {
-          final mutableVisitor = Map<String, dynamic>.from(visitor);
-          if ((mutableVisitor['flow']?.toString() ?? '').isEmpty) {
-            mutableVisitor['flow'] = parentFlow;
-          }
-          if ((mutableVisitor['site_id']?.toString() ?? '').isEmpty && (mutableVisitor['site_place']?.toString() ?? '').isEmpty) {
-            mutableVisitor['site_id'] = parentSiteId;
-          }
-          
-          final model = AccessPassModel.fromJson(mutableVisitor);
-          
-          final finalModel = AccessPassModel(
-            id: model.id.isEmpty ? widget.item.id : model.id,
-            agenda: model.agenda.isEmpty ? parentAgenda : model.agenda,
-            initialTrxCode: model.initialTrxCode.isEmpty ? widget.item.initialTrxCode : model.initialTrxCode,
-            host: model.host.isEmpty ? widget.item.host : model.host,
-            isGroup: true,
-            groupName: model.groupName.isEmpty ? widget.item.groupName : model.groupName,
-            groupCode: parentGCode,
-            visitorPeriodStart: (mutableVisitor['visitor_period_start'] ?? mutableVisitor['visit_start']) != null 
-                ? model.visitorPeriodStart 
-                : parentPeriodStart,
-            visitorPeriodEnd: (mutableVisitor['visitor_period_end'] ?? mutableVisitor['visit_end']) != null 
-                ? model.visitorPeriodEnd 
-                : parentPeriodEnd,
-            visitorNumber: model.visitorNumber,
-            visitorCode: model.visitorCode.isEmpty ? widget.item.visitorCode : model.visitorCode,
-            invitationCode: model.invitationCode.isEmpty ? widget.item.invitationCode : model.invitationCode,
-            visitorStatus: model.visitorStatus.isEmpty ? widget.item.visitorStatus : model.visitorStatus,
-            sitePlaceName: model.sitePlaceName.isEmpty ? parentSitePlaceName : model.sitePlaceName,
-            hostName: model.hostName.isEmpty ? parentHostName : model.hostName,
-            parkingSlot: model.parkingSlot,
-            parkingArea: model.parkingArea,
-            vehiclePlateNumber: model.vehiclePlateNumber,
-            vehicleType: model.vehicleType,
-            isDriving: model.isDriving,
-            tz: model.tz.isEmpty ? widget.item.tz : model.tz,
-            siteId: model.siteId.isEmpty ? parentSiteId : model.siteId,
-            visitorName: model.visitorName,
-            isPraregisterDone: model.isPraregisterDone,
-            visitorRole: model.visitorRole.isEmpty ? widget.item.visitorRole : model.visitorRole,
-            approvalStatus: model.approvalStatus.isEmpty ? widget.item.approvalStatus : model.approvalStatus,
-            visitorTypeName: model.visitorTypeName.isEmpty ? parentVisitorTypeName : model.visitorTypeName,
-            visitorTypeId: model.visitorTypeId.isEmpty ? parentVisitorTypeId : model.visitorTypeId,
-            invitedByName: model.invitedByName.isEmpty ? widget.item.invitedByName : model.invitedByName,
-            invitedBy: model.invitedBy.isEmpty ? widget.item.invitedBy : model.invitedBy,
-            hostOrganizationName: model.hostOrganizationName.isEmpty ? widget.item.hostOrganizationName : model.hostOrganizationName,
-            flow: model.flow,
-            visitorOrganizationName: model.visitorOrganizationName,
-            visitorPhone: model.visitorPhone,
-            visitorEmail: model.visitorEmail,
-            visitorIdentityId: model.visitorIdentityId,
-            receiverName: model.receiverName,
-            receiverEmail: model.receiverEmail,
-            receiverPhone: model.receiverPhone,
-            canTrackBle: model.canTrackBle,
-            canAccess: model.canAccess,
-          );
-          models.add(finalModel);
+      for (var visitor in list) {
+        final mutableVisitor = Map<String, dynamic>.from(visitor);
+        if ((mutableVisitor['flow']?.toString() ?? '').isEmpty) {
+          mutableVisitor['flow'] = parentFlow;
         }
+        if ((mutableVisitor['site_id']?.toString() ?? '').isEmpty &&
+            (mutableVisitor['site_place']?.toString() ?? '').isEmpty) {
+          mutableVisitor['site_id'] = parentSiteId;
+        }
+
+        final model = AccessPassModel.fromJson(mutableVisitor);
+
+        final finalModel = AccessPassModel(
+          id: model.id.isEmpty ? widget.item.id : model.id,
+          agenda: model.agenda.isEmpty ? parentAgenda : model.agenda,
+          initialTrxCode: model.initialTrxCode.isEmpty
+              ? widget.item.initialTrxCode
+              : model.initialTrxCode,
+          host: model.host.isEmpty ? widget.item.host : model.host,
+          isGroup: true,
+          groupName: model.groupName.isEmpty
+              ? widget.item.groupName
+              : model.groupName,
+          groupCode: parentGCode,
+          visitorPeriodStart:
+              (mutableVisitor['visitor_period_start'] ??
+                      mutableVisitor['visit_start']) !=
+                  null
+              ? model.visitorPeriodStart
+              : parentPeriodStart,
+          visitorPeriodEnd:
+              (mutableVisitor['visitor_period_end'] ??
+                      mutableVisitor['visit_end']) !=
+                  null
+              ? model.visitorPeriodEnd
+              : parentPeriodEnd,
+          visitorNumber: model.visitorNumber,
+          visitorCode: model.visitorCode.isEmpty
+              ? widget.item.visitorCode
+              : model.visitorCode,
+          invitationCode: model.invitationCode.isEmpty
+              ? widget.item.invitationCode
+              : model.invitationCode,
+          visitorStatus: model.visitorStatus.isEmpty
+              ? widget.item.visitorStatus
+              : model.visitorStatus,
+          sitePlaceName: model.sitePlaceName.isEmpty
+              ? parentSitePlaceName
+              : model.sitePlaceName,
+          hostName: model.hostName.isEmpty ? parentHostName : model.hostName,
+          parkingSlot: model.parkingSlot,
+          parkingArea: model.parkingArea,
+          vehiclePlateNumber: model.vehiclePlateNumber,
+          vehicleType: model.vehicleType,
+          isDriving: model.isDriving,
+          tz: model.tz.isEmpty ? widget.item.tz : model.tz,
+          siteId: model.siteId.isEmpty ? parentSiteId : model.siteId,
+          visitorName: model.visitorName,
+          isPraregisterDone: model.isPraregisterDone,
+          visitorRole: model.visitorRole.isEmpty
+              ? widget.item.visitorRole
+              : model.visitorRole,
+          approvalStatus: model.approvalStatus.isEmpty
+              ? widget.item.approvalStatus
+              : model.approvalStatus,
+          visitorTypeName: model.visitorTypeName.isEmpty
+              ? parentVisitorTypeName
+              : model.visitorTypeName,
+          visitorTypeId: model.visitorTypeId.isEmpty
+              ? parentVisitorTypeId
+              : model.visitorTypeId,
+          invitedByName: model.invitedByName.isEmpty
+              ? widget.item.invitedByName
+              : model.invitedByName,
+          invitedBy: model.invitedBy.isEmpty
+              ? widget.item.invitedBy
+              : model.invitedBy,
+          hostOrganizationName: model.hostOrganizationName.isEmpty
+              ? widget.item.hostOrganizationName
+              : model.hostOrganizationName,
+          flow: model.flow,
+          visitorOrganizationName: model.visitorOrganizationName,
+          visitorPhone: model.visitorPhone,
+          visitorEmail: model.visitorEmail,
+          visitorIdentityId: model.visitorIdentityId,
+          receiverName: model.receiverName,
+          receiverEmail: model.receiverEmail,
+          receiverPhone: model.receiverPhone,
+          canTrackBle: model.canTrackBle,
+          canAccess: model.canAccess,
+        );
+        models.add(finalModel);
+      }
 
       if (mounted) {
         setState(() {
@@ -1385,44 +1396,6 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
     }
   }
 
-  /// Fetch all visitors from /visitor/dt for the Others Visitor section.
-  Future<void> _fetchAllVisitors() async {
-    final controller = Get.isRegistered<InvitationController>()
-        ? Get.find<InvitationController>()
-        : Get.put(InvitationController());
-
-    // If cache already has data, populate immediately (no loading spinner)
-    if (controller.cachedAllVisitors != null) {
-      final cached = controller.cachedAllVisitors!;
-      if (mounted) {
-        setState(() {
-          _allVisitorModels = cached
-              .where((v) => v.flow.toLowerCase() != 'quickaccessvisit')
-              .toList();
-          _loadingAllVisitors = false;
-        });
-      }
-      return;
-    }
-
-    // Cache not ready yet — show spinner and wait
-    if (mounted) setState(() => _loadingAllVisitors = true);
-    try {
-      final visitors = await controller.fetchAllVisitors();
-      if (mounted) {
-        setState(() {
-          _allVisitorModels = visitors
-              .where((v) => v.flow.toLowerCase() != 'quickaccessvisit')
-              .toList();
-          _loadingAllVisitors = false;
-        });
-      }
-    } catch (e) {
-      debugPrint('_fetchAllVisitors error: $e');
-      if (mounted) setState(() => _loadingAllVisitors = false);
-    }
-  }
-
   /// Show a brief visitor profile bottom sheet (name, email, phone).
   void _showVisitorProfilePopup(BuildContext context, AccessPassModel model) {
     showModalBottomSheet(
@@ -1431,7 +1404,10 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
       isScrollControlled: true,
       builder: (ctx) {
         return Container(
-          margin: EdgeInsets.symmetric(horizontal: rw(context, 16), vertical: rh(context, 16)),
+          margin: EdgeInsets.symmetric(
+            horizontal: rw(context, 16),
+            vertical: rh(context, 16),
+          ),
           padding: EdgeInsets.all(rw(context, 20)),
           decoration: BoxDecoration(
             color: Colors.white,
@@ -1453,9 +1429,13 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
               // Avatar
               CircleAvatar(
                 radius: rw(context, 32),
-                backgroundColor: const Color(0xFF005596).withValues(alpha: 0.12),
+                backgroundColor: const Color(
+                  0xFF005596,
+                ).withValues(alpha: 0.12),
                 child: Text(
-                  model.visitorName.isNotEmpty ? model.visitorName[0].toUpperCase() : 'V',
+                  model.visitorName.isNotEmpty
+                      ? model.visitorName[0].toUpperCase()
+                      : 'V',
                   style: TextStyle(
                     fontSize: rfs(context, 24),
                     fontWeight: FontWeight.bold,
@@ -1475,17 +1455,33 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
               ),
               vSpace(context, 16),
               // Info rows
-              _profileInfoRow(context, Icons.email_outlined, 'Email',
-                  model.visitorEmail.isNotEmpty ? model.visitorEmail : '-'),
+              _profileInfoRow(
+                context,
+                Icons.email_outlined,
+                'Email',
+                model.visitorEmail.isNotEmpty ? model.visitorEmail : '-',
+              ),
               vSpace(context, 8),
-              _profileInfoRow(context, Icons.phone_outlined, 'Phone',
-                  model.visitorPhone.isNotEmpty ? model.visitorPhone : '-'),
+              _profileInfoRow(
+                context,
+                Icons.phone_outlined,
+                'Phone',
+                model.visitorPhone.isNotEmpty ? model.visitorPhone : '-',
+              ),
               vSpace(context, 8),
-              _profileInfoRow(context, Icons.confirmation_number_outlined, 'Invitation Code',
-                  model.invitationCode.isNotEmpty ? model.invitationCode : '-'),
+              _profileInfoRow(
+                context,
+                Icons.confirmation_number_outlined,
+                'Invitation Code',
+                model.invitationCode.isNotEmpty ? model.invitationCode : '-',
+              ),
               vSpace(context, 8),
-              _profileInfoRow(context, Icons.pin_outlined, 'Visitor Number',
-                  model.visitorNumber.isNotEmpty ? model.visitorNumber : '-'),
+              _profileInfoRow(
+                context,
+                Icons.pin_outlined,
+                'Visitor Number',
+                model.visitorNumber.isNotEmpty ? model.visitorNumber : '-',
+              ),
             ],
           ),
         );
@@ -1572,10 +1568,10 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
     if (mounted) setState(() => _loadingSite = false);
   }
 
-  Future<void> _downloadBarcodePdf(AccessPassModel model) async {
+  Future<void> _downloadBarcodePdf(List<AccessPassModel> models) async {
     try {
       final pdf = pw.Document();
-      
+
       pw.Widget pdfField(String label, String value) {
         return pw.Padding(
           padding: const pw.EdgeInsets.symmetric(horizontal: 10, vertical: 8),
@@ -1584,16 +1580,13 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
             children: [
               pw.Text(
                 label,
-                style: pw.TextStyle(
-                  fontSize: 9,
-                  color: PdfColors.grey500,
-                ),
+                style: pw.TextStyle(fontSize: 8, color: PdfColors.grey500),
               ),
               pw.SizedBox(height: 2),
               pw.Text(
-                value,
+                value.isEmpty ? '-' : value,
                 style: pw.TextStyle(
-                  fontSize: 11,
+                  fontSize: 10,
                   fontWeight: pw.FontWeight.bold,
                   color: PdfColors.black,
                 ),
@@ -1603,164 +1596,342 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
         );
       }
 
-      pdf.addPage(
-        pw.Page(
-          pageFormat: PdfPageFormat.a4,
-          build: (pw.Context context) {
-            return pw.Center(
-              child: pw.Container(
-                width: 320,
-                padding: const pw.EdgeInsets.all(20),
-                decoration: pw.BoxDecoration(
-                  color: PdfColors.white,
-                  border: pw.Border.all(color: PdfColors.grey300, width: 1),
-                  borderRadius: const pw.BorderRadius.all(pw.Radius.circular(16)),
+      pw.Widget sectionHeader(String title) {
+        return pw.Padding(
+          padding: const pw.EdgeInsets.only(top: 14, bottom: 6),
+          child: pw.Row(
+            children: [
+              pw.Container(
+                width: 3,
+                height: 12,
+                color: const PdfColor(0.0, 0.333, 0.588),
+              ),
+              pw.SizedBox(width: 6),
+              pw.Text(
+                title,
+                style: pw.TextStyle(
+                  fontSize: 12,
+                  fontWeight: pw.FontWeight.bold,
+                  color: PdfColors.black,
                 ),
-                child: pw.Column(
-                  mainAxisSize: pw.MainAxisSize.min,
-                  crossAxisAlignment: pw.CrossAxisAlignment.center,
-                  children: [
-                    // Title
-                    pw.Text(
-                      model.visitorName.isNotEmpty ? model.visitorName : 'Visitor',
-                      style: pw.TextStyle(
-                        fontSize: 18,
-                        fontWeight: pw.FontWeight.bold,
-                        color: PdfColors.black,
-                      ),
-                      textAlign: pw.TextAlign.center,
-                    ),
-                    pw.SizedBox(height: 4),
-                    pw.Text(
-                      DateFormat('EEEE, d MMMM yyyy').format(model.visitorPeriodStart),
-                      style: const pw.TextStyle(
-                        fontSize: 11,
-                        color: PdfColors.grey700,
-                      ),
-                      textAlign: pw.TextAlign.center,
-                    ),
-                    pw.SizedBox(height: 2),
-                    pw.Text(
-                      '${DateFormat('HH:mm').format(model.visitorPeriodStart)} - ${DateFormat('HH:mm').format(model.visitorPeriodEnd)}',
-                      style: const pw.TextStyle(
-                        fontSize: 11,
-                        color: PdfColors.grey700,
-                      ),
-                      textAlign: pw.TextAlign.center,
-                    ),
-                    pw.SizedBox(height: 16),
+              ),
+            ],
+          ),
+        );
+      }
 
-                    // Grid details
-                    pw.Container(
-                      decoration: pw.BoxDecoration(
-                        color: PdfColors.grey50,
-                        borderRadius: const pw.BorderRadius.all(pw.Radius.circular(10)),
-                        border: pw.Border.all(color: PdfColors.grey200, width: 1),
+      pw.Widget buildPdfDigitalCard(AccessPassModel model) {
+        return pw.Container(
+          width: double.infinity,
+          padding: const pw.EdgeInsets.all(16),
+          decoration: const pw.BoxDecoration(
+            borderRadius: pw.BorderRadius.all(pw.Radius.circular(16)),
+            gradient: pw.LinearGradient(
+              begin: pw.Alignment.topLeft,
+              end: pw.Alignment.bottomRight,
+              colors: [
+                PdfColor(0.0, 0.333, 0.588),
+                PdfColor(0.098, 0.462, 0.823),
+                PdfColor(0.051, 0.278, 0.631),
+              ],
+            ),
+          ),
+          child: pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
+            children: [
+              pw.Row(
+                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                children: [
+                  pw.Container(
+                    padding: const pw.EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 3,
+                    ),
+                    decoration: pw.BoxDecoration(
+                      color: const PdfColor(1.0, 1.0, 1.0, 0.18),
+                      borderRadius: const pw.BorderRadius.all(
+                        pw.Radius.circular(4),
                       ),
-                      child: pw.Column(
-                        children: [
-                          pw.Row(
-                            children: [
-                              pw.Expanded(child: pdfField('Invitation Code', model.invitationCode.isEmpty ? '-' : model.invitationCode)),
-                              pw.Container(width: 1, height: 42, color: PdfColors.grey200),
-                              pw.Expanded(child: pdfField('Agenda', model.agenda.isEmpty ? '-' : model.agenda)),
-                            ],
+                      border: pw.Border.all(
+                        color: const PdfColor(1.0, 1.0, 1.0, 0.4),
+                        width: 1,
+                      ),
+                    ),
+                    child: pw.Text(
+                      'VISITOR CARD',
+                      style: pw.TextStyle(
+                        color: PdfColors.white,
+                        fontSize: 8,
+                        fontWeight: pw.FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              pw.SizedBox(height: 24),
+              pw.Text(
+                model.visitorName.toUpperCase(),
+                style: pw.TextStyle(
+                  color: PdfColors.white,
+                  fontSize: 16,
+                  fontWeight: pw.FontWeight.bold,
+                ),
+              ),
+              pw.SizedBox(height: 4),
+              pw.Text(
+                model.visitorNumber,
+                style: pw.TextStyle(
+                  color: const PdfColor(1.0, 1.0, 1.0, 0.88),
+                  fontSize: 10,
+                  fontWeight: pw.FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+        );
+      }
+
+      for (final model in models) {
+        final List<MapEntry<String, String>> fields = [
+          MapEntry('Visitor Type', model.visitorTypeName),
+          MapEntry('Visitor Role', model.visitorRole),
+          MapEntry('Name', model.visitorName),
+          MapEntry('Email', model.visitorEmail),
+          MapEntry('Phone', model.visitorPhone),
+          MapEntry('Agenda', model.agenda),
+          MapEntry('Organization', model.visitorOrganizationName),
+          if (model.flow.toLowerCase() != 'quickaccessvisit')
+            MapEntry('Identity ID', model.visitorIdentityId),
+          MapEntry('Location', model.sitePlaceName),
+          MapEntry('Invitation Code', model.invitationCode),
+          MapEntry('Visitor Code', model.visitorCode),
+          MapEntry('Group Name', model.groupName),
+          if (model.flow.toLowerCase() != 'quickaccessvisit')
+            MapEntry('Host', model.hostName),
+          MapEntry('Vehicle Type', model.vehicleType),
+          MapEntry('Vehicle Plate', model.vehiclePlateNumber),
+          if (model.flow.toLowerCase() == 'quickaccessvisit') ...[
+            MapEntry('Receiver Name', model.receiverName),
+            MapEntry('Receiver Phone', model.receiverPhone),
+            MapEntry('Receiver Email', model.receiverEmail),
+          ],
+        ];
+
+        final List<pw.Widget> rows = [];
+        for (int i = 0; i < fields.length; i += 2) {
+          final f1 = fields[i];
+          final hasSecond = i + 1 < fields.length;
+          final f2 = hasSecond ? fields[i + 1] : null;
+          rows.add(
+            pw.Row(
+              children: [
+                pw.Expanded(child: pdfField(f1.key, f1.value)),
+                if (hasSecond) ...[
+                  pw.Container(width: 1, height: 36, color: PdfColors.grey200),
+                  pw.Expanded(child: pdfField(f2!.key, f2.value)),
+                ] else
+                  pw.Expanded(child: pw.SizedBox()),
+              ],
+            ),
+          );
+          if (i + 2 < fields.length) {
+            rows.add(pw.Container(height: 1, color: PdfColors.grey200));
+          }
+        }
+
+        pdf.addPage(
+          pw.MultiPage(
+            pageFormat: PdfPageFormat.a4,
+            margin: const pw.EdgeInsets.all(30),
+            build: (pw.Context context) {
+              return [
+                // Header banner
+                pw.Container(
+                  width: double.infinity,
+                  padding: const pw.EdgeInsets.only(bottom: 8),
+                  decoration: const pw.BoxDecoration(
+                    border: pw.Border(
+                      bottom: pw.BorderSide(color: PdfColors.grey300, width: 1),
+                    ),
+                  ),
+                  child: pw.Row(
+                    mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                    children: [
+                      pw.Text(
+                        'VISITOR ACCESS PASS',
+                        style: pw.TextStyle(
+                          fontSize: 16,
+                          fontWeight: pw.FontWeight.bold,
+                          color: const PdfColor(0.0, 0.333, 0.588),
+                        ),
+                      ),
+                      pw.Text(
+                        DateFormat('dd MMM yyyy').format(DateTime.now()),
+                        style: const pw.TextStyle(
+                          fontSize: 10,
+                          color: PdfColors.grey600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                pw.SizedBox(height: 8),
+
+                // 1. Visitor Information
+                sectionHeader('Visitor Information'),
+                pw.Container(
+                  decoration: pw.BoxDecoration(
+                    color: PdfColors.grey50,
+                    borderRadius: const pw.BorderRadius.all(
+                      pw.Radius.circular(10),
+                    ),
+                    border: pw.Border.all(color: PdfColors.grey200, width: 1),
+                  ),
+                  child: pw.Column(children: rows),
+                ),
+                pw.SizedBox(height: 8),
+
+                // 2. Visit Period
+                sectionHeader('Visit Period'),
+                pw.Container(
+                  decoration: pw.BoxDecoration(
+                    color: PdfColors.grey50,
+                    borderRadius: const pw.BorderRadius.all(
+                      pw.Radius.circular(10),
+                    ),
+                    border: pw.Border.all(color: PdfColors.grey200, width: 1),
+                  ),
+                  child: pw.Row(
+                    children: [
+                      pw.Expanded(
+                        child: pdfField(
+                          'Period Start',
+                          DateFormat(
+                            'dd MMMM yyyy, HH:mm',
+                          ).format(model.visitorPeriodStart),
+                        ),
+                      ),
+                      pw.Container(
+                        width: 1,
+                        height: 36,
+                        color: PdfColors.grey200,
+                      ),
+                      pw.Expanded(
+                        child: pdfField(
+                          'Period End',
+                          DateFormat(
+                            'dd MMMM yyyy, HH:mm',
+                          ).format(model.visitorPeriodEnd),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                pw.SizedBox(height: 8),
+
+                // 3. Access Pass
+                sectionHeader('Access Pass'),
+                pw.Container(
+                  width: double.infinity,
+                  padding: const pw.EdgeInsets.all(12),
+                  decoration: pw.BoxDecoration(
+                    color: PdfColors.white,
+                    borderRadius: const pw.BorderRadius.all(
+                      pw.Radius.circular(10),
+                    ),
+                    border: pw.Border.all(color: PdfColors.grey200, width: 1),
+                  ),
+                  child: pw.Column(
+                    children: [
+                      pw.Container(
+                        width: 120,
+                        height: 120,
+                        padding: const pw.EdgeInsets.all(6),
+                        decoration: pw.BoxDecoration(
+                          color: PdfColors.white,
+                          borderRadius: const pw.BorderRadius.all(
+                            pw.Radius.circular(8),
                           ),
-                          pw.Container(height: 1, color: PdfColors.grey200),
-                          pw.Row(
-                            children: [
-                              pw.Expanded(child: pdfField('Location', model.sitePlaceName.isEmpty ? '-' : model.sitePlaceName)),
-                              pw.Container(width: 1, height: 42, color: PdfColors.grey200),
-                              pw.Expanded(child: pdfField('Phone', model.visitorPhone.isNotEmpty ? model.visitorPhone : (model.receiverPhone.isNotEmpty ? model.receiverPhone : '-'))),
-                            ],
+                          border: pw.Border.all(
+                            color: PdfColors.grey200,
+                            width: 1,
+                          ),
+                        ),
+                        child: pw.BarcodeWidget(
+                          barcode: pw.Barcode.qrCode(),
+                          data: model.visitorNumber.isNotEmpty
+                              ? model.visitorNumber
+                              : 'N/A',
+                        ),
+                      ),
+                      pw.SizedBox(height: 6),
+                      pw.Row(
+                        mainAxisAlignment: pw.MainAxisAlignment.center,
+                        children: [
+                          pw.Text(
+                            model.canTrackBle == true ? 'Tracked' : 'Not Tracked',
+                            style: pw.TextStyle(
+                              fontSize: 9,
+                              fontWeight: pw.FontWeight.bold,
+                              color: model.canTrackBle == true
+                                  ? PdfColors.green700
+                                  : PdfColors.red700,
+                            ),
+                          ),
+                          pw.SizedBox(width: 16),
+                          pw.Text(
+                            model.canAccess == true
+                                ? 'Accessible'
+                                : 'Not Accessible',
+                            style: pw.TextStyle(
+                              fontSize: 9,
+                              fontWeight: pw.FontWeight.bold,
+                              color: model.canAccess == true
+                                  ? PdfColors.green700
+                                  : PdfColors.red700,
+                            ),
                           ),
                         ],
                       ),
-                    ),
-                    pw.SizedBox(height: 20),
-
-                    pw.Text(
-                      'Access Pass',
-                      style: pw.TextStyle(
-                        fontSize: 16,
-                        fontWeight: pw.FontWeight.bold,
-                        color: PdfColors.black,
-                      ),
-                    ),
-                    pw.SizedBox(height: 10),
-
-                    // QR Code
-                    pw.Container(
-                      padding: const pw.EdgeInsets.all(10),
-                      decoration: pw.BoxDecoration(
-                        borderRadius: const pw.BorderRadius.all(pw.Radius.circular(10)),
-                        border: pw.Border.all(color: PdfColors.grey200, width: 1),
-                      ),
-                      child: pw.Container(
-                        width: 150,
-                        height: 150,
-                        child: pw.BarcodeWidget(
-                          barcode: pw.Barcode.qrCode(),
-                          data: model.visitorNumber.isNotEmpty ? model.visitorNumber : 'N/A',
+                      pw.SizedBox(height: 4),
+                      pw.Text(
+                        'Show this while visiting',
+                        style: pw.TextStyle(
+                          fontSize: 9,
+                          fontWeight: pw.FontWeight.bold,
+                          color: PdfColors.black,
                         ),
                       ),
-                    ),
-                    pw.SizedBox(height: 12),
-
-                    // Status
-                    pw.Row(
-                      mainAxisAlignment: pw.MainAxisAlignment.center,
-                      children: [
-                        pw.Text(
-                          model.canTrackBle == true ? 'Tracked' : 'Not Tracked',
-                          style: pw.TextStyle(
-                            fontSize: 10,
-                            fontWeight: pw.FontWeight.bold,
-                            color: model.canTrackBle == true ? PdfColors.green700 : PdfColors.red700,
-                          ),
+                      pw.SizedBox(height: 2),
+                      pw.Text(
+                        'ID : ${model.visitorNumber.isNotEmpty ? model.visitorNumber : '-'}',
+                        style: pw.TextStyle(
+                          fontSize: 10,
+                          fontWeight: pw.FontWeight.bold,
+                          color: PdfColors.black,
                         ),
-                        pw.SizedBox(width: 16),
-                        pw.Text(
-                          model.canAccess == true ? 'Accessible' : 'Not Accessible',
-                          style: pw.TextStyle(
-                            fontSize: 10,
-                            fontWeight: pw.FontWeight.bold,
-                            color: model.canAccess == true ? PdfColors.green700 : PdfColors.red700,
-                          ),
-                        ),
-                      ],
-                    ),
-                    pw.SizedBox(height: 10),
-
-                    pw.Text(
-                      'Show this while visiting',
-                      style: pw.TextStyle(
-                        fontSize: 11,
-                        fontWeight: pw.FontWeight.bold,
-                        color: PdfColors.black,
                       ),
-                    ),
-                    pw.SizedBox(height: 2),
-                    pw.Text(
-                      'ID : ${model.visitorNumber.isNotEmpty ? model.visitorNumber : '-'}',
-                      style: pw.TextStyle(
-                        fontSize: 12,
-                        fontWeight: pw.FontWeight.bold,
-                        color: PdfColors.black,
-                      ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-            );
-          },
-        ),
-      );
+                pw.SizedBox(height: 8),
+
+                // 4. Digital Invitation Card
+                sectionHeader('Digital Invitation Card'),
+                buildPdfDigitalCard(model),
+              ];
+            },
+          ),
+        );
+      }
 
       final bytes = await pdf.save();
-      
+
       String? path;
-      final visitorNumber = model.visitorNumber.isNotEmpty ? model.visitorNumber : 'N_A';
+      final firstModel = models.first;
+      final visitorNumber = firstModel.visitorNumber.isNotEmpty
+          ? firstModel.visitorNumber
+          : 'N_A';
       bool saveSuccess = false;
 
       if (Platform.isAndroid) {
@@ -1774,10 +1945,12 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
             saveSuccess = true;
           }
         } catch (e) {
-          debugPrint('Failed to save barcode PDF to public Download folder: $e');
+          debugPrint(
+            'Failed to save barcode PDF to public Download folder: $e',
+          );
         }
       }
-      
+
       if (!saveSuccess) {
         final dir = await getApplicationDocumentsDirectory();
         path = '${dir.path}/access_pass_$visitorNumber.pdf';
@@ -1880,9 +2053,14 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
       return 'Checkin';
     } else if (lowerStatus == 'checkout') {
       return 'Checkout';
-    } else if (lowerStatus == 'reject' || lowerStatus == 'rejected' || lowerStatus == 'denied' || lowerStatus == 'deny') {
+    } else if (lowerStatus == 'reject' ||
+        lowerStatus == 'rejected' ||
+        lowerStatus == 'denied' ||
+        lowerStatus == 'deny') {
       return 'Rejected';
-    } else if (lowerStatus == 'preregis' || lowerStatus == 'praregis' || lowerStatus == 'praregister') {
+    } else if (lowerStatus == 'preregis' ||
+        lowerStatus == 'praregis' ||
+        lowerStatus == 'praregister') {
       return 'Praregis';
     } else if (lowerStatus == 'quickaccess') {
       return 'Quick Access';
@@ -1899,6 +2077,9 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
     final selectedItem = _selectedGroupVisitor ?? item;
     final isExpired = selectedItem.visitorPeriodEnd.isBefore(DateTime.now());
     final statusColor = _statusColor(selectedItem.visitorStatus);
+    final isQuickAccess =
+        selectedItem.flow.toLowerCase() == 'quickaccessvisit' ||
+        selectedItem.visitorStatus.toLowerCase().trim() == 'quickaccess';
 
     return DraggableScrollableSheet(
       initialChildSize: 0.9,
@@ -1970,13 +2151,38 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
                               fontSize: rfs(context, 13),
                               color: Colors.grey.shade600,
                             ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ],
                       ),
                     ),
                     hSpace(context, 8),
+                    GestureDetector(
+                      onTap: () {
+                        final barcodeItems = _groupVisitorModels.isNotEmpty
+                            ? _groupVisitorModels
+                            : [selectedItem];
+                        _downloadBarcodePdf(barcodeItems);
+                      },
+                      child: Container(
+                        width: rw(context, 32),
+                        height: rw(context, 32),
+                        decoration: const BoxDecoration(
+                          color: Color(0xFFE8F1FB),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.download_rounded,
+                          size: 16,
+                          color: Color(0xFF1976D2),
+                        ),
+                      ),
+                    ),
+                    hSpace(context, 8),
                     if (selectedItem.visitorStatus.isNotEmpty &&
-                        selectedItem.visitorStatus.toLowerCase().trim() != 'quickaccess') ...[
+                        selectedItem.visitorStatus.toLowerCase().trim() !=
+                            'quickaccess') ...[
                       Container(
                         padding: EdgeInsets.symmetric(
                           horizontal: rw(context, 10),
@@ -2031,951 +2237,880 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
                     vertical: rh(context, 16),
                   ),
                   children: [
-                    // Group Members selector at the top (only shown in full detail view)
-                    if (widget.isFullDetail) ...[
-                      if (_loadingGroupVisitors)
-                        const Center(
-                          child: Padding(
-                            padding: EdgeInsets.all(16.0),
-                            child: CircularProgressIndicator(),
-                          ),
-                        )
-                      else if (_groupVisitorModels.length > 1) ...[
-                        _section(context, 'Invitation Visitor'),
-                        vSpace(context, 8),
-                        Container(
-                          height: rh(context, 55),
-                          child: ListView.separated(
-                            scrollDirection: Axis.horizontal,
-                            itemCount: _groupVisitorModels.length,
-                            separatorBuilder: (context, index) => hSpace(context, 10),
-                            itemBuilder: (context, index) {
-                              final model = _groupVisitorModels[index];
-                              final isSelected = _selectedGroupVisitor == model;
-                              
-                              return GestureDetector(
-                                onTap: () {
-                                  setState(() {
-                                    _selectedGroupVisitor = model;
-                                  });
-                                },
-                                child: Container(
-                                  padding: EdgeInsets.symmetric(
-                                    horizontal: rw(context, 12),
-                                    vertical: rh(context, 6),
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: isSelected
-                                        ? const Color(0xFF005596).withValues(alpha: 0.08)
-                                        : Colors.white,
-                                    borderRadius: BorderRadius.circular(rw(context, 8)),
-                                    border: Border.all(
-                                      color: isSelected
-                                          ? const Color(0xFF005596)
-                                          : Colors.grey.shade200,
-                                      width: isSelected ? 1.5 : 1.0,
-                                    ),
-                                  ),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      CircleAvatar(
-                                        radius: rw(context, 14),
-                                        backgroundColor: isSelected
-                                            ? const Color(0xFF005596)
-                                            : Colors.grey.shade200,
-                                        child: Text(
-                                          model.visitorName.isNotEmpty
-                                              ? model.visitorName[0].toUpperCase()
-                                              : 'V',
-                                          style: TextStyle(
-                                            color: isSelected
-                                                ? Colors.white
-                                                : Colors.grey.shade700,
-                                            fontSize: rfs(context, 11),
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                      ),
-                                      hSpace(context, 8),
-                                      Text(
-                                        model.visitorName.isNotEmpty
-                                            ? model.visitorName
-                                            : 'Visitor ${index + 1}',
-                                        style: TextStyle(
-                                          fontSize: rfs(context, 12),
-                                          fontWeight: FontWeight.w700,
-                                          color: isSelected
-                                              ? const Color(0xFF005596)
-                                              : Colors.black87,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              );
-                            },
-                          ),
-                        ),
-                        vSpace(context, 16),
-                      ],
-                    ],
+                    Builder(
+                      builder: (context) {
+                        List<Widget> buildInfoBlock(
+                          AccessPassModel visitor, [
+                          int? index,
+                        ]) {
+                          final expired = visitor.visitorPeriodEnd.isBefore(
+                            DateTime.now(),
+                          );
+                          final sColor = _statusColor(visitor.visitorStatus);
 
-                    // 1. Visitor Information
-                    _section(
-                      context,
-                      'Visitor Information',
-                      trailing: widget.isFullDetail
-                          ? null
-                          : GestureDetector(
-                              onTap: () {
-                                showModalBottomSheet(
-                                  context: context,
-                                  isScrollControlled: true,
-                                  backgroundColor: Colors.transparent,
-                                  builder: (ctx) => InvitationDetailSheet(
-                                    item: widget.item,
-                                    isFullDetail: true,
-                                  ),
-                                );
-                              },
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Text(
-                                    'More',
-                                    style: TextStyle(
-                                      fontSize: rfs(context, 12),
-                                      fontWeight: FontWeight.bold,
-                                      color: const Color(0xFF005596),
-                                    ),
-                                  ),
-                                  hSpace(context, 4),
-                                  Icon(
-                                    Icons.arrow_forward_rounded,
-                                    size: rw(context, 16),
-                                    color: const Color(0xFF005596),
-                                  ),
-                                ],
-                              ),
-                            ),
-                    ),
-                    _grid(
-                      context,
-                      statusColor,
-                      widget.isFullDetail
-                          ? [
-                              _SheetField(
-                                'Visitor Type',
-                                selectedItem.visitorTypeName.isEmpty
-                                    ? '-'
-                                    : selectedItem.visitorTypeName,
-                                Icons.badge_outlined,
-                              ),
-                              _SheetField(
-                                'Visitor Role',
-                                selectedItem.visitorRole.isEmpty
-                                    ? '-'
-                                    : selectedItem.visitorRole,
-                                Icons.work_outline,
-                              ),
-                              _SheetField(
-                                'Name',
-                                selectedItem.visitorName.isEmpty
-                                    ? '-'
-                                    : selectedItem.visitorName,
-                                Icons.person_outline,
-                              ),
-                              _SheetField(
-                                'Email',
-                                selectedItem.visitorEmail.isEmpty
-                                    ? '-'
-                                    : selectedItem.visitorEmail,
-                                Icons.email_outlined,
-                              ),
-                              _SheetField(
-                                'Phone',
-                                selectedItem.visitorPhone.isEmpty
-                                    ? '-'
-                                    : selectedItem.visitorPhone,
-                                Icons.phone_outlined,
-                              ),
-                              _SheetField(
-                                'Organization',
-                                selectedItem.visitorOrganizationName.isEmpty
-                                    ? '-'
-                                    : selectedItem.visitorOrganizationName,
-                                Icons.business_outlined,
-                              ),
-                              if (selectedItem.flow.toLowerCase() !=
-                                  'quickaccessvisit')
-                                _SheetField(
-                                  'Identity ID',
-                                  selectedItem.visitorIdentityId.isEmpty
-                                      ? '-'
-                                      : selectedItem.visitorIdentityId,
-                                  Icons.credit_card_outlined,
-                                ),
-                              _SheetField(
-                                'Location',
-                                _loadingSite
-                                    ? '...'
-                                    : (selectedItem.sitePlaceName.isNotEmpty
-                                        ? selectedItem.sitePlaceName
-                                        : (_sitePlaceName.isEmpty
-                                            ? '-'
-                                            : _sitePlaceName)),
-                                Icons.location_on_outlined,
-                              ),
-                              _SheetField(
-                                'Invitation Code',
-                                selectedItem.invitationCode.isEmpty
-                                    ? '-'
-                                    : selectedItem.invitationCode,
-                                Icons.confirmation_number_outlined,
-                                isCode: true,
-                              ),
-                              _SheetField(
-                                'Visitor Number',
-                                selectedItem.visitorCode.isEmpty
-                                    ? '-'
-                                    : selectedItem.visitorCode,
-                                Icons.pin_outlined,
-                              ),
-                              _SheetField(
-                                'Group Name',
-                                selectedItem.groupName.isEmpty
-                                    ? '-'
-                                    : selectedItem.groupName,
-                                Icons.group_outlined,
-                              ),
-                              if (selectedItem.flow.toLowerCase() !=
-                                  'quickaccessvisit')
-                                _SheetField(
-                                  'Host',
-                                  selectedItem.hostName.isEmpty
-                                      ? '-'
-                                      : selectedItem.hostName,
-                                  Icons.person_outline,
-                                ),
-                              _SheetField(
-                                'Vehicle Type',
-                                selectedItem.vehicleType.isEmpty
-                                    ? '-'
-                                    : selectedItem.vehicleType,
-                                Icons.directions_car_outlined,
-                              ),
-                              _SheetField(
-                                'Vehicle Plate',
-                                selectedItem.vehiclePlateNumber.isEmpty
-                                    ? '-'
-                                    : selectedItem.vehiclePlateNumber,
-                                Icons.subtitles_outlined,
-                              ),
-                              if (selectedItem.flow.toLowerCase() ==
-                                  'quickaccessvisit') ...[
-                                _SheetField(
-                                  'Receiver Name',
-                                  selectedItem.receiverName.isEmpty
-                                      ? '-'
-                                      : selectedItem.receiverName,
-                                  Icons.person_outline,
-                                ),
-                                _SheetField(
-                                  'Receiver Phone',
-                                  selectedItem.receiverPhone.isEmpty
-                                      ? '-'
-                                      : selectedItem.receiverPhone,
-                                  Icons.phone_outlined,
-                                ),
-                                _SheetField(
-                                  'Receiver Email',
-                                  selectedItem.receiverEmail.isEmpty
-                                      ? '-'
-                                      : selectedItem.receiverEmail,
-                                  Icons.email_outlined,
-                                ),
-                              ],
-                            ]
-                          : [
-                              _SheetField(
-                                'Visitor Type',
-                                selectedItem.visitorTypeName.isEmpty
-                                    ? '-'
-                                    : selectedItem.visitorTypeName,
-                                Icons.badge_outlined,
-                              ),
-                              if (selectedItem.flow.toLowerCase() !=
-                                  'quickaccessvisit')
-                                _SheetField(
-                                  'Visitor Role',
-                                  selectedItem.visitorRole.isEmpty
-                                      ? '-'
-                                      : selectedItem.visitorRole,
-                                  Icons.work_outline,
-                                ),
-                              _SheetField(
-                                'Location',
-                                _loadingSite
-                                    ? '...'
-                                    : (selectedItem.sitePlaceName.isNotEmpty
-                                        ? selectedItem.sitePlaceName
-                                        : (_sitePlaceName.isEmpty
-                                            ? '-'
-                                            : _sitePlaceName)),
-                                Icons.location_on_outlined,
-                              ),
-                              _SheetField(
-                                'Group Name',
-                                selectedItem.groupName.isEmpty
-                                    ? '-'
-                                    : selectedItem.groupName,
-                                Icons.group_outlined,
-                              ),
-                              if (selectedItem.flow.toLowerCase() !=
-                                  'quickaccessvisit')
-                                _SheetField(
-                                  'Host',
-                                  selectedItem.hostName.isEmpty
-                                      ? '-'
-                                      : selectedItem.hostName,
-                                  Icons.person_outline,
-                                ),
-                            ],
-                      isExpired: isExpired,
-                    ),
-
-                    vSpace(context, 16),
-
-                    // 2. Visit Period
-                    _section(context, 'Visit Period'),
-
-                    // Start / End
-                    Container(
-                      padding: EdgeInsets.all(rw(context, 14)),
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade50,
-                        borderRadius: BorderRadius.circular(rw(context, 10)),
-                        border: Border.all(color: Colors.grey.shade200),
-                      ),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    Icon(
-                                      Icons.login_outlined,
-                                      size: rw(context, 14),
-                                      color: Colors.green.shade600,
-                                    ),
-                                    hSpace(context, 4),
-                                    Text(
-                                      'Start',
-                                      style: TextStyle(
-                                        fontSize: rfs(context, 12),
-                                        color: Colors.grey.shade500,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                vSpace(context, 4),
-                                Text(
-                                  DateFormat(
-                                    'dd MMMM yyyy',
-                                  ).format(selectedItem.visitorPeriodStart),
-                                  style: TextStyle(
-                                    fontSize: rfs(context, 12),
-                                    fontWeight: FontWeight.w700,
-                                    color: Colors.black87,
-                                  ),
-                                ),
-                                Text(
-                                  DateFormat(
-                                    'HH:mm',
-                                  ).format(selectedItem.visitorPeriodStart),
-                                  style: TextStyle(
-                                    fontSize: rfs(context, 12),
-                                    color: Colors.grey.shade600,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          Container(
-                            width: 1,
-                            height: rh(context, 50),
-                            color: Colors.grey.shade300,
-                          ),
-                          Expanded(
-                            child: Padding(
-                              padding: EdgeInsets.only(left: rw(context, 12)),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    children: [
-                                      Icon(
-                                        Icons.logout_outlined,
-                                        size: rw(context, 14),
-                                        color: isExpired
-                                            ? Colors.red.shade600
-                                            : Colors.grey.shade500,
-                                      ),
-                                      hSpace(context, 4),
-                                      Text(
-                                        'End',
-                                        style: TextStyle(
-                                          fontSize: rfs(context, 12),
-                                          color: Colors.grey.shade500,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  vSpace(context, 4),
-                                  Text(
-                                    DateFormat(
-                                      'dd MMMM yyyy',
-                                    ).format(selectedItem.visitorPeriodEnd),
-                                    style: TextStyle(
-                                      fontSize: rfs(context, 12),
-                                      fontWeight: FontWeight.w700,
-                                      color: isExpired
-                                          ? Colors.red.shade600
-                                          : Colors.black87,
-                                    ),
-                                  ),
-                                  Text(
-                                    DateFormat(
-                                      'HH:mm',
-                                    ).format(selectedItem.visitorPeriodEnd),
-                                    style: TextStyle(
-                                      fontSize: rfs(context, 12),
-                                      color: isExpired
-                                          ? Colors.red.shade400
-                                          : Colors.grey.shade600,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    vSpace(context, 24),
-
-                    if (!widget.isFullDetail &&
-                        widget.item.flow.toLowerCase() != 'quickaccessvisit' &&
-                        (_loadingAllVisitors || _allVisitorModels.isNotEmpty)) ...[
-                      _section(
-                        context,
-                        'Others Visitor',
-                        trailing: _allVisitorModels.isNotEmpty
-                            ? GestureDetector(
-                                onTap: () {
-                                  // Show full list in a scrollable bottom sheet
-                                  showModalBottomSheet(
-                                    context: context,
-                                    isScrollControlled: true,
-                                    backgroundColor: Colors.transparent,
-                                    builder: (ctx) => _AllVisitorsSheet(
-                                      visitors: _allVisitorModels,
-                                      onTapVisitor: (c, model) =>
-                                          _showVisitorProfilePopup(c, model),
-                                    ),
-                                  );
-                                },
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Text(
-                                      'More',
-                                      style: TextStyle(
-                                        fontSize: rfs(context, 12),
-                                        fontWeight: FontWeight.bold,
-                                        color: const Color(0xFF005596),
-                                      ),
-                                    ),
-                                    hSpace(context, 4),
-                                    Icon(
-                                      Icons.arrow_forward_rounded,
-                                      size: rw(context, 16),
-                                      color: const Color(0xFF005596),
-                                    ),
-                                  ],
-                                ),
-                              )
-                            : null,
-                      ),
-                      vSpace(context, 8),
-                      if (_loadingAllVisitors)
-                        const Center(
-                          child: Padding(
-                            padding: EdgeInsets.all(8.0),
-                            child: CircularProgressIndicator(),
-                          ),
-                        )
-                      else
-                        SizedBox(
-                          height: rh(context, 88),
-                          child: ListView.separated(
-                            scrollDirection: Axis.horizontal,
-                            itemCount: _allVisitorModels.length > 7
-                                ? 7
-                                : _allVisitorModels.length,
-                            separatorBuilder: (context, index) =>
-                                hSpace(context, 12),
-                            itemBuilder: (context, index) {
-                              final model = _allVisitorModels[index];
-                              final initials = model.visitorName.isNotEmpty
-                                  ? model.visitorName[0].toUpperCase()
-                                  : 'V';
-                              final colors = [
-                                const Color(0xFF1565C0),
-                                const Color(0xFF00695C),
-                                const Color(0xFFAD1457),
-                                const Color(0xFF6A1B9A),
-                                const Color(0xFF37474F),
-                                const Color(0xFFE65100),
-                                const Color(0xFF2E7D32),
-                              ];
-                              final avatarColor = colors[index % colors.length];
-
-                              return GestureDetector(
-                                onTap: () =>
-                                    _showVisitorProfilePopup(context, model),
-                                child: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    CircleAvatar(
-                                      radius: rw(context, 28),
-                                      backgroundColor:
-                                          avatarColor.withValues(alpha: 0.15),
-                                      child: Text(
-                                        initials,
-                                        style: TextStyle(
-                                          color: avatarColor,
-                                          fontSize: rfs(context, 15),
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                    ),
-                                    vSpace(context, 4),
-                                    SizedBox(
-                                      width: rw(context, 62),
-                                      child: Text(
-                                        model.visitorName.isNotEmpty
-                                            ? model.visitorName
-                                                .trim()
-                                                .split(' ')
-                                                .first
-                                            : 'Visitor',
-                                        textAlign: TextAlign.center,
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: TextStyle(
-                                          fontSize: rfs(context, 11),
-                                          fontWeight: FontWeight.w500,
-                                          color: Colors.black87,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              );
-                            },
-                          ),
-                        ),
-                      vSpace(context, 16),
-                    ],
-
-                    if (!widget.isFullDetail) ...[
-                      _section(
-                        context,
-                        'Barcode',
-                        trailing: GestureDetector(
-                          onTap: () {
-                            final barcodeItems = _groupVisitorModels.isNotEmpty
-                                ? _groupVisitorModels
-                                : [selectedItem];
-                            if (_currentBarcodeIndex < barcodeItems.length) {
-                              final activeVisitor = barcodeItems[_currentBarcodeIndex];
-                              _downloadBarcodePdf(activeVisitor);
-                            }
-                          },
-                          child: Container(
-                            width: rw(context, 32),
-                            height: rw(context, 32),
-                            decoration: const BoxDecoration(
-                              color: Color(0xFFE8F1FB),
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Icon(
-                              Icons.download_rounded,
-                              size: 16,
-                              color: Color(0xFF1976D2),
-                            ),
-                          ),
-                        ),
-                      ),
-                      vSpace(context, 8),
-                      (() {
-                        final barcodeItems = _groupVisitorModels.isNotEmpty
-                            ? _groupVisitorModels
-                            : [selectedItem];
-                        
-                        return Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            CarouselSlider.builder(
-                              itemCount: barcodeItems.length,
-                              carouselController: _barcodeCarouselController,
-                              options: CarouselOptions(
-                                height: rh(context, 385),
-                                autoPlay: false,
-                                enlargeCenterPage: false,
-                                viewportFraction: 1.0,
-                                enableInfiniteScroll: barcodeItems.length > 1,
-                                scrollDirection: Axis.horizontal,
-                                onPageChanged: (index, reason) {
-                                  setState(() {
-                                    _currentBarcodeIndex = index;
-                                  });
-                                },
-                              ),
-                              itemBuilder: (context, index, realIndex) {
-                                final model = barcodeItems[index];
-                                return Container(
-                                  width: double.infinity,
-                                  margin: EdgeInsets.symmetric(
-                                    horizontal: rw(context, 20),
-                                    vertical: rh(context, 4),
-                                  ),
-                                  padding: EdgeInsets.all(rw(context, 16)),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white,
-                                    borderRadius: BorderRadius.circular(rw(context, 16)),
-                                    border: Border.all(color: Colors.grey.shade200),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Colors.black.withValues(alpha: 0.04),
-                                        blurRadius: 8,
-                                        offset: const Offset(0, 4),
-                                      ),
-                                    ],
-                                  ),
-                                  child: Column(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      // Access Pass Title (Centered)
-                                      Center(
-                                        child: Text(
-                                          'Access Pass',
-                                          style: TextStyle(
-                                            fontSize: rfs(context, 18),
-                                            fontWeight: FontWeight.w800,
-                                            color: Colors.black87,
-                                          ),
-                                        ),
-                                      ),
-                                      vSpace(context, 12),
-                                      
-                                      // QR Code Box (Enlarged)
-                                      Container(
-                                        padding: EdgeInsets.all(rw(context, 10)),
-                                        decoration: BoxDecoration(
-                                          color: Colors.white,
-                                          borderRadius: BorderRadius.circular(rw(context, 10)),
-                                          border: Border.all(color: Colors.grey.shade200),
-                                        ),
-                                        child: QrImageView(
-                                          data: model.visitorNumber.isNotEmpty ? model.visitorNumber : 'N/A',
-                                          version: QrVersions.auto,
-                                          size: rw(context, 175),
-                                        ),
-                                      ),
-                                      vSpace(context, 12),
-                                      
-                                      // Tracked / Low Battery Row (Centered)
-                                      Row(
-                                        mainAxisAlignment: MainAxisAlignment.center,
+                          return [
+                            // 1. Visitor Information
+                            _section(
+                              context,
+                              index != null
+                                  ? 'Visitor Information ${index + 1}'
+                                  : 'Visitor Information',
+                              trailing: widget.isFullDetail
+                                  ? null
+                                  : GestureDetector(
+                                      onTap: () {
+                                        showModalBottomSheet(
+                                          context: context,
+                                          isScrollControlled: true,
+                                          backgroundColor: Colors.transparent,
+                                          builder: (ctx) =>
+                                              InvitationDetailSheet(
+                                                item: widget.item,
+                                                isFullDetail: true,
+                                              ),
+                                        );
+                                      },
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
                                         children: [
                                           Text(
-                                            model.canTrackBle == true ? 'Tracked' : 'Not Tracked',
+                                            'More',
                                             style: TextStyle(
-                                              color: model.canTrackBle == true ? const Color(0xFF43A047) : const Color(0xFFE53935),
-                                              fontSize: rfs(context, 11),
+                                              fontSize: rfs(context, 12),
                                               fontWeight: FontWeight.bold,
+                                              color: const Color(0xFF005596),
                                             ),
                                           ),
-                                          hSpace(context, 16),
+                                          hSpace(context, 4),
+                                          Icon(
+                                            Icons.arrow_forward_rounded,
+                                            size: rw(context, 16),
+                                            color: const Color(0xFF005596),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                            ),
+                            _grid(
+                              context,
+                              sColor,
+                              widget.isFullDetail
+                                  ? [
+                                      _SheetField(
+                                        'Visitor Type',
+                                        visitor.visitorTypeName.isEmpty
+                                            ? '-'
+                                            : visitor.visitorTypeName,
+                                        Icons.badge_outlined,
+                                      ),
+                                      _SheetField(
+                                        'Visitor Role',
+                                        visitor.visitorRole.isEmpty
+                                            ? '-'
+                                            : visitor.visitorRole,
+                                        Icons.work_outline,
+                                      ),
+                                      _SheetField(
+                                        'Name',
+                                        visitor.visitorName.isEmpty
+                                            ? '-'
+                                            : visitor.visitorName,
+                                        Icons.person_outline,
+                                      ),
+                                      _SheetField(
+                                        'Email',
+                                        visitor.visitorEmail.isEmpty
+                                            ? '-'
+                                            : visitor.visitorEmail,
+                                        Icons.email_outlined,
+                                      ),
+                                      _SheetField(
+                                        'Phone',
+                                        visitor.visitorPhone.isEmpty
+                                            ? '-'
+                                            : visitor.visitorPhone,
+                                        Icons.phone_outlined,
+                                      ),
+                                      _SheetField(
+                                        'Agenda',
+                                        visitor.agenda.isEmpty
+                                            ? '-'
+                                            : visitor.agenda,
+                                        Icons.event_note_outlined,
+                                      ),
+                                      _SheetField(
+                                        'Organization',
+                                        visitor.visitorOrganizationName.isEmpty
+                                            ? '-'
+                                            : visitor.visitorOrganizationName,
+                                        Icons.business_outlined,
+                                      ),
+                                      if (visitor.flow.toLowerCase() !=
+                                          'quickaccessvisit')
+                                        _SheetField(
+                                          'Identity ID',
+                                          visitor.visitorIdentityId.isEmpty
+                                              ? '-'
+                                              : visitor.visitorIdentityId,
+                                          Icons.credit_card_outlined,
+                                        ),
+                                      _SheetField(
+                                        'Location',
+                                        _loadingSite
+                                            ? '...'
+                                            : (visitor.sitePlaceName.isNotEmpty
+                                                  ? visitor.sitePlaceName
+                                                  : (_sitePlaceName.isEmpty
+                                                        ? '-'
+                                                        : _sitePlaceName)),
+                                        Icons.location_on_outlined,
+                                      ),
+                                      _SheetField(
+                                        'Invitation Code',
+                                        visitor.invitationCode.isEmpty
+                                            ? '-'
+                                            : visitor.invitationCode,
+                                        Icons.confirmation_number_outlined,
+                                        isCode: true,
+                                      ),
+                                      _SheetField(
+                                        'Visitor Number',
+                                        visitor.visitorCode.isEmpty
+                                            ? '-'
+                                            : visitor.visitorCode,
+                                        Icons.pin_outlined,
+                                      ),
+                                      _SheetField(
+                                        'Group Name',
+                                        visitor.groupName.isEmpty
+                                            ? '-'
+                                            : visitor.groupName,
+                                        Icons.group_outlined,
+                                      ),
+                                      if (visitor.flow.toLowerCase() !=
+                                          'quickaccessvisit')
+                                        _SheetField(
+                                          'Host',
+                                          visitor.hostName.isEmpty
+                                              ? '-'
+                                              : visitor.hostName,
+                                          Icons.person_outline,
+                                        ),
+                                      _SheetField(
+                                        'Vehicle Type',
+                                        visitor.vehicleType.isEmpty
+                                            ? '-'
+                                            : visitor.vehicleType,
+                                        Icons.directions_car_outlined,
+                                      ),
+                                      _SheetField(
+                                        'Vehicle Plate',
+                                        visitor.vehiclePlateNumber.isEmpty
+                                            ? '-'
+                                            : visitor.vehiclePlateNumber,
+                                        Icons.subtitles_outlined,
+                                      ),
+                                      if (visitor.flow.toLowerCase() ==
+                                          'quickaccessvisit') ...[
+                                        _SheetField(
+                                          'Receiver Name',
+                                          visitor.receiverName.isEmpty
+                                              ? '-'
+                                              : visitor.receiverName,
+                                          Icons.person_outline,
+                                        ),
+                                        _SheetField(
+                                          'Receiver Phone',
+                                          visitor.receiverPhone.isEmpty
+                                              ? '-'
+                                              : visitor.receiverPhone,
+                                          Icons.phone_outlined,
+                                        ),
+                                        _SheetField(
+                                          'Receiver Email',
+                                          visitor.receiverEmail.isEmpty
+                                              ? '-'
+                                              : visitor.receiverEmail,
+                                          Icons.email_outlined,
+                                        ),
+                                      ],
+                                    ]
+                                  : [
+                                      _SheetField(
+                                        'Visitor Type',
+                                        visitor.visitorTypeName.isEmpty
+                                            ? '-'
+                                            : visitor.visitorTypeName,
+                                        Icons.badge_outlined,
+                                      ),
+                                      if (visitor.flow.toLowerCase() !=
+                                          'quickaccessvisit')
+                                        _SheetField(
+                                          'Visitor Role',
+                                          visitor.visitorRole.isEmpty
+                                              ? '-'
+                                              : visitor.visitorRole,
+                                          Icons.work_outline,
+                                        ),
+
+                                      _SheetField(
+                                        'Location',
+                                        _loadingSite
+                                            ? '...'
+                                            : (visitor.sitePlaceName.isNotEmpty
+                                                  ? visitor.sitePlaceName
+                                                  : (_sitePlaceName.isEmpty
+                                                        ? '-'
+                                                        : _sitePlaceName)),
+                                        Icons.location_on_outlined,
+                                      ),
+                                      _SheetField(
+                                        'Group Name',
+                                        visitor.groupName.isEmpty
+                                            ? '-'
+                                            : visitor.groupName,
+                                        Icons.group_outlined,
+                                      ),
+                                      if (visitor.flow.toLowerCase() !=
+                                          'quickaccessvisit')
+                                        _SheetField(
+                                          'Host',
+                                          visitor.hostName.isEmpty
+                                              ? '-'
+                                              : visitor.hostName,
+                                          Icons.person_outline,
+                                        ),
+                                      _SheetField(
+                                        'Agenda',
+                                        visitor.agenda.isEmpty
+                                            ? '-'
+                                            : visitor.agenda,
+                                        Icons.event_note_outlined,
+                                      ),
+                                    ],
+                              isExpired: expired,
+                            ),
+                            if (!widget.isFullDetail) ...[
+                              vSpace(context, 16),
+                              // 2. Visit Period
+                              _section(context, 'Visit Period'),
+                              // Start / End
+                              Container(
+                                padding: EdgeInsets.all(rw(context, 14)),
+                                decoration: BoxDecoration(
+                                  color: Colors.grey.shade50,
+                                  borderRadius: BorderRadius.circular(
+                                    rw(context, 10),
+                                  ),
+                                  border: Border.all(
+                                    color: Colors.grey.shade200,
+                                  ),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Row(
+                                            children: [
+                                              Icon(
+                                                Icons.login_outlined,
+                                                size: rw(context, 14),
+                                                color: Colors.green.shade600,
+                                              ),
+                                              hSpace(context, 4),
+                                              Text(
+                                                'Start',
+                                                style: TextStyle(
+                                                  fontSize: rfs(context, 12),
+                                                  color: Colors.grey.shade500,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                          vSpace(context, 4),
                                           Text(
-                                            model.canAccess == true ? 'Accessible' : 'Not Accessible',
+                                            DateFormat('dd MMMM yyyy').format(
+                                              visitor.visitorPeriodStart,
+                                            ),
                                             style: TextStyle(
-                                              color: model.canAccess == true ? const Color(0xFF43A047) : const Color(0xFFE53935),
-                                              fontSize: rfs(context, 11),
-                                              fontWeight: FontWeight.bold,
+                                              fontSize: rfs(context, 12),
+                                              fontWeight: FontWeight.w700,
+                                              color: Colors.black87,
+                                            ),
+                                          ),
+                                          Text(
+                                            DateFormat('HH:mm').format(
+                                              visitor.visitorPeriodStart,
+                                            ),
+                                            style: TextStyle(
+                                              fontSize: rfs(context, 12),
+                                              color: Colors.grey.shade600,
                                             ),
                                           ),
                                         ],
                                       ),
-                                      vSpace(context, 10),
-                                      
-                                      // Show this while visiting
-                                      Text(
-                                        'Show this while visiting',
-                                        style: TextStyle(
-                                          fontSize: rfs(context, 12),
-                                          fontWeight: FontWeight.w600,
-                                          color: Colors.black87,
+                                    ),
+                                    Container(
+                                      width: 1,
+                                      height: rh(context, 50),
+                                      color: Colors.grey.shade300,
+                                    ),
+                                    Expanded(
+                                      child: Padding(
+                                        padding: EdgeInsets.only(
+                                          left: rw(context, 12),
                                         ),
-                                      ),
-                                      vSpace(context, 2),
-                                      
-                                      // ID
-                                      Text(
-                                        'ID : ${model.visitorNumber.isNotEmpty ? model.visitorNumber : '-'}',
-                                        style: TextStyle(
-                                          fontSize: rfs(context, 13),
-                                          fontWeight: FontWeight.w800,
-                                          color: Colors.black87,
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Row(
+                                              children: [
+                                                Icon(
+                                                  Icons.logout_outlined,
+                                                  size: rw(context, 14),
+                                                  color: expired
+                                                      ? Colors.red.shade600
+                                                      : Colors.grey.shade500,
+                                                ),
+                                                hSpace(context, 4),
+                                                Text(
+                                                  'End',
+                                                  style: TextStyle(
+                                                    fontSize: rfs(context, 12),
+                                                    color: Colors.grey.shade500,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                            vSpace(context, 4),
+                                            Text(
+                                              DateFormat('dd MMMM yyyy').format(
+                                                visitor.visitorPeriodEnd,
+                                              ),
+                                              style: TextStyle(
+                                                fontSize: rfs(context, 12),
+                                                fontWeight: FontWeight.w700,
+                                                color: expired
+                                                    ? Colors.red.shade600
+                                                    : Colors.black87,
+                                              ),
+                                            ),
+                                            Text(
+                                              DateFormat('HH:mm').format(
+                                                visitor.visitorPeriodEnd,
+                                              ),
+                                              style: TextStyle(
+                                                fontSize: rfs(context, 12),
+                                                color: expired
+                                                    ? Colors.red.shade400
+                                                    : Colors.grey.shade600,
+                                              ),
+                                            ),
+                                          ],
                                         ),
-                                      ),
-                                    ],
-                                  ),
-                                );
-                              },
-                            ),
-                            if (barcodeItems.length > 1) ...[
-                              vSpace(context, 8),
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: barcodeItems.asMap().entries.map((entry) {
-                                  final isActive = _currentBarcodeIndex == entry.key;
-                                  return GestureDetector(
-                                    onTap: () => _barcodeCarouselController.animateToPage(entry.key),
-                                    child: AnimatedContainer(
-                                      duration: const Duration(milliseconds: 300),
-                                      curve: Curves.easeInOut,
-                                      width: isActive ? rw(context, 20.0) : rw(context, 6.0),
-                                      height: rw(context, 6.0),
-                                      margin: EdgeInsets.symmetric(horizontal: rw(context, 3.0)),
-                                      decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.circular(3.0),
-                                        color: isActive 
-                                          ? const Color(0xFF005596)
-                                          : const Color(0xFF005596).withValues(alpha: 0.3),
                                       ),
                                     ),
-                                  );
-                                }).toList(),
+                                  ],
+                                ),
                               ),
                             ],
-                          ],
-                        );
-                      })(),
-                      vSpace(context, 16),
-                    ],
+                             vSpace(context, widget.isFullDetail ? 24 : 16),
+                           ];
+                        }
 
-                    // ── Digital Invitation Card section ───────────────────
-                    if (!widget.isFullDetail && widget.item.flow.toLowerCase() != 'quickaccessvisit') ...[
-                      StatefulBuilder(
-                        builder: (context, setCardState) {
-                          final cardItems = _groupVisitorModels.isNotEmpty
+                        if (widget.isFullDetail) {
+                          final barcodeItems = _groupVisitorModels.isNotEmpty
                               ? _groupVisitorModels
                               : [selectedItem];
-                          int cardIndex = 0;
-                          // One GlobalKey per card for RepaintBoundary capture
-                          final cardKeys = List.generate(
-                            cardItems.length,
-                            (_) => GlobalKey(),
-                          );
-
-                          Future<void> downloadActiveCard() async {
-                            try {
-                              final key = cardKeys[cardIndex];
-                              final boundary = key.currentContext
-                                  ?.findRenderObject() as RenderRepaintBoundary?;
-                              if (boundary == null) return;
-
-                              final image = await boundary.toImage(pixelRatio: 3.0);
-                              final byteData = await image.toByteData(
-                                format: ui.ImageByteFormat.png,
-                              );
-                              if (byteData == null) return;
-                              final pngBytes = byteData.buffer.asUint8List();
-
-                              final model = cardItems[cardIndex];
-                              final visitorNum = model.visitorNumber.isNotEmpty
-                                  ? model.visitorNumber
-                                  : 'invitation_card';
-
-                              String? path;
-                              bool saveSuccess = false;
-
-                              if (Platform.isAndroid) {
-                                try {
-                                  final dir = Directory('/storage/emulated/0/Download');
-                                  if (await dir.exists()) {
-                                    final testPath = '${dir.path}/visitor_card_$visitorNum.png';
-                                    final file = File(testPath);
-                                    await file.writeAsBytes(pngBytes);
-                                    path = testPath;
-                                    saveSuccess = true;
-                                  }
-                                } catch (e) {
-                                  debugPrint('Failed to save visitor card PNG to public Download folder: $e');
-                                }
-                              }
-                              
-                              if (!saveSuccess) {
-                                final dir = await getApplicationDocumentsDirectory();
-                                path = '${dir.path}/visitor_card_$visitorNum.png';
-                                final file = File(path);
-                                await file.writeAsBytes(pngBytes);
-                              }
-
-                              Get.snackbar(
-                                'Success',
-                                'Visitor Card berhasil diunduh!',
-                                messageText: const Text(
-                                  'Visitor Card berhasil diunduh!',
-                                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                                ),
-                                titleText: const SizedBox.shrink(),
-                                snackPosition: SnackPosition.TOP,
-                                backgroundColor: Colors.green,
-                                colorText: Colors.white,
-                                duration: const Duration(seconds: 6),
-                                mainButton: TextButton(
-                                  onPressed: () => OpenFilex.open(path!),
-                                  style: TextButton.styleFrom(
-                                    padding: EdgeInsets.zero,
-                                    minimumSize: Size.zero,
-                                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          return Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: barcodeItems
+                                .asMap()
+                                .entries
+                                .expand(
+                                  (e) => buildInfoBlock(
+                                    e.value,
+                                    barcodeItems.length > 1 ? e.key : null,
                                   ),
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                                    margin: const EdgeInsets.only(right: 8),
-                                    decoration: BoxDecoration(
-                                      color: Colors.white,
-                                      borderRadius: BorderRadius.circular(6),
+                                )
+                                .toList(),
+                          );
+                        } else {
+                          return Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: buildInfoBlock(selectedItem),
+                          );
+                        }
+                      },
+                    ),
+
+                    if (!widget.isFullDetail) ...[
+                      Builder(
+                        builder: (context) {
+                          final barcodeItems = _groupVisitorModels.isNotEmpty
+                              ? _groupVisitorModels
+                              : [selectedItem];
+                          final others = barcodeItems
+                              .where((v) => v.id != selectedItem.id)
+                              .toList();
+
+                          if (others.isEmpty) return const SizedBox.shrink();
+
+                          // Max 6 avatars shown inline; if more, show 5 + "More" button at slot 6
+                          const int maxVisible = 6;
+                          final bool hasMore = others.length > maxVisible;
+                          final List<AccessPassModel> visibleOthers = hasMore
+                              ? others.sublist(0, maxVisible - 1)
+                              : others;
+                          final int remaining =
+                              others.length - visibleOthers.length;
+
+                          final List<Color> avatarColors = [
+                            const Color(0xFF1565C0),
+                            const Color(0xFF00695C),
+                            const Color(0xFFAD1457),
+                            const Color(0xFF6A1B9A),
+                            const Color(0xFF37474F),
+                            const Color(0xFFE65100),
+                            const Color(0xFF2E7D32),
+                          ];
+
+                          Widget buildAvatar(
+                            AccessPassModel model,
+                            int idx, {
+                            bool isMore = false,
+                          }) {
+                            final initials = model.visitorName.isNotEmpty
+                                ? model.visitorName[0].toUpperCase()
+                                : 'V';
+                            final avatarColor =
+                                avatarColors[idx % avatarColors.length];
+                            final firstName = model.visitorName.isNotEmpty
+                                ? model.visitorName.trim().split(' ').first
+                                : 'Visitor';
+
+                            return GestureDetector(
+                              onTap: () =>
+                                  _showVisitorProfilePopup(context, model),
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  CircleAvatar(
+                                    radius: rw(context, 28),
+                                    backgroundColor: avatarColor.withValues(
+                                      alpha: 0.15,
                                     ),
-                                    child: const Text(
-                                      'BUKA',
+                                    child: Text(
+                                      initials,
                                       style: TextStyle(
-                                        color: Colors.green,
+                                        color: avatarColor,
+                                        fontSize: rfs(context, 15),
                                         fontWeight: FontWeight.bold,
                                       ),
                                     ),
                                   ),
-                                ),
-                              );
-                            } catch (e) {
-                              Get.snackbar(
-                                'Error',
-                                'Gagal mengunduh Visitor Card',
-                                messageText: const Text(
-                                  'Gagal mengunduh Visitor Card',
-                                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                                ),
-                                titleText: const SizedBox.shrink(),
-                                snackPosition: SnackPosition.TOP,
-                                backgroundColor: Colors.red,
-                                colorText: Colors.white,
-                              );
-                            }
+                                  vSpace(context, 4),
+                                  SizedBox(
+                                    width: rw(context, 62),
+                                    child: Text(
+                                      firstName,
+                                      textAlign: TextAlign.center,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(
+                                        fontSize: rfs(context, 11),
+                                        fontWeight: FontWeight.w500,
+                                        color: Colors.black87,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          }
+
+                          Widget buildMoreButton() {
+                            return GestureDetector(
+                              onTap: () {
+                                // Open Instagram-style modal with all others
+                                showModalBottomSheet(
+                                  context: context,
+                                  isScrollControlled: true,
+                                  backgroundColor: Colors.transparent,
+                                  builder: (ctx) => _OthersVisitorSheet(
+                                    visitors: others,
+                                    avatarColors: avatarColors,
+                                    onVisitorTap: (model) {
+                                      _showVisitorProfilePopup(context, model);
+                                    },
+                                  ),
+                                );
+                              },
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  CircleAvatar(
+                                    radius: rw(context, 28),
+                                    backgroundColor: Colors.grey.shade200,
+                                    child: Icon(
+                                      Icons.more_horiz_rounded,
+                                      color: Colors.grey.shade600,
+                                      size: rw(context, 22),
+                                    ),
+                                  ),
+                                  vSpace(context, 4),
+                                  SizedBox(
+                                    width: rw(context, 62),
+                                    child: Text(
+                                      '+$remaining more',
+                                      textAlign: TextAlign.center,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(
+                                        fontSize: rfs(context, 11),
+                                        fontWeight: FontWeight.w500,
+                                        color: Colors.grey.shade600,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
                           }
 
                           return Column(
                             mainAxisSize: MainAxisSize.min,
-                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                               _section(
-                                context,
-                                'Digital Invitation Card',
-                                trailing: GestureDetector(
-                                  onTap: downloadActiveCard,
-                                  child: Container(
-                                    width: rw(context, 32),
-                                    height: rw(context, 32),
-                                    decoration: const BoxDecoration(
-                                      color: Color(0xFFE8F1FB),
-                                      shape: BoxShape.circle,
-                                    ),
-                                    child: const Icon(
-                                      Icons.download_rounded,
-                                      size: 16,
-                                      color: Color(0xFF1976D2),
-                                    ),
+                              _section(context, 'Others Visitor'),
+                              if (_loadingGroupVisitors)
+                                const Center(
+                                  child: Padding(
+                                    padding: EdgeInsets.all(8.0),
+                                    child: CircularProgressIndicator(),
+                                  ),
+                                )
+                              else
+                                SizedBox(
+                                  height: rh(context, 88),
+                                  child: Row(
+                                    children: [
+                                      Expanded(
+                                        child: ListView.separated(
+                                          scrollDirection: Axis.horizontal,
+                                          itemCount:
+                                              visibleOthers.length +
+                                              (hasMore ? 1 : 0),
+                                          separatorBuilder: (context, index) =>
+                                              hSpace(context, 12),
+                                          itemBuilder: (context, index) {
+                                            if (hasMore &&
+                                                index == visibleOthers.length) {
+                                              return buildMoreButton();
+                                            }
+                                            return buildAvatar(
+                                              visibleOthers[index],
+                                              index,
+                                            );
+                                          },
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ),
-                              ),
-                              // Carousel
-                              CarouselSlider.builder(
-                                itemCount: cardItems.length,
-                                options: CarouselOptions(
-                                  height: rh(context, 190),
-                                  autoPlay: false,
-                                  enlargeCenterPage: false,
-                                  viewportFraction: 1.0,
-                                  enableInfiniteScroll: cardItems.length > 1,
-                                  onPageChanged: (index, reason) {
-                                    setCardState(() => cardIndex = index);
-                                  },
+                              vSpace(context, 16),
+                            ],
+                          );
+                        },
+                      ),
+
+                      if (!widget.isFullDetail) ...[
+                        _section(context, 'Access Pass'),
+                        (() {
+                          final barcodeItems = _groupVisitorModels.isNotEmpty
+                              ? _groupVisitorModels
+                              : [selectedItem];
+                          // Always show only the first visitor
+                          final model = barcodeItems.first;
+
+                          return Padding(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: rw(context, 0),
+                              vertical: rh(context, 4),
+                            ),
+                            child: Container(
+                              width: double.infinity,
+                              padding: EdgeInsets.all(rw(context, 16)),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(
+                                  rw(context, 16),
                                 ),
-                                itemBuilder: (context, index, realIndex) {
-                                  final model = cardItems[index];
+                                border: Border.all(color: Colors.grey.shade200),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withValues(alpha: 0.04),
+                                    blurRadius: 8,
+                                    offset: const Offset(0, 4),
+                                  ),
+                                ],
+                              ),
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  // QR Code Box
+                                  Container(
+                                    padding: EdgeInsets.all(rw(context, 10)),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(
+                                        rw(context, 10),
+                                      ),
+                                      border: Border.all(
+                                        color: Colors.grey.shade200,
+                                      ),
+                                    ),
+                                    child: QrImageView(
+                                      data: model.visitorNumber.isNotEmpty
+                                          ? model.visitorNumber
+                                          : 'N/A',
+                                      version: QrVersions.auto,
+                                      size: rw(context, 175),
+                                    ),
+                                  ),
+                                  vSpace(context, 12),
+
+                                  // Tracked / Accessible Row
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Text(
+                                        model.canTrackBle == true
+                                            ? 'Tracked'
+                                            : 'Not Tracked',
+                                        style: TextStyle(
+                                          color: model.canTrackBle == true
+                                              ? const Color(0xFF43A047)
+                                              : const Color(0xFFE53935),
+                                          fontSize: rfs(context, 11),
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                      hSpace(context, 16),
+                                      Text(
+                                        model.canAccess == true
+                                            ? 'Accessible'
+                                            : 'Not Accessible',
+                                        style: TextStyle(
+                                          color: model.canAccess == true
+                                              ? const Color(0xFF43A047)
+                                              : const Color(0xFFE53935),
+                                          fontSize: rfs(context, 11),
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  vSpace(context, 10),
+
+                                  // Show this while visiting
+                                  Text(
+                                    'Show this while visiting',
+                                    style: TextStyle(
+                                      fontSize: rfs(context, 12),
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.black87,
+                                    ),
+                                  ),
+                                  vSpace(context, 2),
+
+                                  // ID
+                                  Text(
+                                    'ID : ${model.visitorNumber.isNotEmpty ? model.visitorNumber : '-'}',
+                                    style: TextStyle(
+                                      fontSize: rfs(context, 13),
+                                      fontWeight: FontWeight.w800,
+                                      color: Colors.black87,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        })(),
+                        vSpace(context, 16),
+                      ],
+
+                      // ── Digital Invitation Card section ───────────────────
+                      if (!widget.isFullDetail &&
+                          widget.item.flow.toLowerCase() !=
+                              'quickaccessvisit') ...[
+                        StatefulBuilder(
+                          builder: (context, setCardState) {
+                            final cardItems = _groupVisitorModels.isNotEmpty
+                                ? _groupVisitorModels
+                                : [selectedItem];
+                            int cardIndex = 0;
+                            // One GlobalKey per card for RepaintBoundary capture
+                            final cardKeys = List.generate(
+                              cardItems.length,
+                              (_) => GlobalKey(),
+                            );
+
+                            Future<void> downloadActiveCard() async {
+                              try {
+                                final key = cardKeys[cardIndex];
+                                final boundary =
+                                    key.currentContext?.findRenderObject()
+                                        as RenderRepaintBoundary?;
+                                if (boundary == null) return;
+
+                                final image = await boundary.toImage(
+                                  pixelRatio: 3.0,
+                                );
+                                final byteData = await image.toByteData(
+                                  format: ui.ImageByteFormat.png,
+                                );
+                                if (byteData == null) return;
+                                final pngBytes = byteData.buffer.asUint8List();
+
+                                final model = cardItems[cardIndex];
+                                final visitorNum =
+                                    model.visitorNumber.isNotEmpty
+                                    ? model.visitorNumber
+                                    : 'invitation_card';
+
+                                String? path;
+                                bool saveSuccess = false;
+
+                                if (Platform.isAndroid) {
+                                  try {
+                                    final dir = Directory(
+                                      '/storage/emulated/0/Download',
+                                    );
+                                    if (await dir.exists()) {
+                                      final testPath =
+                                          '${dir.path}/visitor_card_$visitorNum.png';
+                                      final file = File(testPath);
+                                      await file.writeAsBytes(pngBytes);
+                                      path = testPath;
+                                      saveSuccess = true;
+                                    }
+                                  } catch (e) {
+                                    debugPrint(
+                                      'Failed to save visitor card PNG to public Download folder: $e',
+                                    );
+                                  }
+                                }
+
+                                if (!saveSuccess) {
+                                  final dir =
+                                      await getApplicationDocumentsDirectory();
+                                  path =
+                                      '${dir.path}/visitor_card_$visitorNum.png';
+                                  final file = File(path);
+                                  await file.writeAsBytes(pngBytes);
+                                }
+
+                                Get.snackbar(
+                                  'Success',
+                                  'Visitor Card berhasil diunduh!',
+                                  messageText: const Text(
+                                    'Visitor Card berhasil diunduh!',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  titleText: const SizedBox.shrink(),
+                                  snackPosition: SnackPosition.TOP,
+                                  backgroundColor: Colors.green,
+                                  colorText: Colors.white,
+                                  duration: const Duration(seconds: 6),
+                                  mainButton: TextButton(
+                                    onPressed: () => OpenFilex.open(path!),
+                                    style: TextButton.styleFrom(
+                                      padding: EdgeInsets.zero,
+                                      minimumSize: Size.zero,
+                                      tapTargetSize:
+                                          MaterialTapTargetSize.shrinkWrap,
+                                    ),
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 14,
+                                        vertical: 6,
+                                      ),
+                                      margin: const EdgeInsets.only(right: 8),
+                                      decoration: BoxDecoration(
+                                        color: Colors.white,
+                                        borderRadius: BorderRadius.circular(6),
+                                      ),
+                                      child: const Text(
+                                        'BUKA',
+                                        style: TextStyle(
+                                          color: Colors.green,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              } catch (e) {
+                                Get.snackbar(
+                                  'Error',
+                                  'Gagal mengunduh Visitor Card',
+                                  messageText: const Text(
+                                    'Gagal mengunduh Visitor Card',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  titleText: const SizedBox.shrink(),
+                                  snackPosition: SnackPosition.TOP,
+                                  backgroundColor: Colors.red,
+                                  colorText: Colors.white,
+                                );
+                              }
+                            }
+
+                            return Column(
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                _section(context, 'Digital Invitation Card'),
+                                // Static single card — first visitor only
+                                (() {
+                                  final model = cardItems.first;
                                   return Padding(
                                     padding: EdgeInsets.symmetric(
-                                      horizontal: rw(context, 20),
+                                      horizontal: rw(context, 0),
                                     ),
                                     child: RepaintBoundary(
-                                      key: cardKeys[index],
+                                      key: cardKeys[0],
                                       child: _DigitalInvitationCard(
                                         name: model.visitorName.isNotEmpty
                                             ? model.visitorName
                                             : '-',
-                                        visitorNumber: model.visitorNumber.isNotEmpty
+                                        visitorNumber:
+                                            model.visitorNumber.isNotEmpty
                                             ? model.visitorNumber
                                             : '-',
                                       ),
                                     ),
                                   );
-                                },
-                              ),
-                              // Dot indicators
-                              if (cardItems.length > 1) ...[
-                                vSpace(context, 8),
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: cardItems.asMap().entries.map((entry) {
-                                    final isActive = cardIndex == entry.key;
-                                    return AnimatedContainer(
-                                      duration: const Duration(milliseconds: 300),
-                                      curve: Curves.easeInOut,
-                                      width: isActive ? rw(context, 20.0) : rw(context, 6.0),
-                                      height: rw(context, 6.0),
-                                      margin: EdgeInsets.symmetric(horizontal: rw(context, 3.0)),
-                                      decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.circular(3.0),
-                                        color: isActive
-                                            ? const Color(0xFF005596)
-                                            : const Color(0xFF005596).withValues(alpha: 0.3),
-                                      ),
-                                    );
-                                  }).toList(),
-                                ),
+                                })(),
                               ],
-                            ],
-                          );
-                        },
-                      ),
-                      vSpace(context, 16),
+                            );
+                          },
+                        ),
+                        vSpace(context, 16),
+                      ],
                     ],
                   ],
                 ),
@@ -3199,7 +3334,6 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
   }
 }
 
-
 // ─── _SheetField model ────────────────────────────────────────────────────────
 class _SheetField {
   final String label;
@@ -3422,24 +3556,25 @@ class _ShareLinkListInlineState extends State<ShareLinkListInline> {
                     onTap: () async {
                       final result =
                           await showModalBottomSheet<Map<String, dynamic>>(
-                        context: context,
-                        enableDrag: true,
-                        isDismissible: true,
-                        isScrollControlled: true,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.vertical(
-                            top: Radius.circular(rw(context, 16)),
-                          ),
-                        ),
-                        builder: (context) => FilterBottomSheet(
-                          initialStartDate: startDateShare,
-                          initialEndDate: endDateShare,
-                          initialSiteId: controller.selectedSiteIdShare.value,
-                          initialStatus: selectedStatusShare,
-                          showStatusFilter: false,
-                          showSiteFilter: false,
-                        ),
-                      );
+                            context: context,
+                            enableDrag: true,
+                            isDismissible: true,
+                            isScrollControlled: true,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.vertical(
+                                top: Radius.circular(rw(context, 16)),
+                              ),
+                            ),
+                            builder: (context) => FilterBottomSheet(
+                              initialStartDate: startDateShare,
+                              initialEndDate: endDateShare,
+                              initialSiteId:
+                                  controller.selectedSiteIdShare.value,
+                              initialStatus: selectedStatusShare,
+                              showStatusFilter: false,
+                              showSiteFilter: false,
+                            ),
+                          );
 
                       if (result != null) {
                         setState(() {
@@ -3496,7 +3631,8 @@ class _ShareLinkListInlineState extends State<ShareLinkListInline> {
                       },
                     ),
                   ],
-                  if (selectedStatusShare != null && selectedStatusShare!.isNotEmpty) ...[
+                  if (selectedStatusShare != null &&
+                      selectedStatusShare!.isNotEmpty) ...[
                     hSpace(context, 8),
                     _buildFilterValueChip(
                       context,
@@ -3526,7 +3662,10 @@ class _ShareLinkListInlineState extends State<ShareLinkListInline> {
                   selectedGedungShare = null;
                   selectedStatusShare = null;
                 });
-                await controller.fetchShareLinks(resetPage: true, clearFilters: true);
+                await controller.fetchShareLinks(
+                  resetPage: true,
+                  clearFilters: true,
+                );
               },
               child: listWidget,
             ),
@@ -3670,263 +3809,6 @@ class _SlidableDeleteCardState extends State<_SlidableDeleteCard> {
   }
 }
 
-// ─── All Visitors Full-List Sheet ─────────────────────────────────────────────
-class _AllVisitorsSheet extends StatefulWidget {
-  final List<AccessPassModel> visitors;
-  final void Function(BuildContext, AccessPassModel) onTapVisitor;
-  const _AllVisitorsSheet({
-    required this.visitors,
-    required this.onTapVisitor,
-  });
-
-  @override
-  State<_AllVisitorsSheet> createState() => _AllVisitorsSheetState();
-}
-
-class _AllVisitorsSheetState extends State<_AllVisitorsSheet> {
-  final TextEditingController _searchCtrl = TextEditingController();
-  List<AccessPassModel> _filtered = [];
-
-  @override
-  void initState() {
-    super.initState();
-    _filtered = List.from(widget.visitors);
-    _searchCtrl.addListener(_onSearch);
-  }
-
-  void _onSearch() {
-    final q = _searchCtrl.text.trim().toLowerCase();
-    setState(() {
-      _filtered = widget.visitors.where((v) {
-        return v.visitorName.toLowerCase().contains(q);
-      }).toList();
-    });
-  }
-
-  @override
-  void dispose() {
-    _searchCtrl.removeListener(_onSearch);
-    _searchCtrl.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = [
-      const Color(0xFF1565C0),
-      const Color(0xFF00695C),
-      const Color(0xFFAD1457),
-      const Color(0xFF6A1B9A),
-      const Color(0xFF37474F),
-      const Color(0xFFE65100),
-      const Color(0xFF2E7D32),
-    ];
-
-    return DraggableScrollableSheet(
-      initialChildSize: 0.85,
-      minChildSize: 0.5,
-      maxChildSize: 0.97,
-      expand: false,
-      builder: (context, scrollController) {
-        return Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.only(
-              topLeft: Radius.circular(rw(context, 20)),
-              topRight: Radius.circular(rw(context, 20)),
-            ),
-          ),
-          child: Column(
-            children: [
-              // Drag handle
-              Padding(
-                padding: EdgeInsets.only(top: rh(context, 12), bottom: rh(context, 8)),
-                child: Container(
-                  width: rw(context, 40),
-                  height: rh(context, 4),
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade300,
-                    borderRadius: BorderRadius.circular(rw(context, 2)),
-                  ),
-                ),
-              ),
-              // Header
-              Padding(
-                padding: EdgeInsets.symmetric(
-                  horizontal: rw(context, 20),
-                  vertical: rh(context, 8),
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      padding: EdgeInsets.all(rw(context, 8)),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF005596).withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(rw(context, 8)),
-                      ),
-                      child: const Icon(
-                        Icons.people_outline_rounded,
-                        color: Color(0xFF005596),
-                      ),
-                    ),
-                    hSpace(context, 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Others Visitor',
-                            style: TextStyle(
-                              fontWeight: FontWeight.w800,
-                              fontSize: rfs(context, 16),
-                              color: Colors.black87,
-                            ),
-                          ),
-                          Text(
-                            '${widget.visitors.length} visitor',
-                            style: TextStyle(
-                              fontSize: rfs(context, 12),
-                              color: Colors.grey.shade500,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Divider(height: 1, color: Colors.grey.shade100),
-              // Search bar
-              Padding(
-                padding: EdgeInsets.symmetric(
-                  horizontal: rw(context, 16),
-                  vertical: rh(context, 10),
-                ),
-                child: TextField(
-                  controller: _searchCtrl,
-                  decoration: InputDecoration(
-                    hintText: 'Search visitor...',
-                    hintStyle: TextStyle(
-                      fontSize: rfs(context, 13),
-                      color: Colors.grey.shade400,
-                    ),
-                    prefixIcon: Icon(Icons.search, color: Colors.grey.shade400),
-                    filled: true,
-                    fillColor: Colors.grey.shade100,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(rw(context, 12)),
-                      borderSide: BorderSide.none,
-                    ),
-                    contentPadding: EdgeInsets.symmetric(
-                      vertical: rh(context, 10),
-                      horizontal: rw(context, 12),
-                    ),
-                  ),
-                  style: TextStyle(fontSize: rfs(context, 13)),
-                ),
-              ),
-              // List
-              Expanded(
-                child: _filtered.isEmpty
-                    ? Center(
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(Icons.person_off_outlined,
-                                size: rw(context, 48), color: Colors.grey.shade300),
-                            vSpace(context, 8),
-                            Text(
-                              'Tidak ada visitor ditemukan',
-                              style: TextStyle(
-                                color: Colors.grey.shade500,
-                                fontSize: rfs(context, 13),
-                              ),
-                            ),
-                          ],
-                        ),
-                      )
-                    : ListView.separated(
-                        controller: scrollController,
-                        padding: EdgeInsets.symmetric(
-                          horizontal: rw(context, 16),
-                          vertical: rh(context, 8),
-                        ),
-                        itemCount: _filtered.length,
-                        separatorBuilder: (_, __) => vSpace(context, 8),
-                        itemBuilder: (context, index) {
-                          final v = _filtered[index];
-                          final avatarColor = colors[index % colors.length];
-                          final initials = v.visitorName.isNotEmpty
-                              ? v.visitorName[0].toUpperCase()
-                              : 'V';
-
-                          return GestureDetector(
-                            onTap: () {
-                              widget.onTapVisitor(context, v);
-                            },
-                            child: Container(
-                              padding: EdgeInsets.symmetric(
-                                horizontal: rw(context, 14),
-                                vertical: rh(context, 12),
-                              ),
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(rw(context, 12)),
-                                border: Border.all(color: Colors.grey.shade100),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withValues(alpha: 0.04),
-                                    blurRadius: rw(context, 6),
-                                    offset: Offset(0, rh(context, 2)),
-                                  ),
-                                ],
-                              ),
-                              child: Row(
-                                children: [
-                                  // Avatar
-                                  CircleAvatar(
-                                    radius: rw(context, 24),
-                                    backgroundColor:
-                                        avatarColor.withValues(alpha: 0.14),
-                                    child: Text(
-                                      initials,
-                                      style: TextStyle(
-                                        color: avatarColor,
-                                        fontSize: rfs(context, 16),
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ),
-                                  hSpace(context, 12),
-                                  // Info
-                                  Expanded(
-                                    child: Text(
-                                      v.visitorName.isNotEmpty
-                                          ? v.visitorName
-                                          : 'Visitor',
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.w700,
-                                        fontSize: rfs(context, 14),
-                                        color: Colors.black87,
-                                      ),
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-}
-
 // ─────────────────────────────────────────────────────────────────────────────
 // Digital Invitation Card Widget
 // Data source: same as Barcode — from /visitor/transaction/{id}/visitors
@@ -3963,9 +3845,7 @@ class _DigitalInvitationCard extends StatelessWidget {
             children: [
               // ── Base gradient background ────────────────────────────────
               Positioned.fill(
-                child: CustomPaint(
-                  painter: _CardGeometricPainter(),
-                ),
+                child: CustomPaint(painter: _CardGeometricPainter()),
               ),
 
               // ── Logo / brand chip top-left ──────────────────────────────
@@ -3994,17 +3874,6 @@ class _DigitalInvitationCard extends StatelessWidget {
                       letterSpacing: 1.5,
                     ),
                   ),
-                ),
-              ),
-
-              // ── Chip icon top-right ─────────────────────────────────────
-              Positioned(
-                top: rh(context, 18),
-                right: rw(context, 20),
-                child: Icon(
-                  Icons.credit_card_rounded,
-                  color: Colors.white.withValues(alpha: 0.5),
-                  size: rw(context, 22),
                 ),
               ),
 
@@ -4046,17 +3915,6 @@ class _DigitalInvitationCard extends StatelessWidget {
                     fontWeight: FontWeight.w500,
                     letterSpacing: 1.2,
                   ),
-                ),
-              ),
-
-              // ── NFC / wave icon bottom-right ────────────────────────────
-              Positioned(
-                bottom: rh(context, 18),
-                right: rw(context, 20),
-                child: Icon(
-                  Icons.wifi_rounded,
-                  color: Colors.white.withValues(alpha: 0.55),
-                  size: rw(context, 22),
                 ),
               ),
             ],
@@ -4132,15 +3990,18 @@ class _CardGeometricPainter extends CustomPainter {
 
     // ── Subtle circle shimmer top-right ───────────────────────────────────
     final shimmerPaint = Paint()
-      ..shader = RadialGradient(
-        colors: [
-          Colors.white.withValues(alpha: 0.12),
-          Colors.white.withValues(alpha: 0.0),
-        ],
-      ).createShader(Rect.fromCircle(
-        center: Offset(size.width * 0.82, size.height * 0.2),
-        radius: size.width * 0.35,
-      ));
+      ..shader =
+          RadialGradient(
+            colors: [
+              Colors.white.withValues(alpha: 0.12),
+              Colors.white.withValues(alpha: 0.0),
+            ],
+          ).createShader(
+            Rect.fromCircle(
+              center: Offset(size.width * 0.82, size.height * 0.2),
+              radius: size.width * 0.35,
+            ),
+          );
     canvas.drawCircle(
       Offset(size.width * 0.82, size.height * 0.2),
       size.width * 0.35,
@@ -4150,4 +4011,224 @@ class _CardGeometricPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+// ─── Others Visitor - Instagram-style Sheet ───────────────────────────────────
+
+class _OthersVisitorSheet extends StatefulWidget {
+  final List<AccessPassModel> visitors;
+  final List<Color> avatarColors;
+  final void Function(AccessPassModel) onVisitorTap;
+
+  const _OthersVisitorSheet({
+    required this.visitors,
+    required this.avatarColors,
+    required this.onVisitorTap,
+  });
+
+  @override
+  State<_OthersVisitorSheet> createState() => _OthersVisitorSheetState();
+}
+
+class _OthersVisitorSheetState extends State<_OthersVisitorSheet> {
+  final TextEditingController _searchCtrl = TextEditingController();
+  List<AccessPassModel> _filtered = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _filtered = widget.visitors;
+    _searchCtrl.addListener(_onSearch);
+  }
+
+  @override
+  void dispose() {
+    _searchCtrl.removeListener(_onSearch);
+    _searchCtrl.dispose();
+    super.dispose();
+  }
+
+  void _onSearch() {
+    final q = _searchCtrl.text.toLowerCase().trim();
+    setState(() {
+      _filtered = q.isEmpty
+          ? widget.visitors
+          : widget.visitors
+                .where((v) => v.visitorName.toLowerCase().contains(q))
+                .toList();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final double sh = MediaQuery.of(context).size.height * 0.75;
+    return Container(
+      height: sh,
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      child: Column(
+        children: [
+          // ── Handle ──────────────────────────────────────────────────────
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            child: Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey.shade300,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ),
+          // ── Title ───────────────────────────────────────────────────────
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+            child: Row(
+              children: [
+                Text(
+                  'All Visitors',
+                  style: TextStyle(
+                    color: Colors.black87,
+                    fontSize: rfs(context, 18),
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const Spacer(),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF3F51B5).withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: const Color(0xFF3F51B5).withValues(alpha: 0.35),
+                    ),
+                  ),
+                  child: Text(
+                    '${widget.visitors.length} people',
+                    style: TextStyle(
+                      color: const Color(0xFF3F51B5),
+                      fontSize: rfs(context, 12),
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          // ── Search ──────────────────────────────────────────────────────
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.grey.shade100,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: Colors.grey.shade200),
+              ),
+              child: TextField(
+                controller: _searchCtrl,
+                style: TextStyle(color: Colors.grey.shade800),
+                decoration: InputDecoration(
+                  hintText: 'Search by name',
+                  hintStyle: TextStyle(color: Colors.grey.shade400),
+                  prefixIcon: Icon(
+                    Icons.search_rounded,
+                    color: Colors.grey.shade400,
+                  ),
+                  border: InputBorder.none,
+                  contentPadding: const EdgeInsets.symmetric(vertical: 14),
+                ),
+              ),
+            ),
+          ),
+          // ── Divider ─────────────────────────────────────────────────────
+          Container(height: 1, color: Colors.grey.shade100),
+          // ── Grid ────────────────────────────────────────────────────────
+          Expanded(
+            child: _filtered.isEmpty
+                ? Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.search_off_rounded,
+                          size: 48,
+                          color: Colors.grey.shade300,
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          'No visitors found',
+                          style: TextStyle(
+                            color: Colors.grey.shade400,
+                            fontSize: rfs(context, 14),
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                : GridView.builder(
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 3,
+                          mainAxisSpacing: 20,
+                          crossAxisSpacing: 12,
+                          childAspectRatio: 0.85,
+                        ),
+                    itemCount: _filtered.length,
+                    itemBuilder: (context, index) {
+                      final model = _filtered[index];
+                      final origIdx = widget.visitors.indexOf(model);
+                      final color = widget
+                          .avatarColors[origIdx % widget.avatarColors.length];
+                      final initials = model.visitorName.isNotEmpty
+                          ? model.visitorName[0].toUpperCase()
+                          : 'V';
+                      final firstName = model.visitorName.isNotEmpty
+                          ? model.visitorName.trim().split(' ').first
+                          : 'Visitor';
+
+                      return GestureDetector(
+                        onTap: () => widget.onVisitorTap(model),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            CircleAvatar(
+                              radius: rw(context, 32),
+                              backgroundColor: color.withValues(alpha: 0.15),
+                              child: Text(
+                                initials,
+                                style: TextStyle(
+                                  color: color,
+                                  fontSize: rfs(context, 18),
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              firstName,
+                              textAlign: TextAlign.center,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                color: Colors.grey.shade800,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
 }

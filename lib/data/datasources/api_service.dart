@@ -509,7 +509,10 @@ class ApiService {
       );
       return response;
     } on DioException catch (e) {
-      debugPrint('Dio Error getVisitorDetail: ${e.message}');
+      // 404 is expected when the ID is a group transaction ID — suppress noisy log
+      if (e.response?.statusCode != 404) {
+        debugPrint('Dio Error getVisitorDetail: ${e.message}');
+      }
       if (e.response != null) return e.response!;
       rethrow;
     }
