@@ -31,7 +31,8 @@ void main() async {
   final originalOnError = FlutterError.onError;
   FlutterError.onError = (FlutterErrorDetails details) {
     final errStr = details.exception.toString();
-    if (errStr.contains('_pressedKeys.containsKey') || errStr.contains('KeyUpEvent is dispatched')) {
+    if (errStr.contains('_pressedKeys.containsKey') ||
+        errStr.contains('KeyUpEvent is dispatched')) {
       debugPrint('⚠️ Suppressed physical keyboard assertion error');
       return;
     }
@@ -40,8 +41,11 @@ void main() async {
 
   PlatformDispatcher.instance.onError = (error, stack) {
     final errStr = error.toString();
-    if (errStr.contains('_pressedKeys.containsKey') || errStr.contains('KeyUpEvent is dispatched')) {
-      debugPrint('⚠️ Suppressed physical keyboard platform dispatcher assertion error');
+    if (errStr.contains('_pressedKeys.containsKey') ||
+        errStr.contains('KeyUpEvent is dispatched')) {
+      debugPrint(
+        '⚠️ Suppressed physical keyboard platform dispatcher assertion error',
+      );
       return true;
     }
     return false;
@@ -54,9 +58,7 @@ void main() async {
   await initializeDateFormatting('id_ID', null);
 
   // Initialize Firebase
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
   // Set FCM background handler (must be before runApp)
   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
@@ -109,7 +111,8 @@ class PageLogObserver extends GetObserver {
 
     // If still null or generic, try to clean up the runtimeType
     if (name == null || name.contains('Material') || name.contains('PageRoute')) {
-      name = route.settings.name ??
+      name =
+          route.settings.name ??
           route.runtimeType
               .toString()
               .replaceAll('PageRoute', '')
@@ -143,8 +146,8 @@ class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
     final savedLang = LanguageController.to.selectedLang.value;
-    final initialLocale = savedLang == 'id' 
-        ? const Locale('id', 'ID') 
+    final initialLocale = savedLang == 'id'
+        ? const Locale('id', 'ID')
         : const Locale('en', 'US');
 
     return GetMaterialApp(
