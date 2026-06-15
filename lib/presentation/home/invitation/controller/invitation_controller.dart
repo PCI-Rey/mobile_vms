@@ -350,8 +350,9 @@ class InvitationController extends GetxController {
         search: '',
       );
       
-      if (countResponse.data['status'] == 'success' ||
-          countResponse.data['status_code'] == 200) {
+      if (countResponse.data is Map &&
+          (countResponse.data['status'] == 'success' ||
+              countResponse.data['status_code'] == 200)) {
         final recordsFiltered =
             (countResponse.data['recordsFiltered'] ??
                 countResponse.data['RecordsFiltered'] ??
@@ -367,8 +368,9 @@ class InvitationController extends GetxController {
           search: '',
         );
 
-        if (response.data['status'] == 'success' ||
-            response.data['status_code'] == 200) {
+        if (response.data is Map &&
+            (response.data['status'] == 'success' ||
+                response.data['status_code'] == 200)) {
           final collection = response.data['collection'];
 
           final List<AccessPassModel> allVisitors = await compute(_parseAccessPassData, collection);
@@ -532,8 +534,9 @@ class InvitationController extends GetxController {
         sortDir: 'desc',
       );
 
-      if (countResponse.data['status'] == 'success' ||
-          countResponse.data['status_code'] == 200) {
+      if (countResponse.data is Map &&
+          (countResponse.data['status'] == 'success' ||
+              countResponse.data['status_code'] == 200)) {
         final recordsFiltered =
             (countResponse.data['recordsFiltered'] ??
                 countResponse.data['RecordsFiltered'] ??
@@ -549,18 +552,21 @@ class InvitationController extends GetxController {
           sortDir: 'desc',
         );
 
-        if (response.data['status'] == 'success' ||
-            response.data['status_code'] == 200) {
+        if (response.data is Map &&
+            (response.data['status'] == 'success' ||
+                response.data['status_code'] == 200)) {
           final collection = response.data['collection'] as List<dynamic>? ?? [];
           allShareLinks.assignAll(collection);
           _applyShareFilters();
-        } else if (response.data['status'] == 'not_found' ||
-            response.data['status_code'] == 404) {
+        } else if (response.data is Map &&
+            (response.data['status'] == 'not_found' ||
+                response.data['status_code'] == 404)) {
           allShareLinks.clear();
           _applyShareFilters();
         }
-      } else if (countResponse.data['status'] == 'not_found' ||
-          countResponse.data['status_code'] == 404) {
+      } else if (countResponse.data is Map &&
+          (countResponse.data['status'] == 'not_found' ||
+              countResponse.data['status_code'] == 404)) {
         allShareLinks.clear();
         _applyShareFilters();
       }
@@ -686,11 +692,13 @@ class InvitationController extends GetxController {
         final int maxUsage = item['max_usage'] ?? 0;
         final int currentUsage = item['current_usage'] ?? 0;
         final bool isSingleUse = item['is_single_use'] == true;
-        if (expiredAt != null && expiredAt.isBefore(DateTime.now()))
+        if (expiredAt != null && expiredAt.isBefore(DateTime.now())) {
           return true;
+        }
         if ((maxUsage > 0 && currentUsage >= maxUsage) ||
-            (isSingleUse && currentUsage >= 1))
+            (isSingleUse && currentUsage >= 1)) {
           return true;
+        }
         return false;
       }
 

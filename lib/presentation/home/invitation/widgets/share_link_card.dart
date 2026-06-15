@@ -1,4 +1,5 @@
 // ignore_for_file: unused_import, unused_local_variable, unused_element, use_build_context_synchronously, sized_box_for_whitespace, unnecessary_underscores, unnecessary_import, unnecessary_null_comparison, curly_braces_in_flow_control_structures, unused_element_parameter, deprecated_member_use
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:intl/intl.dart';
@@ -6,7 +7,7 @@ import '../../../../core/core.dart';
 import '../../../../core/helper/responsive_helper.dart';
 import 'invite_share_link_dialog.dart';
 
-class ShareLinkCard extends StatelessWidget {
+class ShareLinkCard extends StatefulWidget {
   final dynamic item;
   final int no;
   final VoidCallback onTap;
@@ -18,7 +19,29 @@ class ShareLinkCard extends StatelessWidget {
     required this.onTap,
   });
 
+  @override
+  State<ShareLinkCard> createState() => _ShareLinkCardState();
+}
+
+class _ShareLinkCardState extends State<ShareLinkCard> {
+  Timer? _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (mounted) setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
   String _getRemainingTime(DateTime? expiredAt) {
+    final item = widget.item;
     final int expiredNumber = item['expired_number'] ?? -1;
     if (expiredNumber == 0) return 'No Expired';
     if (expiredAt == null) return '00:00:00';
@@ -133,6 +156,10 @@ class ShareLinkCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final item = widget.item;
+    final no = widget.no;
+    final onTap = widget.onTap;
+    
     final String agenda = item['agenda'] ?? '-';
 
     final expiredAtStr = item['expired_at'];

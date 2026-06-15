@@ -1625,80 +1625,86 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
       }
 
       pw.Widget buildPdfDigitalCard(AccessPassModel model) {
-        return pw.Container(
-          width: double.infinity,
-          padding: const pw.EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-          decoration: const pw.BoxDecoration(
-            borderRadius: pw.BorderRadius.all(pw.Radius.circular(12)),
-            gradient: pw.LinearGradient(
-              begin: pw.Alignment.topLeft,
-              end: pw.Alignment.bottomRight,
-              colors: [
-                PdfColor(0.0, 0.333, 0.588),
-                PdfColor(0.098, 0.462, 0.823),
-                PdfColor(0.051, 0.278, 0.631),
-              ],
-            ),
-          ),
-          child: pw.Column(
-            crossAxisAlignment: pw.CrossAxisAlignment.start,
-            children: [
-              pw.Row(
-                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                children: [
-                  pw.Container(
-                    padding: const pw.EdgeInsets.symmetric(
-                      horizontal: 6,
-                      vertical: 2,
-                    ),
-                    decoration: pw.BoxDecoration(
-                      color: const PdfColor(1.0, 1.0, 1.0, 0.18),
-                      borderRadius: const pw.BorderRadius.all(
-                        pw.Radius.circular(3),
-                      ),
-                      border: pw.Border.all(
-                        color: const PdfColor(1.0, 1.0, 1.0, 0.4),
-                        width: 1,
-                      ),
-                    ),
-                    child: pw.Text(
-                      'VISITOR CARD',
-                      style: pw.TextStyle(
-                        color: PdfColors.white,
-                        fontSize: 7,
-                        fontWeight: pw.FontWeight.bold,
-                      ),
-                    ),
-                  ),
+        return pw.Center(
+          child: pw.Container(
+            width: 270,
+            height: 160,
+            padding: const pw.EdgeInsets.all(16),
+            decoration: const pw.BoxDecoration(
+              borderRadius: pw.BorderRadius.all(pw.Radius.circular(12)),
+              gradient: pw.LinearGradient(
+                begin: pw.Alignment.topLeft,
+                end: pw.Alignment.bottomRight,
+                colors: [
+                  PdfColor(0.0, 0.333, 0.588),
+                  PdfColor(0.098, 0.462, 0.823),
+                  PdfColor(0.051, 0.278, 0.631),
                 ],
               ),
-              pw.SizedBox(height: 12),
-              pw.Text(
-                model.visitorName.toUpperCase(),
-                style: pw.TextStyle(
-                  color: PdfColors.white,
-                  fontSize: 14,
-                  fontWeight: pw.FontWeight.bold,
+            ),
+            child: pw.Column(
+              crossAxisAlignment: pw.CrossAxisAlignment.start,
+              children: [
+                pw.Row(
+                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                  children: [
+                    pw.Container(
+                      padding: const pw.EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      decoration: pw.BoxDecoration(
+                        color: const PdfColor(1.0, 1.0, 1.0, 0.18),
+                        borderRadius: const pw.BorderRadius.all(
+                          pw.Radius.circular(4),
+                        ),
+                        border: pw.Border.all(
+                          color: const PdfColor(1.0, 1.0, 1.0, 0.4),
+                          width: 1,
+                        ),
+                      ),
+                      child: pw.Text(
+                        'VISITOR CARD',
+                        style: pw.TextStyle(
+                          color: PdfColors.white,
+                          fontSize: 8,
+                          fontWeight: pw.FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-              ),
-              pw.SizedBox(height: 2),
-              pw.Text(
-                model.visitorNumber,
-                style: pw.TextStyle(
-                  color: const PdfColor(1.0, 1.0, 1.0, 0.88),
-                  fontSize: 9,
-                  fontWeight: pw.FontWeight.bold,
+                pw.Spacer(),
+                pw.Text(
+                  model.visitorName.toUpperCase(),
+                  style: pw.TextStyle(
+                    color: PdfColors.white,
+                    fontSize: 18,
+                    fontWeight: pw.FontWeight.bold,
+                  ),
                 ),
-              ),
-            ],
+                pw.SizedBox(height: 4),
+                pw.Text(
+                  model.visitorNumber.isNotEmpty ? model.visitorNumber : '-',
+                  style: pw.TextStyle(
+                    color: const PdfColor(1.0, 1.0, 1.0, 0.88),
+                    fontSize: 10,
+                    fontWeight: pw.FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
           ),
         );
       }
 
       for (final model in models) {
+        final isQuickAccess = model.flow.toLowerCase() == 'quickaccessvisit' ||
+            model.visitorStatus.toLowerCase().trim() == 'quickaccess';
         final List<MapEntry<String, String>> fields = [
           MapEntry('Visitor Type', model.visitorTypeName),
-          MapEntry('Visitor Role', model.visitorRole),
+          if (!isQuickAccess || (model.visitorRole.isNotEmpty && model.visitorRole.trim() != '-'))
+            MapEntry('Visitor Role', model.visitorRole),
           MapEntry('Name', model.visitorName),
           MapEntry('Email', model.visitorEmail),
           MapEntry('Phone', model.visitorPhone),
@@ -1716,7 +1722,8 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
           MapEntry('Vehicle Plate', model.vehiclePlateNumber),
           if (model.flow.toLowerCase() == 'quickaccessvisit') ...[
             MapEntry('Receiver Name', model.receiverName),
-            MapEntry('Receiver Phone', model.receiverPhone),
+            if (model.receiverPhone.isNotEmpty && model.receiverPhone.trim() != '-')
+              MapEntry('Receiver Phone', model.receiverPhone),
             MapEntry('Receiver Email', model.receiverEmail),
           ],
         ];
@@ -1918,11 +1925,13 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
                     ],
                   ),
                 ),
-                pw.SizedBox(height: 6),
+                if (!isQuickAccess) ...[
+                  pw.SizedBox(height: 6),
 
-                // 4. Digital Invitation Card
-                sectionHeader('Digital Invitation Card'),
-                buildPdfDigitalCard(model),
+                  // 4. Digital Invitation Card
+                  sectionHeader('Digital Invitation Card'),
+                  buildPdfDigitalCard(model),
+                ],
               ];
             },
           ),
@@ -2251,6 +2260,8 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
                             DateTime.now(),
                           );
                           final sColor = _statusColor(visitor.visitorStatus);
+                          final isQuickAccess = visitor.flow.toLowerCase() == 'quickaccessvisit' ||
+                              visitor.visitorStatus.toLowerCase().trim() == 'quickaccess';
 
                           return [
                             // 1. Visitor Information
@@ -2307,13 +2318,14 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
                                             : visitor.visitorTypeName,
                                         Icons.badge_outlined,
                                       ),
-                                      _SheetField(
-                                        'Visitor Role',
-                                        visitor.visitorRole.isEmpty
-                                            ? '-'
-                                            : visitor.visitorRole,
-                                        Icons.work_outline,
-                                      ),
+                                      if (!isQuickAccess || (visitor.visitorRole.isNotEmpty && visitor.visitorRole.trim() != '-'))
+                                        _SheetField(
+                                          'Visitor Role',
+                                          visitor.visitorRole.isEmpty
+                                              ? '-'
+                                              : visitor.visitorRole,
+                                          Icons.work_outline,
+                                        ),
                                       _SheetField(
                                         'Name',
                                         visitor.visitorName.isEmpty
@@ -2422,14 +2434,15 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
                                               ? '-'
                                               : visitor.receiverName,
                                           Icons.person_outline,
-                                        ),
-                                        _SheetField(
-                                          'Receiver Phone',
-                                          visitor.receiverPhone.isEmpty
-                                              ? '-'
-                                              : visitor.receiverPhone,
-                                          Icons.phone_outlined,
-                                        ),
+                                         ),
+                                         if (visitor.receiverPhone.isNotEmpty && visitor.receiverPhone.trim() != '-')
+                                           _SheetField(
+                                             'Receiver Phone',
+                                             visitor.receiverPhone.isEmpty
+                                                 ? '-'
+                                                 : visitor.receiverPhone,
+                                             Icons.phone_outlined,
+                                           ),
                                         _SheetField(
                                           'Receiver Email',
                                           visitor.receiverEmail.isEmpty
