@@ -343,11 +343,8 @@ class _WaitingApprovalPageState extends State<WaitingApprovalPage>
                 rw(context, 24),
                 bottomPadding + rh(context, 16),
               ),
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                 color: Colors.white,
-                border: Border(
-                  top: BorderSide(color: Colors.grey.shade100),
-                ),
               ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -428,14 +425,14 @@ class _WaitingApprovalPageState extends State<WaitingApprovalPage>
                   TextButton(
                     onPressed: _closePage,
                     style: TextButton.styleFrom(
-                      foregroundColor: const Color(0xFF94A3B8),
+                      foregroundColor: const Color(0xFF475569),
                       minimumSize: Size(double.infinity, rh(context, 44)),
                     ),
                     child: Text(
                       'Close',
                       style: TextStyle(
-                        fontSize: rfs(context, 13.5),
-                        fontWeight: FontWeight.w600,
+                        fontSize: rfs(context, 14),
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
                   ),

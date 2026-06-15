@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
@@ -2425,10 +2426,26 @@ class _FormFieldWidget extends StatelessWidget {
     TextEditingController ctrl,
   ) async {
     final now = DateTime.now();
+    bool isStart = field.remarks == 'visitor_period_start';
+    bool isEnd = field.remarks == 'visitor_period_end';
+
+    DateTime initialDate = now;
+    DateTime firstDate = DateTime(now.year - 1);
+
+    if (isEnd && controller.visitStart.value != null) {
+      firstDate = DateTime(
+          controller.visitStart.value!.year,
+          controller.visitStart.value!.month,
+          controller.visitStart.value!.day);
+      if (initialDate.isBefore(firstDate)) {
+        initialDate = firstDate;
+      }
+    }
+
     final picked = await showDatePicker(
       context: ctx,
-      initialDate: now,
-      firstDate: DateTime(now.year - 1),
+      initialDate: initialDate,
+      firstDate: firstDate,
       lastDate: DateTime(now.year + 5),
       builder: (context, child) => Theme(
         data: Theme.of(context).copyWith(
@@ -2438,13 +2455,30 @@ class _FormFieldWidget extends StatelessWidget {
       ),
     );
     if (picked != null) {
+      if (isEnd && controller.visitStart.value != null) {
+        final startDt = controller.visitStart.value!;
+        final startOnlyDate = DateTime(startDt.year, startDt.month, startDt.day);
+        if (picked.isBefore(startOnlyDate)) {
+          Get.snackbar('Waktu Tidak Valid', 'Visit End tidak boleh lebih awal dari Visit Start', backgroundColor: Colors.red, colorText: Colors.white, snackPosition: SnackPosition.TOP);
+          return;
+        }
+      }
+      if (isStart && controller.visitEnd.value != null) {
+        final endDt = controller.visitEnd.value!;
+        final endOnlyDate = DateTime(endDt.year, endDt.month, endDt.day);
+        if (picked.isAfter(endOnlyDate)) {
+          Get.snackbar('Waktu Tidak Valid', 'Visit Start tidak boleh lebih lambat dari Visit End', backgroundColor: Colors.red, colorText: Colors.white, snackPosition: SnackPosition.TOP);
+          return;
+        }
+      }
+
       final iso = picked.toIso8601String().replaceAll(RegExp(r'\.\d+'), '');
       field.answerDatetime = iso;
       field.answerText = iso;
       ctrl.text = _formatDisplay(picked, false);
-      if (field.remarks == 'visitor_period_start') {
+      if (isStart) {
         controller.visitStart.value = picked;
-      } else if (field.remarks == 'visitor_period_end') {
+      } else if (isEnd) {
         controller.visitEnd.value = picked;
       }
       setState(() {});
@@ -2458,10 +2492,26 @@ class _FormFieldWidget extends StatelessWidget {
     TextEditingController ctrl,
   ) async {
     final now = DateTime.now();
+    bool isStart = field.remarks == 'visitor_period_start';
+    bool isEnd = field.remarks == 'visitor_period_end';
+
+    DateTime initialDate = now;
+    DateTime firstDate = DateTime(now.year - 1);
+
+    if (isEnd && controller.visitStart.value != null) {
+      firstDate = DateTime(
+          controller.visitStart.value!.year,
+          controller.visitStart.value!.month,
+          controller.visitStart.value!.day);
+      if (initialDate.isBefore(firstDate)) {
+        initialDate = firstDate;
+      }
+    }
+
     final date = await showDatePicker(
       context: ctx,
-      initialDate: now,
-      firstDate: DateTime(now.year - 1),
+      initialDate: initialDate,
+      firstDate: firstDate,
       lastDate: DateTime(now.year + 5),
       builder: (context, child) => Theme(
         data: Theme.of(context).copyWith(
@@ -2473,15 +2523,84 @@ class _FormFieldWidget extends StatelessWidget {
     if (date == null) return;
     if (!ctx.mounted) return;
 
-    final time = await showTimePicker(
+    TimeOfDay initialTime = TimeOfDay.now();
+    if (isEnd && controller.visitStart.value != null) {
+      if (date.year == controller.visitStart.value!.year &&
+          date.month == controller.visitStart.value!.month &&
+          date.day == controller.visitStart.value!.day) {
+        if (initialTime.hour < controller.visitStart.value!.hour ||
+            (initialTime.hour == controller.visitStart.value!.hour &&
+                initialTime.minute < controller.visitStart.value!.minute)) {
+          initialTime = TimeOfDay(
+              hour: controller.visitStart.value!.hour,
+              minute: controller.visitStart.value!.minute);
+        }
+      }
+    }
+
+    DateTime cupertinoInitialDate = DateTime(
+      date.year,
+      date.month,
+      date.day,
+      initialTime.hour,
+      initialTime.minute,
+    );
+    DateTime? cupertinoMinDate;
+    if (isEnd && controller.visitStart.value != null) {
+      if (date.year == controller.visitStart.value!.year &&
+          date.month == controller.visitStart.value!.month &&
+          date.day == controller.visitStart.value!.day) {
+        cupertinoMinDate = controller.visitStart.value!;
+      }
+    }
+
+    TimeOfDay? time;
+    await showModalBottomSheet(
       context: ctx,
-      initialTime: TimeOfDay.now(),
-      builder: (context, child) => Theme(
-        data: Theme.of(context).copyWith(
-          colorScheme: const ColorScheme.light(primary: AppColors.primary500),
-        ),
-        child: child!,
+      backgroundColor: Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(rw(ctx, 16))),
       ),
+      builder: (BuildContext builder) {
+        return SizedBox(
+          height: rh(ctx, 300),
+          child: Column(
+            children: [
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: rw(ctx, 16)),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    TextButton(
+                      child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+                      onPressed: () => Navigator.of(builder).pop(),
+                    ),
+                    TextButton(
+                      child: const Text('OK', style: TextStyle(color: AppColors.primary500, fontWeight: FontWeight.bold)),
+                      onPressed: () {
+                        time ??= TimeOfDay.fromDateTime(cupertinoInitialDate);
+                        Navigator.of(builder).pop();
+                      },
+                    ),
+                  ],
+                ),
+              ),
+              const Divider(height: 1),
+              Expanded(
+                child: CupertinoDatePicker(
+                  mode: CupertinoDatePickerMode.time,
+                  use24hFormat: true,
+                  initialDateTime: cupertinoInitialDate,
+                  minimumDate: cupertinoMinDate,
+                  onDateTimeChanged: (DateTime newDateTime) {
+                    time = TimeOfDay.fromDateTime(newDateTime);
+                  },
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
     if (time == null) return;
     if (!ctx.mounted) return;
@@ -2490,16 +2609,26 @@ class _FormFieldWidget extends StatelessWidget {
       date.year,
       date.month,
       date.day,
-      time.hour,
-      time.minute,
+      time!.hour,
+      time!.minute,
     );
+
+    if (isEnd && controller.visitStart.value != null && dtRaw.isBefore(controller.visitStart.value!)) {
+      Get.snackbar('Waktu Tidak Valid', 'Visit End tidak boleh lebih awal dari Visit Start', backgroundColor: Colors.red, colorText: Colors.white, snackPosition: SnackPosition.TOP);
+      return;
+    }
+    if (isStart && controller.visitEnd.value != null && dtRaw.isAfter(controller.visitEnd.value!)) {
+      Get.snackbar('Waktu Tidak Valid', 'Visit Start tidak boleh lebih lambat dari Visit End', backgroundColor: Colors.red, colorText: Colors.white, snackPosition: SnackPosition.TOP);
+      return;
+    }
+
     final iso = dtRaw.toIso8601String().replaceAll(RegExp(r'\.\d+'), '');
     field.answerDatetime = iso;
     field.answerText = iso;
     ctrl.text = _formatDisplay(dtRaw, true);
-    if (field.remarks == 'visitor_period_start') {
+    if (isStart) {
       controller.visitStart.value = dtRaw;
-    } else if (field.remarks == 'visitor_period_end') {
+    } else if (isEnd) {
       controller.visitEnd.value = dtRaw;
     }
     setState(() {});

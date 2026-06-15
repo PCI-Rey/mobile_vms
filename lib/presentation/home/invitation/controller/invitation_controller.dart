@@ -1186,8 +1186,11 @@ class InvitationController extends GetxController {
         approvalTicketId,
         listTrxVisitorId,
       );
-      return response.data['status'] == 'success' ||
-          response.data['status_code'] == 200;
+      if (response.data is Map) {
+        return response.data['status'] == 'success' ||
+            response.data['status_code'] == 200;
+      }
+      return false;
     } catch (e) {
       debugPrint('approveMeetingHostAction error: $e');
       return false;
@@ -1213,15 +1216,20 @@ class InvitationController extends GetxController {
         listTrxVisitorId,
       );
 
-      final approveHostOk =
-          responseHost.data['status'] == 'success' ||
-          responseHost.data['status_code'] == 200;
+      bool approveHostOk = false;
+      if (responseHost.data is Map) {
+        approveHostOk = responseHost.data['status'] == 'success' ||
+            responseHost.data['status_code'] == 200;
+      }
 
       if (!approveHostOk) {
+        String errMsg = 'Gagal menyetujui host meeting.';
+        if (responseHost.data is Map && responseHost.data['msg'] != null) {
+          errMsg = responseHost.data['msg'].toString();
+        }
         Get.snackbar(
           'Failed',
-          responseHost.data['msg']?.toString() ??
-              'Gagal menyetujui host meeting.',
+          errMsg,
           snackPosition: SnackPosition.TOP,
           backgroundColor: Colors.red,
           colorText: Colors.white,
@@ -1231,8 +1239,11 @@ class InvitationController extends GetxController {
 
       // 2. Call approve endpoint ONCE with the approvalTicketId and actorId
       final res = await _api.approveTicket(token, approvalTicketId, actorId);
-      final approveOk =
-          res.data['status'] == 'success' || res.data['status_code'] == 200;
+      
+      bool approveOk = false;
+      if (res.data is Map) {
+        approveOk = res.data['status'] == 'success' || res.data['status_code'] == 200;
+      }
 
       if (approveOk) {
         Get.snackbar(
@@ -1246,9 +1257,14 @@ class InvitationController extends GetxController {
         return true;
       }
 
+      String errMsg = 'Gagal menyetujui ticket.';
+      if (res.data is Map && res.data['msg'] != null) {
+        errMsg = res.data['msg'].toString();
+      }
+
       Get.snackbar(
         'Failed',
-        res.data['msg']?.toString() ?? 'Gagal menyetujui ticket.',
+        errMsg,
         snackPosition: SnackPosition.TOP,
         backgroundColor: Colors.red,
         colorText: Colors.white,
@@ -1281,7 +1297,13 @@ class InvitationController extends GetxController {
     try {
       isApprovalLoading.value = true;
       final res = await _api.rejectTicket(token, approvalTicketId, actorId);
-      if (res.data['status'] == 'success' || res.data['status_code'] == 200) {
+      
+      bool rejectOk = false;
+      if (res.data is Map) {
+        rejectOk = res.data['status'] == 'success' || res.data['status_code'] == 200;
+      }
+
+      if (rejectOk) {
         Get.snackbar(
           'Success',
           'Berhasil menolak approval.',
@@ -1293,9 +1315,14 @@ class InvitationController extends GetxController {
         return true;
       }
 
+      String errMsg = 'Gagal menolak approval.';
+      if (res.data is Map && res.data['msg'] != null) {
+        errMsg = res.data['msg'].toString();
+      }
+
       Get.snackbar(
         'Failed',
-        res.data['msg']?.toString() ?? 'Gagal menolak approval.',
+        errMsg,
         snackPosition: SnackPosition.TOP,
         backgroundColor: Colors.red,
         colorText: Colors.white,

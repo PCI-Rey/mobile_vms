@@ -1014,7 +1014,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                     'No active access pass found for this employee.',
                     backgroundColor: Colors.redAccent,
                     colorText: Colors.white,
-                    snackPosition: SnackPosition.BOTTOM,
+                    snackPosition: SnackPosition.TOP,
                   );
                 } else {
                   showAccessPassDialog(

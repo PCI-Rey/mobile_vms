@@ -365,8 +365,8 @@ class _ApprovalDetailModalState extends State<ApprovalDetailModal> {
                         child: OutlinedButton(
                           onPressed: () => _confirmAction(
                             context,
-                            title: 'Tolak Approval',
-                            message: 'Apakah Anda yakin ingin menolak approval ini?',
+                            title: 'Reject Approval',
+                            message: 'Are you sure you want to reject this approval?',
                             onConfirm: () => _ctrl.rejectMeetingHostAction(
                               approvalTicketId: ticket.approvalTicketId ?? ticket.ticketId ?? '',
                               actorId: ticket.actorId ?? '',
@@ -467,23 +467,24 @@ class _ApprovalDetailModalState extends State<ApprovalDetailModal> {
     showDialog(
       context: context,
       builder: (dialogCtx) => AlertDialog(
+        backgroundColor: Colors.white,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(rw(context, 16)),
         ),
         title: Text(
           title,
-          style: TextStyle(
-            fontWeight: FontWeight.w700,
-            fontSize: rfs(context, 16),
-          ),
+          style: const TextStyle(fontWeight: FontWeight.bold),
         ),
-        content: Text(message),
+        content: Text(
+          message,
+          textAlign: TextAlign.justify,
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogCtx).pop(),
-            child: const Text('Batal'),
+            child: const Text('No', style: TextStyle(color: Colors.grey)),
           ),
-          ElevatedButton(
+          TextButton(
             onPressed: () async {
               Navigator.of(dialogCtx).pop();
               final success = await onConfirm();
@@ -491,15 +492,10 @@ class _ApprovalDetailModalState extends State<ApprovalDetailModal> {
                 Navigator.of(context).pop(); // close bottom sheet
               }
             },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary500,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(rw(context, 8)),
-              ),
-              elevation: 0,
+            child: const Text(
+              'Yes, Reject',
+              style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
             ),
-            child: const Text('Ya, Konfirmasi'),
           ),
         ],
       ),
