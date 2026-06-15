@@ -173,14 +173,20 @@ class InvitationController extends GetxController {
     // everything else (Invitation, Praregister, etc.) → Invitation tab
     List<AccessPassModel> filtered = List.from(
       allInvitations.where(
-        (item) => item.flow.toLowerCase() != 'quickaccessvisit' &&
-                  !(item.agenda.isEmpty && item.hostName.isEmpty && item.visitorTypeName.isEmpty),
+        (item) =>
+            item.flow.toLowerCase() != 'quickaccessvisit' &&
+            !(item.agenda.isEmpty &&
+                item.hostName.isEmpty &&
+                item.visitorTypeName.isEmpty),
       ),
     );
     List<AccessPassModel> quickAccess = List.from(
       allInvitations.where(
-        (item) => item.flow.toLowerCase() == 'quickaccessvisit' &&
-                  !(item.agenda.isEmpty && item.hostName.isEmpty && item.visitorTypeName.isEmpty),
+        (item) =>
+            item.flow.toLowerCase() == 'quickaccessvisit' &&
+            !(item.agenda.isEmpty &&
+                item.hostName.isEmpty &&
+                item.visitorTypeName.isEmpty),
       ),
     );
 
@@ -261,7 +267,8 @@ class InvitationController extends GetxController {
       }).toList();
     }
 
-    if (selectedSiteIdQuick.value.isNotEmpty || selectedSiteNameQuick.value.isNotEmpty) {
+    if (selectedSiteIdQuick.value.isNotEmpty ||
+        selectedSiteNameQuick.value.isNotEmpty) {
       quickAccess = quickAccess.where((item) {
         return (selectedSiteIdQuick.value.isNotEmpty &&
                 item.siteId.toLowerCase() ==
@@ -276,7 +283,8 @@ class InvitationController extends GetxController {
       quickAccess = quickAccess.where((item) {
         final isExpired = DateTime.now().isAfter(item.visitorPeriodEnd);
         final uiStatus = isExpired ? 'Expired' : 'Active';
-        return uiStatus.toLowerCase() == selectedStatusQuick.value.toLowerCase();
+        return uiStatus.toLowerCase() ==
+            selectedStatusQuick.value.toLowerCase();
       }).toList();
     }
 
@@ -470,7 +478,10 @@ class InvitationController extends GetxController {
   final RxInt shareLinkTotalRecords = 0.obs;
   final RxList<dynamic> allShareLinks = <dynamic>[].obs;
 
-  Future<void> fetchShareLinks({bool resetPage = false, bool clearFilters = false}) async {
+  Future<void> fetchShareLinks({
+    bool resetPage = false,
+    bool clearFilters = false,
+  }) async {
     if (clearFilters) {
       startDateShare.value = null;
       endDateShare.value = null;
@@ -489,7 +500,8 @@ class InvitationController extends GetxController {
       final response = await _api.getShareLinkDt(
         token,
         start: 0,
-        length: 500, // Fetch a large number of items so we can filter and paginate locally
+        length:
+            500, // Fetch a large number of items so we can filter and paginate locally
         sortColumn: 'created_at',
         sortDir: 'desc',
       );
@@ -562,7 +574,8 @@ class InvitationController extends GetxController {
     }
 
     // 2. Filter Berdasarkan Gedung (Lokal)
-    if (selectedSiteIdShare.value.isNotEmpty || selectedSiteNameShare.value.isNotEmpty) {
+    if (selectedSiteIdShare.value.isNotEmpty ||
+        selectedSiteNameShare.value.isNotEmpty) {
       filtered = filtered.where((item) {
         final itemSiteId = item['site_id']?.toString() ?? '';
         final itemSiteName = item['site_place_name']?.toString() ?? '';
@@ -596,12 +609,14 @@ class InvitationController extends GetxController {
         if (expiredAt != null && expiredAt.isBefore(DateTime.now())) {
           isExpired = true;
         }
-        if ((maxUsage > 0 && currentUsage >= maxUsage) || (isSingleUse && currentUsage >= 1)) {
+        if ((maxUsage > 0 && currentUsage >= maxUsage) ||
+            (isSingleUse && currentUsage >= 1)) {
           isExpired = true;
         }
 
         final String computedStatus = isExpired ? 'Expired' : 'Active';
-        return computedStatus.toLowerCase() == selectedStatusShare.value.toLowerCase();
+        return computedStatus.toLowerCase() ==
+            selectedStatusShare.value.toLowerCase();
       }).toList();
     }
 
@@ -609,7 +624,7 @@ class InvitationController extends GetxController {
     filtered.sort((a, b) {
       final aMap = Map<String, dynamic>.from(a as Map);
       final bMap = Map<String, dynamic>.from(b as Map);
-      
+
       bool isExpiredLink(Map<String, dynamic> item) {
         final expiredAtStr = item['expired_at'];
         DateTime? expiredAt;
@@ -623,8 +638,11 @@ class InvitationController extends GetxController {
         final int maxUsage = item['max_usage'] ?? 0;
         final int currentUsage = item['current_usage'] ?? 0;
         final bool isSingleUse = item['is_single_use'] == true;
-        if (expiredAt != null && expiredAt.isBefore(DateTime.now())) return true;
-        if ((maxUsage > 0 && currentUsage >= maxUsage) || (isSingleUse && currentUsage >= 1)) return true;
+        if (expiredAt != null && expiredAt.isBefore(DateTime.now()))
+          return true;
+        if ((maxUsage > 0 && currentUsage >= maxUsage) ||
+            (isSingleUse && currentUsage >= 1))
+          return true;
         return false;
       }
 
@@ -634,10 +652,12 @@ class InvitationController extends GetxController {
         return aExpired ? 1 : -1;
       }
 
-      final dateStrA = aMap['visitor_period_start']?.toString() ??
+      final dateStrA =
+          aMap['visitor_period_start']?.toString() ??
           aMap['created_at']?.toString() ??
           aMap['expired_at']?.toString();
-      final dateStrB = bMap['visitor_period_start']?.toString() ??
+      final dateStrB =
+          bMap['visitor_period_start']?.toString() ??
           bMap['created_at']?.toString() ??
           bMap['expired_at']?.toString();
       if (dateStrA == null && dateStrB == null) return 0;
@@ -649,15 +669,18 @@ class InvitationController extends GetxController {
     // 4. Paginate
     shareLinkTotalRecords.value = filtered.length;
     final start = shareLinkCurrentPage.value * shareLinkPageSize.value;
-    
+
     // Safety check start index
     int safeStart = start;
     if (safeStart >= filtered.length) {
       safeStart = 0;
       shareLinkCurrentPage.value = 0;
     }
-    
-    final pagedList = filtered.skip(safeStart).take(shareLinkPageSize.value).toList();
+
+    final pagedList = filtered
+        .skip(safeStart)
+        .take(shareLinkPageSize.value)
+        .toList();
     shareLinks.assignAll(pagedList);
   }
 
@@ -1025,7 +1048,9 @@ class InvitationController extends GetxController {
   /// 4. Batch call /visitor/transaction/{id}/visitors per 20 request paralel
   /// 5. Gabungkan + deduplicate by visitorNumber
   /// Returns cached visitors immediately on subsequent calls.
-  Future<List<AccessPassModel>> fetchAllVisitors({bool forceRefresh = false}) async {
+  Future<List<AccessPassModel>> fetchAllVisitors({
+    bool forceRefresh = false,
+  }) async {
     final user = _hive.getUser();
     final token = user?.token;
     if (token == null) return [];
@@ -1058,11 +1083,12 @@ class InvitationController extends GetxController {
       final countData = countResponse.data;
       if (countData is! Map) return [];
 
-      final totalCount = (countData['RecordsFiltered'] ??
-              countData['records_filtered'] ??
-              countData['recordsFiltered'] ??
-              50)
-          as int;
+      final totalCount =
+          (countData['RecordsFiltered'] ??
+                  countData['records_filtered'] ??
+                  countData['recordsFiltered'] ??
+                  50)
+              as int;
 
       debugPrint('fetchAllVisitors: total transactions = $totalCount');
 
@@ -1085,8 +1111,11 @@ class InvitationController extends GetxController {
       // Step 3: Filter hanya non-quickaccess
       final transactions = rawTransactions
           .whereType<Map<String, dynamic>>()
-          .where((t) =>
-              (t['flow']?.toString() ?? '').toLowerCase() != 'quickaccessvisit')
+          .where(
+            (t) =>
+                (t['flow']?.toString() ?? '').toLowerCase() !=
+                'quickaccessvisit',
+          )
           .toList();
 
       debugPrint(
@@ -1112,8 +1141,8 @@ class InvitationController extends GetxController {
               final parentFlow = trx['flow']?.toString() ?? '';
               final parentSitePlaceName =
                   (trx['site_place_name'] ?? trx['host_organization_name'])
-                          ?.toString() ??
-                      '';
+                      ?.toString() ??
+                  '';
               final parentAgenda = trx['agenda']?.toString() ?? '';
               final parentHostName = trx['host_name']?.toString() ?? '';
 
@@ -1134,9 +1163,7 @@ class InvitationController extends GetxController {
               }
               return visitors;
             } catch (e) {
-              debugPrint(
-                'fetchAllVisitors - error for trxId $trxId: $e',
-              );
+              debugPrint('fetchAllVisitors - error for trxId $trxId: $e');
               return <Map<String, dynamic>>[];
             }
           }),
@@ -1218,12 +1245,13 @@ class InvitationController extends GetxController {
 
       bool approveHostOk = false;
       if (responseHost.data is Map) {
-        approveHostOk = responseHost.data['status'] == 'success' ||
+        approveHostOk =
+            responseHost.data['status'] == 'success' ||
             responseHost.data['status_code'] == 200;
       }
 
       if (!approveHostOk) {
-        String errMsg = 'Gagal menyetujui host meeting.';
+        String errMsg = 'Failed to approve meeting host.';
         if (responseHost.data is Map && responseHost.data['msg'] != null) {
           errMsg = responseHost.data['msg'].toString();
         }
@@ -1239,16 +1267,17 @@ class InvitationController extends GetxController {
 
       // 2. Call approve endpoint ONCE with the approvalTicketId and actorId
       final res = await _api.approveTicket(token, approvalTicketId, actorId);
-      
+
       bool approveOk = false;
       if (res.data is Map) {
-        approveOk = res.data['status'] == 'success' || res.data['status_code'] == 200;
+        approveOk =
+            res.data['status'] == 'success' || res.data['status_code'] == 200;
       }
 
       if (approveOk) {
         Get.snackbar(
           'Success',
-          'Berhasil menyetujui approval.',
+          'Successfully approved ticket.',
           snackPosition: SnackPosition.TOP,
           backgroundColor: Colors.green,
           colorText: Colors.white,
@@ -1257,7 +1286,7 @@ class InvitationController extends GetxController {
         return true;
       }
 
-      String errMsg = 'Gagal menyetujui ticket.';
+      String errMsg = 'Failed to approve ticket.';
       if (res.data is Map && res.data['msg'] != null) {
         errMsg = res.data['msg'].toString();
       }
@@ -1297,16 +1326,17 @@ class InvitationController extends GetxController {
     try {
       isApprovalLoading.value = true;
       final res = await _api.rejectTicket(token, approvalTicketId, actorId);
-      
+
       bool rejectOk = false;
       if (res.data is Map) {
-        rejectOk = res.data['status'] == 'success' || res.data['status_code'] == 200;
+        rejectOk =
+            res.data['status'] == 'success' || res.data['status_code'] == 200;
       }
 
       if (rejectOk) {
         Get.snackbar(
           'Success',
-          'Berhasil menolak approval.',
+          'Successfully rejected ticket.',
           snackPosition: SnackPosition.TOP,
           backgroundColor: Colors.green,
           colorText: Colors.white,
@@ -1315,7 +1345,7 @@ class InvitationController extends GetxController {
         return true;
       }
 
-      String errMsg = 'Gagal menolak approval.';
+      String errMsg = 'Failed to reject ticket.';
       if (res.data is Map && res.data['msg'] != null) {
         errMsg = res.data['msg'].toString();
       }

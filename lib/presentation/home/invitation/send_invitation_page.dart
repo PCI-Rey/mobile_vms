@@ -353,99 +353,99 @@ class _SendInvitationPageState extends State<SendInvitationPage>
               final inviteCtrl = Get.find<InvitationController>();
               await inviteCtrl.fetchOngoingInvitations();
             },
-            child: SingleChildScrollView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              padding: EdgeInsets.only(
-                left: rw(context, 20.0),
-                right: rw(context, 20.0),
-                bottom: rw(context, 20.0),
-                top: rw(context, 10.0),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Loading indicator for background refresh
-                  Obx(() {
-                    final inviteCtrl = Get.isRegistered<InvitationController>()
-                        ? Get.find<InvitationController>()
-                        : null;
-                    if (inviteCtrl != null &&
-                        inviteCtrl.isLoading.value &&
-                        inviteCtrl.ongoingInvitations.isNotEmpty) {
-                      return Padding(
-                        padding: EdgeInsets.only(bottom: rh(context, 12)),
-                        child: LinearProgressIndicator(
-                          minHeight: rh(context, 2),
-                          backgroundColor: Colors.transparent,
-                          valueColor: const AlwaysStoppedAnimation<Color>(
-                            AppColors.primary500,
-                          ),
+            child: Obx(() {
+              final inviteCtrl = Get.isRegistered<InvitationController>()
+                  ? Get.find<InvitationController>()
+                  : Get.put(InvitationController());
+
+              final listToShow = inviteCtrl.ongoingInvitations.toList();
+              final isLoading = inviteCtrl.isLoading.value;
+
+              if (isLoading && listToShow.isEmpty) {
+                return ListView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  children: [
+                    Center(
+                      child: Padding(
+                        padding: EdgeInsets.all(rw(context, 40.0)),
+                        child: const CircularProgressIndicator(),
+                      ),
+                    ),
+                  ],
+                );
+              }
+
+              if (listToShow.isEmpty) {
+                return ListView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  children: [
+                    Center(
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: rw(context, 20.0),
+                          vertical: rw(context, 40.0),
                         ),
-                      );
-                    }
-                    return const SizedBox.shrink();
-                  }),
-                  Obx(() {
-                    final inviteCtrl = Get.isRegistered<InvitationController>()
-                        ? Get.find<InvitationController>()
-                        : Get.put(InvitationController());
-
-                    final listToShow = inviteCtrl.ongoingInvitations.toList();
-
-                    if (inviteCtrl.isLoading.value && listToShow.isEmpty) {
-                      return Center(
-                        child: Padding(
-                          padding: EdgeInsets.all(rw(context, 40.0)),
-                          child: const CircularProgressIndicator(),
+                        child: Column(
+                          children: [
+                            Icon(
+                              Icons.inbox_outlined,
+                              size: rw(context, 48),
+                              color: Colors.grey[400],
+                            ),
+                            vSpace(context, 16),
+                            Text(
+                              'No Invitation Found',
+                              style: TextStyle(
+                                color: Colors.grey[600],
+                                fontSize: rfs(context, 16),
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            vSpace(context, 8),
+                            Text(
+                              "Tap the '+' button at the top right to create a new invitation",
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: Colors.grey[500],
+                                fontSize: rfs(context, 13),
+                              ),
+                            ),
+                          ],
                         ),
-                      );
-                    }
+                      ),
+                    ),
+                  ],
+                );
+              }
 
-                    if (listToShow.isEmpty) {
-                      return Center(
-                        child: Padding(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: rw(context, 20.0),
-                            vertical: rw(context, 40.0),
-                          ),
-                          child: Column(
-                            children: [
-                              Icon(
-                                Icons.inbox_outlined,
-                                size: rw(context, 48),
-                                color: Colors.grey[400],
-                              ),
-                              vSpace(context, 16),
-                              Text(
-                                'No Invitation Found',
-                                style: TextStyle(
-                                  color: Colors.grey[600],
-                                  fontSize: rfs(context, 16),
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                              vSpace(context, 8),
-                              Text(
-                                "Tap the '+' button at the top right to create a new invitation",
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  color: Colors.grey[500],
-                                  fontSize: rfs(context, 13),
-                                ),
-                              ),
-                            ],
-                          ),
+              final showTopLoading = isLoading && listToShow.isNotEmpty;
+
+              return ListView.separated(
+                padding: EdgeInsets.only(
+                  left: rw(context, 20.0),
+                  right: rw(context, 20.0),
+                  bottom: rw(context, 20.0),
+                  top: rw(context, 10.0),
+                ),
+                physics: const AlwaysScrollableScrollPhysics(),
+                itemCount: listToShow.length + (showTopLoading ? 1 : 0),
+                separatorBuilder: (context, index) => vSpace(context, 10),
+                itemBuilder: (context, index) {
+                  if (showTopLoading && index == 0) {
+                    return Padding(
+                      padding: EdgeInsets.only(bottom: rh(context, 12)),
+                      child: LinearProgressIndicator(
+                        minHeight: rh(context, 2),
+                        backgroundColor: Colors.transparent,
+                        valueColor: const AlwaysStoppedAnimation<Color>(
+                          AppColors.primary500,
                         ),
-                      );
-                    }
+                      ),
+                    );
+                  }
 
-                    return ListView.separated(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      itemCount: inviteCtrl.ongoingInvitations.length,
-                      separatorBuilder: (context, index) => vSpace(context, 10),
-                      itemBuilder: (context, index) {
-                        final item = inviteCtrl.ongoingInvitations[index];
+                  final itemIndex = showTopLoading ? index - 1 : index;
+                  final item = listToShow[itemIndex];
                         final now = DateTime.now();
                         final isExpired = item.visitorPeriodEnd.isBefore(now);
                         final String jenis;
@@ -695,10 +695,7 @@ class _SendInvitationPageState extends State<SendInvitationPage>
                         );
                       },
                     );
-                  }),
-                ],
-              ),
-            ),
+            }),
           ),
         ),
       ],
@@ -839,93 +836,93 @@ class _SendInvitationPageState extends State<SendInvitationPage>
               });
               await inviteCtrl.fetchOngoingInvitations(clearFilters: true);
             },
-            child: SingleChildScrollView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              padding: EdgeInsets.all(rw(context, 20.0)),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Obx(() {
-                    final inviteCtrl = Get.isRegistered<InvitationController>()
-                        ? Get.find<InvitationController>()
-                        : null;
-                    if (inviteCtrl != null &&
-                        inviteCtrl.isLoading.value &&
-                        inviteCtrl.ongoingInvitations.isNotEmpty) {
-                      return Padding(
-                        padding: EdgeInsets.only(bottom: rh(context, 12)),
-                        child: LinearProgressIndicator(
-                          minHeight: rh(context, 2),
-                          backgroundColor: Colors.transparent,
-                          valueColor: const AlwaysStoppedAnimation<Color>(
-                            AppColors.primary500,
-                          ),
+            child: Obx(() {
+              final inviteCtrl = Get.isRegistered<InvitationController>()
+                  ? Get.find<InvitationController>()
+                  : Get.put(InvitationController());
+
+              final listToShow = inviteCtrl.quickAccessInvitations.toList();
+              final isLoading = inviteCtrl.isLoading.value;
+
+              if (isLoading && listToShow.isEmpty) {
+                return ListView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  children: [
+                    Center(
+                      child: Padding(
+                        padding: EdgeInsets.all(rw(context, 40.0)),
+                        child: const CircularProgressIndicator(),
+                      ),
+                    ),
+                  ],
+                );
+              }
+
+              if (listToShow.isEmpty) {
+                return ListView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  children: [
+                    Center(
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: rw(context, 20.0),
+                          vertical: rw(context, 40.0),
                         ),
-                      );
-                    }
-                    return const SizedBox.shrink();
-                  }),
-                  Obx(() {
-                    final inviteCtrl = Get.isRegistered<InvitationController>()
-                        ? Get.find<InvitationController>()
-                        : Get.put(InvitationController());
-
-                    final listToShow = inviteCtrl.quickAccessInvitations
-                        .toList();
-
-                    if (inviteCtrl.isLoading.value && listToShow.isEmpty) {
-                      return Center(
-                        child: Padding(
-                          padding: EdgeInsets.all(rw(context, 40.0)),
-                          child: const CircularProgressIndicator(),
+                        child: Column(
+                          children: [
+                            Icon(
+                              Icons.flash_on_rounded,
+                              size: rw(context, 48),
+                              color: Colors.grey[400],
+                            ),
+                            vSpace(context, 16),
+                            Text(
+                              'No Quick Access Visit Found',
+                              style: TextStyle(
+                                color: Colors.grey[600],
+                                fontSize: rfs(context, 16),
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            vSpace(context, 8),
+                            Text(
+                              "Tap the '+' button at the top right to create a new quick access",
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: Colors.grey[500],
+                                fontSize: rfs(context, 13),
+                              ),
+                            ),
+                          ],
                         ),
-                      );
-                    }
+                      ),
+                    ),
+                  ],
+                );
+              }
 
-                    if (listToShow.isEmpty) {
-                      return Center(
-                        child: Padding(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: rw(context, 20.0),
-                            vertical: rw(context, 40.0),
-                          ),
-                          child: Column(
-                            children: [
-                              Icon(
-                                Icons.flash_on_rounded,
-                                size: rw(context, 48),
-                                color: Colors.grey[400],
-                              ),
-                              vSpace(context, 16),
-                              Text(
-                                'No Quick Access Visit Found',
-                                style: TextStyle(
-                                  color: Colors.grey[600],
-                                  fontSize: rfs(context, 16),
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                              vSpace(context, 8),
-                              Text(
-                                "Tap the '+' button at the top right to create a new quick access",
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  color: Colors.grey[500],
-                                  fontSize: rfs(context, 13),
-                                ),
-                              ),
-                            ],
-                          ),
+              final showTopLoading = isLoading && listToShow.isNotEmpty;
+
+              return ListView.builder(
+                padding: EdgeInsets.all(rw(context, 20.0)),
+                physics: const AlwaysScrollableScrollPhysics(),
+                itemCount: listToShow.length + (showTopLoading ? 1 : 0),
+                itemBuilder: (context, index) {
+                  if (showTopLoading && index == 0) {
+                    return Padding(
+                      padding: EdgeInsets.only(bottom: rh(context, 12)),
+                      child: LinearProgressIndicator(
+                        minHeight: rh(context, 2),
+                        backgroundColor: Colors.transparent,
+                        valueColor: const AlwaysStoppedAnimation<Color>(
+                          AppColors.primary500,
                         ),
-                      );
-                    }
+                      ),
+                    );
+                  }
 
-                    return ListView.builder(
-                      itemCount: listToShow.length,
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      itemBuilder: (context, index) {
-                        final item = listToShow[index];
+                  final itemIndex = showTopLoading ? index - 1 : index;
+                  final item = listToShow[itemIndex];
                         final isExpired = DateTime.now().isAfter(
                           item.visitorPeriodEnd,
                         );
@@ -1095,12 +1092,9 @@ class _SendInvitationPageState extends State<SendInvitationPage>
                             ),
                           ),
                         );
-                      },
-                    );
-                  }),
-                ],
-              ),
-            ),
+                },
+              );
+            }),
           ),
         ),
       ],
