@@ -64,9 +64,6 @@ class _SendInvitationPageState extends State<SendInvitationPage>
     );
     _tabController.addListener(() {
       if (_tabController.indexIsChanging) return;
-      if (_tabController.index == 1) {
-        controller.fetchShareLinks(resetPage: true);
-      }
       setState(() {});
     });
   }
@@ -213,9 +210,9 @@ class _SendInvitationPageState extends State<SendInvitationPage>
             child: TabBarView(
               controller: _tabController,
               children: [
-                _buildInvitationTab(),
-                _buildShareLinkTab(),
-                _buildQuickAccessTab(),
+                KeepAliveWrapper(child: _buildInvitationTab()),
+                const KeepAliveWrapper(child: ShareLinkListInline()),
+                KeepAliveWrapper(child: _buildQuickAccessTab()),
               ],
             ),
           ),
@@ -4248,3 +4245,24 @@ class _OthersVisitorSheetState extends State<_OthersVisitorSheet> {
     );
   }
 }
+
+class KeepAliveWrapper extends StatefulWidget {
+  final Widget child;
+  const KeepAliveWrapper({super.key, required this.child});
+
+  @override
+  State<KeepAliveWrapper> createState() => _KeepAliveWrapperState();
+}
+
+class _KeepAliveWrapperState extends State<KeepAliveWrapper>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context);
+    return widget.child;
+  }
+}
+
