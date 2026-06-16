@@ -32,6 +32,8 @@ class InvitationController extends GetxController {
   final RxInt visitorTodayCount = 0.obs;
   final RxBool isVisitorTodayLoading = false.obs;
   int _visitorTodayFetchId = 0;
+  final RxMap<String, int> transactionVisitorCounts = <String, int>{}.obs;
+  final RxMap<String, List<AccessPassModel>> transactionVisitorsCache = <String, List<AccessPassModel>>{}.obs;
   final RxList<AccessPassModel> ongoingInvitations = <AccessPassModel>[].obs;
   final RxList<AccessPassModel> quickAccessInvitations =
       <AccessPassModel>[].obs;
@@ -125,6 +127,7 @@ class InvitationController extends GetxController {
     fetchOngoingInvitations();
     fetchApprovalTickets();
     fetchMasterData();
+    fetchDashboardShareLinks();
   }
 
   @override
@@ -385,6 +388,7 @@ class InvitationController extends GetxController {
 
           allInvitations.assignAll(allVisitors);
           _applyFilters();
+          _prefetchTransactionVisitorCounts(allVisitors);
           fetchVisitorTodayCount();
         }
       }
@@ -1127,21 +1131,82 @@ class InvitationController extends GetxController {
     }
   }
 
-  Future<void> fetchVisitorTodayCount() async {
-    final date = selectedDashboardDate.value;
-    debugPrint('fetchVisitorTodayCount: called for date $date');
-    final user = _hive.getUser();
-    final token = user?.token;
-    if (token == null) {
-      debugPrint('fetchVisitorTodayCount: token is null');
-      visitorTodayCount.value = 0;
-      return;
+  List<AccessPassModel> _parseAndCacheSubVisitors(AccessPassModel parent, List<Map<String, dynamic>> list) {
+    final List<AccessPassModel> results = [];
+    final parentFlow = parent.flow;
+    final parentSiteId = parent.siteId;
+    final parentSitePlaceName = parent.sitePlaceName;
+    final parentPeriodStart = parent.visitorPeriodStart;
+    final parentPeriodEnd = parent.visitorPeriodEnd;
+    final parentAgenda = parent.agenda;
+    final parentHostName = parent.hostName;
+    final parentVisitorTypeName = parent.visitorTypeName;
+    final parentVisitorTypeId = parent.visitorTypeId;
+    final parentGCode = parent.groupCode.isNotEmpty
+        ? parent.groupCode
+        : (parent.invitationCode.contains('-')
+            ? parent.invitationCode.split('-').first
+            : '');
+
+    for (var visitor in list) {
+      final mutableVisitor = Map<String, dynamic>.from(visitor);
+      if ((mutableVisitor['flow']?.toString() ?? '').isEmpty) {
+        mutableVisitor['flow'] = parentFlow;
+      }
+      if ((mutableVisitor['site_id']?.toString() ?? '').isEmpty &&
+          (mutableVisitor['site_place']?.toString() ?? '').isEmpty) {
+        mutableVisitor['site_id'] = parentSiteId;
+      }
+      if ((mutableVisitor['site_place_name']?.toString() ?? '').isEmpty) {
+        mutableVisitor['site_place_name'] = parentSitePlaceName;
+      }
+      if (mutableVisitor['visitor_period_start'] == null &&
+          mutableVisitor['visit_start'] == null &&
+          mutableVisitor['start_date'] == null &&
+          mutableVisitor['visit_date'] == null) {
+        mutableVisitor['visitor_period_start'] = parentPeriodStart.toIso8601String();
+      }
+      if (mutableVisitor['visitor_period_end'] == null &&
+          mutableVisitor['visit_end'] == null &&
+          mutableVisitor['end_date'] == null) {
+        mutableVisitor['visitor_period_end'] = parentPeriodEnd.toIso8601String();
+      }
+      if ((mutableVisitor['agenda']?.toString() ?? '').isEmpty) {
+        mutableVisitor['agenda'] = parentAgenda;
+      }
+      if ((mutableVisitor['host_name']?.toString() ?? '').isEmpty) {
+        mutableVisitor['host_name'] = parentHostName;
+      }
+      if ((mutableVisitor['visitor_type_name']?.toString() ?? '').isEmpty) {
+        mutableVisitor['visitor_type_name'] = parentVisitorTypeName;
+      }
+      if ((mutableVisitor['visitor_type_id']?.toString() ?? '').isEmpty) {
+        mutableVisitor['visitor_type_id'] = parentVisitorTypeId;
+      }
+      if ((mutableVisitor['group_code']?.toString() ?? '').isEmpty) {
+        mutableVisitor['group_code'] = parentGCode;
+      }
+      if ((mutableVisitor['group_name']?.toString() ?? '').isEmpty) {
+        mutableVisitor['group_name'] = parent.groupName;
+      }
+      if (mutableVisitor['transaction_status'] == null &&
+          mutableVisitor['visitor_status'] == null) {
+        mutableVisitor['transaction_status'] = parent.visitorStatus;
+      }
+
+      results.add(AccessPassModel.fromJson(mutableVisitor));
     }
 
-    final fetchId = ++_visitorTodayFetchId;
-    isVisitorTodayLoading.value = true;
+    if (results.isEmpty) {
+      results.add(parent);
+    }
+    
+    transactionVisitorsCache[parent.id] = results;
+    return results;
+  }
 
-    debugPrint('fetchVisitorTodayCount: allRawVisitors length is ${allRawVisitors.length}');
+  List<AccessPassModel> getTodayVisitors() {
+    final date = selectedDashboardDate.value;
     final todayTransactions = allRawVisitors.where((item) {
       final itemDate = item.visitorPeriodStart;
       final isEmptyDraft = item.agenda.isEmpty &&
@@ -1153,61 +1218,147 @@ class InvitationController extends GetxController {
           !isEmptyDraft;
     }).toList();
 
-    debugPrint('fetchVisitorTodayCount: todayTransactions on this day is ${todayTransactions.length}');
-
-    // Optimistic estimate: count 1 for single, parse visitorNumber for group
-    int localEstimate = todayTransactions.fold<int>(0, (sum, item) {
-      if (item.isGroup) {
-        final parsed = int.tryParse(item.visitorNumber) ?? 1;
-        return sum + (parsed > 0 ? parsed : 1);
+    final List<AccessPassModel> results = [];
+    for (final tx in todayTransactions) {
+      final cachedList = transactionVisitorsCache[tx.id];
+      if (cachedList != null && cachedList.isNotEmpty) {
+        results.addAll(cachedList);
+      } else {
+        // Fallback to tx parent itself if cache not populated yet
+        results.add(tx);
       }
-      return sum + 1;
-    });
+    }
+    
+    // Filter out visitors with empty names
+    final filteredResults = results.where((item) => item.visitorName.trim().isNotEmpty).toList();
+    
+    // Sort descending by visitorPeriodStart
+    filteredResults.sort((a, b) => b.visitorPeriodStart.compareTo(a.visitorPeriodStart));
+    return filteredResults;
+  }
 
-    visitorTodayCount.value = localEstimate;
+  Future<void> _prefetchTransactionVisitorCounts(List<AccessPassModel> items) async {
+    final user = _hive.getUser();
+    final token = user?.token;
+    if (token == null) return;
 
-    if (todayTransactions.isEmpty) {
-      if (fetchId == _visitorTodayFetchId) {
-        isVisitorTodayLoading.value = false;
-      }
+    final List<Future<void>> tasks = [];
+    for (final item in items) {
+      if (transactionVisitorCounts.containsKey(item.id)) continue;
+      
+      final isEmptyDraft = item.agenda.isEmpty &&
+          item.hostName.isEmpty &&
+          item.visitorTypeName.isEmpty;
+      if (isEmptyDraft) continue;
+
+      tasks.add(() async {
+        try {
+          final list = await fetchTransactionVisitors(item.id);
+          _parseAndCacheSubVisitors(item, list);
+          
+          int count = 1;
+          if (list.isNotEmpty) {
+            count = list.length;
+          } else if (item.isGroup) {
+            final parsed = int.tryParse(item.visitorNumber) ?? 1;
+            count = parsed > 0 ? parsed : 1;
+          }
+          transactionVisitorCounts[item.id] = count;
+        } catch (_) {}
+      }());
+    }
+
+    if (tasks.isNotEmpty) {
+      await Future.wait(tasks);
+      fetchVisitorTodayCount();
+    }
+  }
+
+  Future<void> fetchVisitorTodayCount() async {
+    final date = selectedDashboardDate.value;
+    debugPrint('fetchVisitorTodayCount: called for date $date');
+    final user = _hive.getUser();
+    final token = user?.token;
+    if (token == null) {
+      debugPrint('fetchVisitorTodayCount: token is null');
+      visitorTodayCount.value = 0;
       return;
     }
 
-    try {
-      // Async fetch for all transactions
-      final tasks = todayTransactions.map((item) async {
-        final list = await fetchTransactionVisitors(item.id);
-        if (list.isNotEmpty) {
-          return {'count': list.length, 'isFallback': false};
-        } else {
-          // Fallback if empty/fails
-          if (item.isGroup) {
-            final parsed = int.tryParse(item.visitorNumber) ?? 1;
-            return {'count': parsed > 0 ? parsed : 1, 'isFallback': true};
-          }
-          return {'count': 1, 'isFallback': true};
+    final todayTransactions = allRawVisitors.where((item) {
+      final itemDate = item.visitorPeriodStart;
+      final isEmptyDraft = item.agenda.isEmpty &&
+          item.hostName.isEmpty &&
+          item.visitorTypeName.isEmpty;
+      return itemDate.year == date.year &&
+          itemDate.month == date.month &&
+          itemDate.day == date.day &&
+          !isEmptyDraft;
+    }).toList();
+
+    debugPrint('fetchVisitorTodayCount: allRawVisitors length is ${allRawVisitors.length}');
+    debugPrint('fetchVisitorTodayCount: todayTransactions on this day is ${todayTransactions.length}');
+
+    int total = 0;
+    final List<AccessPassModel> missingTransactions = [];
+
+    for (final item in todayTransactions) {
+      if (transactionVisitorCounts.containsKey(item.id)) {
+        total += transactionVisitorCounts[item.id]!;
+      } else {
+        int estimate = 1;
+        if (item.isGroup) {
+          final parsed = int.tryParse(item.visitorNumber) ?? 1;
+          estimate = parsed > 0 ? parsed : 1;
         }
+        total += estimate;
+        missingTransactions.add(item);
+      }
+    }
+
+    visitorTodayCount.value = total;
+
+    if (missingTransactions.isEmpty) {
+      isVisitorTodayLoading.value = false;
+      return;
+    }
+
+    final fetchId = ++_visitorTodayFetchId;
+    isVisitorTodayLoading.value = true;
+
+    try {
+      final tasks = missingTransactions.map((item) async {
+        final list = await fetchTransactionVisitors(item.id);
+        _parseAndCacheSubVisitors(item, list);
+        
+        int count = 1;
+        if (list.isNotEmpty) {
+          count = list.length;
+        } else if (item.isGroup) {
+          final parsed = int.tryParse(item.visitorNumber) ?? 1;
+          count = parsed > 0 ? parsed : 1;
+        }
+        transactionVisitorCounts[item.id] = count;
       });
 
-      final results = await Future.wait(tasks);
+      await Future.wait(tasks);
 
       if (fetchId == _visitorTodayFetchId) {
-        final total = results.fold<int>(0, (sum, res) => sum + (res['count'] as int));
-        visitorTodayCount.value = total;
+        int newTotal = 0;
+        for (final item in todayTransactions) {
+          newTotal += transactionVisitorCounts[item.id] ?? 1;
+        }
+        visitorTodayCount.value = newTotal;
         isVisitorTodayLoading.value = false;
         
         debugPrint('--- Visitor Today Calculation Log for Date: $date ---');
         for (int i = 0; i < todayTransactions.length; i++) {
           final tx = todayTransactions[i];
-          final res = results[i];
-          final c = res['count'];
-          final isFallback = res['isFallback'];
-          debugPrint('Tx #${i + 1}: ID=${tx.id}, Agenda="${tx.agenda}", Host="${tx.hostName}", CreatedAt="${tx.invitationCode}", Date=${tx.visitorPeriodStart}, Group=${tx.isGroup}, SubCount=$c, Status="${tx.visitorStatus}", IsFallback=$isFallback');
+          final c = transactionVisitorCounts[tx.id] ?? 1;
+          debugPrint('Tx #${i + 1}: ID=${tx.id}, Agenda="${tx.agenda}", Host="${tx.hostName}", Date=${tx.visitorPeriodStart}, Group=${tx.isGroup}, SubCount=$c, Status="${tx.visitorStatus}"');
         }
-        debugPrint('Total Visitor Today: $total');
+        debugPrint('Total Visitor Today: $newTotal');
         debugPrint('----------------------------------------------------');
-      } else {
-        debugPrint('fetchVisitorTodayCount: fetchId $fetchId is obsolete, ignored');
       }
     } catch (e) {
       debugPrint('fetchVisitorTodayCount async error: $e');

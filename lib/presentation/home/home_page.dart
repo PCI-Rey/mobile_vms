@@ -15,6 +15,8 @@ import '../../presentation/auth/controller/user_controller.dart';
 import '../../core/core.dart';
 import 'access_pass/access_pass_page.dart';
 import 'approval/approval_page.dart';
+import 'today_activity_page.dart';
+import 'new_visitor_page.dart';
 import 'invitation/controller/invitation_controller.dart';
 import 'invitation/widgets/create_share_link_dialog.dart';
 import 'invitation/widgets/create_quick_access_dialog.dart';
@@ -639,11 +641,12 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     return Scaffold(
       backgroundColor: _bgPage,
       body: Stack(
+        clipBehavior: Clip.hardEdge,
         children: [
           // 1. Full background gradient
           Container(
             width: double.infinity,
-            height: MediaQuery.of(context).size.height,
+            height: double.infinity,
             decoration: const BoxDecoration(
               gradient: LinearGradient(
                 colors: [_blue, _blueDark],
@@ -1343,10 +1346,627 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
           _buildSummaryCards(context),
           vSpace(context, 24),
           _buildQuickActions(context),
+          vSpace(context, 24),
+          _buildTodayActivity(context),
+          vSpace(context, 24),
+          _buildNewVisitor(context),
         ],
       ),
     );
   }
+
+  Widget _buildTodayActivity(BuildContext context) {
+    return Obx(() {
+      final date = invitationController.selectedDashboardDate.value;
+      final isId = langCtrl.selectedLang.value == 'id';
+      
+      final List<_ActivityItem> activities = [];
+
+      // 1. Invitations created today
+      for (final item in invitationController.allRawVisitors) {
+        if (item.flow.toLowerCase() == 'quickaccessvisit') continue;
+        if (item.agenda.isEmpty && item.hostName.isEmpty && item.visitorTypeName.isEmpty) continue;
+        
+        final createdAt = item.invitationCreatedAt ?? item.visitorPeriodStart;
+        if (createdAt.year == date.year &&
+            createdAt.month == date.month &&
+            createdAt.day == date.day) {
+          activities.add(_ActivityItem(
+            title: isId ? 'Undangan dibuat' : 'Invitation created',
+            description: item.visitorName.trim().isEmpty ? item.agenda : '${item.visitorName.trim()} - ${item.agenda}',
+            timestamp: createdAt,
+            icon: Icons.calendar_month_outlined,
+            iconColor: const Color(0xFF3B6D11),
+            bgColor: const Color(0xFFEAF3DE),
+          ));
+        }
+      }
+
+      // 2. Quick Access created today
+      for (final item in invitationController.allRawVisitors) {
+        if (item.flow.toLowerCase() != 'quickaccessvisit') continue;
+        if (item.agenda.isEmpty && item.hostName.isEmpty && item.visitorTypeName.isEmpty) continue;
+        
+        final createdAt = item.invitationCreatedAt ?? item.visitorPeriodStart;
+        if (createdAt.year == date.year &&
+            createdAt.month == date.month &&
+            createdAt.day == date.day) {
+          activities.add(_ActivityItem(
+            title: isId ? 'Quick Access dibuat' : 'Quick Access created',
+            description: item.visitorName.trim().isEmpty ? item.agenda : '${item.visitorName.trim()} - ${item.agenda}',
+            timestamp: createdAt,
+            icon: Icons.flash_on_rounded,
+            iconColor: const Color(0xFFFF9800),
+            bgColor: const Color(0xFFFFF4E5),
+          ));
+        }
+      }
+
+      // 3. Share Links created today
+      for (final item in invitationController.dashboardShareLinks) {
+        final dateStr = item['created_at']?.toString() ??
+            item['visitor_period_start']?.toString() ??
+            item['expired_at']?.toString();
+        if (dateStr != null) {
+          try {
+            String normalized = dateStr;
+            if (!normalized.endsWith('Z') && !normalized.contains('+')) {
+              normalized = '${normalized.replaceFirst(' ', 'T')}Z';
+            }
+            final createdAt = DateTime.parse(normalized).toLocal();
+            if (createdAt.year == date.year &&
+                createdAt.month == date.month &&
+                createdAt.day == date.day) {
+              activities.add(_ActivityItem(
+                title: isId ? 'Tautan dibagikan' : 'Link shared',
+                description: '${item['site_place_name'] ?? item['site_name'] ?? 'Gedung'} - ${item['agenda'] ?? ''}',
+                timestamp: createdAt,
+                icon: Icons.add_link,
+                iconColor: const Color(0xFF534AB7),
+                bgColor: const Color(0xFFF3EEFE),
+              ));
+            }
+          } catch (e) {
+            debugPrint('Error parsing share link date: $e');
+          }
+        }
+      }
+
+      // 4. Approvals processed today
+      for (final ticket in invitationController.approvalTickets) {
+        final isPending = (ticket.approvalActorStatus ?? '').toLowerCase() == 'pending' ||
+                          (ticket.approvalStatus ?? '').toLowerCase() == 'pending';
+        final isApproved = (ticket.approvalActorStatus ?? '').toLowerCase() == 'approved' ||
+                           (ticket.approvalStatus ?? '').toLowerCase() == 'approved';
+        final isRejected = (ticket.approvalActorStatus ?? '').toLowerCase() == 'rejected' ||
+                           (ticket.approvalActorStatus ?? '').toLowerCase() == 'denied' ||
+                           (ticket.approvalStatus ?? '').toLowerCase() == 'rejected' ||
+                           (ticket.approvalStatus ?? '').toLowerCase() == 'denied';
+
+        if (isPending) {
+          final createdAt = ticket.approvalTicketAt;
+          if (createdAt != null &&
+              createdAt.year == date.year &&
+              createdAt.month == date.month &&
+              createdAt.day == date.day) {
+            activities.add(_ActivityItem(
+              title: isId ? 'Persetujuan diterima' : 'Approval request received',
+              description: 'Akses pending untuk ${ticket.hostName ?? 'Visitor'} - ${ticket.agenda ?? ''}',
+              timestamp: createdAt,
+              icon: Icons.access_time,
+              iconColor: const Color(0xFFE65100),
+              bgColor: const Color(0xFFFFF3E0),
+            ));
+          }
+        } else if (isApproved) {
+          final approvedAt = ticket.approvedAt ?? ticket.approvalTicketAt;
+          if (approvedAt != null &&
+              approvedAt.year == date.year &&
+              approvedAt.month == date.month &&
+              approvedAt.day == date.day) {
+            activities.add(_ActivityItem(
+              title: isId ? 'Persetujuan disetujui' : 'Approval approved',
+              description: 'Akses disetujui untuk ${ticket.hostName ?? 'Visitor'} - ${ticket.agenda ?? ''}',
+              timestamp: approvedAt,
+              icon: Icons.check_circle_outline,
+              iconColor: const Color(0xFF43A047),
+              bgColor: const Color(0xFFE8F5E9),
+            ));
+          }
+        } else if (isRejected) {
+          final approvedAt = ticket.approvedAt ?? ticket.approvalTicketAt;
+          if (approvedAt != null &&
+              approvedAt.year == date.year &&
+              approvedAt.month == date.month &&
+              approvedAt.day == date.day) {
+            activities.add(_ActivityItem(
+              title: isId ? 'Persetujuan ditolak' : 'Approval rejected',
+              description: 'Akses ditolak untuk ${ticket.hostName ?? 'Visitor'} - ${ticket.agenda ?? ''}',
+              timestamp: approvedAt,
+              icon: Icons.cancel_outlined,
+              iconColor: const Color(0xFFD32F2F),
+              bgColor: const Color(0xFFFFEBEE),
+            ));
+          }
+        }
+      }
+
+      // Sort activities descending by timestamp
+      activities.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+
+      final sectionHeaderTitle = isId ? 'Aktivitas Hari Ini' : 'Activity Today';
+
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildSectionHeader(
+            context,
+            sectionHeaderTitle,
+          ),
+          vSpace(context, 16),
+          if (activities.isEmpty)
+            Container(
+              width: double.infinity,
+              padding: EdgeInsets.symmetric(vertical: rh(context, 32)),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(rw(context, 16)),
+                border: Border.all(color: Colors.grey.shade200),
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.history_toggle_off_rounded,
+                    size: rw(context, 48),
+                    color: Colors.grey.shade400,
+                  ),
+                  vSpace(context, 12),
+                  Text(
+                    isId ? 'Tidak ada aktivitas hari ini' : 'No activity today',
+                    style: TextStyle(
+                      fontSize: rfs(context, 13),
+                      color: Colors.grey.shade500,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            )
+          else
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(rw(context, 16)),
+                border: Border.all(color: Colors.grey.shade200),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.02),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Column(
+                children: [
+                  ...activities.take(3).map((activity) {
+                    final isLast = activities.indexOf(activity) == activities.take(3).length - 1;
+                    return Column(
+                      children: [
+                        _buildActivityRow(context, activity),
+                        if (!isLast)
+                          Divider(
+                            height: 1,
+                            thickness: 0.5,
+                            color: Colors.grey.shade100,
+                            indent: rw(context, 76),
+                          ),
+                      ],
+                    );
+                  }),
+                  if (activities.length > 3) ...[
+                    Divider(
+                      height: 1,
+                      thickness: 0.5,
+                      color: Colors.grey.shade100,
+                    ),
+                    TextButton(
+                      onPressed: () => context.push(const TodayActivityPage()),
+                      style: TextButton.styleFrom(
+                        padding: EdgeInsets.symmetric(vertical: rh(context, 14)),
+                        minimumSize: Size.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        foregroundColor: AppColors.primary500,
+                        shape: const RoundedRectangleBorder(
+                          borderRadius: BorderRadius.vertical(
+                            bottom: Radius.circular(16),
+                          ),
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            isId ? 'Lihat Semua Aktivitas' : 'See All Activities',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: rfs(context, 13),
+                            ),
+                          ),
+                          hSpace(context, 6),
+                          Icon(
+                            Icons.arrow_forward_rounded,
+                            size: rw(context, 14),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ]
+                ],
+              ),
+            ),
+        ],
+      );
+    });
+  }
+
+  Widget _buildActivityRow(BuildContext context, _ActivityItem activity) {
+    final timeStr = DateFormat('HH:mm').format(activity.timestamp);
+    return Padding(
+      padding: EdgeInsets.symmetric(
+        horizontal: rw(context, 16),
+        vertical: rh(context, 14),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Container(
+            width: rw(context, 44),
+            height: rw(context, 44),
+            decoration: BoxDecoration(
+              color: activity.bgColor,
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              activity.icon,
+              color: activity.iconColor,
+              size: rw(context, 20),
+            ),
+          ),
+          hSpace(context, 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  activity.title,
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: rfs(context, 13.5),
+                    color: Colors.black87,
+                  ),
+                ),
+                vSpace(context, 4),
+                Text(
+                  activity.description,
+                  style: TextStyle(
+                    fontSize: rfs(context, 12),
+                    color: Colors.grey.shade600,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+          hSpace(context, 12),
+          Text(
+            timeStr,
+            style: TextStyle(
+              fontSize: rfs(context, 12),
+              fontWeight: FontWeight.w600,
+              color: Colors.grey.shade500,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNewVisitor(BuildContext context) {
+    return Obx(() {
+      final date = invitationController.selectedDashboardDate.value;
+      final isId = langCtrl.selectedLang.value == 'id';
+
+      final List<AccessPassModel> newVisitors = invitationController.getTodayVisitors();
+      final sectionHeaderTitle = isId ? 'Visitor Terbaru' : 'New Visitor';
+
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildSectionHeader(
+            context,
+            sectionHeaderTitle,
+          ),
+          vSpace(context, 16),
+          if (newVisitors.isEmpty)
+            Container(
+              width: double.infinity,
+              padding: EdgeInsets.symmetric(vertical: rh(context, 32)),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(rw(context, 16)),
+                border: Border.all(color: Colors.grey.shade200),
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.people_outline_rounded,
+                    size: rw(context, 48),
+                    color: Colors.grey.shade400,
+                  ),
+                  vSpace(context, 12),
+                  Text(
+                    isId ? 'Tidak ada visitor baru hari ini' : 'No new visitors today',
+                    style: TextStyle(
+                      fontSize: rfs(context, 13),
+                      color: Colors.grey.shade500,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            )
+          else
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(rw(context, 16)),
+                border: Border.all(color: Colors.grey.shade200),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.02),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Column(
+                children: [
+                  ...newVisitors.take(3).map((visitor) {
+                    final index = newVisitors.indexOf(visitor);
+                    final isLast = index == newVisitors.take(3).length - 1;
+                    return Column(
+                      children: [
+                        _buildVisitorRow(context, visitor, index),
+                        if (!isLast)
+                          Divider(
+                            height: 1,
+                            thickness: 0.5,
+                            color: Colors.grey.shade100,
+                            indent: rw(context, 76),
+                          ),
+                      ],
+                    );
+                  }),
+                  if (newVisitors.length > 3) ...[
+                    Divider(
+                      height: 1,
+                      thickness: 0.5,
+                      color: Colors.grey.shade100,
+                    ),
+                    TextButton(
+                      onPressed: () => context.push(const NewVisitorPage()),
+                      style: TextButton.styleFrom(
+                        padding: EdgeInsets.symmetric(vertical: rh(context, 14)),
+                        minimumSize: Size.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        foregroundColor: AppColors.primary500,
+                        shape: const RoundedRectangleBorder(
+                          borderRadius: BorderRadius.vertical(
+                            bottom: Radius.circular(16),
+                          ),
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            isId ? 'Lihat Semua Visitor' : 'See All New Visitors',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: rfs(context, 13),
+                            ),
+                          ),
+                          hSpace(context, 6),
+                          Icon(
+                            Icons.arrow_forward_rounded,
+                            size: rw(context, 14),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ]
+                ],
+              ),
+            ),
+        ],
+      );
+    });
+  }
+
+  Map<String, Color> _getBadgeColors(String status) {
+    final lower = status.toLowerCase().trim();
+    if (lower == 'checkin') {
+      return {
+        'bg': const Color(0xFFE8F5E9),
+        'text': const Color(0xFF2E7D32),
+      };
+    } else if (lower == 'checkout') {
+      return {
+        'bg': const Color(0xFFE8EAF6),
+        'text': const Color(0xFF283593),
+      };
+    } else if (lower == 'pending' || lower == 'waiting') {
+      return {
+        'bg': const Color(0xFFFFF3E0),
+        'text': const Color(0xFFEF6C00),
+      };
+    } else if (lower == 'reject' || lower == 'rejected' || lower == 'denied' || lower == 'deny') {
+      return {
+        'bg': const Color(0xFFFFEBEE),
+        'text': const Color(0xFFC62828),
+      };
+    } else {
+      // Active, Available, or others
+      return {
+        'bg': const Color(0xFFE0F7FA),
+        'text': const Color(0xFF006064),
+      };
+    }
+  }
+
+  String _displayStatus(String status) {
+    final lowerStatus = status.toLowerCase().trim();
+    if (lowerStatus == 'available') {
+      return 'Available';
+    } else if (lowerStatus == 'pending' || lowerStatus == 'waiting') {
+      return 'Pending';
+    } else if (lowerStatus == 'undercreated') {
+      return 'Under Created';
+    } else if (lowerStatus == 'checkin') {
+      return 'Checked In';
+    } else if (lowerStatus == 'checkout') {
+      return 'Checked Out';
+    } else if (lowerStatus == 'reject' ||
+        lowerStatus == 'rejected' ||
+        lowerStatus == 'denied' ||
+        lowerStatus == 'deny') {
+      return 'Rejected';
+    } else if (lowerStatus == 'preregis' ||
+        lowerStatus == 'praregis' ||
+        lowerStatus == 'praregister') {
+      return 'Praregis';
+    } else if (lowerStatus == 'quickaccess') {
+      return 'Quick Access';
+    } else if (status.isNotEmpty) {
+      return status[0].toUpperCase() + status.substring(1);
+    }
+    return 'Active';
+  }
+
+  Widget _buildVisitorRow(BuildContext context, AccessPassModel visitor, int index) {
+    final timeStr = DateFormat('HH:mm').format(visitor.visitorPeriodStart);
+    final badgeColors = _getBadgeColors(visitor.visitorStatus);
+    final displayStatus = _displayStatus(visitor.visitorStatus);
+
+    final initials = visitor.visitorName.trim().isNotEmpty
+        ? visitor.visitorName.trim()[0].toUpperCase()
+        : 'V';
+
+    final colors = [
+      const Color(0xFF1976D2), // Blue
+      const Color(0xFF388E3C), // Green
+      const Color(0xFFD32F2F), // Red
+      const Color(0xFFF57C00), // Orange
+      const Color(0xFF7B1FA2), // Purple
+    ];
+    final color = colors[index % colors.length];
+
+    return Padding(
+      padding: EdgeInsets.symmetric(
+        horizontal: rw(context, 16),
+        vertical: rh(context, 14),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Container(
+            width: rw(context, 44),
+            height: rw(context, 44),
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.12),
+              shape: BoxShape.circle,
+            ),
+            child: Center(
+              child: Text(
+                initials,
+                style: TextStyle(
+                  color: color,
+                  fontWeight: FontWeight.bold,
+                  fontSize: rfs(context, 16),
+                ),
+              ),
+            ),
+          ),
+          hSpace(context, 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  visitor.visitorName,
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: rfs(context, 13.5),
+                    color: Colors.black87,
+                  ),
+                ),
+                vSpace(context, 4),
+                Text(
+                  visitor.visitorOrganizationName.isEmpty ? '-' : visitor.visitorOrganizationName,
+                  style: TextStyle(
+                    fontSize: rfs(context, 12),
+                    color: Colors.grey.shade600,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+          hSpace(context, 12),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: EdgeInsets.symmetric(
+                  horizontal: rw(context, 8),
+                  vertical: rh(context, 4),
+                ),
+                decoration: BoxDecoration(
+                  color: badgeColors['bg'],
+                  borderRadius: BorderRadius.circular(rw(context, 20)),
+                ),
+                child: Text(
+                  displayStatus,
+                  style: TextStyle(
+                    fontSize: rfs(context, 11),
+                    fontWeight: FontWeight.bold,
+                    color: badgeColors['text'],
+                  ),
+                ),
+              ),
+              vSpace(context, 6),
+              Text(
+                timeStr,
+                style: TextStyle(
+                  fontSize: rfs(context, 11),
+                  fontWeight: FontWeight.w600,
+                  color: Colors.grey.shade500,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
 
   Widget _buildSummaryCards(BuildContext context) {
     return Obx(() {
@@ -2014,4 +2634,22 @@ class _FlyingIconAnimationState extends State<FlyingIconAnimation>
       },
     );
   }
+}
+
+class _ActivityItem {
+  final String title;
+  final String description;
+  final DateTime timestamp;
+  final IconData icon;
+  final Color iconColor;
+  final Color bgColor;
+
+  _ActivityItem({
+    required this.title,
+    required this.description,
+    required this.timestamp,
+    required this.icon,
+    required this.iconColor,
+    required this.bgColor,
+  });
 }

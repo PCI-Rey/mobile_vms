@@ -1654,12 +1654,11 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
                         vertical: 4,
                       ),
                       decoration: pw.BoxDecoration(
-                        color: const PdfColor(1.0, 1.0, 1.0, 0.18),
                         borderRadius: const pw.BorderRadius.all(
                           pw.Radius.circular(4),
                         ),
                         border: pw.Border.all(
-                          color: const PdfColor(1.0, 1.0, 1.0, 0.4),
+                          color: PdfColors.white,
                           width: 1,
                         ),
                       ),
@@ -1973,9 +1972,9 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
 
       Get.snackbar(
         'Success',
-        'PDF Access Pass berhasil diunduh!',
+        'PDF Access Pass downloaded successfully!',
         messageText: const Text(
-          'PDF Access Pass berhasil diunduh!',
+          'PDF Access Pass downloaded successfully!',
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
         titleText: const SizedBox.shrink(),
@@ -2000,7 +1999,7 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
               borderRadius: BorderRadius.circular(6),
             ),
             child: const Text(
-              'BUKA',
+              'OPEN',
               style: TextStyle(
                 color: Colors.green,
                 fontWeight: FontWeight.bold,
@@ -2012,9 +2011,9 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
     } catch (e) {
       Get.snackbar(
         'Error',
-        'Gagal mengunduh PDF Access Pass',
+        'Failed to download PDF Access Pass',
         messageText: const Text(
-          'Gagal mengunduh PDF Access Pass',
+          'Failed to download PDF Access Pass',
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
         titleText: const SizedBox.shrink(),

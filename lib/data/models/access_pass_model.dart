@@ -44,6 +44,7 @@ class AccessPassModel {
   final String groupCode;
   final bool? canTrackBle;
   final bool? canAccess;
+  final DateTime? invitationCreatedAt;
 
   AccessPassModel({
     required this.id,
@@ -88,6 +89,7 @@ class AccessPassModel {
     this.groupCode = '',
     this.canTrackBle = false,
     this.canAccess = false,
+    this.invitationCreatedAt,
   });
 
   factory AccessPassModel.fromRawJson(String str) =>
@@ -176,6 +178,9 @@ class AccessPassModel {
       canAccess: json['can_access'] == true ||
           json['can_access'] == 1 ||
           json['can_access']?.toString() == 'true',
+      invitationCreatedAt: json['invitation_created_at'] != null
+          ? _parseUtcToLocal(json['invitation_created_at'].toString())
+          : null,
     );
   }
 
@@ -222,6 +227,7 @@ class AccessPassModel {
     'group_code': groupCode,
     'can_track_ble': canTrackBle,
     'can_access': canAccess,
+    'invitation_created_at': invitationCreatedAt?.toIso8601String(),
   };
 
   /// Parse a datetime string from the API as UTC and convert to device local time.
