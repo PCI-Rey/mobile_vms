@@ -1,6 +1,10 @@
+import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:open_filex/open_filex.dart';
 import '../../core/core.dart';
 import '../../core/helper/responsive_helper.dart';
 import '../auth/controller/language_controller.dart';
@@ -40,24 +44,36 @@ class TodaySummaryPage extends StatelessWidget {
       final isPending =
           (t.approvalActorStatus ?? '').toLowerCase() == 'pending' ||
           (t.approvalStatus ?? '').toLowerCase() == 'pending';
-      if (!isPending) return false;
+      if (!isPending) {
+        return false;
+      }
       final itemDate = t.visitorPeriodStart;
-      if (itemDate == null) return false;
+      if (itemDate == null) {
+        return false;
+      }
       return itemDate.year == date.year &&
           itemDate.month == date.month &&
           itemDate.day == date.day;
     }).length;
 
     final activeInvitationCount = invitationController.allRawVisitors.where((item) {
-      if (item.flow.toLowerCase() == 'quickaccessvisit') return false;
+      if (item.flow.toLowerCase() == 'quickaccessvisit') {
+        return false;
+      }
       if (item.agenda.isEmpty &&
           item.hostName.isEmpty &&
-          item.visitorTypeName.isEmpty) return false;
+          item.visitorTypeName.isEmpty) {
+        return false;
+      }
       final itemDate = item.visitorPeriodStart;
       if (itemDate.year != date.year ||
           itemDate.month != date.month ||
-          itemDate.day != date.day) return false;
-      if (item.visitorPeriodEnd.isBefore(DateTime.now())) return false;
+          itemDate.day != date.day) {
+        return false;
+      }
+      if (item.visitorPeriodEnd.isBefore(DateTime.now())) {
+        return false;
+      }
       return true;
     }).length;
 
@@ -92,9 +108,13 @@ class TodaySummaryPage extends StatelessWidget {
         final isPending =
             (t.approvalActorStatus ?? '').toLowerCase() == 'pending' ||
             (t.approvalStatus ?? '').toLowerCase() == 'pending';
-        if (!isPending) return false;
+        if (!isPending) {
+          return false;
+        }
         final itemDate = t.visitorPeriodStart;
-        if (itemDate == null) return false;
+        if (itemDate == null) {
+          return false;
+        }
         return itemDate.year == date.year &&
             itemDate.month == date.month &&
             itemDate.day == date.day;
@@ -116,10 +136,7 @@ class TodaySummaryPage extends StatelessWidget {
         appBar: AppBar(
           backgroundColor: Colors.white,
           elevation: 0,
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back, color: Colors.black87),
-            onPressed: () => Navigator.pop(context),
-          ),
+          leading: const BackButton(color: Colors.black87),
           centerTitle: false,
           title: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -128,8 +145,8 @@ class TodaySummaryPage extends StatelessWidget {
                 pageTitle,
                 style: TextStyle(
                   color: Colors.black87,
-                  fontWeight: FontWeight.bold,
-                  fontSize: rfs(context, 18),
+                  fontWeight: FontWeight.w700,
+                  fontSize: rfs(context, 24),
                 ),
               ),
               const SizedBox(height: 2),
@@ -149,18 +166,36 @@ class TodaySummaryPage extends StatelessWidget {
               ),
             ],
           ),
-          bottom: TabBar(
-            labelColor: const Color(0xFF1976D2),
-            unselectedLabelColor: Colors.grey,
-            indicatorColor: const Color(0xFF1976D2),
-            indicatorSize: TabBarIndicatorSize.tab,
-            labelStyle: TextStyle(fontWeight: FontWeight.bold, fontSize: rfs(context, 13)),
-            unselectedLabelStyle: TextStyle(fontWeight: FontWeight.normal, fontSize: rfs(context, 13)),
-            tabs: [
-              Tab(text: tabAll),
-              Tab(text: tabDetail),
-              Tab(text: tabHistory),
-            ],
+          bottom: PreferredSize(
+            preferredSize: Size.fromHeight(rh(context, 48)),
+            child: Container(
+              color: Colors.white,
+              child: MediaQuery(
+                data: MediaQuery.of(context).copyWith(textScaler: TextScaler.noScaling),
+                child: TabBar(
+                  dividerColor: Colors.transparent,
+                  labelColor: AppColors.primary600,
+                  unselectedLabelColor: Colors.grey.shade500,
+                  indicatorColor: AppColors.primary600,
+                  indicatorWeight: 2.5,
+                  indicatorSize: TabBarIndicatorSize.label,
+                  labelPadding: EdgeInsets.zero,
+                  labelStyle: TextStyle(
+                    fontSize: rfs(context, 15),
+                    fontWeight: FontWeight.w700,
+                  ),
+                  unselectedLabelStyle: TextStyle(
+                    fontSize: rfs(context, 15),
+                    fontWeight: FontWeight.w500,
+                  ),
+                  tabs: [
+                    Tab(text: tabAll),
+                    Tab(text: tabDetail),
+                    Tab(text: tabHistory),
+                  ],
+                ),
+              ),
+            ),
           ),
         ),
         body: TabBarView(
@@ -205,10 +240,14 @@ class TodaySummaryPage extends StatelessWidget {
     final int checkedOutCount = todayVisitorsList.where((v) => v.visitorStatus.toLowerCase() == 'checkout').length;
 
     final dateInvitations = invitationController.allRawVisitors.where((item) {
-      if (item.flow.toLowerCase() == 'quickaccessvisit') return false;
+      if (item.flow.toLowerCase() == 'quickaccessvisit') {
+        return false;
+      }
       if (item.agenda.isEmpty &&
           item.hostName.isEmpty &&
-          item.visitorTypeName.isEmpty) return false;
+          item.visitorTypeName.isEmpty) {
+        return false;
+      }
       final itemDate = item.visitorPeriodStart;
       return itemDate.year == date.year &&
           itemDate.month == date.month &&
@@ -321,14 +360,7 @@ class TodaySummaryPage extends StatelessWidget {
             width: double.infinity,
             height: rh(context, 44),
             child: ElevatedButton.icon(
-              onPressed: () {
-                Get.snackbar(
-                  isIndo ? 'Mengekspor' : 'Exporting',
-                  isIndo ? 'Mengekspor data ringkasan...' : 'Exporting summary data...',
-                  backgroundColor: const Color(0xFF1976D2),
-                  colorText: Colors.white,
-                );
-              },
+              onPressed: () => _exportSummaryToExcel(context, lang, date),
               icon: const Icon(Icons.file_download_outlined, color: Colors.white),
               label: Text(
                 isIndo ? 'Ekspor Ringkasan' : 'Export Summary',
@@ -532,7 +564,7 @@ class TodaySummaryPage extends StatelessWidget {
             style: TextStyle(
               fontSize: rfs(context, 13),
               fontWeight: isHeader ? FontWeight.bold : FontWeight.normal,
-              color: isHeader ? Colors.black87 : Colors.grey.shade700,
+              color: Colors.grey.shade700,
             ),
           ),
           Text(
@@ -565,7 +597,9 @@ class TodaySummaryPage extends StatelessWidget {
     final date = invitationController.selectedDashboardDate.value;
     final dateTickets = invitationController.approvalTickets.where((t) {
       final itemDate = t.visitorPeriodStart;
-      if (itemDate == null) return false;
+      if (itemDate == null) {
+        return false;
+      }
       return itemDate.year == date.year &&
           itemDate.month == date.month &&
           itemDate.day == date.day;
@@ -596,10 +630,14 @@ class TodaySummaryPage extends StatelessWidget {
 
     // Compute active invitation details dynamically
     final dateInvitations = invitationController.allRawVisitors.where((item) {
-      if (item.flow.toLowerCase() == 'quickaccessvisit') return false;
+      if (item.flow.toLowerCase() == 'quickaccessvisit') {
+        return false;
+      }
       if (item.agenda.isEmpty &&
           item.hostName.isEmpty &&
-          item.visitorTypeName.isEmpty) return false;
+          item.visitorTypeName.isEmpty) {
+        return false;
+      }
       final itemDate = item.visitorPeriodStart;
       return itemDate.year == date.year &&
           itemDate.month == date.month &&
@@ -610,7 +648,9 @@ class TodaySummaryPage extends StatelessWidget {
     final int expiredInvitations = dateInvitations.where((item) => item.visitorPeriodEnd.isBefore(DateTime.now())).length;
     final int expiringSoonInvitations = dateInvitations.where((item) {
       final now = DateTime.now();
-      if (item.visitorPeriodEnd.isBefore(now)) return false;
+      if (item.visitorPeriodEnd.isBefore(now)) {
+        return false;
+      }
       final diff = item.visitorPeriodEnd.difference(now);
       return diff.inDays <= 3;
     }).length;
@@ -770,7 +810,11 @@ class TodaySummaryPage extends StatelessWidget {
         children: [
           Text(
             label,
-            style: TextStyle(fontSize: rfs(context, 13), color: Colors.grey.shade700),
+            style: TextStyle(
+              fontSize: rfs(context, 13), 
+              color: Colors.grey.shade700,
+              fontWeight: FontWeight.normal,
+            ),
           ),
           Text(
             value,
@@ -828,10 +872,14 @@ class TodaySummaryPage extends StatelessWidget {
 
     // 2. Invitations Created
     final dateInvitations = invitationController.allRawVisitors.where((item) {
-      if (item.flow.toLowerCase() == 'quickaccessvisit') return false;
+      if (item.flow.toLowerCase() == 'quickaccessvisit') {
+        return false;
+      }
       if (item.agenda.isEmpty &&
           item.hostName.isEmpty &&
-          item.visitorTypeName.isEmpty) return false;
+          item.visitorTypeName.isEmpty) {
+        return false;
+      }
       final itemDate = item.visitorPeriodStart;
       return itemDate.year == date.year &&
           itemDate.month == date.month &&
@@ -852,7 +900,9 @@ class TodaySummaryPage extends StatelessWidget {
     // 3. Approval Requests
     final dateTickets = invitationController.approvalTickets.where((t) {
       final itemDate = t.visitorPeriodStart;
-      if (itemDate == null) return false;
+      if (itemDate == null) {
+        return false;
+      }
       return itemDate.year == date.year &&
           itemDate.month == date.month &&
           itemDate.day == date.day;
@@ -1019,7 +1069,7 @@ class TodaySummaryPage extends StatelessWidget {
     );
   }
 
-  Widget _dummyPlaceholder() { return const SizedBox.shrink(); } // Temporary to balance diff
+
 
   Widget _buildActivityGroupHeader(BuildContext context, String label) {
     return Padding(
@@ -1130,6 +1180,272 @@ class TodaySummaryPage extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  Future<void> _exportSummaryToExcel(
+    BuildContext context,
+    String lang,
+    DateTime date,
+  ) async {
+    final bool isIndo = lang == 'id';
+    final invitationController = Get.find<InvitationController>();
+    final alarmCtrl = Get.isRegistered<AlarmController>()
+        ? Get.find<AlarmController>()
+        : Get.put(AlarmController());
+
+    final formatDate = DateFormat('yyyy-MM-dd').format(date);
+    final String filename = 'summary_report_$formatDate.csv';
+
+    try {
+      // 1. Show exporting SnackBar
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                ),
+              ),
+              const SizedBox(width: 16),
+              Text(isIndo ? "Mengekspor data ke Excel..." : "Exporting summary to Excel..."),
+            ],
+          ),
+          duration: const Duration(seconds: 1),
+        ),
+      );
+
+      // 2. Gather Stats (similar to what's inside Tab 1 / Tab 2)
+      final todayVisitorsList = invitationController.getTodayVisitors();
+      final int totalTodayVisitors = todayVisitorsList.length;
+      final int checkedInToday = todayVisitorsList.where((v) => v.visitorStatus.toLowerCase() == 'checkin' || v.visitorStatus.toLowerCase() == 'checkout').length;
+      final int checkedOutToday = todayVisitorsList.where((v) => v.visitorStatus.toLowerCase() == 'checkout').length;
+      final int notCheckedInToday = totalTodayVisitors - checkedInToday;
+      final int stillOnSiteToday = todayVisitorsList.where((v) => v.visitorStatus.toLowerCase() == 'checkin').length;
+
+      final dateTickets = invitationController.approvalTickets.where((t) {
+        final itemDate = t.visitorPeriodStart;
+        if (itemDate == null) {
+          return false;
+        }
+        return itemDate.year == date.year &&
+            itemDate.month == date.month &&
+            itemDate.day == date.day;
+      }).toList();
+      final int totalRequests = dateTickets.length;
+      final int awaitingApproval = dateTickets.where((t) {
+        return (t.approvalActorStatus ?? '').toLowerCase() == 'pending' ||
+            (t.approvalStatus ?? '').toLowerCase() == 'pending';
+      }).length;
+      final int approved = dateTickets.where((t) {
+        final status = (t.approvalStatus ?? '').toLowerCase();
+        final actorStatus = (t.approvalActorStatus ?? '').toLowerCase();
+        return status == 'approved' || status == 'success' || actorStatus == 'approved' || actorStatus == 'success';
+      }).toList().length;
+      final int rejected = dateTickets.where((t) {
+        final status = (t.approvalStatus ?? '').toLowerCase();
+        final actorStatus = (t.approvalActorStatus ?? '').toLowerCase();
+        return status == 'rejected' || status == 'reject' || actorStatus == 'rejected' || actorStatus == 'reject';
+      }).toList().length;
+
+      final dateInvitations = invitationController.allRawVisitors.where((item) {
+        if (item.flow.toLowerCase() == 'quickaccessvisit') {
+          return false;
+        }
+        if (item.agenda.isEmpty &&
+            item.hostName.isEmpty &&
+            item.visitorTypeName.isEmpty) {
+          return false;
+        }
+        final itemDate = item.visitorPeriodStart;
+        return itemDate.year == date.year &&
+            itemDate.month == date.month &&
+            itemDate.day == date.day;
+      }).toList();
+      final int activeInvitations = dateInvitations.where((item) {
+        return !item.visitorPeriodEnd.isBefore(DateTime.now());
+      }).length;
+      final int expiredInvitations = dateInvitations.where((item) {
+        return item.visitorPeriodEnd.isBefore(DateTime.now());
+      }).length;
+      final int expiringSoonInvitations = dateInvitations.where((item) {
+        final now = DateTime.now();
+        if (item.visitorPeriodEnd.isBefore(now)) {
+          return false;
+        }
+        final diff = item.visitorPeriodEnd.difference(now);
+        return diff.inDays <= 3;
+      }).length;
+
+      final dateAlarms = alarmCtrl.alarms.where((alarm) {
+        final itemDate = alarm.createdAt;
+        return itemDate.year == date.year &&
+            itemDate.month == date.month &&
+            itemDate.day == date.day;
+      }).toList();
+      final int totalActiveAlarms = dateAlarms.length;
+      final int highPriorityAlarms = dateAlarms.where((a) => a.status == AlarmStatus.high).length;
+      final int mediumPriorityAlarms = dateAlarms.where((a) => a.status == AlarmStatus.medium).length;
+      final int lowPriorityAlarms = dateAlarms.where((a) => a.status == AlarmStatus.low).length;
+
+      // 3. Build CSV string content
+      final StringBuffer csv = StringBuffer();
+      
+      // Header Section
+      csv.writeln('=========================================');
+      csv.writeln(isIndo ? 'LAPORAN RINGKASAN HARIAN' : 'DAILY SUMMARY REPORT');
+      csv.writeln('=========================================');
+      csv.writeln('${isIndo ? "Tanggal Laporan" : "Report Date"}: $formatDate');
+      csv.writeln('${isIndo ? "Waktu Dibuat" : "Generated At"}: ${DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now())}');
+      csv.writeln('');
+
+      // Statistics Section
+      csv.writeln(isIndo ? '1. STATISTIK RINGKASAN' : '1. SUMMARY STATISTICS');
+      csv.writeln('${isIndo ? "Kategori" : "Category"},${isIndo ? "Metrik" : "Metric"},${isIndo ? "Nilai" : "Value"}');
+      csv.writeln('Visitor Today,${isIndo ? "Total Visitor" : "Total Visitors"},$totalTodayVisitors');
+      csv.writeln('Visitor Today,${isIndo ? "Sudah Check-in" : "Checked In"},$checkedInToday');
+      csv.writeln('Visitor Today,${isIndo ? "Belum Check-in" : "Not Checked In"},$notCheckedInToday');
+      csv.writeln('Visitor Today,${isIndo ? "Sudah Check-out" : "Checked Out"},$checkedOutToday');
+      csv.writeln('Visitor Today,${isIndo ? "Masih Berada Di Lokasi" : "Still In Location"},$stillOnSiteToday');
+      
+      csv.writeln('Waiting Approval,${isIndo ? "Total Permintaan" : "Total Requests"},$totalRequests');
+      csv.writeln('Waiting Approval,${isIndo ? "Menunggu Persetujuan" : "Awaiting Approval"},$awaitingApproval');
+      csv.writeln('Waiting Approval,${isIndo ? "Disetujui" : "Approved"},$approved');
+      csv.writeln('Waiting Approval,${isIndo ? "Ditolak" : "Rejected"},$rejected');
+      
+      csv.writeln('Active Invitation,${isIndo ? "Total Undangan Aktif" : "Total Active Invitations"},$activeInvitations');
+      csv.writeln('Active Invitation,${isIndo ? "Akan Kadaluarsa (<= 3 hari)" : "Expiring Soon (<= 3 days)"},$expiringSoonInvitations');
+      csv.writeln('Active Invitation,${isIndo ? "Kadaluarsa" : "Expired"},$expiredInvitations');
+      
+      csv.writeln('Active Alarm,${isIndo ? "Total Alarm Aktif" : "Total Active Alarms"},$totalActiveAlarms');
+      csv.writeln('Active Alarm,${isIndo ? "Prioritas Tinggi" : "High Priority"},$highPriorityAlarms');
+      csv.writeln('Active Alarm,${isIndo ? "Prioritas Sedang" : "Medium Priority"},$mediumPriorityAlarms');
+      csv.writeln('Active Alarm,${isIndo ? "Prioritas Rendah" : "Low Priority"},$lowPriorityAlarms');
+      csv.writeln('');
+
+      // Detail Visitors Section
+      csv.writeln(isIndo ? '2. DAFTAR VISITOR HARI INI' : '2. TODAY VISITOR LIST');
+      csv.writeln('${isIndo ? "Nama Visitor" : "Visitor Name"},${isIndo ? "Tipe Visitor" : "Visitor Type"},${isIndo ? "Nama Host" : "Host Name"},${isIndo ? "Mulai Kunjungan" : "Period Start"},${isIndo ? "Selesai Kunjungan" : "Period End"},Status');
+      for (final v in todayVisitorsList) {
+        final name = v.visitorName.replaceAll(',', ' ');
+        final type = v.visitorTypeName.replaceAll(',', ' ');
+        final host = v.hostName.replaceAll(',', ' ');
+        final start = DateFormat('yyyy-MM-dd HH:mm').format(v.visitorPeriodStart);
+        final end = DateFormat('yyyy-MM-dd HH:mm').format(v.visitorPeriodEnd);
+        csv.writeln('$name,$type,$host,$start,$end,${v.visitorStatus}');
+      }
+      csv.writeln('');
+
+      // Detail Approval Tickets Section
+      csv.writeln(isIndo ? '3. DAFTAR PERSETUJUAN HARI INI' : '3. TODAY APPROVAL LIST');
+      csv.writeln('Agenda,${isIndo ? "Nama Pengaju" : "Visitor Name"},${isIndo ? "Mulai Kunjungan" : "Period Start"},${isIndo ? "Selesai Kunjungan" : "Period End"},Status Approval');
+      for (final t in dateTickets) {
+        final agenda = (t.agenda ?? '-').replaceAll(',', ' ');
+        final String ticketId = t.ticketId ?? '';
+        final String visName = invitationController.ticketVisitorNames[ticketId] ?? t.hostName ?? '-';
+        final name = visName.replaceAll(',', ' ');
+        final start = t.visitorPeriodStart != null ? DateFormat('yyyy-MM-dd HH:mm').format(t.visitorPeriodStart!) : '-';
+        final end = t.visitorPeriodEnd != null ? DateFormat('yyyy-MM-dd HH:mm').format(t.visitorPeriodEnd!) : '-';
+        csv.writeln('$agenda,$name,$start,$end,${t.approvalActorStatus}');
+      }
+      csv.writeln('');
+
+      // Detail Alarms Section
+      csv.writeln(isIndo ? '4. DAFTAR ALARM HARI INI' : '4. TODAY ALARM LIST');
+      csv.writeln('${isIndo ? "Deskripsi" : "Description"},${isIndo ? "Lokasi" : "Location"},${isIndo ? "Status/Prioritas" : "Priority/Status"},${isIndo ? "Waktu Muncul" : "Created At"},Status');
+      for (final a in dateAlarms) {
+        final desc = a.alarmDescription.replaceAll(',', ' ');
+        final loc = a.location.replaceAll(',', ' ');
+        final priority = a.status == AlarmStatus.high ? 'High' : a.status == AlarmStatus.medium ? 'Medium' : 'Low';
+        final start = DateFormat('yyyy-MM-dd HH:mm').format(a.createdAt);
+        final status = a.isApproved ? 'Approved' : a.isDenied ? 'Denied' : 'Active';
+        csv.writeln('$desc,$loc,$priority,$start,$status');
+      }
+
+      // 4. Save to file
+      String? path;
+      bool saveSuccess = false;
+      final bytes = utf8.encode(csv.toString());
+
+      if (Platform.isAndroid) {
+        try {
+          final dir = Directory('/storage/emulated/0/Download');
+          if (await dir.exists()) {
+            final testPath = '${dir.path}/$filename';
+            final file = File(testPath);
+            await file.writeAsBytes(bytes);
+            path = testPath;
+            saveSuccess = true;
+          }
+        } catch (e) {
+          debugPrint('Failed to save CSV to public Download folder: $e');
+        }
+      }
+
+      if (!saveSuccess) {
+        final dir = await getApplicationDocumentsDirectory();
+        path = '${dir.path}/$filename';
+        final file = File(path);
+        await file.writeAsBytes(bytes);
+      }
+
+      // 5. Show Get.snackbar with OPEN button
+      Get.snackbar(
+        'Success',
+        isIndo ? 'Laporan ringkasan berhasil diunduh!' : 'Summary report downloaded successfully!',
+        messageText: Text(
+          isIndo ? 'Laporan ringkasan berhasil diunduh!' : 'Summary report downloaded successfully!',
+          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
+        titleText: const SizedBox.shrink(),
+        snackPosition: SnackPosition.TOP,
+        backgroundColor: Colors.green,
+        colorText: Colors.white,
+        duration: const Duration(seconds: 6),
+        mainButton: TextButton(
+          onPressed: () {
+            OpenFilex.open(path!);
+          },
+          style: TextButton.styleFrom(
+            padding: EdgeInsets.zero,
+            minimumSize: Size.zero,
+            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          ),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+            margin: const EdgeInsets.only(right: 8),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: Text(
+              isIndo ? 'BUKA' : 'OPEN',
+              style: const TextStyle(
+                color: Colors.green,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ),
+      );
+    } catch (e) {
+      debugPrint("Unexpected error while exporting summary Excel: $e");
+      Get.snackbar(
+        'Error',
+        isIndo ? 'Gagal mengunduh laporan ringkasan' : 'Failed to download summary report',
+        messageText: Text(
+          isIndo ? 'Gagal mengunduh laporan ringkasan' : 'Failed to download summary report',
+          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
+        titleText: const SizedBox.shrink(),
+        snackPosition: SnackPosition.TOP,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
+    }
   }
 
   // --- REUSABLE WIDGETS ---

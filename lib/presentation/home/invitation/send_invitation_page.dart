@@ -12,6 +12,7 @@ import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:open_filex/open_filex.dart';
 import 'controller/invitation_controller.dart';
+import 'scan_invitation_page.dart';
 import '../../../../presentation/home/visitor_request/add_pra_registration_dialog.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
@@ -57,17 +58,25 @@ class _SendInvitationPageState extends State<SendInvitationPage>
   @override
   void initState() {
     super.initState();
-    
+
     // Restore filter states from controller
     startDate = controller.startDate.value;
     endDate = controller.endDate.value;
-    selectedGedung = controller.selectedSiteName.value.isEmpty ? null : controller.selectedSiteName.value;
-    selectedStatus = controller.selectedStatus.value.isEmpty ? null : controller.selectedStatus.value;
+    selectedGedung = controller.selectedSiteName.value.isEmpty
+        ? null
+        : controller.selectedSiteName.value;
+    selectedStatus = controller.selectedStatus.value.isEmpty
+        ? null
+        : controller.selectedStatus.value;
 
     startDateQuick = controller.startDateQuick.value;
     endDateQuick = controller.endDateQuick.value;
-    selectedGedungQuick = controller.selectedSiteNameQuick.value.isEmpty ? null : controller.selectedSiteNameQuick.value;
-    selectedStatusQuick = controller.selectedStatusQuick.value.isEmpty ? null : controller.selectedStatusQuick.value;
+    selectedGedungQuick = controller.selectedSiteNameQuick.value.isEmpty
+        ? null
+        : controller.selectedSiteNameQuick.value;
+    selectedStatusQuick = controller.selectedStatusQuick.value.isEmpty
+        ? null
+        : controller.selectedStatusQuick.value;
 
     _tabController = TabController(
       length: 3,
@@ -191,7 +200,9 @@ class _SendInvitationPageState extends State<SendInvitationPage>
           Container(
             color: Colors.white,
             child: MediaQuery(
-              data: MediaQuery.of(context).copyWith(textScaler: TextScaler.noScaling),
+              data: MediaQuery.of(
+                context,
+              ).copyWith(textScaler: TextScaler.noScaling),
               child: TabBar(
                 controller: _tabController,
                 dividerColor: Colors.transparent,
@@ -383,11 +394,19 @@ class _SendInvitationPageState extends State<SendInvitationPage>
               }
 
               if (listToShow.isEmpty) {
+                final isIndonesian = Get.locale?.languageCode == 'id';
                 return EmptyStateWidget(
+                  illustration: const InvitationIllustration(),
                   icon: Icons.mail_outline_rounded,
-                  title: 'No invitations yet',
-                  subtitle: 'Create invitations to invite guests, share links or QR codes, and track their responses easily.',
-                  buttonText: 'Create Invitation',
+                  title: isIndonesian
+                      ? 'Belum ada invitation'
+                      : 'No invitations yet',
+                  subtitle: isIndonesian
+                      ? 'Buat invitation untuk mengundang tamu, bagikan tautan atau QR code, dan lacak respons mereka dengan mudah.'
+                      : 'Create invitations to invite guests, share links or QR codes, and track their responses easily.',
+                  buttonText: isIndonesian
+                      ? 'Buat Invitation'
+                      : 'Create Invitation',
                   onButtonPressed: () async {
                     final result = await showAddPraRegistrationDialog(context);
                     if (result == true) {
@@ -398,7 +417,9 @@ class _SendInvitationPageState extends State<SendInvitationPage>
                       });
                     }
                   },
-                  tipsText: 'Invitations make it easy for you to invite guests and monitor their attendance in real-time.',
+                  tipsText: isIndonesian
+                      ? 'Info: Invitation memudahkan Anda mengundang tamu dan memantau kehadiran secara real-time.'
+                      : 'Info: Invitations make it easy for you to invite guests and monitor their attendance in real-time.',
                   showQuickActions: true,
                 );
               }
@@ -844,11 +865,19 @@ class _SendInvitationPageState extends State<SendInvitationPage>
               }
 
               if (listToShow.isEmpty) {
+                final isIndonesian = Get.locale?.languageCode == 'id';
                 return EmptyStateWidget(
+                  illustration: const QuickAccessIllustration(),
                   icon: Icons.flash_on_rounded,
-                  title: 'No quick access yet',
-                  subtitle: 'Create quick access for instant entry for special guests or VIPs without manual approval.',
-                  buttonText: 'Create Quick Access',
+                  title: isIndonesian
+                      ? 'Belum ada quick access'
+                      : 'No quick access yet',
+                  subtitle: isIndonesian
+                      ? 'Buat quick access untuk mempermudah ojek online atau kurir pengantar makanan masuk ke area perusahaan dengan cepat.'
+                      : 'Create quick access to make it easier for online motorcycle taxis or food delivery couriers to enter the company area quickly.',
+                  buttonText: isIndonesian
+                      ? 'Buat Quick Access'
+                      : 'Create Quick Access',
                   onButtonPressed: () {
                     showDialog(
                       context: context,
@@ -860,7 +889,9 @@ class _SendInvitationPageState extends State<SendInvitationPage>
                       }
                     });
                   },
-                  tipsText: 'Use Quick Access for VIP guests or external staff who require recurring access without manual approval.',
+                  tipsText: isIndonesian
+                      ? 'Info: Quick Access sangat cocok untuk mitra pengantar makanan atau ojek online agar pengiriman makanan menjadi lebih praktis tanpa perlu persetujuan manual berulang.'
+                      : 'Info: Quick Access is perfect for food delivery partners or online motorcycle taxis to make food delivery more practical without requiring repeated manual approval.',
                   showQuickActions: true,
                 );
               }
@@ -1315,7 +1346,9 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
           isDriving: model.isDriving,
           tz: model.tz.isEmpty ? widget.item.tz : model.tz,
           siteId: model.siteId.isEmpty ? parentSiteId : model.siteId,
-          sitePlaceId: (model.sitePlaceId ?? '').isEmpty ? parentSitePlaceId : model.sitePlaceId,
+          sitePlaceId: (model.sitePlaceId ?? '').isEmpty
+              ? parentSitePlaceId
+              : model.sitePlaceId,
           visitorName: model.visitorName,
           isPraregisterDone: model.isPraregisterDone,
           visitorRole: model.visitorRole.isEmpty
@@ -1627,10 +1660,7 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
                         borderRadius: const pw.BorderRadius.all(
                           pw.Radius.circular(4),
                         ),
-                        border: pw.Border.all(
-                          color: PdfColors.white,
-                          width: 1,
-                        ),
+                        border: pw.Border.all(color: PdfColors.white, width: 1),
                       ),
                       child: pw.Text(
                         'VISITOR CARD',
@@ -1668,11 +1698,13 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
       }
 
       for (final model in models) {
-        final isQuickAccess = model.flow.toLowerCase() == 'quickaccessvisit' ||
+        final isQuickAccess =
+            model.flow.toLowerCase() == 'quickaccessvisit' ||
             model.visitorStatus.toLowerCase().trim() == 'quickaccess';
         final List<MapEntry<String, String>> fields = [
           MapEntry('Visitor Type', model.visitorTypeName),
-          if (!isQuickAccess || (model.visitorRole.isNotEmpty && model.visitorRole.trim() != '-'))
+          if (!isQuickAccess ||
+              (model.visitorRole.isNotEmpty && model.visitorRole.trim() != '-'))
             MapEntry('Visitor Role', model.visitorRole),
           MapEntry('Name', model.visitorName),
           MapEntry('Email', model.visitorEmail),
@@ -1691,7 +1723,8 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
           MapEntry('Vehicle Plate', model.vehiclePlateNumber),
           if (model.flow.toLowerCase() == 'quickaccessvisit') ...[
             MapEntry('Receiver Name', model.receiverName),
-            if (model.receiverPhone.isNotEmpty && model.receiverPhone.trim() != '-')
+            if (model.receiverPhone.isNotEmpty &&
+                model.receiverPhone.trim() != '-')
               MapEntry('Receiver Phone', model.receiverPhone),
             MapEntry('Receiver Email', model.receiverEmail),
           ],
@@ -1849,7 +1882,9 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
                         mainAxisAlignment: pw.MainAxisAlignment.center,
                         children: [
                           pw.Text(
-                            model.canTrackBle == true ? 'Tracked' : 'Not Tracked',
+                            model.canTrackBle == true
+                                ? 'Tracked'
+                                : 'Not Tracked',
                             style: pw.TextStyle(
                               fontSize: 8,
                               fontWeight: pw.FontWeight.bold,
@@ -2229,8 +2264,11 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
                             DateTime.now(),
                           );
                           final sColor = _statusColor(visitor.visitorStatus);
-                          final isQuickAccess = visitor.flow.toLowerCase() == 'quickaccessvisit' ||
-                              visitor.visitorStatus.toLowerCase().trim() == 'quickaccess';
+                          final isQuickAccess =
+                              visitor.flow.toLowerCase() ==
+                                  'quickaccessvisit' ||
+                              visitor.visitorStatus.toLowerCase().trim() ==
+                                  'quickaccess';
 
                           return [
                             // 1. Visitor Information
@@ -2287,7 +2325,10 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
                                             : visitor.visitorTypeName,
                                         Icons.badge_outlined,
                                       ),
-                                      if (!isQuickAccess || (visitor.visitorRole.isNotEmpty && visitor.visitorRole.trim() != '-'))
+                                      if (!isQuickAccess ||
+                                          (visitor.visitorRole.isNotEmpty &&
+                                              visitor.visitorRole.trim() !=
+                                                  '-'))
                                         _SheetField(
                                           'Visitor Role',
                                           visitor.visitorRole.isEmpty
@@ -2403,15 +2444,16 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
                                               ? '-'
                                               : visitor.receiverName,
                                           Icons.person_outline,
-                                         ),
-                                         if (visitor.receiverPhone.isNotEmpty && visitor.receiverPhone.trim() != '-')
-                                           _SheetField(
-                                             'Receiver Phone',
-                                             visitor.receiverPhone.isEmpty
-                                                 ? '-'
-                                                 : visitor.receiverPhone,
-                                             Icons.phone_outlined,
-                                           ),
+                                        ),
+                                        if (visitor.receiverPhone.isNotEmpty &&
+                                            visitor.receiverPhone.trim() != '-')
+                                          _SheetField(
+                                            'Receiver Phone',
+                                            visitor.receiverPhone.isEmpty
+                                                ? '-'
+                                                : visitor.receiverPhone,
+                                            Icons.phone_outlined,
+                                          ),
                                         _SheetField(
                                           'Receiver Email',
                                           visitor.receiverEmail.isEmpty
@@ -2604,8 +2646,8 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
                                 ),
                               ),
                             ],
-                             vSpace(context, widget.isFullDetail ? 24 : 16),
-                           ];
+                            vSpace(context, widget.isFullDetail ? 24 : 16),
+                          ];
                         }
 
                         if (widget.isFullDetail) {
@@ -3363,12 +3405,16 @@ class _ShareLinkListInlineState extends State<ShareLinkListInline> {
   @override
   void initState() {
     super.initState();
-    
+
     // Restore filter states from controller
     startDateShare = controller.startDateShare.value;
     endDateShare = controller.endDateShare.value;
-    selectedGedungShare = controller.selectedSiteNameShare.value.isEmpty ? null : controller.selectedSiteNameShare.value;
-    selectedStatusShare = controller.selectedStatusShare.value.isEmpty ? null : controller.selectedStatusShare.value;
+    selectedGedungShare = controller.selectedSiteNameShare.value.isEmpty
+        ? null
+        : controller.selectedSiteNameShare.value;
+    selectedStatusShare = controller.selectedStatusShare.value.isEmpty
+        ? null
+        : controller.selectedStatusShare.value;
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       controller.shareLinkPageSize.value = 10;
@@ -3385,8 +3431,6 @@ class _ShareLinkListInlineState extends State<ShareLinkListInline> {
         );
       }
     });
-
-
   }
 
   @override
@@ -3408,11 +3452,15 @@ class _ShareLinkListInlineState extends State<ShareLinkListInline> {
 
       Widget listWidget;
       if (controller.shareLinks.isEmpty) {
+        final isIndonesian = Get.locale?.languageCode == 'id';
         listWidget = EmptyStateWidget(
+          illustration: const ShareLinkIllustration(),
           icon: Icons.add_link_rounded,
-          title: 'No share links yet',
-          subtitle: 'Create share links to share self-registration access for your guests, either for one-time or recurring use.',
-          buttonText: 'Create Share Link',
+          title: isIndonesian ? 'Belum ada share link' : 'No share links yet',
+          subtitle: isIndonesian
+              ? 'Buat share link untuk membagikan akses pendaftaran mandiri bagi tamu Anda, baik sekali pakai maupun berulang.'
+              : 'Create share links to share self-registration access for your guests, either for one-time or recurring use.',
+          buttonText: isIndonesian ? 'Buat Share Link' : 'Create Share Link',
           onButtonPressed: () {
             showDialog(
               context: context,
@@ -3420,7 +3468,9 @@ class _ShareLinkListInlineState extends State<ShareLinkListInline> {
               builder: (context) => const CreateShareLinkDialog(),
             ).then((_) => controller.fetchShareLinks());
           },
-          tipsText: 'Share links are perfect if you want to invite many people without inputting data one by one.',
+          tipsText: isIndonesian
+              ? 'Info: Share link sangat cocok jika Anda ingin mengundang banyak orang tanpa memasukkan data satu per satu.'
+              : 'Info: Share links are perfect if you want to invite many people without inputting data one by one.',
           showQuickActions: true,
         );
       } else {
@@ -4221,6 +4271,7 @@ class EmptyStateWidget extends StatelessWidget {
   final VoidCallback onButtonPressed;
   final String tipsText;
   final bool showQuickActions;
+  final Widget? illustration;
 
   const EmptyStateWidget({
     super.key,
@@ -4231,6 +4282,7 @@ class EmptyStateWidget extends StatelessWidget {
     required this.onButtonPressed,
     required this.tipsText,
     this.showQuickActions = false,
+    this.illustration,
   });
 
   @override
@@ -4240,91 +4292,25 @@ class EmptyStateWidget extends StatelessWidget {
       child: Padding(
         padding: EdgeInsets.symmetric(
           horizontal: rw(context, 20.0),
-          vertical: rh(context, 24.0),
+          vertical: rh(context, 32.0),
         ),
         child: Column(
           children: [
-            // 1. Top Icon Illustration (Stack with decorative shapes)
-            Center(
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  Container(
-                    width: rw(context, 160),
-                    height: rw(context, 160),
-                    decoration: const BoxDecoration(
-                      color: Color(0xFFF4F8FC),
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                  Container(
-                    width: rw(context, 110),
-                    height: rw(context, 110),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.04),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    alignment: Alignment.center,
-                    child: Icon(
-                      icon,
-                      size: rw(context, 48),
-                      color: AppColors.primary500,
-                    ),
-                  ),
-                  // Decorative elements
-                  Positioned(
-                    top: rw(context, 15),
-                    right: rw(context, 20),
-                    child: Transform.rotate(
-                      angle: -0.2,
-                      child: Icon(
-                        Icons.send_rounded,
-                        color: AppColors.primary500.withValues(alpha: 0.8),
-                        size: rw(context, 24),
-                      ),
-                    ),
-                  ),
-                  Positioned(
-                    bottom: rw(context, 25),
-                    left: rw(context, 15),
-                    child: const Icon(
-                      Icons.star_rounded,
-                      color: Colors.amber,
-                      size: 16,
-                    ),
-                  ),
-                  Positioned(
-                    top: rw(context, 30),
-                    left: rw(context, 25),
-                    child: Icon(
-                      Icons.star_border_rounded,
-                      color: Colors.blue.shade300,
-                      size: 12,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            vSpace(context, 20),
+            // 1. Top Icon Illustration
+            Center(child: illustration ?? _buildDefaultIllustration(context)),
+            vSpace(context, 24),
 
             // 2. Title
             Text(
               title,
               style: TextStyle(
                 color: Colors.black87,
-                fontSize: rfs(context, 20),
+                fontSize: rfs(context, 21),
                 fontWeight: FontWeight.w700,
               ),
               textAlign: TextAlign.center,
             ),
-            vSpace(context, 8),
+            vSpace(context, 10),
 
             // 3. Subtitle
             Padding(
@@ -4334,12 +4320,12 @@ class EmptyStateWidget extends StatelessWidget {
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   color: Colors.grey.shade600,
-                  fontSize: rfs(context, 13),
-                  height: 1.4,
+                  fontSize: rfs(context, 13.5),
+                  height: 1.45,
                 ),
               ),
             ),
-            vSpace(context, 20),
+            vSpace(context, 24),
 
             // 4. Create Button
             ElevatedButton(
@@ -4348,34 +4334,30 @@ class EmptyStateWidget extends StatelessWidget {
                 backgroundColor: AppColors.primary500,
                 foregroundColor: Colors.white,
                 padding: EdgeInsets.symmetric(
-                  horizontal: rw(context, 24),
-                  vertical: rh(context, 12),
+                  horizontal: rw(context, 28),
+                  vertical: rh(context, 14),
                 ),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(rw(context, 10)),
+                  borderRadius: BorderRadius.circular(rw(context, 12)),
                 ),
                 elevation: 0,
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(
-                    Icons.add,
-                    color: Colors.white,
-                    size: rw(context, 18),
-                  ),
+                  Icon(Icons.add, color: Colors.white, size: rw(context, 20)),
                   hSpace(context, 8),
                   Text(
                     buttonText,
                     style: TextStyle(
-                      fontSize: rfs(context, 14),
+                      fontSize: rfs(context, 14.5),
                       fontWeight: FontWeight.w700,
                     ),
                   ),
                 ],
               ),
             ),
-            vSpace(context, 24),
+            vSpace(context, 36),
 
             // 5. Quick Actions Section (Optional)
             if (showQuickActions) ...[
@@ -4384,58 +4366,87 @@ class EmptyStateWidget extends StatelessWidget {
                 child: Text(
                   'Quick Actions',
                   style: TextStyle(
-                    fontSize: rfs(context, 14),
+                    fontSize: rfs(context, 16),
                     fontWeight: FontWeight.w700,
                     color: Colors.black87,
                   ),
                 ),
               ),
-              vSpace(context, 12),
+              vSpace(context, 16),
               Row(
                 children: [
                   Expanded(
                     child: _buildQuickActionCard(
                       context: context,
-                      title: 'Import Contacts',
-                      subtitle: 'From your contacts',
-                      icon: Icons.people_outline_rounded,
-                      color: const Color(0xFF2E7D32),
-                      bgColor: const Color(0xFFE8F5E9),
-                      onTap: () {
-                        Get.snackbar(
-                          'Info',
-                          'Import Contacts feature is under development',
-                          backgroundColor: Colors.blue.shade100,
-                          colorText: Colors.blue.shade900,
-                        );
-                      },
-                    ),
-                  ),
-                  hSpace(context, 8),
-                  Expanded(
-                    child: _buildQuickActionCard(
-                      context: context,
-                      title: 'Scan QR Code',
-                      subtitle: 'Scan invitation',
+                      title: Get.locale?.languageCode == 'id'
+                          ? 'Scan QR Code'
+                          : 'Scan QR Code',
+                      subtitle: Get.locale?.languageCode == 'id'
+                          ? 'Pindai invitation'
+                          : 'Scan invitation',
                       icon: Icons.qr_code_scanner_rounded,
                       color: const Color(0xFF7B1FA2),
                       bgColor: const Color(0xFFF3E5F5),
-                      onTap: () {
-                        Get.snackbar(
-                          'Info',
-                          'Scan QR feature is under development',
-                          backgroundColor: Colors.blue.shade100,
-                          colorText: Colors.blue.shade900,
+                      onTap: () async {
+                        final scannedCode = await context.push<String>(
+                          const ScanInvitationPage(),
                         );
+
+                        if (scannedCode != null && scannedCode.isNotEmpty) {
+                          final inviteCtrl =
+                              Get.isRegistered<InvitationController>()
+                              ? Get.find<InvitationController>()
+                              : Get.put(InvitationController());
+
+                          // Search local lists for invitation matching code or number
+                          final matched = inviteCtrl.allRawVisitors
+                              .firstWhereOrNull(
+                                (v) =>
+                                    v.visitorNumber.toLowerCase() ==
+                                        scannedCode.toLowerCase() ||
+                                    v.visitorCode.toLowerCase() ==
+                                        scannedCode.toLowerCase() ||
+                                    v.invitationCode.toLowerCase() ==
+                                        scannedCode.toLowerCase() ||
+                                    v.initialTrxCode.toLowerCase() ==
+                                        scannedCode.toLowerCase() ||
+                                    v.id.toLowerCase() ==
+                                        scannedCode.toLowerCase() ||
+                                    v.transactionVisitorId.toLowerCase() ==
+                                        scannedCode.toLowerCase(),
+                              );
+
+                          if (matched != null) {
+                            showInvitationDetailSheet(context, matched);
+                          } else {
+                            final isIndonesian =
+                                Get.locale?.languageCode == 'id';
+                            Get.snackbar(
+                              isIndonesian
+                                  ? 'Undangan Tidak Ditemukan'
+                                  : 'Invitation Not Found',
+                              isIndonesian
+                                  ? 'Undangan dengan kode/nomor "$scannedCode" tidak ditemukan dalam daftar.'
+                                  : 'Invitation with code/number "$scannedCode" was not found in the list.',
+                              backgroundColor: Colors.red.shade100,
+                              colorText: Colors.red.shade900,
+                              snackPosition: SnackPosition.BOTTOM,
+                            );
+                          }
+                        }
                       },
                     ),
                   ),
-                  hSpace(context, 8),
+                  hSpace(context, 16),
                   Expanded(
                     child: _buildQuickActionCard(
                       context: context,
-                      title: 'Duplicate Invitation',
-                      subtitle: 'Use an old one',
+                      title: Get.locale?.languageCode == 'id'
+                          ? 'Duplikat Invitation'
+                          : 'Duplicate Invitation',
+                      subtitle: Get.locale?.languageCode == 'id'
+                          ? 'Gunakan yang lama'
+                          : 'Use an old one',
                       icon: Icons.copy_all_rounded,
                       color: const Color(0xFFE65100),
                       bgColor: const Color(0xFFFFF3E0),
@@ -4451,12 +4462,12 @@ class EmptyStateWidget extends StatelessWidget {
                   ),
                 ],
               ),
-              vSpace(context, 24),
+              vSpace(context, 32),
             ],
 
             // 6. Tips Box
             Container(
-              padding: EdgeInsets.all(rw(context, 14)),
+              padding: EdgeInsets.all(rw(context, 18)),
               decoration: BoxDecoration(
                 color: const Color(0xFFF4F8FC),
                 borderRadius: BorderRadius.circular(rw(context, 12)),
@@ -4465,8 +4476,8 @@ class EmptyStateWidget extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Container(
-                    width: rw(context, 32),
-                    height: rw(context, 32),
+                    width: rw(context, 40),
+                    height: rw(context, 40),
                     decoration: BoxDecoration(
                       color: AppColors.primary500.withValues(alpha: 0.12),
                       shape: BoxShape.circle,
@@ -4475,20 +4486,21 @@ class EmptyStateWidget extends StatelessWidget {
                     child: Icon(
                       Icons.lightbulb_outline_rounded,
                       color: AppColors.primary500,
-                      size: rw(context, 18),
+                      size: rw(context, 22),
                     ),
                   ),
-                  hSpace(context, 12),
+                  hSpace(context, 16),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
                           tipsText,
+                          textAlign: TextAlign.justify,
                           style: TextStyle(
-                            fontSize: rfs(context, 12),
+                            fontSize: rfs(context, 13),
                             color: const Color(0xFF005596),
-                            height: 1.4,
+                            height: 1.45,
                             fontWeight: FontWeight.w500,
                           ),
                         ),
@@ -4501,6 +4513,66 @@ class EmptyStateWidget extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildDefaultIllustration(BuildContext context) {
+    return Stack(
+      alignment: Alignment.center,
+      children: [
+        Container(
+          width: rw(context, 160),
+          height: rw(context, 160),
+          decoration: const BoxDecoration(
+            color: Color(0xFFF4F8FC),
+            shape: BoxShape.circle,
+          ),
+        ),
+        Container(
+          width: rw(context, 110),
+          height: rw(context, 110),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.04),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          alignment: Alignment.center,
+          child: Icon(icon, size: rw(context, 48), color: AppColors.primary500),
+        ),
+        // Decorative elements
+        Positioned(
+          top: rw(context, 15),
+          right: rw(context, 20),
+          child: Transform.rotate(
+            angle: -0.2,
+            child: Icon(
+              Icons.send_rounded,
+              color: AppColors.primary500.withValues(alpha: 0.8),
+              size: rw(context, 24),
+            ),
+          ),
+        ),
+        Positioned(
+          bottom: rw(context, 25),
+          left: rw(context, 15),
+          child: const Icon(Icons.star_rounded, color: Colors.amber, size: 16),
+        ),
+        Positioned(
+          top: rw(context, 30),
+          left: rw(context, 25),
+          child: Icon(
+            Icons.star_border_rounded,
+            color: Colors.blue.shade300,
+            size: 12,
+          ),
+        ),
+      ],
     );
   }
 
@@ -4517,8 +4589,8 @@ class EmptyStateWidget extends StatelessWidget {
       onTap: onTap,
       child: Container(
         padding: EdgeInsets.symmetric(
-          horizontal: rw(context, 8),
-          vertical: rh(context, 12),
+          horizontal: rw(context, 16),
+          vertical: rh(context, 18),
         ),
         decoration: BoxDecoration(
           color: Colors.white,
@@ -4535,37 +4607,30 @@ class EmptyStateWidget extends StatelessWidget {
         child: Column(
           children: [
             Container(
-              width: rw(context, 40),
-              height: rw(context, 40),
-              decoration: BoxDecoration(
-                color: bgColor,
-                shape: BoxShape.circle,
-              ),
+              width: rw(context, 48),
+              height: rw(context, 48),
+              decoration: BoxDecoration(color: bgColor, shape: BoxShape.circle),
               alignment: Alignment.center,
-              child: Icon(
-                icon,
-                color: color,
-                size: rw(context, 20),
-              ),
+              child: Icon(icon, color: color, size: rw(context, 24)),
             ),
-            vSpace(context, 8),
+            vSpace(context, 12),
             Text(
               title,
               textAlign: TextAlign.center,
               style: TextStyle(
-                fontSize: rfs(context, 10),
+                fontSize: rfs(context, 13),
                 fontWeight: FontWeight.w700,
                 color: Colors.black87,
               ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
-            vSpace(context, 2),
+            vSpace(context, 4),
             Text(
               subtitle,
               textAlign: TextAlign.center,
               style: TextStyle(
-                fontSize: rfs(context, 8),
+                fontSize: rfs(context, 11),
                 color: Colors.grey.shade500,
               ),
               maxLines: 1,
@@ -4578,4 +4643,870 @@ class EmptyStateWidget extends StatelessWidget {
   }
 }
 
+// ─── Custom Empty State Illustrations ────────────────────────────────────────
 
+class InvitationIllustration extends StatelessWidget {
+  const InvitationIllustration({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: rw(context, 260),
+      height: rw(context, 200),
+      child: CustomPaint(painter: _EnvelopeIllustrationPainter()),
+    );
+  }
+}
+
+class _EnvelopeIllustrationPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2 + 10);
+
+    // 1. Draw irregular cloud background blob
+    final bgPaint = Paint()
+      ..color = const Color(0xFFEAF4FF)
+      ..style = PaintingStyle.fill;
+
+    final bgPath = Path()
+      ..moveTo(center.dx - 80, center.dy - 30)
+      ..cubicTo(
+        center.dx - 120,
+        center.dy - 60,
+        center.dx - 40,
+        center.dy - 120,
+        center.dx,
+        center.dy - 90,
+      )
+      ..cubicTo(
+        center.dx + 40,
+        center.dy - 120,
+        center.dx + 120,
+        center.dy - 60,
+        center.dx + 80,
+        center.dy - 10,
+      )
+      ..cubicTo(
+        center.dx + 110,
+        center.dy + 40,
+        center.dx + 50,
+        center.dy + 90,
+        center.dx,
+        center.dy + 70,
+      )
+      ..cubicTo(
+        center.dx - 60,
+        center.dy + 90,
+        center.dx - 110,
+        center.dy + 40,
+        center.dx - 80,
+        center.dy - 30,
+      )
+      ..close();
+    canvas.drawPath(bgPath, bgPaint);
+
+    // 2. Draw leaves
+    _drawLeaf(
+      canvas,
+      center + const Offset(-75, -20),
+      1.4,
+      -0.6,
+      const Color(0xFF8AD4FF),
+    );
+    _drawLeaf(
+      canvas,
+      center + const Offset(-85, 15),
+      1.1,
+      -1.1,
+      const Color(0xFF5ABFFF),
+    );
+
+    _drawLeaf(
+      canvas,
+      center + const Offset(70, -30),
+      1.4,
+      0.6,
+      const Color(0xFFA2E599),
+    );
+    _drawLeaf(
+      canvas,
+      center + const Offset(85, -5),
+      1.1,
+      1.1,
+      const Color(0xFF7CD770),
+    );
+    _drawLeaf(
+      canvas,
+      center + const Offset(70, 25),
+      0.9,
+      1.5,
+      const Color(0xFF53C645),
+    );
+
+    // 3. Envelope back
+    final envBackPaint = Paint()
+      ..color = const Color(0xFFE6EFFF)
+      ..style = PaintingStyle.fill;
+    final envOutlinePaint = Paint()
+      ..color = const Color(0xFFC4DDFC)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.0;
+
+    const double envW = 110;
+    const double envH = 75;
+    final envRect = Rect.fromCenter(
+      center: center + const Offset(0, 15),
+      width: envW,
+      height: envH,
+    );
+
+    final backPath = Path()
+      ..moveTo(envRect.left, envRect.bottom)
+      ..lineTo(envRect.left, envRect.top)
+      ..lineTo(center.dx, envRect.top - 30)
+      ..lineTo(envRect.right, envRect.top)
+      ..lineTo(envRect.right, envRect.bottom)
+      ..close();
+
+    canvas.drawPath(backPath, envBackPaint);
+    canvas.drawPath(backPath, envOutlinePaint);
+
+    // 4. Card sticking out
+    final cardRect = Rect.fromLTWH(center.dx - 40, center.dy - 35, 80, 70);
+    final cardRRect = RRect.fromRectAndRadius(
+      cardRect,
+      const Radius.circular(8),
+    );
+
+    final cardPaint = Paint()
+      ..color = Colors.white
+      ..style = PaintingStyle.fill;
+    final cardShadowPaint = Paint()
+      ..color = Colors.black.withOpacity(0.05)
+      ..style = PaintingStyle.fill;
+
+    canvas.drawRRect(cardRRect.shift(const Offset(0, 4)), cardShadowPaint);
+    canvas.drawRRect(cardRRect, cardPaint);
+
+    // Draw dashed border on card
+    final dashBorderPaint = Paint()
+      ..color = const Color(0xFFD0E3FA)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.5;
+    _drawDashedRRect(canvas, cardRRect, dashBorderPaint);
+
+    // Draw user icon graphics on the card
+    final contactColor = const Color(0xFF4FA0F9);
+    final contactPaint = Paint()
+      ..color = contactColor
+      ..style = PaintingStyle.fill;
+
+    // Person 1
+    canvas.drawCircle(Offset(center.dx - 10, center.dy - 15), 6, contactPaint);
+    final shoulder1 = Path()
+      ..moveTo(center.dx - 22, center.dy - 2)
+      ..quadraticBezierTo(
+        center.dx - 22,
+        center.dy - 10,
+        center.dx - 10,
+        center.dy - 10,
+      )
+      ..quadraticBezierTo(
+        center.dx + 2,
+        center.dy - 10,
+        center.dx + 2,
+        center.dy - 2,
+      )
+      ..close();
+    canvas.drawPath(shoulder1, contactPaint);
+
+    // Person 2
+    final contactColor2 = const Color(0xFF81C3F8);
+    final contactPaint2 = Paint()
+      ..color = contactColor2
+      ..style = PaintingStyle.fill;
+    canvas.drawCircle(Offset(center.dx + 10, center.dy - 15), 6, contactPaint2);
+    final shoulder2 = Path()
+      ..moveTo(center.dx - 2, center.dy - 2)
+      ..quadraticBezierTo(
+        center.dx - 2,
+        center.dy - 10,
+        center.dx + 10,
+        center.dy - 10,
+      )
+      ..quadraticBezierTo(
+        center.dx + 22,
+        center.dy - 10,
+        center.dx + 22,
+        center.dy - 2,
+      )
+      ..close();
+    canvas.drawPath(shoulder2, contactPaint2);
+
+    final linePaint = Paint()
+      ..color = const Color(0xFFE2EFFD)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.5
+      ..strokeCap = StrokeCap.round;
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        Rect.fromLTWH(center.dx - 22, center.dy + 6, 44, 20),
+        const Radius.circular(4),
+      ),
+      Paint()
+        ..color = const Color(0xFFF0F6FF)
+        ..style = PaintingStyle.fill,
+    );
+    canvas.drawLine(
+      Offset(center.dx - 15, center.dy + 12),
+      Offset(center.dx + 15, center.dy + 12),
+      linePaint,
+    );
+    canvas.drawLine(
+      Offset(center.dx - 15, center.dy + 20),
+      Offset(center.dx + 5, center.dy + 20),
+      linePaint,
+    );
+
+    // 5. Envelope front flaps
+    final envFlapPaint = Paint()
+      ..color = Colors.white
+      ..style = PaintingStyle.fill;
+
+    final leftFlap = Path()
+      ..moveTo(envRect.left, envRect.top)
+      ..lineTo(center.dx, envRect.bottom - 10)
+      ..lineTo(envRect.left, envRect.bottom)
+      ..close();
+
+    final rightFlap = Path()
+      ..moveTo(envRect.right, envRect.top)
+      ..lineTo(center.dx, envRect.bottom - 10)
+      ..lineTo(envRect.right, envRect.bottom)
+      ..close();
+
+    canvas.drawPath(leftFlap, envFlapPaint);
+    canvas.drawPath(leftFlap, envOutlinePaint);
+    canvas.drawPath(rightFlap, envFlapPaint);
+    canvas.drawPath(rightFlap, envOutlinePaint);
+
+    final bottomFlap = Path()
+      ..moveTo(envRect.left, envRect.bottom)
+      ..lineTo(center.dx, envRect.bottom - 25)
+      ..lineTo(envRect.right, envRect.bottom)
+      ..close();
+
+    canvas.drawPath(bottomFlap, envFlapPaint);
+    canvas.drawPath(bottomFlap, envOutlinePaint);
+
+    // 6. Dashed curve to paper plane
+    final dashPaint = Paint()
+      ..color = const Color(0xFF62A0EA)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.0
+      ..strokeCap = StrokeCap.round;
+
+    final pStart = Offset(center.dx + 25, center.dy - 35);
+    final pControl = Offset(center.dx + 90, center.dy - 90);
+    final pEnd = Offset(size.width - 20, 20);
+
+    _drawDashedBezier(
+      canvas,
+      pStart,
+      pControl,
+      pEnd,
+      dashPaint,
+      dashWidth: 6,
+      dashSpace: 6,
+    );
+
+    // 7. Large paper plane
+    _drawPaperPlane(canvas, pEnd, 1.3, -0.4, const Color(0xFF1E88E5));
+
+    // 8. Floating stars/sparkles
+    _drawSparkle(
+      canvas,
+      Offset(center.dx - 60, center.dy - 60),
+      6,
+      const Color(0xFF4FC3F7),
+    );
+    _drawSparkle(
+      canvas,
+      Offset(center.dx + 50, center.dy - 80),
+      5,
+      const Color(0xFFFFF176),
+    );
+    _drawSparkle(
+      canvas,
+      Offset(center.dx + 90, center.dy + 30),
+      5,
+      const Color(0xFF81C784),
+    );
+    _drawSparkle(
+      canvas,
+      Offset(center.dx - 90, center.dy + 20),
+      4,
+      const Color(0xFFFFB74D),
+    );
+  }
+
+  void _drawDashedRRect(Canvas canvas, RRect rrect, Paint paint) {
+    Path path = Path()..addRRect(rrect);
+    Path dashPath = Path();
+    const double dashWidth = 5.0;
+    const double dashSpace = 4.0;
+    double distance = 0.0;
+
+    for (ui.PathMetric pathMetric in path.computeMetrics()) {
+      while (distance < pathMetric.length) {
+        dashPath.addPath(
+          pathMetric.extractPath(distance, distance + dashWidth),
+          Offset.zero,
+        );
+        distance += dashWidth;
+        distance += dashSpace;
+      }
+      distance = 0.0; // Reset for next metric
+    }
+    canvas.drawPath(dashPath, paint);
+  }
+
+  void _drawLeaf(
+    Canvas canvas,
+    Offset origin,
+    double scale,
+    double angle,
+    Color color,
+  ) {
+    canvas.save();
+    canvas.translate(origin.dx, origin.dy);
+    canvas.rotate(angle);
+    canvas.scale(scale);
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.fill;
+    final path = Path()
+      ..moveTo(0, 0)
+      ..quadraticBezierTo(-12, -20, 0, -35)
+      ..quadraticBezierTo(12, -20, 0, 0);
+    canvas.drawPath(path, paint);
+    canvas.restore();
+  }
+
+  void _drawPaperPlane(
+    Canvas canvas,
+    Offset origin,
+    double scale,
+    double angle,
+    Color color,
+  ) {
+    canvas.save();
+    canvas.translate(origin.dx, origin.dy);
+    canvas.rotate(angle);
+    canvas.scale(scale);
+
+    final mainPaint = Paint()
+      ..color = color
+      ..style = PaintingStyle.fill;
+    final shadowPaint = Paint()
+      ..color = color.withOpacity(0.7)
+      ..style = PaintingStyle.fill;
+    final whitePaint = Paint()
+      ..color = Colors.white
+      ..style = PaintingStyle.fill;
+
+    final planePath = Path()
+      ..moveTo(0, -18)
+      ..lineTo(-20, 10)
+      ..lineTo(-4, 2)
+      ..close();
+    final planeRightPath = Path()
+      ..moveTo(0, -18)
+      ..lineTo(4, 2)
+      ..lineTo(20, 10)
+      ..close();
+    final planeFoldPath = Path()
+      ..moveTo(-4, 2)
+      ..lineTo(0, 10)
+      ..lineTo(4, 2)
+      ..close();
+
+    canvas.drawPath(planePath, whitePaint);
+    canvas.drawPath(planeRightPath, mainPaint);
+    canvas.drawPath(planeFoldPath, shadowPaint);
+    canvas.restore();
+  }
+
+  void _drawDashedBezier(
+    Canvas canvas,
+    Offset start,
+    Offset control,
+    Offset end,
+    Paint paint, {
+    double dashWidth = 5,
+    double dashSpace = 5,
+  }) {
+    final Path path = Path()
+      ..moveTo(start.dx, start.dy)
+      ..quadraticBezierTo(control.dx, control.dy, end.dx, end.dy);
+    Path dashPath = Path();
+    double distance = 0.0;
+
+    for (ui.PathMetric pathMetric in path.computeMetrics()) {
+      while (distance < pathMetric.length) {
+        dashPath.addPath(
+          pathMetric.extractPath(distance, distance + dashWidth),
+          Offset.zero,
+        );
+        distance += dashWidth;
+        distance += dashSpace;
+      }
+      distance = 0.0;
+    }
+    canvas.drawPath(dashPath, paint);
+  }
+
+  void _drawSparkle(Canvas canvas, Offset center, double size, Color color) {
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.fill;
+    final path = Path()
+      ..moveTo(center.dx, center.dy - size)
+      ..quadraticBezierTo(center.dx, center.dy, center.dx + size, center.dy)
+      ..quadraticBezierTo(center.dx, center.dy, center.dx, center.dy + size)
+      ..quadraticBezierTo(center.dx, center.dy, center.dx - size, center.dy)
+      ..quadraticBezierTo(center.dx, center.dy, center.dx, center.dy - size)
+      ..close();
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+class ShareLinkIllustration extends StatelessWidget {
+  const ShareLinkIllustration({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: rw(context, 260),
+      height: rw(context, 200),
+      child: CustomPaint(painter: _ShareLinkIllustrationPainter()),
+    );
+  }
+}
+
+class _ShareLinkIllustrationPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2 + 10);
+
+    // 1. Draw irregular cloud background blob
+    final bgPaint = Paint()
+      ..color = const Color(0xFFF3E5F5)
+      ..style = PaintingStyle.fill;
+
+    final bgPath = Path()
+      ..moveTo(center.dx - 90, center.dy - 10)
+      ..cubicTo(
+        center.dx - 120,
+        center.dy - 60,
+        center.dx - 30,
+        center.dy - 110,
+        center.dx + 20,
+        center.dy - 80,
+      )
+      ..cubicTo(
+        center.dx + 70,
+        center.dy - 110,
+        center.dx + 130,
+        center.dy - 40,
+        center.dx + 90,
+        center.dy + 20,
+      )
+      ..cubicTo(
+        center.dx + 110,
+        center.dy + 80,
+        center.dx + 30,
+        center.dy + 110,
+        center.dx - 20,
+        center.dy + 70,
+      )
+      ..cubicTo(
+        center.dx - 80,
+        center.dy + 100,
+        center.dx - 130,
+        center.dy + 50,
+        center.dx - 90,
+        center.dy - 10,
+      )
+      ..close();
+    canvas.drawPath(bgPath, bgPaint);
+
+    // 2. Links / Connected Nodes
+    final nodeLinePaint = Paint()
+      ..color = const Color(0xFFCE93D8)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 3.0
+      ..strokeCap = StrokeCap.round;
+
+    canvas.drawLine(
+      center + const Offset(-40, 20),
+      center + const Offset(-70, -20),
+      nodeLinePaint,
+    );
+    canvas.drawLine(
+      center + const Offset(40, -10),
+      center + const Offset(80, 30),
+      nodeLinePaint,
+    );
+    canvas.drawLine(
+      center + const Offset(-30, -50),
+      center + const Offset(20, -80),
+      nodeLinePaint,
+    );
+
+    final nodePaint = Paint()
+      ..color = const Color(0xFFAB47BC)
+      ..style = PaintingStyle.fill;
+    canvas.drawCircle(center + const Offset(-70, -20), 8, nodePaint);
+    canvas.drawCircle(center + const Offset(80, 30), 10, nodePaint);
+    canvas.drawCircle(center + const Offset(20, -80), 6, nodePaint);
+
+    // 3. Central Document / Card
+    final cardRect = Rect.fromCenter(center: center, width: 90, height: 110);
+    final cardRRect = RRect.fromRectAndRadius(
+      cardRect,
+      const Radius.circular(12),
+    );
+
+    final cardPaint = Paint()
+      ..color = Colors.white
+      ..style = PaintingStyle.fill;
+    final cardShadowPaint = Paint()
+      ..color = Colors.black.withOpacity(0.06)
+      ..style = PaintingStyle.fill;
+
+    canvas.drawRRect(cardRRect.shift(const Offset(0, 6)), cardShadowPaint);
+    canvas.drawRRect(cardRRect, cardPaint);
+
+    final cardBorderPaint = Paint()
+      ..color = const Color(0xFFE1BEE7)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.0;
+    canvas.drawRRect(cardRRect, cardBorderPaint);
+
+    // Document Lines
+    final docLinePaint = Paint()
+      ..color = const Color(0xFFF3E5F5)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 4.0
+      ..strokeCap = StrokeCap.round;
+
+    canvas.drawLine(
+      center + const Offset(-25, -25),
+      center + const Offset(25, -25),
+      docLinePaint,
+    );
+    canvas.drawLine(
+      center + const Offset(-25, -10),
+      center + const Offset(25, -10),
+      docLinePaint,
+    );
+    canvas.drawLine(
+      center + const Offset(-25, 5),
+      center + const Offset(0, 5),
+      docLinePaint,
+    );
+
+    // 4. Large Link Icon
+    final linkPaint = Paint()
+      ..color = const Color(0xFF8E24AA)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 5.0
+      ..strokeCap = StrokeCap.round;
+
+    final linkPath = Path()
+      ..moveTo(center.dx - 15, center.dy + 35)
+      ..lineTo(center.dx - 5, center.dy + 35)
+      ..arcTo(
+        Rect.fromCircle(center: center + const Offset(-5, 25), radius: 10),
+        1.57,
+        -3.14,
+        false,
+      )
+      ..lineTo(center.dx + 5, center.dy + 15)
+      ..moveTo(center.dx - 5, center.dy + 35)
+      ..lineTo(center.dx + 5, center.dy + 35)
+      ..arcTo(
+        Rect.fromCircle(center: center + const Offset(5, 25), radius: 10),
+        1.57,
+        3.14,
+        false,
+      )
+      ..lineTo(center.dx + 15, center.dy + 15);
+
+    canvas.drawPath(linkPath, linkPaint);
+    canvas.drawLine(
+      center + const Offset(-6, 25),
+      center + const Offset(6, 25),
+      linkPaint,
+    );
+
+    // 5. Floating elements
+    _drawSparkle(
+      canvas,
+      center + const Offset(-50, -60),
+      7,
+      const Color(0xFFFFB74D),
+    );
+    _drawSparkle(
+      canvas,
+      center + const Offset(50, -50),
+      5,
+      const Color(0xFFBA68C8),
+    );
+    _drawSparkle(
+      canvas,
+      center + const Offset(60, 40),
+      6,
+      const Color(0xFF64B5F6),
+    );
+    _drawSparkle(
+      canvas,
+      center + const Offset(-60, 40),
+      4,
+      const Color(0xFF81C784),
+    );
+  }
+
+  void _drawSparkle(Canvas canvas, Offset center, double size, Color color) {
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.fill;
+    final path = Path()
+      ..moveTo(center.dx, center.dy - size)
+      ..quadraticBezierTo(center.dx, center.dy, center.dx + size, center.dy)
+      ..quadraticBezierTo(center.dx, center.dy, center.dx, center.dy + size)
+      ..quadraticBezierTo(center.dx, center.dy, center.dx - size, center.dy)
+      ..quadraticBezierTo(center.dx, center.dy, center.dx, center.dy - size)
+      ..close();
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+class QuickAccessIllustration extends StatelessWidget {
+  const QuickAccessIllustration({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: rw(context, 260),
+      height: rw(context, 200),
+      child: CustomPaint(painter: _QuickAccessIllustrationPainter()),
+    );
+  }
+}
+
+class _QuickAccessIllustrationPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2 + 10);
+
+    // 1. Draw irregular cloud background blob
+    final bgPaint = Paint()
+      ..color = const Color(0xFFFFF3E0)
+      ..style = PaintingStyle.fill;
+
+    final bgPath = Path()
+      ..moveTo(center.dx - 80, center.dy - 40)
+      ..cubicTo(
+        center.dx - 130,
+        center.dy - 70,
+        center.dx - 50,
+        center.dy - 120,
+        center.dx,
+        center.dy - 90,
+      )
+      ..cubicTo(
+        center.dx + 50,
+        center.dy - 120,
+        center.dx + 120,
+        center.dy - 60,
+        center.dx + 80,
+        center.dy - 10,
+      )
+      ..cubicTo(
+        center.dx + 130,
+        center.dy + 50,
+        center.dx + 40,
+        center.dy + 120,
+        center.dx,
+        center.dy + 80,
+      )
+      ..cubicTo(
+        center.dx - 50,
+        center.dy + 120,
+        center.dx - 120,
+        center.dy + 60,
+        center.dx - 80,
+        center.dy - 40,
+      )
+      ..close();
+    canvas.drawPath(bgPath, bgPaint);
+
+    // 2. Background decorative cards
+    final bgCardPaint = Paint()
+      ..color = const Color(0xFFFFE0B2)
+      ..style = PaintingStyle.fill;
+
+    canvas.save();
+    canvas.translate(center.dx, center.dy);
+    canvas.rotate(-0.3);
+    final bgCardRect1 = Rect.fromCenter(
+      center: const Offset(-20, -10),
+      width: 90,
+      height: 120,
+    );
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(bgCardRect1, const Radius.circular(12)),
+      bgCardPaint,
+    );
+    canvas.restore();
+
+    canvas.save();
+    canvas.translate(center.dx, center.dy);
+    canvas.rotate(0.2);
+    final bgCardRect2 = Rect.fromCenter(
+      center: const Offset(20, 10),
+      width: 90,
+      height: 120,
+    );
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(bgCardRect2, const Radius.circular(12)),
+      Paint()
+        ..color = const Color(0xFFFFCC80)
+        ..style = PaintingStyle.fill,
+    );
+    canvas.restore();
+
+    // 3. Main Central Card (ID Card / Access Card)
+    final cardRect = Rect.fromCenter(center: center, width: 100, height: 130);
+    final cardRRect = RRect.fromRectAndRadius(
+      cardRect,
+      const Radius.circular(16),
+    );
+
+    final cardPaint = Paint()
+      ..color = Colors.white
+      ..style = PaintingStyle.fill;
+    final cardShadowPaint = Paint()
+      ..color = Colors.black.withOpacity(0.08)
+      ..style = PaintingStyle.fill;
+
+    canvas.drawRRect(cardRRect.shift(const Offset(0, 8)), cardShadowPaint);
+    canvas.drawRRect(cardRRect, cardPaint);
+
+    // Top Card Header (Color Block)
+    final headerPath = Path()
+      ..moveTo(cardRect.left, cardRect.top + 35)
+      ..lineTo(cardRect.right, cardRect.top + 35)
+      ..lineTo(cardRect.right, cardRect.top + 16)
+      ..quadraticBezierTo(
+        cardRect.right,
+        cardRect.top,
+        cardRect.right - 16,
+        cardRect.top,
+      )
+      ..lineTo(cardRect.left + 16, cardRect.top)
+      ..quadraticBezierTo(
+        cardRect.left,
+        cardRect.top,
+        cardRect.left,
+        cardRect.top + 16,
+      )
+      ..close();
+    canvas.drawPath(
+      headerPath,
+      Paint()
+        ..color = const Color(0xFFF57C00)
+        ..style = PaintingStyle.fill,
+    );
+
+    // Card Hole
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        Rect.fromCenter(
+          center: Offset(center.dx, cardRect.top + 12),
+          width: 24,
+          height: 6,
+        ),
+        const Radius.circular(4),
+      ),
+      Paint()
+        ..color = Colors.white
+        ..style = PaintingStyle.fill,
+    );
+
+    // 4. Large Lightning Bolt inside Card
+    final boltPaint = Paint()
+      ..color = const Color(0xFFFF9800)
+      ..style = PaintingStyle.fill;
+    final boltPath = Path()
+      ..moveTo(center.dx + 5, center.dy - 10)
+      ..lineTo(center.dx + 25, center.dy - 10)
+      ..lineTo(center.dx - 5, center.dy + 35)
+      ..lineTo(center.dx, center.dy + 10)
+      ..lineTo(center.dx - 20, center.dy + 10)
+      ..lineTo(center.dx + 10, center.dy - 35)
+      ..close();
+    canvas.drawPath(boltPath, boltPaint);
+
+    // 5. Floating elements
+    _drawSparkle(
+      canvas,
+      center + const Offset(-60, -50),
+      7,
+      const Color(0xFF4FC3F7),
+    );
+    _drawSparkle(
+      canvas,
+      center + const Offset(70, -60),
+      6,
+      const Color(0xFFE57373),
+    );
+    _drawSparkle(
+      canvas,
+      center + const Offset(60, 50),
+      5,
+      const Color(0xFF81C784),
+    );
+    _drawSparkle(
+      canvas,
+      center + const Offset(-70, 40),
+      5,
+      const Color(0xFFBA68C8),
+    );
+  }
+
+  void _drawSparkle(Canvas canvas, Offset center, double size, Color color) {
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.fill;
+    final path = Path()
+      ..moveTo(center.dx, center.dy - size)
+      ..quadraticBezierTo(center.dx, center.dy, center.dx + size, center.dy)
+      ..quadraticBezierTo(center.dx, center.dy, center.dx, center.dy + size)
+      ..quadraticBezierTo(center.dx, center.dy, center.dx - size, center.dy)
+      ..quadraticBezierTo(center.dx, center.dy, center.dx, center.dy - size)
+      ..close();
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
