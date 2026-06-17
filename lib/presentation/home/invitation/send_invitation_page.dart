@@ -4471,28 +4471,113 @@ class EmptyStateWidget extends StatelessWidget {
                                 // invitation or quick_access lookup
                                 final isQuickAccessMode =
                                     mode == 'quick_access';
-                                final matched = inviteCtrl.allRawVisitors
-                                    .firstWhereOrNull((v) {
-                                      final isQA =
-                                          v.flow.toLowerCase() ==
-                                          'quickaccessvisit';
-                                      if (isQuickAccessMode != isQA)
-                                        return false;
 
-                                      return v.visitorNumber.toLowerCase() ==
-                                              scannedCode.toLowerCase() ||
-                                          v.visitorCode.toLowerCase() ==
-                                              scannedCode.toLowerCase() ||
-                                          v.invitationCode.toLowerCase() ==
-                                              scannedCode.toLowerCase() ||
-                                          v.initialTrxCode.toLowerCase() ==
-                                              scannedCode.toLowerCase() ||
-                                          v.id.toLowerCase() ==
-                                              scannedCode.toLowerCase() ||
-                                          v.transactionVisitorId
-                                                  .toLowerCase() ==
-                                              scannedCode.toLowerCase();
-                                    });
+                                bool isMatch(AccessPassModel v) {
+                                  final isQA =
+                                      v.flow.toLowerCase() ==
+                                      'quickaccessvisit';
+                                  if (isQuickAccessMode != isQA) return false;
+
+                                  final sLower = scannedCode.toLowerCase();
+                                  return v.visitorNumber.toLowerCase() == sLower ||
+                                      v.visitorCode.toLowerCase() == sLower ||
+                                      v.invitationCode.toLowerCase() == sLower ||
+                                      v.initialTrxCode.toLowerCase() == sLower ||
+                                      v.id.toLowerCase() == sLower ||
+                                      v.transactionVisitorId
+                                              .toLowerCase() ==
+                                          sLower;
+                                }
+
+                                AccessPassModel? matched = inviteCtrl.allRawVisitors
+                                    .firstWhereOrNull(isMatch);
+
+                                // 2. If not found locally, search in sub-visitors cache
+                                if (matched == null) {
+                                  for (final subList in inviteCtrl
+                                      .transactionVisitorsCache.values) {
+                                    final found = subList.firstWhereOrNull(isMatch);
+                                    if (found != null) {
+                                      matched = found;
+                                      break;
+                                    }
+                                  }
+                                }
+
+                                // 3. Fallback: Search from backend API /api/visitor/transaction/dt
+                                if (matched == null) {
+                                  try {
+                                    Get.dialog(
+                                      const Center(
+                                        child: CircularProgressIndicator(
+                                          valueColor: AlwaysStoppedAnimation<Color>(
+                                            AppColors.primary500,
+                                          ),
+                                        ),
+                                      ),
+                                      barrierDismissible: false,
+                                    );
+
+                                    final hive = HiveService();
+                                    final user = hive.getUser();
+                                    final token = user?.token;
+                                    if (token != null) {
+                                      final api = ApiService();
+                                      final response = await api.getVisitorDt(
+                                        token,
+                                        search: scannedCode,
+                                        length: 50,
+                                      );
+
+                                      if (Get.isDialogOpen ?? false) {
+                                        Get.back();
+                                      }
+
+                                      if (response.data is Map &&
+                                          (response.data['status'] == 'success' ||
+                                              response.data['status_code'] == 200)) {
+                                        final collection =
+                                            response.data['collection'] as List? ??
+                                                [];
+                                        for (final trx in collection) {
+                                          final parentModel = AccessPassModel.fromJson(
+                                            trx as Map<String, dynamic>,
+                                          );
+                                          if (isMatch(parentModel)) {
+                                            matched = parentModel;
+                                            break;
+                                          }
+
+                                          // Fetch sub-visitors for this transaction
+                                          final subVisitorsRaw = await inviteCtrl
+                                              .fetchTransactionVisitors(
+                                            parentModel.id,
+                                          );
+                                          final subVisitors = inviteCtrl
+                                              .parseAndCacheSubVisitors(
+                                            parentModel,
+                                            subVisitorsRaw,
+                                          );
+                                          final foundSub =
+                                              subVisitors.firstWhereOrNull(isMatch);
+                                          if (foundSub != null) {
+                                            matched = foundSub;
+                                            break;
+                                          }
+                                        }
+                                      }
+                                    } else {
+                                      if (Get.isDialogOpen ?? false) {
+                                        Get.back();
+                                      }
+                                    }
+                                  } catch (e) {
+                                    debugPrint('Fallback backend search error: $e');
+                                    if (Get.isDialogOpen ?? false) {
+                                      Get.back();
+                                    }
+                                  }
+                                }
 
                                 if (matched != null) {
                                   showInvitationDetailSheet(context, matched);

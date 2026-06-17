@@ -28,7 +28,7 @@ class _ScanInvitationPageState extends State<ScanInvitationPage> {
           icon: const Icon(Icons.arrow_back_ios, color: Colors.black),
           onPressed: () async {
             await cameraController.stop();
-            if (mounted) {
+            if (context.mounted) {
               Navigator.pop(context);
             }
           },
@@ -65,7 +65,7 @@ class _ScanInvitationPageState extends State<ScanInvitationPage> {
                   // Stop scanning immediately and return scanned raw data
                   final code = barcode.rawValue!.trim();
                   cameraController.stop().then((_) {
-                    if (mounted) {
+                    if (context.mounted) {
                       Navigator.pop(context, code);
                     }
                   });
@@ -78,7 +78,10 @@ class _ScanInvitationPageState extends State<ScanInvitationPage> {
           // Custom overlay with transparent center using CustomPainter
           CustomPaint(
             painter: ScannerOverlayPainter(scanAreaSize: scanAreaSize),
-            child: const SizedBox(width: double.infinity, height: double.infinity),
+            child: const SizedBox(
+              width: double.infinity,
+              height: double.infinity,
+            ),
           ),
 
           // Scanner frame with corner brackets
@@ -97,8 +100,14 @@ class _ScanInvitationPageState extends State<ScanInvitationPage> {
                       height: rw(context, 32),
                       decoration: BoxDecoration(
                         border: Border(
-                          top: BorderSide(color: Colors.white, width: rw(context, 4)),
-                          left: BorderSide(color: Colors.white, width: rw(context, 4)),
+                          top: BorderSide(
+                            color: Colors.white,
+                            width: rw(context, 4),
+                          ),
+                          left: BorderSide(
+                            color: Colors.white,
+                            width: rw(context, 4),
+                          ),
                         ),
                       ),
                     ),
@@ -112,8 +121,14 @@ class _ScanInvitationPageState extends State<ScanInvitationPage> {
                       height: rw(context, 32),
                       decoration: BoxDecoration(
                         border: Border(
-                          top: BorderSide(color: Colors.white, width: rw(context, 4)),
-                          right: BorderSide(color: Colors.white, width: rw(context, 4)),
+                          top: BorderSide(
+                            color: Colors.white,
+                            width: rw(context, 4),
+                          ),
+                          right: BorderSide(
+                            color: Colors.white,
+                            width: rw(context, 4),
+                          ),
                         ),
                       ),
                     ),
@@ -127,8 +142,14 @@ class _ScanInvitationPageState extends State<ScanInvitationPage> {
                       height: rw(context, 32),
                       decoration: BoxDecoration(
                         border: Border(
-                          bottom: BorderSide(color: Colors.white, width: rw(context, 4)),
-                          left: BorderSide(color: Colors.white, width: rw(context, 4)),
+                          bottom: BorderSide(
+                            color: Colors.white,
+                            width: rw(context, 4),
+                          ),
+                          left: BorderSide(
+                            color: Colors.white,
+                            width: rw(context, 4),
+                          ),
                         ),
                       ),
                     ),
@@ -142,8 +163,14 @@ class _ScanInvitationPageState extends State<ScanInvitationPage> {
                       height: rw(context, 32),
                       decoration: BoxDecoration(
                         border: Border(
-                          bottom: BorderSide(color: Colors.white, width: rw(context, 4)),
-                          right: BorderSide(color: Colors.white, width: rw(context, 4)),
+                          bottom: BorderSide(
+                            color: Colors.white,
+                            width: rw(context, 4),
+                          ),
+                          right: BorderSide(
+                            color: Colors.white,
+                            width: rw(context, 4),
+                          ),
                         ),
                       ),
                     ),
@@ -217,7 +244,11 @@ class ScannerOverlayPainter extends CustomPainter {
 
     // Calculate center position for the transparent area
     final center = Offset(size.width / 2, size.height / 2);
-    final scanArea = Rect.fromCenter(center: center, width: scanAreaSize, height: scanAreaSize);
+    final scanArea = Rect.fromCenter(
+      center: center,
+      width: scanAreaSize,
+      height: scanAreaSize,
+    );
 
     // Create a path that covers the entire canvas
     final overlayPath = Path()

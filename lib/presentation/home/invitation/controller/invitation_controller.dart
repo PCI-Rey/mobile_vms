@@ -1156,7 +1156,7 @@ class InvitationController extends GetxController {
     }
   }
 
-  List<AccessPassModel> _parseAndCacheSubVisitors(
+  List<AccessPassModel> parseAndCacheSubVisitors(
     AccessPassModel parent,
     List<Map<String, dynamic>> list,
   ) {
@@ -1292,7 +1292,7 @@ class InvitationController extends GetxController {
       tasks.add(() async {
         try {
           final list = await fetchTransactionVisitors(item.id);
-          _parseAndCacheSubVisitors(item, list);
+          parseAndCacheSubVisitors(item, list);
 
           int count = 1;
           if (list.isNotEmpty) {
@@ -1372,7 +1372,7 @@ class InvitationController extends GetxController {
     try {
       final tasks = missingTransactions.map((item) async {
         final list = await fetchTransactionVisitors(item.id);
-        _parseAndCacheSubVisitors(item, list);
+        parseAndCacheSubVisitors(item, list);
 
         int count = 1;
         if (list.isNotEmpty) {
