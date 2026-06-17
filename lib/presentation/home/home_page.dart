@@ -714,7 +714,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           GestureDetector(
-            onTap: () => Get.to(() => const ProfilePage()),
+            onTap: () => Dashboard.state?.changeTab(3),
             child: CustomCircleImage(
               image: Assets.images.avaPerson1.image(fit: BoxFit.cover),
               size: rw(context, 48),

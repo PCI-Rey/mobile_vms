@@ -6,6 +6,7 @@ import '../../auth/controller/language_controller.dart';
 import '../../auth/controller/user_controller.dart';
 import '../../profile/profile_page.dart';
 import '../../notification/notification_page.dart';
+import '../../dashboard.dart';
 
 class GuestHeader extends StatelessWidget {
   const GuestHeader({super.key});
@@ -20,7 +21,7 @@ class GuestHeader extends StatelessWidget {
       child: Row(
         children: [
           GestureDetector(
-            onTap: () => Get.to(() => const ProfilePage()),
+            onTap: () => Dashboard.state?.changeTab(1),
             child: CustomCircleImage(
               image: userCtrl.faceUrl != null && userCtrl.faceUrl!.isNotEmpty
                   ? Image.network(

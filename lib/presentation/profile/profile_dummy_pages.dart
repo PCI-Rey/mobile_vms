@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import '../../core/helper/responsive_helper.dart';
 import '../../core/core.dart';
 import '../auth/controller/user_controller.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 // ============================================================================
 // SECURITY PAGE
@@ -29,65 +30,52 @@ class _SecurityPageState extends State<SecurityPage> {
         elevation: 0,
         centerTitle: true,
       ),
-      body: Column(
+      body: ListView(
+        padding: EdgeInsets.all(rw(context, 20)),
         children: [
-          Expanded(
-            child: ListView(
-              padding: EdgeInsets.all(rw(context, 20)),
-              children: [
-                _buildSectionHeader('Authentication'),
-                _buildMenuItem(
-                  icon: Icons.key_outlined,
-                  title: 'Change Password',
-                  subtitle: 'Update your password regularly',
-                  onTap: () {
-                    Get.snackbar('Info', 'Change Password Feature');
-                  },
-                ),
-                vSpace(context, 12),
-                _buildSwitchItem(
-                  icon: Icons.security_outlined,
-                  title: '2-Factor Authentication (2FA)',
-                  subtitle: 'Secure your account with additional verification',
-                  value: _twoFactor,
-                  onChanged: (val) {
-                    setState(() => _twoFactor = val);
-                  },
-                ),
-                vSpace(context, 12),
-                _buildSwitchItem(
-                  icon: Icons.fingerprint_outlined,
-                  title: 'Fingerprint / Face ID',
-                  subtitle: 'Sign in faster using biometrics',
-                  value: _biometric,
-                  onChanged: (val) {
-                    setState(() => _biometric = val);
-                  },
-                ),
-                vSpace(context, 24),
-                _buildSectionHeader('Login Activity'),
-                _buildMenuItem(
-                  icon: Icons.devices_outlined,
-                  title: 'Connected Devices',
-                  subtitle: 'Manage devices currently logged in',
-                  onTap: () {},
-                ),
-                vSpace(context, 12),
-                _buildMenuItem(
-                  icon: Icons.history_outlined,
-                  title: 'Activity History',
-                  subtitle: 'View your recent login activity',
-                  onTap: () {},
-                ),
-              ],
-            ),
+          _buildSectionHeader('Authentication'),
+          _buildMenuItem(
+            icon: Icons.key_outlined,
+            title: 'Change Password',
+            subtitle: 'Update your password regularly',
+            onTap: () {
+              Get.snackbar('Info', 'Change Password Feature');
+            },
           ),
-          Padding(
-            padding: EdgeInsets.all(rw(context, 20)),
-            child: Button.filled(
-              label: 'Back',
-              onPressed: () => Get.back(),
-            ),
+          vSpace(context, 12),
+          _buildSwitchItem(
+            icon: Icons.security_outlined,
+            title: '2-Factor Authentication (2FA)',
+            subtitle: 'Secure your account with additional verification',
+            value: _twoFactor,
+            onChanged: (val) {
+              setState(() => _twoFactor = val);
+            },
+          ),
+          vSpace(context, 12),
+          _buildSwitchItem(
+            icon: Icons.fingerprint_outlined,
+            title: 'Fingerprint / Face ID',
+            subtitle: 'Sign in faster using biometrics',
+            value: _biometric,
+            onChanged: (val) {
+              setState(() => _biometric = val);
+            },
+          ),
+          vSpace(context, 24),
+          _buildSectionHeader('Login Activity'),
+          _buildMenuItem(
+            icon: Icons.devices_outlined,
+            title: 'Connected Devices',
+            subtitle: 'Manage devices currently logged in',
+            onTap: () {},
+          ),
+          vSpace(context, 12),
+          _buildMenuItem(
+            icon: Icons.history_outlined,
+            title: 'Activity History',
+            subtitle: 'View your recent login activity',
+            onTap: () {},
           ),
         ],
       ),
@@ -202,72 +190,59 @@ class _PemberitahuanPageState extends State<PemberitahuanPage> {
         elevation: 0,
         centerTitle: true,
       ),
-      body: Column(
+      body: ListView(
+        padding: EdgeInsets.all(rw(context, 20)),
         children: [
-          Expanded(
-            child: ListView(
-              padding: EdgeInsets.all(rw(context, 20)),
-              children: [
-                _buildSectionHeader('Notification Channels'),
-                _buildSwitchItem(
-                  icon: Icons.notifications_active_outlined,
-                  title: 'Push Notifications',
-                  subtitle: 'Receive instant notifications on your device',
-                  value: _pushNotifications,
-                  onChanged: (val) {
-                    setState(() => _pushNotifications = val);
-                  },
-                ),
-                vSpace(context, 12),
-                _buildSwitchItem(
-                  icon: Icons.email_outlined,
-                  title: 'Email Notifications',
-                  subtitle: 'Receive reports and alerts via email',
-                  value: _emailNotifications,
-                  onChanged: (val) {
-                    setState(() => _emailNotifications = val);
-                  },
-                ),
-                vSpace(context, 12),
-                _buildSwitchItem(
-                  icon: Icons.sms_outlined,
-                  title: 'SMS Notifications',
-                  subtitle: 'Send urgent info to your mobile number',
-                  value: _smsNotifications,
-                  onChanged: (val) {
-                    setState(() => _smsNotifications = val);
-                  },
-                ),
-                vSpace(context, 24),
-                _buildSectionHeader('Alert Categories'),
-                _buildSwitchItem(
-                  icon: Icons.warning_amber_outlined,
-                  title: 'Alarms & Warnings',
-                  subtitle: 'Alerts when there is an area/status violation',
-                  value: _alarmAlerts,
-                  onChanged: (val) {
-                    setState(() => _alarmAlerts = val);
-                  },
-                ),
-                vSpace(context, 12),
-                _buildSwitchItem(
-                  icon: Icons.check_circle_outline,
-                  title: 'Approval Notifications',
-                  subtitle: 'Notified when a visit request is approved',
-                  value: _approvalNotifs,
-                  onChanged: (val) {
-                    setState(() => _approvalNotifs = val);
-                  },
-                ),
-              ],
-            ),
+          _buildSectionHeader('Notification Channels'),
+          _buildSwitchItem(
+            icon: Icons.notifications_active_outlined,
+            title: 'Push Notifications',
+            subtitle: 'Receive instant notifications on your device',
+            value: _pushNotifications,
+            onChanged: (val) {
+              setState(() => _pushNotifications = val);
+            },
           ),
-          Padding(
-            padding: EdgeInsets.all(rw(context, 20)),
-            child: Button.filled(
-              label: 'Back',
-              onPressed: () => Get.back(),
-            ),
+          vSpace(context, 12),
+          _buildSwitchItem(
+            icon: Icons.email_outlined,
+            title: 'Email Notifications',
+            subtitle: 'Receive reports and alerts via email',
+            value: _emailNotifications,
+            onChanged: (val) {
+              setState(() => _emailNotifications = val);
+            },
+          ),
+          vSpace(context, 12),
+          _buildSwitchItem(
+            icon: Icons.sms_outlined,
+            title: 'SMS Notifications',
+            subtitle: 'Send urgent info to your mobile number',
+            value: _smsNotifications,
+            onChanged: (val) {
+              setState(() => _smsNotifications = val);
+            },
+          ),
+          vSpace(context, 24),
+          _buildSectionHeader('Alert Categories'),
+          _buildSwitchItem(
+            icon: Icons.warning_amber_outlined,
+            title: 'Alarms & Warnings',
+            subtitle: 'Alerts when there is an area/status violation',
+            value: _alarmAlerts,
+            onChanged: (val) {
+              setState(() => _alarmAlerts = val);
+            },
+          ),
+          vSpace(context, 12),
+          _buildSwitchItem(
+            icon: Icons.check_circle_outline,
+            title: 'Approval Notifications',
+            subtitle: 'Notified when a visit request is approved',
+            value: _approvalNotifs,
+            onChanged: (val) {
+              setState(() => _approvalNotifs = val);
+            },
           ),
         ],
       ),
@@ -340,81 +315,107 @@ class HelpCenterPage extends StatelessWidget {
         elevation: 0,
         centerTitle: true,
       ),
-      body: Column(
+      body: ListView(
+        padding: EdgeInsets.all(rw(context, 20)),
         children: [
-          Expanded(
-            child: ListView(
-              padding: EdgeInsets.all(rw(context, 20)),
-              children: [
-                _buildSectionHeader(context, 'Popular Questions (FAQ)'),
-                _buildFaqItem(
-                  context,
-                  'How do I invite a guest?',
-                  'Open the main page, select the Send Invitation menu, choose the Invitation tab, and tap the add (+) button. Fill in the guest details and tap send.',
-                ),
-                vSpace(context, 12),
-                _buildFaqItem(
-                  context,
-                  'How do I respond to an Alarm Alert?',
-                  'When an alarm sounds, tap the alarm notification or open the Alarm Alert menu, then you can Approve or Deny the alarm.',
-                ),
-                vSpace(context, 12),
-                _buildFaqItem(
-                  context,
-                  'Why can\'t the guest barcode be scanned?',
-                  'Make sure the guest\'s phone screen is bright enough and the barcode has not passed its expiration date.',
-                ),
-                vSpace(context, 24),
-                _buildSectionHeader(context, 'Need More Help?'),
-                Container(
-                  padding: EdgeInsets.all(rw(context, 16)),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(rw(context, 12)),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.04),
-                        blurRadius: 8,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    children: [
-                      Row(
-                        children: [
-                          Icon(Icons.headset_mic_outlined, color: AppColors.primary500, size: rw(context, 28)),
-                          hSpace(context, 16),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: const [
-                                Text('Contact Customer Service', style: TextStyle(fontWeight: FontWeight.bold)),
-                                Text('Available 24/7 to help you', style: TextStyle(fontSize: 12, color: Colors.grey)),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                      vSpace(context, 16),
-                      Button.filled(
-                        label: 'Contact Support',
-                        height: rh(context, 40),
-                        onPressed: () {
-                          Get.snackbar('Support', 'Contacting Support Team...');
-                        },
-                      ),
-                    ],
-                  ),
+          _buildSectionHeader(context, 'Popular Questions (FAQ)'),
+          _buildFaqItem(
+            context,
+            'How do I invite a guest?',
+            'Open the main page, select the Send Invitation menu, choose the Invitation tab, and tap the add (+) button. Fill in the guest details and tap send.',
+          ),
+          vSpace(context, 12),
+          _buildFaqItem(
+            context,
+            'How do I respond to an Alarm Alert?',
+            'When an alarm sounds, tap the alarm notification or open the Alarm Alert menu, then you can Approve or Deny the alarm.',
+          ),
+          vSpace(context, 12),
+          _buildFaqItem(
+            context,
+            'Why can\'t the guest barcode be scanned?',
+            'Make sure the guest\'s phone screen is bright enough and the barcode has not passed its expiration date.',
+          ),
+          vSpace(context, 12),
+          _buildFaqItem(
+            context,
+            'How do I use my Access Pass?',
+            'Your Access Pass allows you to enter/exit office turnstiles. Navigate to the Home screen, tap Access Pass, and present the generated QR Code to the scanner.',
+          ),
+          vSpace(context, 12),
+          _buildFaqItem(
+            context,
+            'What should I do during an Evacuation Alert?',
+            'Open the Evacuate menu on your dashboard. Follow the instructions to proceed to the designated assembly point and register your status to confirm you are safe.',
+          ),
+          vSpace(context, 12),
+          _buildFaqItem(
+            context,
+            'How do I validate a parking ticket?',
+            'Go to the Parking menu on the dashboard, select Scan Ticket, and use your device camera to scan the QR/barcode printed on your physical parking slip.',
+          ),
+          vSpace(context, 12),
+          _buildFaqItem(
+            context,
+            'What is the Share Link feature for?',
+            'The Share Link menu lets you generate a registration link. You can send this link to your guests so they can fill out their visitor details in advance.',
+          ),
+          vSpace(context, 12),
+          _buildFaqItem(
+            context,
+            'How do I manage my notifications?',
+            'Go to your Profile tab, select Notification, and toggle your preferences for push notifications, email reports, SMS alerts, or category filters.',
+          ),
+          vSpace(context, 12),
+          _buildFaqItem(
+            context,
+            'Can I check who is logged into my account?',
+            'Yes. In the Profile tab, tap Security, then select Connected Devices to review all active sessions or change your password regularly.',
+          ),
+          vSpace(context, 24),
+          _buildSectionHeader(context, 'Need More Help?'),
+          Container(
+            padding: EdgeInsets.all(rw(context, 16)),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(rw(context, 12)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.04),
+                  blurRadius: 8,
+                  offset: const Offset(0, 4),
                 ),
               ],
             ),
-          ),
-          Padding(
-            padding: EdgeInsets.all(rw(context, 20)),
-            child: Button.filled(
-              label: 'Back',
-              onPressed: () => Get.back(),
+            child: Column(
+              children: [
+                Row(
+                  children: [
+                    Icon(Icons.headset_mic_outlined, color: AppColors.primary500, size: rw(context, 28)),
+                    hSpace(context, 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: const [
+                          Text('Contact Customer Service', style: TextStyle(fontWeight: FontWeight.bold)),
+                          Text('Available 24/7 to help you', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                vSpace(context, 16),
+                Button.filled(
+                  label: 'Contact Support',
+                  height: rh(context, 40),
+                  onPressed: () async {
+                    final Uri url = Uri.parse('https://bio-experience.com/');
+                    if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
+                      Get.snackbar('Error', 'Could not launch support page.');
+                    }
+                  },
+                ),
+              ],
             ),
           ),
         ],
@@ -485,102 +486,89 @@ class BarcodePage extends StatelessWidget {
         elevation: 0,
         centerTitle: true,
       ),
-      body: Column(
-        children: [
-          Expanded(
-            child: SingleChildScrollView(
-              padding: EdgeInsets.all(rw(context, 20)),
+      body: SingleChildScrollView(
+        padding: EdgeInsets.all(rw(context, 20)),
+        child: Column(
+          children: [
+            vSpace(context, 20),
+            Container(
+              width: double.infinity,
+              padding: EdgeInsets.all(rw(context, 24)),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(rw(context, 20)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.05),
+                    blurRadius: 15,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
+              ),
               child: Column(
                 children: [
-                  vSpace(context, 20),
+                  Text(
+                    user?.fullname ?? 'Employee Pass',
+                    style: TextStyle(
+                      fontSize: rfs(context, 20),
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  vSpace(context, 4),
+                  Text(
+                    user?.roleAccess?.toUpperCase() ?? 'EMPLOYEE',
+                    style: TextStyle(
+                      fontSize: rfs(context, 12),
+                      color: AppColors.primary500,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  vSpace(context, 24),
+                  // QR Code Simulation
                   Container(
-                    width: double.infinity,
-                    padding: EdgeInsets.all(rw(context, 24)),
+                    width: rw(context, 200),
+                    height: rw(context, 200),
                     decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(rw(context, 20)),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.05),
-                          blurRadius: 15,
-                          offset: const Offset(0, 8),
-                        ),
-                      ],
+                      color: Colors.grey.shade50,
+                      borderRadius: BorderRadius.circular(rw(context, 16)),
+                      border: Border.all(color: Colors.grey.shade200, width: 2),
                     ),
-                    child: Column(
-                      children: [
-                        Text(
-                          user?.fullname ?? 'Employee Pass',
-                          style: TextStyle(
-                            fontSize: rfs(context, 20),
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        vSpace(context, 4),
-                        Text(
-                          user?.roleAccess?.toUpperCase() ?? 'EMPLOYEE',
-                          style: TextStyle(
-                            fontSize: rfs(context, 12),
-                            color: AppColors.primary500,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        vSpace(context, 24),
-                        // QR Code Simulation
-                        Container(
-                          width: rw(context, 200),
-                          height: rw(context, 200),
-                          decoration: BoxDecoration(
-                            color: Colors.grey.shade50,
-                            borderRadius: BorderRadius.circular(rw(context, 16)),
-                            border: Border.all(color: Colors.grey.shade200, width: 2),
-                          ),
-                          child: Icon(
-                            Icons.qr_code_2_outlined,
-                            size: rw(context, 160),
-                            color: Colors.black87,
-                          ),
-                        ),
-                        vSpace(context, 24),
-                        Text(
-                          'DEVICE ID: EMP-${user?.id ?? '12345'}',
-                          style: TextStyle(
-                            fontSize: rfs(context, 12),
-                            fontWeight: FontWeight.bold,
-                            color: Colors.grey.shade600,
-                          ),
-                        ),
-                        vSpace(context, 16),
-                        Divider(color: Colors.grey.shade200, thickness: 1),
-                        vSpace(context, 16),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.info_outline, size: rw(context, 16), color: Colors.grey),
-                            hSpace(context, 8),
-                            const Expanded(
-                              child: Text(
-                                'Use this QR Code to access the office turnstile gate.',
-                                style: TextStyle(fontSize: 12, color: Colors.grey),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
+                    child: Icon(
+                      Icons.qr_code_2_outlined,
+                      size: rw(context, 160),
+                      color: Colors.black87,
                     ),
+                  ),
+                  vSpace(context, 24),
+                  Text(
+                    'DEVICE ID: EMP-${user?.id ?? '12345'}',
+                    style: TextStyle(
+                      fontSize: rfs(context, 12),
+                      fontWeight: FontWeight.bold,
+                      color: Colors.grey.shade600,
+                    ),
+                  ),
+                  vSpace(context, 16),
+                  Divider(color: Colors.grey.shade200, thickness: 1),
+                  vSpace(context, 16),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.info_outline, size: rw(context, 16), color: Colors.grey),
+                      hSpace(context, 8),
+                      const Expanded(
+                        child: Text(
+                          'Use this QR Code to access the office turnstile gate.',
+                          style: TextStyle(fontSize: 12, color: Colors.grey),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
             ),
-          ),
-          Padding(
-            padding: EdgeInsets.all(rw(context, 20)),
-            child: Button.filled(
-              label: 'Back',
-              onPressed: () => Get.back(),
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
