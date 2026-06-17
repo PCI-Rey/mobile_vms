@@ -234,7 +234,7 @@ class ProfilePage extends StatelessWidget {
                       Align(
                         alignment: Alignment.centerLeft,
                         child: Text(
-                          'Our Product',
+                          'Related Products from Bio Experience',
                           style: TextStyle(
                             fontSize: rfs(context, 14),
                             fontWeight: FontWeight.bold,

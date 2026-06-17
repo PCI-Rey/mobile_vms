@@ -112,7 +112,7 @@ class _VerificationCodePageState extends State<VerificationCodePage> {
                             FittedBox(
                               fit: BoxFit.scaleDown,
                               child: Text(
-                                'VIRTUAL MANAGEMENT SYSTEM',
+                                'VISITOR MANAGEMENT SYSTEM',
                                 style: TextStyle(
                                   color: Colors.white,
                                   fontSize: rfs(context, 20),

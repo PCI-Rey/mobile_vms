@@ -181,7 +181,7 @@ class _SplashscreenState extends State<Splashscreen>
                         FittedBox(
                           fit: BoxFit.scaleDown,
                           child: Text(
-                            'VIRTUAL MANAGEMENT SYSTEM',
+                            'VISITOR MANAGEMENT SYSTEM',
                             style: TextStyle(
                               color: Colors.white,
                               fontSize: sw * 0.054,
@@ -229,20 +229,52 @@ class _SplashscreenState extends State<Splashscreen>
 
             // ── Version / copyright at bottom ──────────────────
             Positioned(
-              bottom: MediaQuery.of(context).padding.bottom + sw * 0.05,
+              bottom: MediaQuery.of(context).padding.bottom + sw * 0.04,
               left: 0,
               right: 0,
               child: AnimatedBuilder(
                 animation: _opacityAnimation,
                 builder: (_, _) => Opacity(
                   opacity: _opacityAnimation.value,
-                  child: Text(
-                    '© 2026 VMS. All rights reserved.',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.4),
-                      fontSize: sw * 0.028,
-                    ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        '© 2026 VMS. All rights reserved.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.4),
+                          fontSize: sw * 0.028,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            'Powered by',
+                            style: TextStyle(
+                              color: Colors.white.withValues(alpha: 0.5),
+                              fontSize: sw * 0.028,
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Image.asset(
+                            'assets/images/BioExperience.png',
+                            height: sw * 0.045,
+                            fit: BoxFit.contain,
+                            errorBuilder: (context, error, stackTrace) => Text(
+                              'Bio Experience',
+                              style: TextStyle(
+                                color: Colors.white.withValues(alpha: 0.6),
+                                fontSize: sw * 0.028,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
                 ),
               ),

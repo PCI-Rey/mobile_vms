@@ -30,8 +30,15 @@ class _SecurityPageState extends State<SecurityPage> {
         elevation: 0,
         centerTitle: true,
       ),
-      body: ListView(
-        padding: EdgeInsets.all(rw(context, 20)),
+      body: SafeArea(
+        bottom: true,
+        child: ListView(
+          padding: EdgeInsets.only(
+            left: rw(context, 20),
+            right: rw(context, 20),
+            top: rw(context, 20),
+            bottom: rh(context, 40),
+          ),
         children: [
           _buildSectionHeader('Authentication'),
           _buildMenuItem(
@@ -78,6 +85,7 @@ class _SecurityPageState extends State<SecurityPage> {
             onTap: () {},
           ),
         ],
+      ),
       ),
     );
   }
@@ -190,8 +198,15 @@ class _PemberitahuanPageState extends State<PemberitahuanPage> {
         elevation: 0,
         centerTitle: true,
       ),
-      body: ListView(
-        padding: EdgeInsets.all(rw(context, 20)),
+      body: SafeArea(
+        bottom: true,
+        child: ListView(
+          padding: EdgeInsets.only(
+            left: rw(context, 20),
+            right: rw(context, 20),
+            top: rw(context, 20),
+            bottom: rh(context, 40),
+          ),
         children: [
           _buildSectionHeader('Notification Channels'),
           _buildSwitchItem(
@@ -245,6 +260,7 @@ class _PemberitahuanPageState extends State<PemberitahuanPage> {
             },
           ),
         ],
+      ),
       ),
     );
   }
@@ -315,110 +331,171 @@ class HelpCenterPage extends StatelessWidget {
         elevation: 0,
         centerTitle: true,
       ),
-      body: ListView(
-        padding: EdgeInsets.all(rw(context, 20)),
-        children: [
-          _buildSectionHeader(context, 'Popular Questions (FAQ)'),
-          _buildFaqItem(
-            context,
-            'How do I invite a guest?',
-            'Open the main page, select the Send Invitation menu, choose the Invitation tab, and tap the add (+) button. Fill in the guest details and tap send.',
-          ),
-          vSpace(context, 12),
-          _buildFaqItem(
-            context,
-            'How do I respond to an Alarm Alert?',
-            'When an alarm sounds, tap the alarm notification or open the Alarm Alert menu, then you can Approve or Deny the alarm.',
-          ),
-          vSpace(context, 12),
-          _buildFaqItem(
-            context,
-            'Why can\'t the guest barcode be scanned?',
-            'Make sure the guest\'s phone screen is bright enough and the barcode has not passed its expiration date.',
-          ),
-          vSpace(context, 12),
-          _buildFaqItem(
-            context,
-            'How do I use my Access Pass?',
-            'Your Access Pass allows you to enter/exit office turnstiles. Navigate to the Home screen, tap Access Pass, and present the generated QR Code to the scanner.',
-          ),
-          vSpace(context, 12),
-          _buildFaqItem(
-            context,
-            'What should I do during an Evacuation Alert?',
-            'Open the Evacuate menu on your dashboard. Follow the instructions to proceed to the designated assembly point and register your status to confirm you are safe.',
-          ),
-          vSpace(context, 12),
-          _buildFaqItem(
-            context,
-            'How do I validate a parking ticket?',
-            'Go to the Parking menu on the dashboard, select Scan Ticket, and use your device camera to scan the QR/barcode printed on your physical parking slip.',
-          ),
-          vSpace(context, 12),
-          _buildFaqItem(
-            context,
-            'What is the Share Link feature for?',
-            'The Share Link menu lets you generate a registration link. You can send this link to your guests so they can fill out their visitor details in advance.',
-          ),
-          vSpace(context, 12),
-          _buildFaqItem(
-            context,
-            'How do I manage my notifications?',
-            'Go to your Profile tab, select Notification, and toggle your preferences for push notifications, email reports, SMS alerts, or category filters.',
-          ),
-          vSpace(context, 12),
-          _buildFaqItem(
-            context,
-            'Can I check who is logged into my account?',
-            'Yes. In the Profile tab, tap Security, then select Connected Devices to review all active sessions or change your password regularly.',
-          ),
-          vSpace(context, 24),
-          _buildSectionHeader(context, 'Need More Help?'),
-          Container(
-            padding: EdgeInsets.all(rw(context, 16)),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(rw(context, 12)),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.04),
-                  blurRadius: 8,
-                  offset: const Offset(0, 4),
+      body: SafeArea(
+        bottom: true,
+        child: Obx(() {
+          final user = UserController.to.user.value;
+          final bool isEmployee =
+              (user?.roleAccess?.toLowerCase() == 'employee' ||
+                  user?.roleAccess?.toLowerCase() == 'admin') &&
+              (user?.invitationCode == null || user!.invitationCode!.isEmpty) &&
+              (user?.visitorCode == null || user!.visitorCode!.isEmpty);
+
+          return ListView(
+            padding: EdgeInsets.only(
+              left: rw(context, 20),
+              right: rw(context, 20),
+              top: rw(context, 20),
+              bottom: rh(context, 40),
+            ),
+            children: [
+              _buildSectionHeader(context, 'Popular Questions (FAQ)'),
+              if (isEmployee) ...[
+                _buildFaqItem(
+                  context,
+                  'How do I invite a guest?',
+                  'Open the home tab, select the \'Invitation\' menu, and tap the add (+) button. Fill in the guest details and tap send.',
+                ),
+                vSpace(context, 12),
+                _buildFaqItem(
+                  context,
+                  'How do I respond to an Alarm Alert?',
+                  'When an alarm sounds, tap the alarm notification or open the Alarm Alert menu, then you can Approve or Deny the alarm.',
+                ),
+                vSpace(context, 12),
+                _buildFaqItem(
+                  context,
+                  'What is the Share Link feature for?',
+                  'The Share Link menu lets you generate a registration link. You can send this link to your guests so they can fill out their visitor details in advance.',
+                ),
+                vSpace(context, 12),
+                _buildFaqItem(
+                  context,
+                  'How do I approve or reject a visit request?',
+                  'Tap the \'Approval\' menu on your dashboard. You will see a list of pending requests; select a request and tap \'Approve\' or \'Reject\'.',
+                ),
+                vSpace(context, 12),
+                _buildFaqItem(
+                  context,
+                  'What should I do during an Evacuation Alert?',
+                  'Open the Evacuate menu on your dashboard. Follow the instructions to proceed to the designated assembly point and register your status to confirm you are safe.',
+                ),
+                vSpace(context, 12),
+                _buildFaqItem(
+                  context,
+                  'How do I scan a parking ticket?',
+                  'Go to the Parking menu on the dashboard, select Scan Ticket, and use your device camera to scan the QR/barcode printed on your physical parking slip.',
+                ),
+                vSpace(context, 12),
+                _buildFaqItem(
+                  context,
+                  'How do I manage my notifications?',
+                  'Go to your Profile tab, select Notification, and toggle your preferences for push notifications, email reports, SMS alerts, or category filters.',
+                ),
+                vSpace(context, 12),
+                _buildFaqItem(
+                  context,
+                  'Can I check who is logged into my account?',
+                  'Yes. In the Profile tab, tap Security, then select Connected Devices to review all active sessions or change your password regularly.',
+                ),
+              ] else ...[
+                _buildFaqItem(
+                  context,
+                  'How do I complete my visit pre-registration?',
+                  'Open the invitation link sent by your host, or enter your invitation code on the app\'s entry screen. Fill in your personal information, upload any required files, and submit the form.',
+                ),
+                vSpace(context, 12),
+                _buildFaqItem(
+                  context,
+                  'How do I enter the office building?',
+                  'Go to your Profile tab, tap Barcode, and present the generated QR Code to the scanner at the turnstile gate or lobby reception.',
+                ),
+                vSpace(context, 12),
+                _buildFaqItem(
+                  context,
+                  'Why can\'t my guest barcode be scanned?',
+                  'Ensure your screen brightness is set to high, the barcode is fully visible, and the scheduled visit time and date are currently valid.',
+                ),
+                vSpace(context, 12),
+                _buildFaqItem(
+                  context,
+                  'How do I register my vehicle?',
+                  'When filling out your registration form, select \'Yes\' for the vehicle question and enter your license plate number and vehicle details.',
+                ),
+                vSpace(context, 12),
+                _buildFaqItem(
+                  context,
+                  'How do I check my active visit details?',
+                  'Your active Guest Pass is displayed on the main home screen of the app, containing your host\'s name, visit location, and scheduled duration.',
+                ),
+                vSpace(context, 12),
+                _buildFaqItem(
+                  context,
+                  'Can I register multiple people for a group visit?',
+                  'Yes. When registering, you can add multiple visitors or choose the option to register colleagues under the same invitation code.',
+                ),
+                vSpace(context, 12),
+                _buildFaqItem(
+                  context,
+                  'How do I manage my notifications?',
+                  'Go to your Profile tab, select Notification, and toggle your preferences for push notifications, email reports, or SMS alerts.',
+                ),
+                vSpace(context, 12),
+                _buildFaqItem(
+                  context,
+                  'Can I check who is logged into my account?',
+                  'Yes. In the Profile tab, tap Security, then select Connected Devices to review all active sessions.',
                 ),
               ],
-            ),
-            child: Column(
-              children: [
-                Row(
-                  children: [
-                    Icon(Icons.headset_mic_outlined, color: AppColors.primary500, size: rw(context, 28)),
-                    hSpace(context, 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: const [
-                          Text('Contact Customer Service', style: TextStyle(fontWeight: FontWeight.bold)),
-                          Text('Available 24/7 to help you', style: TextStyle(fontSize: 12, color: Colors.grey)),
-                        ],
-                      ),
+              vSpace(context, 24),
+              _buildSectionHeader(context, 'Need More Help?'),
+              Container(
+                padding: EdgeInsets.all(rw(context, 16)),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(rw(context, 12)),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.04),
+                      blurRadius: 8,
+                      offset: const Offset(0, 4),
                     ),
                   ],
                 ),
-                vSpace(context, 16),
-                Button.filled(
-                  label: 'Contact Support',
-                  height: rh(context, 40),
-                  onPressed: () async {
-                    final Uri url = Uri.parse('https://bio-experience.com/');
-                    if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
-                      Get.snackbar('Error', 'Could not launch support page.');
-                    }
-                  },
+                child: Column(
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.headset_mic_outlined, color: AppColors.primary500, size: rw(context, 28)),
+                        hSpace(context, 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: const [
+                              Text('Contact Customer Service', style: TextStyle(fontWeight: FontWeight.bold)),
+                              Text('Available 24/7 to help you', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    vSpace(context, 16),
+                    Button.filled(
+                      label: 'Contact Support',
+                      height: rh(context, 40),
+                      onPressed: () async {
+                        final Uri url = Uri.parse('https://bio-experience.com/');
+                        if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
+                          Get.snackbar('Error', 'Could not launch support page.');
+                        }
+                      },
+                    ),
+                  ],
                 ),
-              ],
-            ),
-          ),
-        ],
+              ),
+            ],
+          );
+        }),
       ),
     );
   }
@@ -450,20 +527,30 @@ class HelpCenterPage extends StatelessWidget {
           ),
         ],
       ),
-      child: ExpansionTile(
-        title: Text(
-          question,
-          style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+      child: Theme(
+        data: Theme.of(context).copyWith(
+          dividerColor: Colors.transparent,
         ),
-        children: [
-          Padding(
-            padding: EdgeInsets.fromLTRB(rw(context, 16), 0, rw(context, 16), rh(context, 16)),
-            child: Text(
-              answer,
-              style: TextStyle(fontSize: 13, color: Colors.grey.shade700, height: 1.4),
-            ),
+        child: ExpansionTile(
+          shape: const Border(),
+          collapsedShape: const Border(),
+          textColor: AppColors.primary500,
+          iconColor: AppColors.primary500,
+          collapsedIconColor: Colors.grey.shade600,
+          title: Text(
+            question,
+            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
           ),
-        ],
+          children: [
+            Padding(
+              padding: EdgeInsets.fromLTRB(rw(context, 16), 0, rw(context, 16), rh(context, 16)),
+              child: Text(
+                answer,
+                style: TextStyle(fontSize: 13, color: Colors.grey.shade700, height: 1.4),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -486,8 +573,15 @@ class BarcodePage extends StatelessWidget {
         elevation: 0,
         centerTitle: true,
       ),
-      body: SingleChildScrollView(
-        padding: EdgeInsets.all(rw(context, 20)),
+      body: SafeArea(
+        bottom: true,
+        child: SingleChildScrollView(
+          padding: EdgeInsets.only(
+            left: rw(context, 20),
+            right: rw(context, 20),
+            top: rw(context, 20),
+            bottom: rh(context, 40),
+          ),
         child: Column(
           children: [
             vSpace(context, 20),
@@ -569,6 +663,7 @@ class BarcodePage extends StatelessWidget {
             ),
           ],
         ),
+      ),
       ),
     );
   }
