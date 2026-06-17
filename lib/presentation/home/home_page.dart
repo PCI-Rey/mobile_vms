@@ -17,6 +17,7 @@ import 'access_pass/access_pass_page.dart';
 import 'approval/approval_page.dart';
 import 'today_activity_page.dart';
 import 'new_visitor_page.dart';
+import 'today_summary_page.dart';
 import 'invitation/controller/invitation_controller.dart';
 import 'invitation/widgets/create_share_link_dialog.dart';
 import 'invitation/widgets/create_quick_access_dialog.dart';
@@ -2130,7 +2131,11 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
 
       return Column(
         children: [
-          _buildSectionHeader(context, isToday ? 'Today Summary' : 'Summary'),
+          _buildSectionHeader(
+            context,
+            isToday ? 'Today Summary' : 'Summary',
+            onShowMoreTap: () => context.push(const TodaySummaryPage()),
+          ),
           vSpace(context, 16),
           Row(
             children: [

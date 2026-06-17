@@ -601,6 +601,28 @@ class InvitationController extends GetxController {
     }
   }
 
+  DateTime? _parseItemDate(dynamic item) {
+    if (item == null || item is! Map) return null;
+    final keys = ['visitor_period_start', 'expired_at', 'created_at'];
+    for (final key in keys) {
+      final value = item[key];
+      if (value == null) continue;
+      final valueStr = value.toString().trim();
+      if (valueStr.isEmpty || valueStr == 'null' || valueStr == '-') continue;
+      try {
+        String normalized = valueStr;
+        if (!normalized.endsWith('Z') && !normalized.contains('+')) {
+          normalized = '${normalized.replaceFirst(' ', 'T')}Z';
+        }
+        final parsed = DateTime.tryParse(normalized);
+        if (parsed != null) {
+          return parsed.toLocal();
+        }
+      } catch (_) {}
+    }
+    return null;
+  }
+
   void _applyShareFilters() {
     debugPrint('DEBUG: _applyShareFilters starting with ${allShareLinks.length} items');
     debugPrint('DEBUG: filters: startDateShare=${startDateShare.value}, endDateShare=${endDateShare.value}, selectedSiteIdShare=${selectedSiteIdShare.value}, selectedSiteNameShare=${selectedSiteNameShare.value}, selectedStatusShare=${selectedStatusShare.value}');
@@ -609,47 +631,29 @@ class InvitationController extends GetxController {
     // 1. Filter Berdasarkan Tanggal (Lokal)
     if (startDateShare.value != null) {
       filtered = filtered.where((item) {
-        final dateStr = item['visitor_period_start'];
-        if (dateStr == null) return false;
-        try {
-          String normalized = dateStr.toString();
-          if (!normalized.endsWith('Z') && !normalized.contains('+')) {
-            normalized = '${normalized.replaceFirst(' ', 'T')}Z';
-          }
-          final itemDate = DateTime.parse(normalized).toLocal();
-          final start = DateTime(
-            startDateShare.value!.year,
-            startDateShare.value!.month,
-            startDateShare.value!.day,
-          );
-          final date = DateTime(itemDate.year, itemDate.month, itemDate.day);
-          return date.isAtSameMomentAs(start) || date.isAfter(start);
-        } catch (e) {
-          return false;
-        }
+        final itemDate = _parseItemDate(item);
+        if (itemDate == null) return false;
+        final start = DateTime(
+          startDateShare.value!.year,
+          startDateShare.value!.month,
+          startDateShare.value!.day,
+        );
+        final date = DateTime(itemDate.year, itemDate.month, itemDate.day);
+        return date.isAtSameMomentAs(start) || date.isAfter(start);
       }).toList();
     }
 
     if (endDateShare.value != null) {
       filtered = filtered.where((item) {
-        final dateStr = item['visitor_period_start'];
-        if (dateStr == null) return false;
-        try {
-          String normalized = dateStr.toString();
-          if (!normalized.endsWith('Z') && !normalized.contains('+')) {
-            normalized = '${normalized.replaceFirst(' ', 'T')}Z';
-          }
-          final itemDate = DateTime.parse(normalized).toLocal();
-          final end = DateTime(
-            endDateShare.value!.year,
-            endDateShare.value!.month,
-            endDateShare.value!.day,
-          );
-          final date = DateTime(itemDate.year, itemDate.month, itemDate.day);
-          return date.isAtSameMomentAs(end) || date.isBefore(end);
-        } catch (e) {
-          return false;
-        }
+        final itemDate = _parseItemDate(item);
+        if (itemDate == null) return false;
+        final end = DateTime(
+          endDateShare.value!.year,
+          endDateShare.value!.month,
+          endDateShare.value!.day,
+        );
+        final date = DateTime(itemDate.year, itemDate.month, itemDate.day);
+        return date.isAtSameMomentAs(end) || date.isBefore(end);
       }).toList();
     }
 
@@ -738,18 +742,12 @@ class InvitationController extends GetxController {
         return aExpired ? 1 : -1;
       }
 
-      final dateStrA =
-          aMap['visitor_period_start']?.toString() ??
-          aMap['created_at']?.toString() ??
-          aMap['expired_at']?.toString();
-      final dateStrB =
-          bMap['visitor_period_start']?.toString() ??
-          bMap['created_at']?.toString() ??
-          bMap['expired_at']?.toString();
-      if (dateStrA == null && dateStrB == null) return 0;
-      if (dateStrA == null) return 1;
-      if (dateStrB == null) return -1;
-      return dateStrB.compareTo(dateStrA);
+      final dateA = _parseItemDate(aMap);
+      final dateB = _parseItemDate(bMap);
+      if (dateA == null && dateB == null) return 0;
+      if (dateA == null) return 1;
+      if (dateB == null) return -1;
+      return dateB.compareTo(dateA);
     });
 
     // 4. Paginate
