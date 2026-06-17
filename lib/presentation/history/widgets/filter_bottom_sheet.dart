@@ -54,8 +54,23 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
   }
 
   Future<void> _fetchGedung() async {
+    final localSites = HiveService().getSites();
+    if (localSites.isNotEmpty) {
+      setState(() {
+        gedungList.clear();
+        gedungList.addAll(localSites);
+      });
+      // Silent fetch in background to keep data updated and save to Hive silently
+      _fetchGedungInBackground();
+      return;
+    }
+
     if (!mounted) return;
     setState(() => isLoadingGedung = true);
+    await _fetchGedungFromApi();
+  }
+
+  Future<void> _fetchGedungFromApi() async {
     try {
       final hive = HiveService();
       final token = hive.getUser()?.token;
@@ -66,14 +81,17 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
         if (response.data['status'] == 'success') {
           final collection =
               response.data['collection'] as List<dynamic>? ?? [];
+          final newList = <Map<String, String>>[];
+          for (var item in collection) {
+            newList.add({
+              'id': item['id']?.toString() ?? '',
+              'name': item['name']?.toString() ?? '',
+            });
+          }
+          await hive.saveSites(newList);
           setState(() {
             gedungList.clear();
-            for (var item in collection) {
-              gedungList.add({
-                'id': item['id']?.toString() ?? '',
-                'name': item['name']?.toString() ?? '',
-              });
-            }
+            gedungList.addAll(newList);
           });
         }
       }
@@ -83,6 +101,38 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
       if (mounted) {
         setState(() => isLoadingGedung = false);
       }
+    }
+  }
+
+  Future<void> _fetchGedungInBackground() async {
+    try {
+      final hive = HiveService();
+      final token = hive.getUser()?.token;
+      if (token != null) {
+        final api = ApiService();
+        final response = await api.getSitesWithToken(token);
+        if (!mounted) return;
+        if (response.data['status'] == 'success') {
+          final collection =
+              response.data['collection'] as List<dynamic>? ?? [];
+          final newList = <Map<String, String>>[];
+          for (var item in collection) {
+            newList.add({
+              'id': item['id']?.toString() ?? '',
+              'name': item['name']?.toString() ?? '',
+            });
+          }
+          await hive.saveSites(newList);
+          if (mounted) {
+            setState(() {
+              gedungList.clear();
+              gedungList.addAll(newList);
+            });
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint('Error fetchGedungInBackground: $e');
     }
   }
 

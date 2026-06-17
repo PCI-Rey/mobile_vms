@@ -16,6 +16,44 @@ class DetailProfilePage extends StatelessWidget {
         backgroundColor: Colors.white,
         title: const Text('Account'),
         elevation: 0,
+        actions: [
+          Obx(() {
+            if (controller.isSaving.value) {
+              return const Center(
+                child: Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 16.0),
+                  child: SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                    ),
+                  ),
+                ),
+              );
+            }
+            if (controller.isEditing.value) {
+              return Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.check, color: Colors.green),
+                    onPressed: () => controller.saveProfile(),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close, color: Colors.red),
+                    onPressed: () => controller.cancelEditing(),
+                  ),
+                ],
+              );
+            } else {
+              return IconButton(
+                icon: Icon(Icons.edit, color: context.theme.primaryColor),
+                onPressed: () => controller.startEditing(),
+              );
+            }
+          }),
+        ],
       ),
       body: SafeArea(
         bottom: true,
@@ -37,47 +75,20 @@ class DetailProfilePage extends StatelessWidget {
                 Center(
                   child: Column(
                     children: [
-                      Stack(
-                        children: [
-                          Container(
-                            padding: EdgeInsets.all(rw(context, 4)),
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                color: context.theme.primaryColor.withValues(alpha: 0.2),
-                                width: 2,
-                              ),
-                            ),
-                            child: CustomCircleImage(
-                              image: Assets.images.avaPerson1.image(fit: BoxFit.cover),
-                              size: rw(context, 100),
-                              scale: 1.5,
-                            ),
+                      Container(
+                        padding: EdgeInsets.all(rw(context, 4)),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: context.theme.primaryColor.withValues(alpha: 0.2),
+                            width: 2,
                           ),
-                          Positioned(
-                            bottom: 0,
-                            right: 0,
-                            child: Container(
-                              padding: EdgeInsets.all(rw(context, 6)),
-                              decoration: BoxDecoration(
-                                color: context.theme.primaryColor,
-                                shape: BoxShape.circle,
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withValues(alpha: 0.1),
-                                    blurRadius: 4,
-                                    offset: const Offset(0, 2),
-                                  ),
-                                ],
-                              ),
-                              child: Icon(
-                                Icons.edit,
-                                color: Colors.white,
-                                size: rw(context, 16),
-                              ),
-                            ),
-                          ),
-                        ],
+                        ),
+                        child: CustomCircleImage(
+                          image: Assets.images.avaPerson1.image(fit: BoxFit.cover),
+                          size: rw(context, 100),
+                          scale: 1.5,
+                        ),
                       ),
                       vSpace(context, 16),
                       Obx(() => Text(
@@ -115,67 +126,98 @@ class DetailProfilePage extends StatelessWidget {
                   ),
                 ),
                 vSpace(context, 32),
-                CustomTextField(
-                  controller: controller.namaController,
-                  label: 'Name',
-                  readOnly: true,
-                  hintText: 'Your Name',
-                  suffixIconData: Icons.edit_outlined,
-                ),
-                CustomTextField(
-                  controller: controller.emailController,
-                  label: 'Email',
-                  readOnly: true,
-                  hintText: 'name@email.com',
-                  keyboardType: TextInputType.emailAddress,
-                  suffixIconData: Icons.edit_outlined,
-                ),
-                CustomTextField(
-                  controller: controller.nomorHpController,
-                  label: 'Phone Number',
-                  readOnly: true,
-                  hintText: '0812 3456 7890',
-                  keyboardType: TextInputType.phone,
-                  suffixIconData: Icons.edit_outlined,
-                ),
-                CustomTextField(
-                  controller: controller.alamatController,
-                  label: 'Home Address',
-                  readOnly: true,
-                  hintText: 'Jl. Melati No. 123',
-                  suffixIconData: Icons.edit_outlined,
-                ),
-                CustomTextField(
-                  controller: controller.districtController,
-                  label: 'District Name',
-                  readOnly: true,
-                  hintText: 'District Name',
-                  suffixIconData: Icons.edit_outlined,
-                ),
-                CustomTextField(
-                  controller: controller.organisasiController,
-                  label: 'Organization',
-                  readOnly: true,
-                  hintText: 'PT Maju Jaya',
-                  suffixIconData: Icons.edit_outlined,
-                ),
-                CustomTextField(
-                  controller: controller.departemenController,
-                  label: 'Department',
-                  readOnly: true,
-                  hintText: 'IT Support',
-                  suffixIconData: Icons.edit_outlined,
-                ),
+                Obx(() => GestureDetector(
+                  onTap: () {
+                    if (!controller.isEditing.value) {
+                      controller.showEditInfo();
+                    }
+                  },
+                  behavior: HitTestBehavior.opaque,
+                  child: AbsorbPointer(
+                    absorbing: !controller.isEditing.value,
+                    child: CustomTextField(
+                      controller: controller.namaController,
+                      label: 'Name',
+                      readOnly: !controller.isEditing.value,
+                      hintText: 'Your Name',
+                    ),
+                  ),
+                )),
+                Obx(() => GestureDetector(
+                  onTap: () {
+                    if (!controller.isEditing.value) {
+                      controller.showEditInfo();
+                    }
+                  },
+                  behavior: HitTestBehavior.opaque,
+                  child: AbsorbPointer(
+                    absorbing: !controller.isEditing.value,
+                    child: CustomTextField(
+                      controller: controller.emailController,
+                      label: 'Email',
+                      readOnly: !controller.isEditing.value,
+                      hintText: 'name@email.com',
+                      keyboardType: TextInputType.emailAddress,
+                    ),
+                  ),
+                )),
+                Obx(() => GestureDetector(
+                  onTap: () {
+                    if (!controller.isEditing.value) {
+                      controller.showEditInfo();
+                    }
+                  },
+                  behavior: HitTestBehavior.opaque,
+                  child: AbsorbPointer(
+                    absorbing: !controller.isEditing.value,
+                    child: CustomTextField(
+                      controller: controller.nomorHpController,
+                      label: 'Phone Number',
+                      readOnly: !controller.isEditing.value,
+                      hintText: '0812 3456 7890',
+                      keyboardType: TextInputType.phone,
+                    ),
+                  ),
+                )),
+                Obx(() => GestureDetector(
+                  onTap: () {
+                    if (!controller.isEditing.value) {
+                      controller.showEditInfo();
+                    }
+                  },
+                  behavior: HitTestBehavior.opaque,
+                  child: AbsorbPointer(
+                    absorbing: !controller.isEditing.value,
+                    child: CustomTextField(
+                      controller: controller.alamatController,
+                      label: 'Home Address',
+                      readOnly: !controller.isEditing.value,
+                      hintText: 'Jl. Melati No. 123',
+                    ),
+                  ),
+                )),
+
                 vSpace(context, 16),
                 Text(
                   'Gender',
                   style: TextStyle(fontSize: rfs(context, 14), fontWeight: FontWeight.w600),
                 ),
                 vSpace(context, 12),
-                Obx(() => IgnorePointer(
-                  child: GenderToggleButton(
-                    selectedGender: controller.selectedGender.value,
-                    onChanged: (gender) {},
+                Obx(() => GestureDetector(
+                  onTap: () {
+                    if (!controller.isEditing.value) {
+                      controller.showEditInfo();
+                    }
+                  },
+                  behavior: HitTestBehavior.opaque,
+                  child: AbsorbPointer(
+                    absorbing: !controller.isEditing.value,
+                    child: GenderToggleButton(
+                      selectedGender: controller.selectedGender.value,
+                      onChanged: (gender) {
+                        controller.selectedGender.value = gender;
+                      },
+                    ),
                   ),
                 )),
                 vSpace(context, 20),

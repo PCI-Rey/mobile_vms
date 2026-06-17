@@ -4,7 +4,6 @@ import '../../../core/core.dart';
 import '../../../core/helper/responsive_helper.dart';
 import '../../auth/controller/language_controller.dart';
 import '../../auth/controller/user_controller.dart';
-import '../../profile/profile_page.dart';
 import '../../notification/notification_page.dart';
 import '../../dashboard.dart';
 
@@ -17,7 +16,12 @@ class GuestHeader extends StatelessWidget {
     final userCtrl = UserController.to;
 
     return Padding(
-      padding: EdgeInsets.fromLTRB(rw(context, 20), rh(context, 16), rw(context, 20), 0),
+      padding: EdgeInsets.fromLTRB(
+        rw(context, 20),
+        rh(context, 16),
+        rw(context, 20),
+        0,
+      ),
       child: Row(
         children: [
           GestureDetector(
@@ -127,17 +131,17 @@ class GuestHeader extends StatelessWidget {
     );
   }
 
-  Widget _buildLangSelector(
-    BuildContext context,
-    LanguageController langCtrl,
-  ) {
+  Widget _buildLangSelector(BuildContext context, LanguageController langCtrl) {
     return Container(
       decoration: BoxDecoration(
         border: Border.all(color: Colors.white54),
         borderRadius: BorderRadius.circular(rw(context, 20)),
         color: Colors.white.withValues(alpha: 0.18),
       ),
-      padding: EdgeInsets.symmetric(horizontal: rw(context, 10), vertical: rh(context, 2)),
+      padding: EdgeInsets.symmetric(
+        horizontal: rw(context, 10),
+        vertical: rh(context, 2),
+      ),
       child: Obx(
         () => DropdownButtonHideUnderline(
           child: DropdownButton<String>(

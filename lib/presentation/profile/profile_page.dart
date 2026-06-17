@@ -433,6 +433,7 @@ class ProfilePage extends StatelessWidget {
                 Get.snackbar('Error', 'Could not launch product page.');
               }
             },
+            canRequestFocus: false,
             customBorder: const CircleBorder(),
             child: Container(
               width: rw(context, 52),

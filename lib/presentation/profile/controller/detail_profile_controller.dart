@@ -10,19 +10,100 @@ class DetailProfileController extends GetxController {
 
   final isLoading = false.obs;
   final isSaving = false.obs;
+  final isEditing = false.obs;
 
   // Controllers
   final namaController = TextEditingController();
   final emailController = TextEditingController();
   final nomorHpController = TextEditingController();
   final alamatController = TextEditingController();
-  final organisasiController = TextEditingController();
-  final departemenController = TextEditingController();
-  final districtController = TextEditingController();
+
   final selectedGender = Gender.male.obs;
   final roleLabel = ''.obs;
   final imageUrl = ''.obs;
   final namaHeader = ''.obs;
+
+  // For backing up values when editing starts
+  String _backupNama = '';
+  String _backupEmail = '';
+  String _backupNomorHp = '';
+  String _backupAlamat = '';
+  Gender _backupGender = Gender.male;
+
+  void startEditing() {
+    _backupNama = namaController.text;
+    _backupEmail = emailController.text;
+    _backupNomorHp = nomorHpController.text;
+    _backupAlamat = alamatController.text;
+    _backupGender = selectedGender.value;
+    isEditing.value = true;
+  }
+
+  void cancelEditing() {
+    namaController.text = _backupNama;
+    emailController.text = _backupEmail;
+    nomorHpController.text = _backupNomorHp;
+    alamatController.text = _backupAlamat;
+    selectedGender.value = _backupGender;
+    isEditing.value = false;
+  }
+
+  Future<void> saveProfile() async {
+    if (namaController.text.trim().isEmpty) {
+      Get.snackbar('Error', 'Name cannot be empty', backgroundColor: Colors.red, colorText: Colors.white);
+      return;
+    }
+    if (emailController.text.trim().isEmpty) {
+      Get.snackbar('Error', 'Email cannot be empty', backgroundColor: Colors.red, colorText: Colors.white);
+      return;
+    }
+
+    isSaving.value = true;
+    final genderStr = selectedGender.value == Gender.female ? 'Female' : 'Male';
+    final payload = {
+      'fullname': namaController.text.trim(),
+      'email': emailController.text.trim(),
+      'phone': nomorHpController.text.trim(),
+      'address': alamatController.text.trim(),
+      'gender': genderStr,
+      'group_name': roleLabel.value,
+    };
+
+    final (success, title, msg) = await _authDatasource.updateProfile(payload);
+    isSaving.value = false;
+
+    if (success) {
+      Get.snackbar(
+        (title ?? 'Success').capitalizeFirst ?? 'Success',
+        msg ?? 'Profile updated successfully',
+        backgroundColor: Colors.green,
+        colorText: Colors.white,
+      );
+      isEditing.value = false;
+      await UserController.to.loadUser();
+      namaHeader.value = namaController.text;
+    } else {
+      Get.snackbar(
+        (title ?? 'Error').capitalizeFirst ?? 'Error',
+        msg ?? 'Failed to update profile',
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
+    }
+  }
+
+  void showEditInfo() {
+    if (Get.isSnackbarOpen) return;
+    Get.snackbar(
+      'Info',
+      'Please tap the pencil icon at the top to start editing your profile.',
+      backgroundColor: const Color(0xFF1976D2),
+      colorText: Colors.white,
+      icon: const Icon(Icons.info_outline, color: Colors.white),
+      snackPosition: SnackPosition.TOP,
+      duration: const Duration(seconds: 3),
+    );
+  }
 
   @override
   void onInit() {
@@ -69,9 +150,7 @@ class DetailProfileController extends GetxController {
     emailController.text = data['email']?.toString() ?? '';
     nomorHpController.text = data['phone']?.toString() ?? '';
     alamatController.text = data['address']?.toString() ?? '';
-    districtController.text = data['district_name']?.toString() ?? '';
-    organisasiController.text = data['organization_name']?.toString() ?? '';
-    departemenController.text = data['department_name']?.toString() ?? '';
+
     roleLabel.value = (data['group_name'] ?? '').toString();
     imageUrl.value =
         data['image']?.toString() ?? ''; // Asumsi field 'image' atau 'photo'
@@ -90,9 +169,7 @@ class DetailProfileController extends GetxController {
     emailController.dispose();
     nomorHpController.dispose();
     alamatController.dispose();
-    organisasiController.dispose();
-    departemenController.dispose();
-    districtController.dispose();
+
     super.onClose();
   }
 }

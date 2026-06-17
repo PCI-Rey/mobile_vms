@@ -7,7 +7,7 @@ import '../../../../core/core.dart';
 import '../../../../core/helper/responsive_helper.dart';
 import 'invite_share_link_dialog.dart';
 
-class ShareLinkCard extends StatefulWidget {
+class ShareLinkCard extends StatelessWidget {
   final dynamic item;
   final int no;
   final VoidCallback onTap;
@@ -18,39 +18,6 @@ class ShareLinkCard extends StatefulWidget {
     required this.no,
     required this.onTap,
   });
-
-  @override
-  State<ShareLinkCard> createState() => _ShareLinkCardState();
-}
-
-class _ShareLinkCardState extends State<ShareLinkCard> {
-  Timer? _timer;
-
-  @override
-  void initState() {
-    super.initState();
-    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (mounted) setState(() {});
-    });
-  }
-
-  @override
-  void dispose() {
-    _timer?.cancel();
-    super.dispose();
-  }
-
-  String _getRemainingTime(DateTime? expiredAt) {
-    final item = widget.item;
-    final int expiredNumber = item['expired_number'] ?? -1;
-    if (expiredNumber == 0) return 'No Expired';
-    if (expiredAt == null) return '00:00:00';
-    final now = DateTime.now();
-    final difference = expiredAt.difference(now);
-    if (difference.isNegative) return '00:00:00';
-    String twoDigits(int n) => n.toString().padLeft(2, '0');
-    return '${twoDigits(difference.inHours)}:${twoDigits(difference.inMinutes.remainder(60))}:${twoDigits(difference.inSeconds.remainder(60))}';
-  }
 
   void _showBarcodeDialog(BuildContext context, String url) {
     showDialog(
@@ -156,10 +123,6 @@ class _ShareLinkCardState extends State<ShareLinkCard> {
 
   @override
   Widget build(BuildContext context) {
-    final item = widget.item;
-    final no = widget.no;
-    final onTap = widget.onTap;
-    
     final String agenda = item['agenda'] ?? '-';
 
     final expiredAtStr = item['expired_at'];
@@ -291,41 +254,10 @@ class _ShareLinkCardState extends State<ShareLinkCard> {
                   ),
                   hSpace(context, 6),
                   // Timer Badge
-                  Container(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: rw(context, 7),
-                      vertical: rh(context, 3),
-                    ),
-                    decoration: BoxDecoration(
-                      color: isExpired
-                          ? Colors.grey.withValues(alpha: 0.1)
-                          : Colors.orange.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(rw(context, 20)),
-                      border: Border.all(
-                        color: isExpired
-                            ? Colors.grey.withValues(alpha: 0.4)
-                            : Colors.orange.withValues(alpha: 0.4),
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.timer_outlined,
-                          size: rw(context, 12),
-                          color: isExpired ? Colors.grey : Colors.orange.shade800,
-                        ),
-                        hSpace(context, 4),
-                        Text(
-                          _getRemainingTime(expiredAt),
-                          style: TextStyle(
-                            fontSize: rfs(context, 12),
-                            fontWeight: FontWeight.w600,
-                            color: isExpired ? Colors.grey : Colors.orange.shade800,
-                          ),
-                        ),
-                      ],
-                    ),
+                  _CountdownBadge(
+                    expiredAt: expiredAt,
+                    expiredNumber: item['expired_number'] ?? -1,
+                    isExpired: isExpired,
                   ),
                   hSpace(context, 6),
                   // Status Badge
@@ -469,6 +401,91 @@ class _ShareLinkCardState extends State<ShareLinkCard> {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _CountdownBadge extends StatefulWidget {
+  final DateTime? expiredAt;
+  final int expiredNumber;
+  final bool isExpired;
+
+  const _CountdownBadge({
+    required this.expiredAt,
+    required this.expiredNumber,
+    required this.isExpired,
+  });
+
+  @override
+  State<_CountdownBadge> createState() => _CountdownBadgeState();
+}
+
+class _CountdownBadgeState extends State<_CountdownBadge> {
+  Timer? _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    if (!widget.isExpired && widget.expiredNumber != 0) {
+      _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+        if (mounted) setState(() {});
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  String _getRemainingTime(DateTime? expiredAt) {
+    if (widget.expiredNumber == 0) return 'No Expired';
+    if (expiredAt == null) return '00:00:00';
+    final now = DateTime.now();
+    final difference = expiredAt.difference(now);
+    if (difference.isNegative) return '00:00:00';
+    String twoDigits(int n) => n.toString().padLeft(2, '0');
+    return '${twoDigits(difference.inHours)}:${twoDigits(difference.inMinutes.remainder(60))}:${twoDigits(difference.inSeconds.remainder(60))}';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: rw(context, 7),
+        vertical: rh(context, 3),
+      ),
+      decoration: BoxDecoration(
+        color: widget.isExpired
+            ? Colors.grey.withValues(alpha: 0.1)
+            : Colors.orange.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(rw(context, 20)),
+        border: Border.all(
+          color: widget.isExpired
+              ? Colors.grey.withValues(alpha: 0.4)
+              : Colors.orange.withValues(alpha: 0.4),
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            Icons.timer_outlined,
+            size: rw(context, 12),
+            color: widget.isExpired ? Colors.grey : Colors.orange.shade800,
+          ),
+          hSpace(context, 4),
+          Text(
+            _getRemainingTime(widget.expiredAt),
+            style: TextStyle(
+              fontSize: rfs(context, 12),
+              fontWeight: FontWeight.w600,
+              color: widget.isExpired ? Colors.grey : Colors.orange.shade800,
+            ),
+          ),
+        ],
       ),
     );
   }

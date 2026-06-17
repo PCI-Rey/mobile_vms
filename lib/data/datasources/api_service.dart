@@ -171,8 +171,8 @@ class ApiService {
     Map<String, dynamic> payload,
   ) async {
     try {
-      final response = await _dio.post(
-        '/$pathApi/profile/update',
+      final response = await _dio.put(
+        '/$pathApi/profile/me',
         data: payload,
         options: Options(headers: {'Authorization': 'Bearer $token'}),
       );

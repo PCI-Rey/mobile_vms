@@ -441,8 +441,6 @@ class _NotificationDialogState extends State<NotificationDialog> {
                                 final isPending =
                                     (t.approvalActorStatus ?? '')
                                             .toLowerCase() ==
-                                        'pending' ||
-                                    (t.approvalStatus ?? '').toLowerCase() ==
                                         'pending';
                                 return isPending;
                               })
@@ -1389,8 +1387,7 @@ class _NotificationPageState extends State<NotificationPage> {
                     .where((t) {
                       final isPending =
                           (t.approvalActorStatus ?? '').toLowerCase() ==
-                              'pending' ||
-                          (t.approvalStatus ?? '').toLowerCase() == 'pending';
+                              'pending';
                       return isPending;
                     })
                     .toList();

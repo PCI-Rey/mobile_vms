@@ -3635,12 +3635,7 @@ class _ShareLinkListInlineState extends State<ShareLinkListInline> {
               child: listWidget,
             ),
           ),
-          if (controller.isShareLinkLoading.value &&
-              controller.shareLinks.isNotEmpty)
-            Padding(
-              padding: EdgeInsets.symmetric(vertical: rh(context, 10)),
-              child: const CircularProgressIndicator(),
-            ),
+
           // Pagination footer
           if (controller.shareLinkTotalRecords.value > 10)
             _buildPaginationBar(),

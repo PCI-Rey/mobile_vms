@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:hive_flutter/hive_flutter.dart';
 import '../models/user_model.dart';
 import '../models/access_pass_model.dart';
@@ -66,5 +67,30 @@ class HiveService {
   Future<void> clearDashboardData() async {
     final box = Hive.box(dashboardBoxName);
     await box.clear();
+  }
+
+  // --- Sites Cache ---
+
+  Future<void> saveSites(List<Map<String, String>> sites) async {
+    final box = Hive.box(dashboardBoxName);
+    await box.put('cached_sites', json.encode(sites));
+  }
+
+  List<Map<String, String>> getSites() {
+    final box = Hive.box(dashboardBoxName);
+    final raw = box.get('cached_sites');
+    if (raw == null || raw is! String) return [];
+    try {
+      final List<dynamic> decoded = json.decode(raw);
+      return decoded.map((e) {
+        final map = e as Map<String, dynamic>;
+        return {
+          'id': map['id']?.toString() ?? '',
+          'name': map['name']?.toString() ?? '',
+        };
+      }).toList();
+    } catch (_) {
+      return [];
+    }
   }
 }

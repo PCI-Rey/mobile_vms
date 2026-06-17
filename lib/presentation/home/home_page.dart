@@ -23,6 +23,8 @@ import 'invitation/widgets/create_quick_access_dialog.dart';
 import 'visitor_request/add_pra_registration_dialog.dart';
 import '../../data/models/access_pass_model.dart';
 import '../../data/models/approval_ticket_model.dart';
+import '../../data/datasources/api_service.dart';
+import '../../data/datasources/hive_service.dart';
 import '../dashboard.dart';
 
 class HomePage extends StatefulWidget {
@@ -44,6 +46,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
       : Get.put(InvitationController());
 
   bool _showBellRedDot = false;
+  bool _isPageTransitionComplete = false;
 
   Worker? _approvalTicketsWorker;
 
@@ -82,8 +85,16 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
         );
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      _prefetchSites();
       if (mounted) {
-        _checkAndShowPendingPopup(invitationController.approvalTickets);
+        Future.delayed(const Duration(milliseconds: 1800), () {
+          if (mounted) {
+            setState(() {
+              _isPageTransitionComplete = true;
+            });
+            _checkAndShowPendingPopup(invitationController.approvalTickets);
+          }
+        });
       }
     });
 
@@ -96,6 +107,31 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     });
   }
 
+  Future<void> _prefetchSites() async {
+    try {
+      final hive = HiveService();
+      final token = hive.getUser()?.token;
+      if (token != null) {
+        final api = ApiService();
+        final response = await api.getSitesWithToken(token);
+        if (response.data['status'] == 'success') {
+          final collection = response.data['collection'] as List<dynamic>? ?? [];
+          final newList = <Map<String, String>>[];
+          for (var item in collection) {
+            newList.add({
+              'id': item['id']?.toString() ?? '',
+              'name': item['name']?.toString() ?? '',
+            });
+          }
+          await hive.saveSites(newList);
+          debugPrint('Sites pre-fetched and saved to Hive successfully.');
+        }
+      }
+    } catch (e) {
+      debugPrint('Error prefetching sites: $e');
+    }
+  }
+
   @override
   void dispose() {
     _bellAnimationController.dispose();
@@ -104,12 +140,12 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   }
 
   void _checkAndShowPendingPopup(List<ApprovalTicketModel> tickets) {
+    if (!_isPageTransitionComplete) return;
     if (invitationController.hasShownPendingPopup) return;
 
     List<ApprovalTicketModel> pendingTickets = tickets.where((t) {
       final isPending =
-          (t.approvalActorStatus ?? '').toLowerCase() == 'pending' ||
-          (t.approvalStatus ?? '').toLowerCase() == 'pending';
+          (t.approvalActorStatus ?? '').toLowerCase() == 'pending';
       return isPending;
     }).toList();
 
@@ -794,7 +830,9 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                       size: rw(context, 22),
                     ),
                     Obx(() {
-                      final hasUnread = _showBellRedDot || invitationController.unreadTicketIds.isNotEmpty;
+                      final hasUnread =
+                          _showBellRedDot ||
+                          invitationController.unreadTicketIds.isNotEmpty;
                       if (!hasUnread) return const SizedBox.shrink();
                       return Positioned(
                         right: 1,
@@ -1362,52 +1400,67 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     return Obx(() {
       final date = invitationController.selectedDashboardDate.value;
       final isId = langCtrl.selectedLang.value == 'id';
-      
+
       final List<_ActivityItem> activities = [];
 
       // 1. Invitations created today
       for (final item in invitationController.allRawVisitors) {
         if (item.flow.toLowerCase() == 'quickaccessvisit') continue;
-        if (item.agenda.isEmpty && item.hostName.isEmpty && item.visitorTypeName.isEmpty) continue;
-        
+        if (item.agenda.isEmpty &&
+            item.hostName.isEmpty &&
+            item.visitorTypeName.isEmpty)
+          continue;
+
         final createdAt = item.invitationCreatedAt ?? item.visitorPeriodStart;
         if (createdAt.year == date.year &&
             createdAt.month == date.month &&
             createdAt.day == date.day) {
-          activities.add(_ActivityItem(
-            title: isId ? 'Undangan dibuat' : 'Invitation created',
-            description: item.visitorName.trim().isEmpty ? item.agenda : '${item.visitorName.trim()} - ${item.agenda}',
-            timestamp: createdAt,
-            icon: Icons.calendar_month_outlined,
-            iconColor: const Color(0xFF3B6D11),
-            bgColor: const Color(0xFFEAF3DE),
-          ));
+          activities.add(
+            _ActivityItem(
+              title: isId ? 'Undangan dibuat' : 'Invitation created',
+              description: item.visitorName.trim().isEmpty
+                  ? item.agenda
+                  : '${item.visitorName.trim()} - ${item.agenda}',
+              timestamp: createdAt,
+              icon: Icons.calendar_month_outlined,
+              iconColor: const Color(0xFF3B6D11),
+              bgColor: const Color(0xFFEAF3DE),
+            ),
+          );
         }
       }
 
       // 2. Quick Access created today
       for (final item in invitationController.allRawVisitors) {
         if (item.flow.toLowerCase() != 'quickaccessvisit') continue;
-        if (item.agenda.isEmpty && item.hostName.isEmpty && item.visitorTypeName.isEmpty) continue;
-        
+        if (item.agenda.isEmpty &&
+            item.hostName.isEmpty &&
+            item.visitorTypeName.isEmpty)
+          continue;
+
         final createdAt = item.invitationCreatedAt ?? item.visitorPeriodStart;
         if (createdAt.year == date.year &&
             createdAt.month == date.month &&
             createdAt.day == date.day) {
-          activities.add(_ActivityItem(
-            title: isId ? 'Quick Access dibuat' : 'Quick Access created',
-            description: item.visitorName.trim().isEmpty ? item.agenda : '${item.visitorName.trim()} - ${item.agenda}',
-            timestamp: createdAt,
-            icon: Icons.flash_on_rounded,
-            iconColor: const Color(0xFFFF9800),
-            bgColor: const Color(0xFFFFF4E5),
-          ));
+          activities.add(
+            _ActivityItem(
+              title: isId ? 'Quick Access dibuat' : 'Quick Access created',
+              description: item.visitorName.trim().isEmpty
+                  ? item.agenda
+                  : '${item.visitorName.trim()} - ${item.agenda}',
+              timestamp: createdAt,
+              icon: Icons.flash_on_rounded,
+              iconColor: const Color(0xFFFF9800),
+              bgColor: const Color(0xFFFFF4E5),
+            ),
+          );
         }
       }
 
       // 3. Share Links created today
       for (final item in invitationController.dashboardShareLinks) {
-        final dateStr = item['created_at']?.toString() ??
+        final dateStr =
+            item['created_at']?.toString() ??
             item['visitor_period_start']?.toString() ??
             item['expired_at']?.toString();
         if (dateStr != null) {
@@ -1420,14 +1473,17 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
             if (createdAt.year == date.year &&
                 createdAt.month == date.month &&
                 createdAt.day == date.day) {
-              activities.add(_ActivityItem(
-                title: isId ? 'Tautan dibagikan' : 'Link shared',
-                description: '${item['site_place_name'] ?? item['site_name'] ?? 'Gedung'} - ${item['agenda'] ?? ''}',
-                timestamp: createdAt,
-                icon: Icons.add_link,
-                iconColor: const Color(0xFF534AB7),
-                bgColor: const Color(0xFFF3EEFE),
-              ));
+              activities.add(
+                _ActivityItem(
+                  title: isId ? 'Tautan dibagikan' : 'Link shared',
+                  description:
+                      '${item['site_place_name'] ?? item['site_name'] ?? 'Gedung'} - ${item['agenda'] ?? ''}',
+                  timestamp: createdAt,
+                  icon: Icons.add_link,
+                  iconColor: const Color(0xFF534AB7),
+                  bgColor: const Color(0xFFF3EEFE),
+                ),
+              );
             }
           } catch (e) {
             debugPrint('Error parsing share link date: $e');
@@ -1437,14 +1493,17 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
 
       // 4. Approvals processed today
       for (final ticket in invitationController.approvalTickets) {
-        final isPending = (ticket.approvalActorStatus ?? '').toLowerCase() == 'pending' ||
-                          (ticket.approvalStatus ?? '').toLowerCase() == 'pending';
-        final isApproved = (ticket.approvalActorStatus ?? '').toLowerCase() == 'approved' ||
-                           (ticket.approvalStatus ?? '').toLowerCase() == 'approved';
-        final isRejected = (ticket.approvalActorStatus ?? '').toLowerCase() == 'rejected' ||
-                           (ticket.approvalActorStatus ?? '').toLowerCase() == 'denied' ||
-                           (ticket.approvalStatus ?? '').toLowerCase() == 'rejected' ||
-                           (ticket.approvalStatus ?? '').toLowerCase() == 'denied';
+        final isPending =
+            (ticket.approvalActorStatus ?? '').toLowerCase() == 'pending' ||
+            (ticket.approvalStatus ?? '').toLowerCase() == 'pending';
+        final isApproved =
+            (ticket.approvalActorStatus ?? '').toLowerCase() == 'approved' ||
+            (ticket.approvalStatus ?? '').toLowerCase() == 'approved';
+        final isRejected =
+            (ticket.approvalActorStatus ?? '').toLowerCase() == 'rejected' ||
+            (ticket.approvalActorStatus ?? '').toLowerCase() == 'denied' ||
+            (ticket.approvalStatus ?? '').toLowerCase() == 'rejected' ||
+            (ticket.approvalStatus ?? '').toLowerCase() == 'denied';
 
         if (isPending) {
           final createdAt = ticket.approvalTicketAt;
@@ -1452,14 +1511,19 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
               createdAt.year == date.year &&
               createdAt.month == date.month &&
               createdAt.day == date.day) {
-            activities.add(_ActivityItem(
-              title: isId ? 'Persetujuan diterima' : 'Approval request received',
-              description: 'Akses pending untuk ${ticket.hostName ?? 'Visitor'} - ${ticket.agenda ?? ''}',
-              timestamp: createdAt,
-              icon: Icons.access_time,
-              iconColor: const Color(0xFFE65100),
-              bgColor: const Color(0xFFFFF3E0),
-            ));
+            activities.add(
+              _ActivityItem(
+                title: isId
+                    ? 'Persetujuan diterima'
+                    : 'Approval request received',
+                description:
+                    'Akses pending untuk ${ticket.hostName ?? 'Visitor'} - ${ticket.agenda ?? ''}',
+                timestamp: createdAt,
+                icon: Icons.access_time,
+                iconColor: const Color(0xFFE65100),
+                bgColor: const Color(0xFFFFF3E0),
+              ),
+            );
           }
         } else if (isApproved) {
           final approvedAt = ticket.approvedAt ?? ticket.approvalTicketAt;
@@ -1467,14 +1531,17 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
               approvedAt.year == date.year &&
               approvedAt.month == date.month &&
               approvedAt.day == date.day) {
-            activities.add(_ActivityItem(
-              title: isId ? 'Persetujuan disetujui' : 'Approval approved',
-              description: 'Akses disetujui untuk ${ticket.hostName ?? 'Visitor'} - ${ticket.agenda ?? ''}',
-              timestamp: approvedAt,
-              icon: Icons.check_circle_outline,
-              iconColor: const Color(0xFF43A047),
-              bgColor: const Color(0xFFE8F5E9),
-            ));
+            activities.add(
+              _ActivityItem(
+                title: isId ? 'Persetujuan disetujui' : 'Approval approved',
+                description:
+                    'Akses disetujui untuk ${ticket.hostName ?? 'Visitor'} - ${ticket.agenda ?? ''}',
+                timestamp: approvedAt,
+                icon: Icons.check_circle_outline,
+                iconColor: const Color(0xFF43A047),
+                bgColor: const Color(0xFFE8F5E9),
+              ),
+            );
           }
         } else if (isRejected) {
           final approvedAt = ticket.approvedAt ?? ticket.approvalTicketAt;
@@ -1482,14 +1549,17 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
               approvedAt.year == date.year &&
               approvedAt.month == date.month &&
               approvedAt.day == date.day) {
-            activities.add(_ActivityItem(
-              title: isId ? 'Persetujuan ditolak' : 'Approval rejected',
-              description: 'Akses ditolak untuk ${ticket.hostName ?? 'Visitor'} - ${ticket.agenda ?? ''}',
-              timestamp: approvedAt,
-              icon: Icons.cancel_outlined,
-              iconColor: const Color(0xFFD32F2F),
-              bgColor: const Color(0xFFFFEBEE),
-            ));
+            activities.add(
+              _ActivityItem(
+                title: isId ? 'Persetujuan ditolak' : 'Approval rejected',
+                description:
+                    'Akses ditolak untuk ${ticket.hostName ?? 'Visitor'} - ${ticket.agenda ?? ''}',
+                timestamp: approvedAt,
+                icon: Icons.cancel_outlined,
+                iconColor: const Color(0xFFD32F2F),
+                bgColor: const Color(0xFFFFEBEE),
+              ),
+            );
           }
         }
       }
@@ -1502,10 +1572,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildSectionHeader(
-            context,
-            sectionHeaderTitle,
-          ),
+          _buildSectionHeader(context, sectionHeaderTitle),
           vSpace(context, 16),
           if (activities.isEmpty)
             Container(
@@ -1553,7 +1620,9 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
               child: Column(
                 children: [
                   ...activities.take(3).map((activity) {
-                    final isLast = activities.indexOf(activity) == activities.take(3).length - 1;
+                    final isLast =
+                        activities.indexOf(activity) ==
+                        activities.take(3).length - 1;
                     return Column(
                       children: [
                         _buildActivityRow(context, activity),
@@ -1576,7 +1645,9 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                     TextButton(
                       onPressed: () => context.push(const TodayActivityPage()),
                       style: TextButton.styleFrom(
-                        padding: EdgeInsets.symmetric(vertical: rh(context, 14)),
+                        padding: EdgeInsets.symmetric(
+                          vertical: rh(context, 14),
+                        ),
                         minimumSize: Size.zero,
                         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                         foregroundColor: AppColors.primary500,
@@ -1590,7 +1661,9 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Text(
-                            isId ? 'Lihat Semua Aktivitas' : 'See All Activities',
+                            isId
+                                ? 'Lihat Semua Aktivitas'
+                                : 'See All Activities',
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
                               fontSize: rfs(context, 13),
@@ -1604,7 +1677,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                         ],
                       ),
                     ),
-                  ]
+                  ],
                 ],
               ),
             ),
@@ -1682,16 +1755,14 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
       final date = invitationController.selectedDashboardDate.value;
       final isId = langCtrl.selectedLang.value == 'id';
 
-      final List<AccessPassModel> newVisitors = invitationController.getTodayVisitors();
+      final List<AccessPassModel> newVisitors = invitationController
+          .getTodayVisitors();
       final sectionHeaderTitle = isId ? 'Visitor Terbaru' : 'New Visitor';
 
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildSectionHeader(
-            context,
-            sectionHeaderTitle,
-          ),
+          _buildSectionHeader(context, sectionHeaderTitle),
           vSpace(context, 16),
           if (newVisitors.isEmpty)
             Container(
@@ -1712,7 +1783,9 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                   ),
                   vSpace(context, 12),
                   Text(
-                    isId ? 'Tidak ada visitor baru hari ini' : 'No new visitors today',
+                    isId
+                        ? 'Tidak ada visitor baru hari ini'
+                        : 'No new visitors today',
                     style: TextStyle(
                       fontSize: rfs(context, 13),
                       color: Colors.grey.shade500,
@@ -1763,7 +1836,9 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                     TextButton(
                       onPressed: () => context.push(const NewVisitorPage()),
                       style: TextButton.styleFrom(
-                        padding: EdgeInsets.symmetric(vertical: rh(context, 14)),
+                        padding: EdgeInsets.symmetric(
+                          vertical: rh(context, 14),
+                        ),
                         minimumSize: Size.zero,
                         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                         foregroundColor: AppColors.primary500,
@@ -1777,7 +1852,9 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Text(
-                            isId ? 'Lihat Semua Visitor' : 'See All New Visitors',
+                            isId
+                                ? 'Lihat Semua Visitor'
+                                : 'See All New Visitors',
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
                               fontSize: rfs(context, 13),
@@ -1791,7 +1868,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                         ],
                       ),
                     ),
-                  ]
+                  ],
                 ],
               ),
             ),
@@ -1803,31 +1880,19 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   Map<String, Color> _getBadgeColors(String status) {
     final lower = status.toLowerCase().trim();
     if (lower == 'checkin') {
-      return {
-        'bg': const Color(0xFFE8F5E9),
-        'text': const Color(0xFF2E7D32),
-      };
+      return {'bg': const Color(0xFFE8F5E9), 'text': const Color(0xFF2E7D32)};
     } else if (lower == 'checkout') {
-      return {
-        'bg': const Color(0xFFE8EAF6),
-        'text': const Color(0xFF283593),
-      };
+      return {'bg': const Color(0xFFE8EAF6), 'text': const Color(0xFF283593)};
     } else if (lower == 'pending' || lower == 'waiting') {
-      return {
-        'bg': const Color(0xFFFFF3E0),
-        'text': const Color(0xFFEF6C00),
-      };
-    } else if (lower == 'reject' || lower == 'rejected' || lower == 'denied' || lower == 'deny') {
-      return {
-        'bg': const Color(0xFFFFEBEE),
-        'text': const Color(0xFFC62828),
-      };
+      return {'bg': const Color(0xFFFFF3E0), 'text': const Color(0xFFEF6C00)};
+    } else if (lower == 'reject' ||
+        lower == 'rejected' ||
+        lower == 'denied' ||
+        lower == 'deny') {
+      return {'bg': const Color(0xFFFFEBEE), 'text': const Color(0xFFC62828)};
     } else {
       // Active, Available, or others
-      return {
-        'bg': const Color(0xFFE0F7FA),
-        'text': const Color(0xFF006064),
-      };
+      return {'bg': const Color(0xFFE0F7FA), 'text': const Color(0xFF006064)};
     }
   }
 
@@ -1860,7 +1925,11 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     return 'Active';
   }
 
-  Widget _buildVisitorRow(BuildContext context, AccessPassModel visitor, int index) {
+  Widget _buildVisitorRow(
+    BuildContext context,
+    AccessPassModel visitor,
+    int index,
+  ) {
     final timeStr = DateFormat('HH:mm').format(visitor.visitorPeriodStart);
     final badgeColors = _getBadgeColors(visitor.visitorStatus);
     final displayStatus = _displayStatus(visitor.visitorStatus);
@@ -1920,7 +1989,9 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                 ),
                 vSpace(context, 4),
                 Text(
-                  visitor.visitorOrganizationName.isEmpty ? '-' : visitor.visitorOrganizationName,
+                  visitor.visitorOrganizationName.isEmpty
+                      ? '-'
+                      : visitor.visitorOrganizationName,
                   style: TextStyle(
                     fontSize: rfs(context, 12),
                     color: Colors.grey.shade600,
@@ -1970,7 +2041,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     );
   }
 
-
   Widget _buildSummaryCards(BuildContext context) {
     return Obx(() {
       final date = invitationController.selectedDashboardDate.value;
@@ -2017,7 +2087,13 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
       bool isGuest = true;
       if (user != null) {
         final r = (user.roleAccess ?? 'guest').toLowerCase();
-        if (['operator', 'employee', 'admin', 'superadmin', 'staff'].contains(r)) {
+        if ([
+          'operator',
+          'employee',
+          'admin',
+          'superadmin',
+          'staff',
+        ].contains(r)) {
           isGuest = false;
         }
       }
@@ -2047,7 +2123,8 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
       }
 
       final now = DateTime.now();
-      final isToday = date.year == now.year &&
+      final isToday =
+          date.year == now.year &&
           date.month == now.month &&
           date.day == now.day;
 
@@ -2065,7 +2142,9 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                   unit: 'People',
                   icon: Icons.people,
                   color: const Color(0xFF1976D2),
-                  isLoading: invitationController.isVisitorTodayLoading.value && invitationController.visitorTodayCount.value == 0,
+                  isLoading:
+                      invitationController.isVisitorTodayLoading.value &&
+                      invitationController.visitorTodayCount.value == 0,
                 ),
               ),
               hSpace(context, 12),
@@ -2137,7 +2216,9 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                     }
                     final result = await showAddPraRegistrationDialog(context);
                     if (result == true) {
-                      invitationController.fetchOngoingInvitations(clearFilters: true);
+                      invitationController.fetchOngoingInvitations(
+                        clearFilters: true,
+                      );
                     }
                   },
                 ),
@@ -2235,15 +2316,8 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
             Container(
               width: rw(context, 48),
               height: rw(context, 48),
-              decoration: BoxDecoration(
-                color: bgColor,
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                icon,
-                color: iconColor,
-                size: rw(context, 22),
-              ),
+              decoration: BoxDecoration(color: bgColor, shape: BoxShape.circle),
+              child: Icon(icon, color: iconColor, size: rw(context, 22)),
             ),
             vSpace(context, 10),
             SizedBox(
