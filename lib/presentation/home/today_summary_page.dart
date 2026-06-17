@@ -197,6 +197,36 @@ class TodaySummaryPage extends StatelessWidget {
     final String unitInv = isIndo ? 'Undangan' : 'Invitation(s)';
     final String unitAlarm = isIndo ? 'Alarm' : 'Alarm(s)';
 
+    // Compute dynamic breakdown stats for Tab 1
+    final invitationController = Get.find<InvitationController>();
+    final date = invitationController.selectedDashboardDate.value;
+
+    final todayVisitorsList = invitationController.getTodayVisitors();
+    final int checkedOutCount = todayVisitorsList.where((v) => v.visitorStatus.toLowerCase() == 'checkout').length;
+
+    final dateInvitations = invitationController.allRawVisitors.where((item) {
+      if (item.flow.toLowerCase() == 'quickaccessvisit') return false;
+      if (item.agenda.isEmpty &&
+          item.hostName.isEmpty &&
+          item.visitorTypeName.isEmpty) return false;
+      final itemDate = item.visitorPeriodStart;
+      return itemDate.year == date.year &&
+          itemDate.month == date.month &&
+          itemDate.day == date.day;
+    }).toList();
+    final int expiredInvitationCount = dateInvitations.where((item) => item.visitorPeriodEnd.isBefore(DateTime.now())).length;
+
+    final alarmCtrl = Get.isRegistered<AlarmController>()
+        ? Get.find<AlarmController>()
+        : Get.put(AlarmController());
+    final dateAlarms = alarmCtrl.alarms.where((alarm) {
+      final itemDate = alarm.createdAt;
+      return itemDate.year == date.year &&
+          itemDate.month == date.month &&
+          itemDate.day == date.day;
+    }).toList();
+    final int resolvedAlarmCount = dateAlarms.where((a) => a.isApproved || a.isDenied).length;
+
     final String descVisitor = isIndo ? 'Jumlah visitor yang datang hari ini' : 'Total visitors arriving today';
     final String descApproval = isIndo ? 'Permintaan akses yang menunggu persetujuan' : 'Access requests waiting for approval';
     final String descInvitation = isIndo ? 'Undangan yang masih aktif' : 'Active visitor invitations';
@@ -328,12 +358,12 @@ class TodaySummaryPage extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _buildBreakdownItem(context, labelVisitor, '$visitorCount $unitPeople', true),
-                _buildBreakdownItem(context, isIndo ? 'Visitor Sudah Check-out' : 'Visitors Checked Out', '${(visitorCount * 0.7).round()} $unitPeople', false),
+                _buildBreakdownItem(context, isIndo ? 'Visitor Sudah Check-out' : 'Visitors Checked Out', '$checkedOutCount $unitPeople', false),
                 _buildBreakdownItem(context, labelApproval, '$approvalCount $unitReq', true),
                 _buildBreakdownItem(context, labelInvitation, '$invitationCount $unitInv', true),
-                _buildBreakdownItem(context, isIndo ? 'Undangan Kadaluarsa' : 'Expired Invitations', '2 $unitInv', false),
+                _buildBreakdownItem(context, isIndo ? 'Undangan Kadaluarsa' : 'Expired Invitations', '$expiredInvitationCount $unitInv', false),
                 _buildBreakdownItem(context, labelAlarm, '$notificationCount $unitAlarm', true),
-                _buildBreakdownItem(context, isIndo ? 'Alarm Selesai' : 'Resolved Alarms', '0 $unitAlarm', false),
+                _buildBreakdownItem(context, isIndo ? 'Alarm Selesai' : 'Resolved Alarms', '$resolvedAlarmCount $unitAlarm', false),
               ],
             ),
           ),
@@ -530,6 +560,77 @@ class TodaySummaryPage extends StatelessWidget {
   ) {
     final bool isIndo = lang == 'id';
 
+    // Compute approval ticket details dynamically
+    final invitationController = Get.find<InvitationController>();
+    final date = invitationController.selectedDashboardDate.value;
+    final dateTickets = invitationController.approvalTickets.where((t) {
+      final itemDate = t.visitorPeriodStart;
+      if (itemDate == null) return false;
+      return itemDate.year == date.year &&
+          itemDate.month == date.month &&
+          itemDate.day == date.day;
+    }).toList();
+
+    final int totalRequests = dateTickets.length;
+    final int awaitingApproval = dateTickets.where((t) =>
+        (t.approvalActorStatus ?? '').toLowerCase() == 'pending' ||
+        (t.approvalStatus ?? '').toLowerCase() == 'pending').length;
+    final int approved = dateTickets.where((t) {
+      final status = (t.approvalStatus ?? '').toLowerCase();
+      final actorStatus = (t.approvalActorStatus ?? '').toLowerCase();
+      return status == 'approved' || status == 'success' || actorStatus == 'approved' || actorStatus == 'success';
+    }).length;
+    final int rejected = dateTickets.where((t) {
+      final status = (t.approvalStatus ?? '').toLowerCase();
+      final actorStatus = (t.approvalActorStatus ?? '').toLowerCase();
+      return status == 'rejected' || status == 'reject' || actorStatus == 'rejected' || actorStatus == 'reject';
+    }).length;
+
+    // Compute visitor stats dynamically
+    final todayVisitorsList = invitationController.getTodayVisitors();
+    final int totalTodayVisitors = todayVisitorsList.length;
+    final int checkedInToday = todayVisitorsList.where((v) => v.visitorStatus.toLowerCase() == 'checkin' || v.visitorStatus.toLowerCase() == 'checkout').length;
+    final int checkedOutToday = todayVisitorsList.where((v) => v.visitorStatus.toLowerCase() == 'checkout').length;
+    final int notCheckedInToday = totalTodayVisitors - checkedInToday;
+    final int stillOnSiteToday = todayVisitorsList.where((v) => v.visitorStatus.toLowerCase() == 'checkin').length;
+
+    // Compute active invitation details dynamically
+    final dateInvitations = invitationController.allRawVisitors.where((item) {
+      if (item.flow.toLowerCase() == 'quickaccessvisit') return false;
+      if (item.agenda.isEmpty &&
+          item.hostName.isEmpty &&
+          item.visitorTypeName.isEmpty) return false;
+      final itemDate = item.visitorPeriodStart;
+      return itemDate.year == date.year &&
+          itemDate.month == date.month &&
+          itemDate.day == date.day;
+    }).toList();
+
+    final int activeInvitations = dateInvitations.where((item) => !item.visitorPeriodEnd.isBefore(DateTime.now())).length;
+    final int expiredInvitations = dateInvitations.where((item) => item.visitorPeriodEnd.isBefore(DateTime.now())).length;
+    final int expiringSoonInvitations = dateInvitations.where((item) {
+      final now = DateTime.now();
+      if (item.visitorPeriodEnd.isBefore(now)) return false;
+      final diff = item.visitorPeriodEnd.difference(now);
+      return diff.inDays <= 3;
+    }).length;
+
+    // Compute alarm counts dynamically
+    final alarmCtrl = Get.isRegistered<AlarmController>()
+        ? Get.find<AlarmController>()
+        : Get.put(AlarmController());
+    final dateAlarms = alarmCtrl.alarms.where((alarm) {
+      final itemDate = alarm.createdAt;
+      return itemDate.year == date.year &&
+          itemDate.month == date.month &&
+          itemDate.day == date.day;
+    }).toList();
+
+    final int totalActiveAlarms = dateAlarms.length;
+    final int highPriorityAlarms = dateAlarms.where((a) => a.status == AlarmStatus.high).length;
+    final int mediumPriorityAlarms = dateAlarms.where((a) => a.status == AlarmStatus.medium).length;
+    final int lowPriorityAlarms = dateAlarms.where((a) => a.status == AlarmStatus.low).length;
+
     final String labelVisitor = isIndo ? 'Visitor Hari Ini' : 'Visitor Today';
     final String labelApproval = isIndo ? 'Menunggu Persetujuan' : 'Waiting Approval';
     final String labelInvitation = isIndo ? 'Undangan Aktif' : 'Active Invitation';
@@ -552,11 +653,11 @@ class TodaySummaryPage extends StatelessWidget {
             title: labelVisitor,
             color: const Color(0xFF1976D2),
             rows: [
-              _buildDetailRow(context, isIndo ? 'Total Visitor' : 'Total Visitors', '$visitorCount $unitPeople'),
-              _buildDetailRow(context, isIndo ? 'Sudah Check-in' : 'Checked In', '$visitorCount $unitPeople'),
-              _buildDetailRow(context, isIndo ? 'Belum Check-in' : 'Not Checked In', '0 $unitPeople'),
-              _buildDetailRow(context, isIndo ? 'Sudah Check-out' : 'Checked Out', '${(visitorCount * 0.7).round()} $unitPeople'),
-              _buildDetailRow(context, isIndo ? 'Masih Berada Di Lokasi' : 'Still In Location', '${(visitorCount * 0.3).round()} $unitPeople'),
+              _buildDetailRow(context, isIndo ? 'Total Visitor' : 'Total Visitors', '$totalTodayVisitors $unitPeople'),
+              _buildDetailRow(context, isIndo ? 'Sudah Check-in' : 'Checked In', '$checkedInToday $unitPeople'),
+              _buildDetailRow(context, isIndo ? 'Belum Check-in' : 'Not Checked In', '$notCheckedInToday $unitPeople'),
+              _buildDetailRow(context, isIndo ? 'Sudah Check-out' : 'Checked Out', '$checkedOutToday $unitPeople'),
+              _buildDetailRow(context, isIndo ? 'Masih Berada Di Lokasi' : 'Still In Location', '$stillOnSiteToday $unitPeople'),
             ],
           ),
 
@@ -567,10 +668,10 @@ class TodaySummaryPage extends StatelessWidget {
             title: labelApproval,
             color: const Color(0xFFF57C00),
             rows: [
-              _buildDetailRow(context, isIndo ? 'Total Permintaan' : 'Total Requests', '$approvalCount $unitReq'),
-              _buildDetailRow(context, isIndo ? 'Menunggu Persetujuan' : 'Awaiting Approval', '$approvalCount $unitReq'),
-              _buildDetailRow(context, isIndo ? 'Ditolak' : 'Rejected', '0 $unitReq'),
-              _buildDetailRow(context, isIndo ? 'Dibatalkan' : 'Cancelled', '0 $unitReq'),
+              _buildDetailRow(context, isIndo ? 'Total Permintaan' : 'Total Requests', '$totalRequests $unitReq'),
+              _buildDetailRow(context, isIndo ? 'Menunggu Persetujuan' : 'Awaiting Approval', '$awaitingApproval $unitReq'),
+              _buildDetailRow(context, isIndo ? 'Disetujui' : 'Approved', '$approved $unitReq'),
+              _buildDetailRow(context, isIndo ? 'Ditolak' : 'Rejected', '$rejected $unitReq'),
             ],
           ),
 
@@ -581,9 +682,9 @@ class TodaySummaryPage extends StatelessWidget {
             title: labelInvitation,
             color: const Color(0xFF43A047),
             rows: [
-              _buildDetailRow(context, isIndo ? 'Total Undangan Aktif' : 'Total Active Invitations', '$invitationCount $unitInv'),
-              _buildDetailRow(context, isIndo ? 'Akan Kadaluarsa (≤ 3 hari)' : 'Expiring Soon (≤ 3 days)', '1 $unitInv'),
-              _buildDetailRow(context, isIndo ? 'Kadaluarsa' : 'Expired', '2 $unitInv'),
+              _buildDetailRow(context, isIndo ? 'Total Undangan Aktif' : 'Total Active Invitations', '$activeInvitations $unitInv'),
+              _buildDetailRow(context, isIndo ? 'Akan Kadaluarsa (≤ 3 hari)' : 'Expiring Soon (≤ 3 days)', '$expiringSoonInvitations $unitInv'),
+              _buildDetailRow(context, isIndo ? 'Kadaluarsa' : 'Expired', '$expiredInvitations $unitInv'),
             ],
           ),
 
@@ -594,10 +695,10 @@ class TodaySummaryPage extends StatelessWidget {
             title: labelAlarm,
             color: const Color(0xFFE53935),
             rows: [
-              _buildDetailRow(context, isIndo ? 'Total Alarm Aktif' : 'Total Active Alarms', '$notificationCount $unitAlarm'),
-              _buildDetailRow(context, isIndo ? 'Prioritas Tinggi' : 'High Priority', '$notificationCount $unitAlarm'),
-              _buildDetailRow(context, isIndo ? 'Prioritas Sedang' : 'Medium Priority', '0 $unitAlarm'),
-              _buildDetailRow(context, isIndo ? 'Prioritas Rendah' : 'Low Priority', '0 $unitAlarm'),
+              _buildDetailRow(context, isIndo ? 'Total Alarm Aktif' : 'Total Active Alarms', '$totalActiveAlarms $unitAlarm'),
+              _buildDetailRow(context, isIndo ? 'Prioritas Tinggi' : 'High Priority', '$highPriorityAlarms $unitAlarm'),
+              _buildDetailRow(context, isIndo ? 'Prioritas Sedang' : 'Medium Priority', '$mediumPriorityAlarms $unitAlarm'),
+              _buildDetailRow(context, isIndo ? 'Prioritas Rendah' : 'Low Priority', '$lowPriorityAlarms $unitAlarm'),
             ],
           ),
 
@@ -692,8 +793,152 @@ class TodaySummaryPage extends StatelessWidget {
     String yesterdayStr,
   ) {
     final bool isIndo = lang == 'id';
-
     final String labelFilter = isIndo ? 'Semua Aktivitas' : 'All Activities';
+
+    final invitationController = Get.find<InvitationController>();
+    final date = invitationController.selectedDashboardDate.value;
+
+    final List<_ActivityItem> activities = [];
+
+    // 1. Visitors Check-in / Check-out
+    final todayVisitorsList = invitationController.getTodayVisitors();
+    for (final v in todayVisitorsList) {
+      final statusLower = v.visitorStatus.toLowerCase();
+      if (statusLower == 'checkin' || statusLower == 'checkout') {
+        activities.add(_ActivityItem(
+          icon: Icons.login,
+          titleIndo: 'Visitor Check-in',
+          titleEng: 'Visitor Check-in',
+          time: DateFormat('HH:mm').format(v.visitorPeriodStart),
+          subtitle: v.visitorName,
+          timestamp: v.visitorPeriodStart,
+        ));
+      }
+      if (statusLower == 'checkout') {
+        activities.add(_ActivityItem(
+          icon: Icons.logout,
+          titleIndo: 'Visitor Check-out',
+          titleEng: 'Visitor Check-out',
+          time: DateFormat('HH:mm').format(v.visitorPeriodEnd),
+          subtitle: v.visitorName,
+          timestamp: v.visitorPeriodEnd,
+        ));
+      }
+    }
+
+    // 2. Invitations Created
+    final dateInvitations = invitationController.allRawVisitors.where((item) {
+      if (item.flow.toLowerCase() == 'quickaccessvisit') return false;
+      if (item.agenda.isEmpty &&
+          item.hostName.isEmpty &&
+          item.visitorTypeName.isEmpty) return false;
+      final itemDate = item.visitorPeriodStart;
+      return itemDate.year == date.year &&
+          itemDate.month == date.month &&
+          itemDate.day == date.day;
+    }).toList();
+    for (final inv in dateInvitations) {
+      final createTime = inv.invitationCreatedAt ?? inv.visitorPeriodStart;
+      activities.add(_ActivityItem(
+        icon: Icons.note_add_outlined,
+        titleIndo: 'Undangan Dibuat',
+        titleEng: 'Invitation Created',
+        time: DateFormat('HH:mm').format(createTime),
+        subtitle: inv.agenda,
+        timestamp: createTime,
+      ));
+    }
+
+    // 3. Approval Requests
+    final dateTickets = invitationController.approvalTickets.where((t) {
+      final itemDate = t.visitorPeriodStart;
+      if (itemDate == null) return false;
+      return itemDate.year == date.year &&
+          itemDate.month == date.month &&
+          itemDate.day == date.day;
+    }).toList();
+    for (final ticket in dateTickets) {
+      final status = (ticket.approvalStatus ?? '').toLowerCase();
+      final actorStatus = (ticket.approvalActorStatus ?? '').toLowerCase();
+      final timestamp = ticket.approvedAt ?? ticket.approvalTicketAt ?? ticket.visitorPeriodStart ?? DateTime.now();
+      
+      if (status == 'approved' || status == 'success' || actorStatus == 'approved' || actorStatus == 'success') {
+        activities.add(_ActivityItem(
+          icon: Icons.check_circle_outline,
+          titleIndo: 'Permintaan Disetujui',
+          titleEng: 'Request Approved',
+          time: DateFormat('HH:mm').format(timestamp),
+          subtitle: ticket.agenda ?? 'Request',
+          timestamp: timestamp,
+        ));
+      } else if (status == 'rejected' || status == 'reject' || actorStatus == 'rejected' || actorStatus == 'reject') {
+        activities.add(_ActivityItem(
+          icon: Icons.cancel_outlined,
+          titleIndo: 'Permintaan Ditolak',
+          titleEng: 'Request Rejected',
+          time: DateFormat('HH:mm').format(timestamp),
+          subtitle: ticket.agenda ?? 'Request',
+          timestamp: timestamp,
+        ));
+      } else {
+        activities.add(_ActivityItem(
+          icon: Icons.access_time,
+          titleIndo: 'Menunggu Persetujuan',
+          titleEng: 'Awaiting Approval',
+          time: DateFormat('HH:mm').format(timestamp),
+          subtitle: ticket.agenda ?? 'Request',
+          timestamp: timestamp,
+        ));
+      }
+    }
+
+    // 4. Alarms
+    final alarmCtrl = Get.isRegistered<AlarmController>()
+        ? Get.find<AlarmController>()
+        : Get.put(AlarmController());
+    final dateAlarms = alarmCtrl.alarms.where((alarm) {
+      final itemDate = alarm.createdAt;
+      return itemDate.year == date.year &&
+          itemDate.month == date.month &&
+          itemDate.day == date.day;
+    }).toList();
+    for (final alarm in dateAlarms) {
+      final String badgeIndo = alarm.status == AlarmStatus.high
+          ? 'Tinggi'
+          : alarm.status == AlarmStatus.medium
+              ? 'Sedang'
+              : 'Rendah';
+      final String badgeEng = alarm.status == AlarmStatus.high
+          ? 'High'
+          : alarm.status == AlarmStatus.medium
+              ? 'Medium'
+              : 'Low';
+
+      activities.add(_ActivityItem(
+        icon: Icons.warning_amber_rounded,
+        titleIndo: 'Alarm Aktif',
+        titleEng: 'Active Alarm',
+        time: DateFormat('HH:mm').format(alarm.createdAt),
+        subtitle: '${alarm.alarmDescription} - ${alarm.location}',
+        badgeIndo: badgeIndo,
+        badgeEng: badgeEng,
+        timestamp: alarm.createdAt,
+      ));
+
+      if (alarm.isApproved || alarm.isDenied) {
+        activities.add(_ActivityItem(
+          icon: Icons.check_circle,
+          titleIndo: 'Alarm Selesai',
+          titleEng: 'Alarm Cleared',
+          time: DateFormat('HH:mm').format(alarm.createdAt.add(const Duration(minutes: 5))),
+          subtitle: '${alarm.alarmDescription} - ${alarm.location}',
+          timestamp: alarm.createdAt.add(const Duration(minutes: 5)),
+        ));
+      }
+    }
+
+    // Sort descending by timestamp
+    activities.sort((a, b) => b.timestamp.compareTo(a.timestamp));
 
     return SingleChildScrollView(
       physics: const BouncingScrollPhysics(),
@@ -732,25 +977,33 @@ class TodaySummaryPage extends StatelessWidget {
 
           vSpace(context, 24),
 
-          // Group 1: Hari Ini
-          _buildActivityGroupHeader(context, '${isIndo ? 'Hari Ini' : 'Today'} - $todayStr'),
-          _buildActivityTile(context, Icons.login, isIndo ? 'Visitor Check-in' : 'Visitor Check-in', '08:45', 'Budi Santoso', null),
-          _buildActivityTile(context, Icons.note_add_outlined, isIndo ? 'Undangan Dibuat' : 'Invitation Created', '08:30', 'Rapat Project XYZ', null),
-          _buildActivityTile(context, Icons.check_circle_outline, isIndo ? 'Permintaan Disetujui' : 'Request Approved', '08:25', 'Budi Santoso', null),
-          _buildActivityTile(context, Icons.logout, isIndo ? 'Visitor Check-out' : 'Visitor Check-out', '08:10', 'Andi Wijaya', null),
-          _buildActivityTile(context, Icons.warning_amber_rounded, isIndo ? 'Alarm Aktif' : 'Active Alarm', '07:58', 'Pintu Utama - Terbuka', isIndo ? 'Tinggi' : 'High'),
-          _buildActivityTile(context, Icons.check_circle, isIndo ? 'Alarm Selesai' : 'Alarm Cleared', '07:59', 'Pintu Utama - Terbuka', null),
-
-          vSpace(context, 20),
-
-          // Group 2: Kemarin
-          _buildActivityGroupHeader(context, '${isIndo ? 'Kemarin' : 'Yesterday'} - $yesterdayStr'),
-          _buildActivityTile(context, Icons.login, isIndo ? 'Visitor Check-in' : 'Visitor Check-in', '16:45', 'Siti Aisyah', null),
-          _buildActivityTile(context, Icons.timer_off_outlined, isIndo ? 'Undangan Kadaluarsa' : 'Invitation Expired', '16:30', 'Tamu Seminar', null),
-          _buildActivityTile(context, Icons.cancel_outlined, isIndo ? 'Permintaan Ditolak' : 'Request Rejected', '15:20', 'John Doe', null),
-          _buildActivityTile(context, Icons.logout, isIndo ? 'Visitor Check-out' : 'Visitor Check-out', '15:10', 'Siti Aisyah', null),
-          _buildActivityTile(context, Icons.warning_amber_rounded, isIndo ? 'Alarm Aktif' : 'Active Alarm', '14:05', 'Lift 1 - Error', isIndo ? 'Sedang' : 'Medium'),
-          _buildActivityTile(context, Icons.check_circle, isIndo ? 'Alarm Selesai' : 'Alarm Cleared', '14:12', 'Lift 1 - Error', null),
+          // Group 1: Selected Date
+          _buildActivityGroupHeader(context, '${isIndo ? 'Daftar Aktivitas' : 'Activity Log'} - $todayStr'),
+          if (activities.isEmpty)
+            Padding(
+              padding: EdgeInsets.symmetric(vertical: rh(context, 40)),
+              child: Center(
+                child: Column(
+                  children: [
+                    Icon(Icons.history_toggle_off, size: 48, color: Colors.grey.shade400),
+                    vSpace(context, 8),
+                    Text(
+                      isIndo ? 'Tidak ada riwayat aktivitas' : 'No activity logs found',
+                      style: TextStyle(color: Colors.grey.shade500, fontSize: rfs(context, 14)),
+                    ),
+                  ],
+                ),
+              ),
+            )
+          else
+            ...activities.map((act) => _buildActivityTile(
+                  context,
+                  act.icon,
+                  isIndo ? act.titleIndo : act.titleEng,
+                  act.time,
+                  act.subtitle,
+                  isIndo ? act.badgeIndo : act.badgeEng,
+                )),
 
           vSpace(context, 24),
 
@@ -758,13 +1011,15 @@ class TodaySummaryPage extends StatelessWidget {
           _buildInfoBanner(
             context,
             isIndo
-                ? 'Riwayat aktivitas menampilkan 7 hari terakhir.'
-                : 'Activity log shows the last 7 days of events.',
+                ? 'Riwayat aktivitas menampilkan aktivitas real-time hari ini.'
+                : 'Activity log shows real-time events for today.',
           ),
         ],
       ),
     );
   }
+
+  Widget _dummyPlaceholder() { return const SizedBox.shrink(); } // Temporary to balance diff
 
   Widget _buildActivityGroupHeader(BuildContext context, String label) {
     return Padding(
@@ -905,4 +1160,26 @@ class TodaySummaryPage extends StatelessWidget {
       ),
     );
   }
+}
+
+class _ActivityItem {
+  final IconData icon;
+  final String titleIndo;
+  final String titleEng;
+  final String time;
+  final String subtitle;
+  final String? badgeIndo;
+  final String? badgeEng;
+  final DateTime timestamp;
+
+  _ActivityItem({
+    required this.icon,
+    required this.titleIndo,
+    required this.titleEng,
+    required this.time,
+    required this.subtitle,
+    this.badgeIndo,
+    this.badgeEng,
+    required this.timestamp,
+  });
 }
