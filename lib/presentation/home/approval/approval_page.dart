@@ -290,7 +290,7 @@ class _ApprovalPageState extends State<ApprovalPage>
           top: Radius.circular(rw(context, 16)),
         ),
       ),
-      builder: (context) => const FilterBottomSheet(),
+      builder: (context) => const FilterBottomSheet(showSiteFilter: false),
     );
 
     if (result != null) {
@@ -312,7 +312,7 @@ class _ApprovalPageState extends State<ApprovalPage>
           top: Radius.circular(rw(context, 16)),
         ),
       ),
-      builder: (context) => const FilterBottomSheet(),
+      builder: (context) => const FilterBottomSheet(showSiteFilter: false),
     );
 
     if (result != null) {
@@ -334,7 +334,7 @@ class _ApprovalPageState extends State<ApprovalPage>
           top: Radius.circular(rw(context, 16)),
         ),
       ),
-      builder: (context) => const FilterBottomSheet(),
+      builder: (context) => const FilterBottomSheet(showSiteFilter: false),
     );
 
     if (result != null) {

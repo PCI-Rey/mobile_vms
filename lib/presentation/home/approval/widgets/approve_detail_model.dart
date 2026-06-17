@@ -13,10 +13,7 @@ class ApprovalDetailModal extends StatefulWidget {
 
   final ApprovalTicketModel ticket;
 
-  static Future<void> show(
-    BuildContext context,
-    ApprovalTicketModel ticket,
-  ) {
+  static Future<void> show(BuildContext context, ApprovalTicketModel ticket) {
     return showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
@@ -186,7 +183,7 @@ class _ApprovalDetailModalState extends State<ApprovalDetailModal> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // 1. Ticket Information
-                      _section(context, 'Ticket Information'),
+                      _section(context, 'Information'),
                       _grid(context, [
                         _SheetField(
                           'Host',
@@ -209,18 +206,24 @@ class _ApprovalDetailModalState extends State<ApprovalDetailModal> {
                           'Transaction Status',
                           ticket.transactionStatus ?? '-',
                           Icons.info_outline,
-                          badgeColor: _statusColor(ticket.transactionStatus ?? ''),
+                          badgeColor: _statusColor(
+                            ticket.transactionStatus ?? '',
+                          ),
                         ),
                         if (isApproved && ticket.approvedAt != null)
                           _SheetField(
                             'Approved',
-                            DateFormat('dd MMM yyyy, HH:mm').format(ticket.approvedAt!),
+                            DateFormat(
+                              'dd MMM yyyy, HH:mm',
+                            ).format(ticket.approvedAt!),
                             Icons.done_all_outlined,
                           ),
                         if (isRejected && ticket.approvedAt != null)
                           _SheetField(
                             'Rejected',
-                            DateFormat('dd MMM yyyy, HH:mm').format(ticket.approvedAt!),
+                            DateFormat(
+                              'dd MMM yyyy, HH:mm',
+                            ).format(ticket.approvedAt!),
                             Icons.cancel_outlined,
                           ),
                       ]),
@@ -262,7 +265,9 @@ class _ApprovalDetailModalState extends State<ApprovalDetailModal> {
                                   vSpace(context, 4),
                                   Text(
                                     ticket.visitorPeriodStart != null
-                                        ? DateFormat('dd MMMM yyyy').format(ticket.visitorPeriodStart!)
+                                        ? DateFormat(
+                                            'dd MMMM yyyy',
+                                          ).format(ticket.visitorPeriodStart!)
                                         : '-',
                                     style: TextStyle(
                                       fontSize: rfs(context, 12),
@@ -272,7 +277,9 @@ class _ApprovalDetailModalState extends State<ApprovalDetailModal> {
                                   ),
                                   if (ticket.visitorPeriodStart != null)
                                     Text(
-                                      DateFormat('HH:mm').format(ticket.visitorPeriodStart!),
+                                      DateFormat(
+                                        'HH:mm',
+                                      ).format(ticket.visitorPeriodStart!),
                                       style: TextStyle(
                                         fontSize: rfs(context, 12),
                                         color: Colors.grey.shade600,
@@ -312,7 +319,9 @@ class _ApprovalDetailModalState extends State<ApprovalDetailModal> {
                                     vSpace(context, 4),
                                     Text(
                                       ticket.visitorPeriodEnd != null
-                                          ? DateFormat('dd MMMM yyyy').format(ticket.visitorPeriodEnd!)
+                                          ? DateFormat(
+                                              'dd MMMM yyyy',
+                                            ).format(ticket.visitorPeriodEnd!)
                                           : '-',
                                       style: TextStyle(
                                         fontSize: rfs(context, 12),
@@ -322,7 +331,9 @@ class _ApprovalDetailModalState extends State<ApprovalDetailModal> {
                                     ),
                                     if (ticket.visitorPeriodEnd != null)
                                       Text(
-                                        DateFormat('HH:mm').format(ticket.visitorPeriodEnd!),
+                                        DateFormat(
+                                          'HH:mm',
+                                        ).format(ticket.visitorPeriodEnd!),
                                         style: TextStyle(
                                           fontSize: rfs(context, 12),
                                           color: Colors.grey.shade600,
@@ -380,18 +391,26 @@ class _ApprovalDetailModalState extends State<ApprovalDetailModal> {
                           onPressed: () => _confirmAction(
                             context,
                             title: 'Reject Approval',
-                            message: 'Are you sure you want to reject this approval?',
+                            message:
+                                'Are you sure you want to reject this approval?',
                             onConfirm: () => _ctrl.rejectMeetingHostAction(
-                              approvalTicketId: ticket.approvalTicketId ?? ticket.ticketId ?? '',
+                              approvalTicketId:
+                                  ticket.approvalTicketId ??
+                                  ticket.ticketId ??
+                                  '',
                               actorId: ticket.actorId ?? '',
                             ),
                           ),
                           style: OutlinedButton.styleFrom(
-                            padding: EdgeInsets.symmetric(vertical: rh(context, 14)),
+                            padding: EdgeInsets.symmetric(
+                              vertical: rh(context, 14),
+                            ),
                             side: const BorderSide(color: Color(0xFFD32F2F)),
                             foregroundColor: const Color(0xFFD32F2F),
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(rw(context, 12)),
+                              borderRadius: BorderRadius.circular(
+                                rw(context, 12),
+                              ),
                             ),
                           ),
                           child: Text(
@@ -407,18 +426,26 @@ class _ApprovalDetailModalState extends State<ApprovalDetailModal> {
                       Expanded(
                         child: ElevatedButton(
                           onPressed: () async {
-                            await VisitorApprovalDialog.show(context, ticket, _ctrl);
+                            await VisitorApprovalDialog.show(
+                              context,
+                              ticket,
+                              _ctrl,
+                            );
                             if (context.mounted) {
                               Navigator.of(context).pop(); // close bottom sheet
                             }
                           },
                           style: ElevatedButton.styleFrom(
-                            padding: EdgeInsets.symmetric(vertical: rh(context, 14)),
+                            padding: EdgeInsets.symmetric(
+                              vertical: rh(context, 14),
+                            ),
                             backgroundColor: AppColors.primary500,
                             foregroundColor: Colors.white,
                             elevation: 0,
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(rw(context, 12)),
+                              borderRadius: BorderRadius.circular(
+                                rw(context, 12),
+                              ),
                             ),
                           ),
                           child: Text(
@@ -485,14 +512,8 @@ class _ApprovalDetailModalState extends State<ApprovalDetailModal> {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(rw(context, 16)),
         ),
-        title: Text(
-          title,
-          style: const TextStyle(fontWeight: FontWeight.bold),
-        ),
-        content: Text(
-          message,
-          textAlign: TextAlign.justify,
-        ),
+        title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
+        content: Text(message, textAlign: TextAlign.justify),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogCtx).pop(),
@@ -543,10 +564,7 @@ class _ApprovalDetailModalState extends State<ApprovalDetailModal> {
     );
   }
 
-  Widget _grid(
-    BuildContext context,
-    List<_SheetField> fields,
-  ) {
+  Widget _grid(BuildContext context, List<_SheetField> fields) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.grey.shade50,
@@ -595,7 +613,9 @@ class _ApprovalDetailModalState extends State<ApprovalDetailModal> {
                                   ),
                                   decoration: BoxDecoration(
                                     color: f.badgeColor,
-                                    borderRadius: BorderRadius.circular(rw(context, 4)),
+                                    borderRadius: BorderRadius.circular(
+                                      rw(context, 4),
+                                    ),
                                   ),
                                   child: Text(
                                     f.value,
@@ -704,7 +724,9 @@ class _VisitorCard extends StatelessWidget {
         visitor['status']?.toString() ??
         '';
     final role =
-        visitor['visitor_role']?.toString() ?? visitor['role']?.toString() ?? '';
+        visitor['visitor_role']?.toString() ??
+        visitor['role']?.toString() ??
+        '';
     final company =
         visitor['visitor_company']?.toString() ??
         visitor['company']?.toString() ??

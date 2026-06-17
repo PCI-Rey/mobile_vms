@@ -99,7 +99,7 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                'Pilih Gedung',
+                'Select Building',
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: rfs(context, 18),
@@ -146,7 +146,7 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                'Pilih Status',
+                'Select Status',
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: rfs(context, 18),
@@ -187,7 +187,12 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
         bottom: MediaQuery.of(context).viewInsets.bottom,
       ),
       child: Container(
-        padding: EdgeInsets.all(rw(context, 20)),
+        padding: EdgeInsets.only(
+          left: rw(context, 20),
+          right: rw(context, 20),
+          top: rw(context, 20),
+          bottom: rw(context, 20) + MediaQuery.of(context).padding.bottom,
+        ),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.vertical(
@@ -227,21 +232,21 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                         initialDate: startDate ?? DateTime.now(),
                         firstDate: DateTime(2020),
                         lastDate: DateTime(2030),
-                        locale: const Locale('id', 'ID'),
+                        locale: const Locale('en', 'US'),
                       );
                       if (picked != null) {
                         setState(() => startDate = picked);
                       }
                     },
                     child: FilterDateBox(
-                      title: "Dari Tanggal",
+                      title: "Start Date",
                       isRequired: endDate != null,
                       value: startDate != null
                           ? DateFormat(
                               'dd MMMM yyyy',
-                              'id_ID',
+                              'en_US',
                             ).format(startDate!)
-                          : "Pilih tanggal",
+                          : "Select date",
                       isPlaceholder: startDate == null,
                     ),
                   ),
@@ -257,21 +262,21 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                           initialDate: endDate ?? DateTime.now(),
                           firstDate: DateTime(2020),
                           lastDate: DateTime(2030),
-                          locale: const Locale('id', 'ID'),
+                          locale: const Locale('en', 'US'),
                         );
                         if (picked != null) {
                           setState(() => endDate = picked);
                         }
                       },
                       child: FilterDateBox(
-                        title: "Sampai Tanggal",
+                        title: "End Date",
                         isRequired: startDate != null,
                         value: endDate != null
                             ? DateFormat(
                                 'dd MMMM yyyy',
-                                'id_ID',
+                                'en_US',
                               ).format(endDate!)
-                            : "Pilih tanggal",
+                            : "Select date",
                         isPlaceholder: endDate == null,
                       ),
                     ),
@@ -290,7 +295,7 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text("Gedung", style: TextStyles.subtitle2),
+                          Text("Building", style: TextStyles.subtitle2),
                           vSpace(context, 6),
                           Container(
                             padding: EdgeInsets.symmetric(
@@ -305,10 +310,10 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                Text(
-                                  gedungList.firstWhereOrNull(
-                                        (e) => e['id'] == selectedGedung,
-                                      )?['name'] ??
-                                      'Pilih Gedung',
+                                   gedungList.firstWhereOrNull(
+                                         (e) => e['id'] == selectedGedung,
+                                       )?['name'] ??
+                                       'Select Building',
                                   style: TextStyle(
                                     color: selectedGedung == null ||
                                             selectedGedung!.isEmpty
@@ -353,7 +358,7 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                           Text(
                             selectedStatus?.isNotEmpty == true
                                 ? selectedStatus!
-                                : 'Pilih Status',
+                                : 'Select Status',
                             style: TextStyle(
                               color:
                                   selectedStatus == null ||
@@ -391,7 +396,7 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                   if (startDate != null && endDate == null) {
                     Get.snackbar(
                       'Validation Error',
-                      'Please select "Sampai Tanggal"',
+                      'Please select "End Date"',
                       backgroundColor: Colors.red,
                       colorText: Colors.white,
                       snackPosition: SnackPosition.TOP,
@@ -402,7 +407,7 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                   if (startDate == null && endDate != null) {
                     Get.snackbar(
                       'Validation Error',
-                      'Please select "Dari Tanggal"',
+                      'Please select "Start Date"',
                       backgroundColor: Colors.red,
                       colorText: Colors.white,
                       snackPosition: SnackPosition.TOP,
@@ -423,7 +428,7 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                   });
                 },
                 child: const Text(
-                  'Pasang filter',
+                  'Apply filter',
                   style: TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.w300,

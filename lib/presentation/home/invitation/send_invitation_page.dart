@@ -370,45 +370,23 @@ class _SendInvitationPageState extends State<SendInvitationPage>
               }
 
               if (listToShow.isEmpty) {
-                return ListView(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  children: [
-                    Center(
-                      child: Padding(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: rw(context, 20.0),
-                          vertical: rw(context, 40.0),
-                        ),
-                        child: Column(
-                          children: [
-                            Icon(
-                              Icons.inbox_outlined,
-                              size: rw(context, 48),
-                              color: Colors.grey[400],
-                            ),
-                            vSpace(context, 16),
-                            Text(
-                              'No Invitation Found',
-                              style: TextStyle(
-                                color: Colors.grey[600],
-                                fontSize: rfs(context, 16),
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                            vSpace(context, 8),
-                            Text(
-                              "Tap the '+' button at the top right to create a new invitation",
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                color: Colors.grey[500],
-                                fontSize: rfs(context, 13),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
+                return EmptyStateWidget(
+                  icon: Icons.mail_outline_rounded,
+                  title: 'No invitations yet',
+                  subtitle: 'Create invitations to invite guests, share links or QR codes, and track their responses easily.',
+                  buttonText: 'Create Invitation',
+                  onButtonPressed: () async {
+                    final result = await showAddPraRegistrationDialog(context);
+                    if (result == true) {
+                      setState(() {
+                        startDate = null;
+                        endDate = null;
+                        selectedGedung = null;
+                      });
+                    }
+                  },
+                  tipsText: 'Invitations make it easy for you to invite guests and monitor their attendance in real-time.',
+                  showQuickActions: true,
                 );
               }
 
@@ -852,45 +830,24 @@ class _SendInvitationPageState extends State<SendInvitationPage>
               }
 
               if (listToShow.isEmpty) {
-                return ListView(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  children: [
-                    Center(
-                      child: Padding(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: rw(context, 20.0),
-                          vertical: rw(context, 40.0),
-                        ),
-                        child: Column(
-                          children: [
-                            Icon(
-                              Icons.flash_on_rounded,
-                              size: rw(context, 48),
-                              color: Colors.grey[400],
-                            ),
-                            vSpace(context, 16),
-                            Text(
-                              'No Quick Access Visit Found',
-                              style: TextStyle(
-                                color: Colors.grey[600],
-                                fontSize: rfs(context, 16),
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                            vSpace(context, 8),
-                            Text(
-                              "Tap the '+' button at the top right to create a new quick access",
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                color: Colors.grey[500],
-                                fontSize: rfs(context, 13),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
+                return EmptyStateWidget(
+                  icon: Icons.flash_on_rounded,
+                  title: 'No quick access yet',
+                  subtitle: 'Create quick access for instant entry for special guests or VIPs without manual approval.',
+                  buttonText: 'Create Quick Access',
+                  onButtonPressed: () {
+                    showDialog(
+                      context: context,
+                      barrierDismissible: false,
+                      builder: (context) => const CreateQuickAccessDialog(),
+                    ).then((result) {
+                      if (result == true) {
+                        controller.fetchOngoingInvitations(clearFilters: true);
+                      }
+                    });
+                  },
+                  tipsText: 'Use Quick Access for VIP guests or external staff who require recurring access without manual approval.',
+                  showQuickActions: false,
                 );
               }
 
@@ -1212,9 +1169,9 @@ String _formatDateRange(DateTime? start, DateTime? end) {
   if (start != null && end != null) {
     return '${format.format(start)} - ${format.format(end)}';
   } else if (start != null) {
-    return 'Dari ${format.format(start)}';
+    return 'From ${format.format(start)}';
   } else {
-    return 'Sampai ${format.format(end!)}';
+    return 'To ${format.format(end!)}';
   }
 }
 
@@ -3435,41 +3392,20 @@ class _ShareLinkListInlineState extends State<ShareLinkListInline> {
 
       Widget listWidget;
       if (controller.shareLinks.isEmpty) {
-        listWidget = Center(
-          child: SingleChildScrollView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            child: Padding(
-              padding: EdgeInsets.symmetric(horizontal: rw(context, 20.0)),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.link_off,
-                    size: rw(context, 64),
-                    color: Colors.grey.shade300,
-                  ),
-                  vSpace(context, 16),
-                  Text(
-                    'No Share Links Found',
-                    style: TextStyle(
-                      color: Colors.grey.shade600,
-                      fontSize: rfs(context, 16),
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  vSpace(context, 8),
-                  Text(
-                    "Tap the '+' button at the top right to create a new share link",
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: Colors.grey.shade500,
-                      fontSize: rfs(context, 13),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
+        listWidget = EmptyStateWidget(
+          icon: Icons.link_rounded,
+          title: 'No share links yet',
+          subtitle: 'Create share links to share self-registration access for your guests, either for one-time or recurring use.',
+          buttonText: 'Create Share Link',
+          onButtonPressed: () {
+            showDialog(
+              context: context,
+              barrierDismissible: false,
+              builder: (context) => const CreateShareLinkDialog(),
+            ).then((_) => controller.fetchShareLinks());
+          },
+          tipsText: 'Share links are perfect if you want to invite many people without inputting data one by one.',
+          showQuickActions: false,
         );
       } else {
         listWidget = ListView.separated(
@@ -4265,4 +4201,370 @@ class _KeepAliveWrapperState extends State<KeepAliveWrapper>
     return widget.child;
   }
 }
+
+class EmptyStateWidget extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final String buttonText;
+  final VoidCallback onButtonPressed;
+  final String tipsText;
+  final bool showQuickActions;
+
+  const EmptyStateWidget({
+    super.key,
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.buttonText,
+    required this.onButtonPressed,
+    required this.tipsText,
+    this.showQuickActions = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      child: Padding(
+        padding: EdgeInsets.symmetric(
+          horizontal: rw(context, 20.0),
+          vertical: rh(context, 24.0),
+        ),
+        child: Column(
+          children: [
+            // 1. Top Icon Illustration (Stack with decorative shapes)
+            Center(
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  Container(
+                    width: rw(context, 160),
+                    height: rw(context, 160),
+                    decoration: const BoxDecoration(
+                      color: Color(0xFFF4F8FC),
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  Container(
+                    width: rw(context, 110),
+                    height: rw(context, 110),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.04),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    alignment: Alignment.center,
+                    child: Icon(
+                      icon,
+                      size: rw(context, 48),
+                      color: AppColors.primary500,
+                    ),
+                  ),
+                  // Decorative elements
+                  Positioned(
+                    top: rw(context, 15),
+                    right: rw(context, 20),
+                    child: Transform.rotate(
+                      angle: -0.2,
+                      child: Icon(
+                        Icons.send_rounded,
+                        color: AppColors.primary500.withValues(alpha: 0.8),
+                        size: rw(context, 24),
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    bottom: rw(context, 25),
+                    left: rw(context, 15),
+                    child: const Icon(
+                      Icons.star_rounded,
+                      color: Colors.amber,
+                      size: 16,
+                    ),
+                  ),
+                  Positioned(
+                    top: rw(context, 30),
+                    left: rw(context, 25),
+                    child: Icon(
+                      Icons.star_border_rounded,
+                      color: Colors.blue.shade300,
+                      size: 12,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            vSpace(context, 20),
+
+            // 2. Title
+            Text(
+              title,
+              style: TextStyle(
+                color: Colors.black87,
+                fontSize: rfs(context, 20),
+                fontWeight: FontWeight.w700,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            vSpace(context, 8),
+
+            // 3. Subtitle
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: rw(context, 16.0)),
+              child: Text(
+                subtitle,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: Colors.grey.shade600,
+                  fontSize: rfs(context, 13),
+                  height: 1.4,
+                ),
+              ),
+            ),
+            vSpace(context, 20),
+
+            // 4. Create Button
+            ElevatedButton(
+              onPressed: onButtonPressed,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary500,
+                foregroundColor: Colors.white,
+                padding: EdgeInsets.symmetric(
+                  horizontal: rw(context, 24),
+                  vertical: rh(context, 12),
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(rw(context, 10)),
+                ),
+                elevation: 0,
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.add,
+                    color: Colors.white,
+                    size: rw(context, 18),
+                  ),
+                  hSpace(context, 8),
+                  Text(
+                    buttonText,
+                    style: TextStyle(
+                      fontSize: rfs(context, 14),
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            vSpace(context, 24),
+
+            // 5. Quick Actions Section (Optional)
+            if (showQuickActions) ...[
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  'Quick Actions',
+                  style: TextStyle(
+                    fontSize: rfs(context, 14),
+                    fontWeight: FontWeight.w700,
+                    color: Colors.black87,
+                  ),
+                ),
+              ),
+              vSpace(context, 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildQuickActionCard(
+                      context: context,
+                      title: 'Import Contacts',
+                      subtitle: 'From your contacts',
+                      icon: Icons.people_outline_rounded,
+                      color: const Color(0xFF2E7D32),
+                      bgColor: const Color(0xFFE8F5E9),
+                      onTap: () {
+                        Get.snackbar(
+                          'Info',
+                          'Import Contacts feature is under development',
+                          backgroundColor: Colors.blue.shade100,
+                          colorText: Colors.blue.shade900,
+                        );
+                      },
+                    ),
+                  ),
+                  hSpace(context, 8),
+                  Expanded(
+                    child: _buildQuickActionCard(
+                      context: context,
+                      title: 'Scan QR Code',
+                      subtitle: 'Scan invitation',
+                      icon: Icons.qr_code_scanner_rounded,
+                      color: const Color(0xFF7B1FA2),
+                      bgColor: const Color(0xFFF3E5F5),
+                      onTap: () {
+                        Get.snackbar(
+                          'Info',
+                          'Scan QR feature is under development',
+                          backgroundColor: Colors.blue.shade100,
+                          colorText: Colors.blue.shade900,
+                        );
+                      },
+                    ),
+                  ),
+                  hSpace(context, 8),
+                  Expanded(
+                    child: _buildQuickActionCard(
+                      context: context,
+                      title: 'Duplicate Invitation',
+                      subtitle: 'Use an old one',
+                      icon: Icons.copy_all_rounded,
+                      color: const Color(0xFFE65100),
+                      bgColor: const Color(0xFFFFF3E0),
+                      onTap: () {
+                        Get.snackbar(
+                          'Info',
+                          'Duplicate feature is under development',
+                          backgroundColor: Colors.blue.shade100,
+                          colorText: Colors.blue.shade900,
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+              vSpace(context, 24),
+            ],
+
+            // 6. Tips Box
+            Container(
+              padding: EdgeInsets.all(rw(context, 14)),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF4F8FC),
+                borderRadius: BorderRadius.circular(rw(context, 12)),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    width: rw(context, 32),
+                    height: rw(context, 32),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary500.withValues(alpha: 0.12),
+                      shape: BoxShape.circle,
+                    ),
+                    alignment: Alignment.center,
+                    child: Icon(
+                      Icons.lightbulb_outline_rounded,
+                      color: AppColors.primary500,
+                      size: rw(context, 18),
+                    ),
+                  ),
+                  hSpace(context, 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          tipsText,
+                          style: TextStyle(
+                            fontSize: rfs(context, 12),
+                            color: const Color(0xFF005596),
+                            height: 1.4,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildQuickActionCard({
+    required BuildContext context,
+    required String title,
+    required String subtitle,
+    required IconData icon,
+    required Color color,
+    required Color bgColor,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: EdgeInsets.symmetric(
+          horizontal: rw(context, 8),
+          vertical: rh(context, 12),
+        ),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(rw(context, 12)),
+          border: Border.all(color: Colors.grey.shade200),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.02),
+              blurRadius: 6,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Column(
+          children: [
+            Container(
+              width: rw(context, 40),
+              height: rw(context, 40),
+              decoration: BoxDecoration(
+                color: bgColor,
+                shape: BoxShape.circle,
+              ),
+              alignment: Alignment.center,
+              child: Icon(
+                icon,
+                color: color,
+                size: rw(context, 20),
+              ),
+            ),
+            vSpace(context, 8),
+            Text(
+              title,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: rfs(context, 10),
+                fontWeight: FontWeight.w700,
+                color: Colors.black87,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            vSpace(context, 2),
+            Text(
+              subtitle,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: rfs(context, 8),
+                color: Colors.grey.shade500,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 
