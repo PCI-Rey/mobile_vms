@@ -421,6 +421,7 @@ class _SendInvitationPageState extends State<SendInvitationPage>
                       ? 'Info: Invitation memudahkan Anda mengundang tamu dan memantau kehadiran secara real-time.'
                       : 'Info: Invitations make it easy for you to invite guests and monitor their attendance in real-time.',
                   showQuickActions: true,
+                  mode: 'invitation',
                 );
               }
 
@@ -893,6 +894,7 @@ class _SendInvitationPageState extends State<SendInvitationPage>
                       ? 'Info: Quick Access sangat cocok untuk mitra pengantar makanan atau ojek online agar pengiriman makanan menjadi lebih praktis tanpa perlu persetujuan manual berulang.'
                       : 'Info: Quick Access is perfect for food delivery partners or online motorcycle taxis to make food delivery more practical without requiring repeated manual approval.',
                   showQuickActions: true,
+                  mode: 'quick_access',
                 );
               }
 
@@ -3472,6 +3474,7 @@ class _ShareLinkListInlineState extends State<ShareLinkListInline> {
               ? 'Info: Share link sangat cocok jika Anda ingin mengundang banyak orang tanpa memasukkan data satu per satu.'
               : 'Info: Share links are perfect if you want to invite many people without inputting data one by one.',
           showQuickActions: true,
+          mode: 'share_link',
         );
       } else {
         listWidget = ListView.separated(
@@ -4272,6 +4275,7 @@ class EmptyStateWidget extends StatelessWidget {
   final String tipsText;
   final bool showQuickActions;
   final Widget? illustration;
+  final String mode;
 
   const EmptyStateWidget({
     super.key,
@@ -4283,6 +4287,7 @@ class EmptyStateWidget extends StatelessWidget {
     required this.tipsText,
     this.showQuickActions = false,
     this.illustration,
+    this.mode = 'invitation',
   });
 
   @override
@@ -4376,86 +4381,186 @@ class EmptyStateWidget extends StatelessWidget {
               Row(
                 children: [
                   Expanded(
-                    child: _buildQuickActionCard(
-                      context: context,
-                      title: Get.locale?.languageCode == 'id'
-                          ? 'Scan QR Code'
-                          : 'Scan QR Code',
-                      subtitle: Get.locale?.languageCode == 'id'
-                          ? 'Pindai invitation'
-                          : 'Scan invitation',
-                      icon: Icons.qr_code_scanner_rounded,
-                      color: const Color(0xFF7B1FA2),
-                      bgColor: const Color(0xFFF3E5F5),
-                      onTap: () async {
-                        final scannedCode = await context.push<String>(
-                          const ScanInvitationPage(),
-                        );
-
-                        if (scannedCode != null && scannedCode.isNotEmpty) {
-                          final inviteCtrl =
-                              Get.isRegistered<InvitationController>()
-                              ? Get.find<InvitationController>()
-                              : Get.put(InvitationController());
-
-                          // Search local lists for invitation matching code or number
-                          final matched = inviteCtrl.allRawVisitors
-                              .firstWhereOrNull(
-                                (v) =>
-                                    v.visitorNumber.toLowerCase() ==
-                                        scannedCode.toLowerCase() ||
-                                    v.visitorCode.toLowerCase() ==
-                                        scannedCode.toLowerCase() ||
-                                    v.invitationCode.toLowerCase() ==
-                                        scannedCode.toLowerCase() ||
-                                    v.initialTrxCode.toLowerCase() ==
-                                        scannedCode.toLowerCase() ||
-                                    v.id.toLowerCase() ==
-                                        scannedCode.toLowerCase() ||
-                                    v.transactionVisitorId.toLowerCase() ==
-                                        scannedCode.toLowerCase(),
-                              );
-
-                          if (matched != null) {
-                            showInvitationDetailSheet(context, matched);
-                          } else {
-                            final isIndonesian =
-                                Get.locale?.languageCode == 'id';
-                            Get.snackbar(
-                              isIndonesian
-                                  ? 'Undangan Tidak Ditemukan'
-                                  : 'Invitation Not Found',
-                              isIndonesian
-                                  ? 'Undangan dengan kode/nomor "$scannedCode" tidak ditemukan dalam daftar.'
-                                  : 'Invitation with code/number "$scannedCode" was not found in the list.',
-                              backgroundColor: Colors.red.shade100,
-                              colorText: Colors.red.shade900,
-                              snackPosition: SnackPosition.BOTTOM,
-                            );
-                          }
+                    child: Builder(
+                      builder: (ctx) {
+                        final isIndonesian = Get.locale?.languageCode == 'id';
+                        final String cardTitle = isIndonesian
+                            ? 'Scan QR Code'
+                            : 'Scan QR Code';
+                        final String cardSubtitle;
+                        if (mode == 'share_link') {
+                          cardSubtitle = isIndonesian
+                              ? 'Pindai share link'
+                              : 'Scan Share Link';
+                        } else if (mode == 'quick_access') {
+                          cardSubtitle = isIndonesian
+                              ? 'Pindai quick access'
+                              : 'Scan Quick Access';
+                        } else {
+                          cardSubtitle = isIndonesian
+                              ? 'Pindai invitation'
+                              : 'Scan Invitation';
                         }
+
+                        return _buildQuickActionCard(
+                          context: context,
+                          title: cardTitle,
+                          subtitle: cardSubtitle,
+                          icon: Icons.qr_code_scanner_rounded,
+                          color: const Color(0xFF7B1FA2),
+                          bgColor: const Color(0xFFF3E5F5),
+                          onTap: () async {
+                            final scannedCode = await context.push<String>(
+                              const ScanInvitationPage(),
+                            );
+
+                            if (scannedCode != null && scannedCode.isNotEmpty) {
+                              final inviteCtrl =
+                                  Get.isRegistered<InvitationController>()
+                                  ? Get.find<InvitationController>()
+                                  : Get.put(InvitationController());
+
+                              if (mode == 'share_link') {
+                                // Search only in Share Links
+                                final matched = inviteCtrl.allShareLinks
+                                    .firstWhereOrNull((item) {
+                                      final itemId =
+                                          item['id']?.toString() ?? '';
+                                      final itemUrl =
+                                          item['url']?.toString() ?? '';
+                                      final itemShorten =
+                                          item['shorten_url']?.toString() ?? '';
+                                      final itemShort =
+                                          item['short_url']?.toString() ?? '';
+
+                                      final sLower = scannedCode.toLowerCase();
+                                      return itemId.toLowerCase() == sLower ||
+                                          itemUrl.toLowerCase() == sLower ||
+                                          itemShorten.toLowerCase() == sLower ||
+                                          itemShort.toLowerCase() == sLower ||
+                                          sLower.contains(
+                                            itemId.toLowerCase(),
+                                          ) ||
+                                          sLower.contains(
+                                            itemUrl.toLowerCase(),
+                                          ) ||
+                                          sLower.contains(
+                                            itemShorten.toLowerCase(),
+                                          ) ||
+                                          sLower.contains(
+                                            itemShort.toLowerCase(),
+                                          );
+                                    });
+
+                                if (matched != null) {
+                                  ShareLinkDetailModal.show(context, matched);
+                                } else {
+                                  Get.snackbar(
+                                    isIndonesian
+                                        ? 'Share Link Tidak Ditemukan'
+                                        : 'Share Link Not Found',
+                                    isIndonesian
+                                        ? 'Share link dengan kode/url "$scannedCode" tidak ditemukan.'
+                                        : 'Share link with code/url "$scannedCode" was not found.',
+                                    backgroundColor: Colors.red.shade100,
+                                    colorText: Colors.red.shade900,
+                                    snackPosition: SnackPosition.BOTTOM,
+                                  );
+                                }
+                              } else {
+                                // invitation or quick_access lookup
+                                final isQuickAccessMode =
+                                    mode == 'quick_access';
+                                final matched = inviteCtrl.allRawVisitors
+                                    .firstWhereOrNull((v) {
+                                      final isQA =
+                                          v.flow.toLowerCase() ==
+                                          'quickaccessvisit';
+                                      if (isQuickAccessMode != isQA)
+                                        return false;
+
+                                      return v.visitorNumber.toLowerCase() ==
+                                              scannedCode.toLowerCase() ||
+                                          v.visitorCode.toLowerCase() ==
+                                              scannedCode.toLowerCase() ||
+                                          v.invitationCode.toLowerCase() ==
+                                              scannedCode.toLowerCase() ||
+                                          v.initialTrxCode.toLowerCase() ==
+                                              scannedCode.toLowerCase() ||
+                                          v.id.toLowerCase() ==
+                                              scannedCode.toLowerCase() ||
+                                          v.transactionVisitorId
+                                                  .toLowerCase() ==
+                                              scannedCode.toLowerCase();
+                                    });
+
+                                if (matched != null) {
+                                  showInvitationDetailSheet(context, matched);
+                                } else {
+                                  final String lookupType = isQuickAccessMode
+                                      ? (isIndonesian
+                                            ? 'Quick Access'
+                                            : 'Quick Access')
+                                      : (isIndonesian
+                                            ? 'Undangan'
+                                            : 'Invitation');
+
+                                  Get.snackbar(
+                                    isIndonesian
+                                        ? '$lookupType Tidak Ditemukan'
+                                        : '$lookupType Not Found',
+                                    isIndonesian
+                                        ? '$lookupType dengan kode/nomor "$scannedCode" tidak ditemukan.'
+                                        : '$lookupType with code/number "$scannedCode" was not found.',
+                                    backgroundColor: Colors.red.shade100,
+                                    colorText: Colors.red.shade900,
+                                    snackPosition: SnackPosition.BOTTOM,
+                                  );
+                                }
+                              }
+                            }
+                          },
+                        );
                       },
                     ),
                   ),
                   hSpace(context, 16),
                   Expanded(
-                    child: _buildQuickActionCard(
-                      context: context,
-                      title: Get.locale?.languageCode == 'id'
-                          ? 'Duplikat Invitation'
-                          : 'Duplicate Invitation',
-                      subtitle: Get.locale?.languageCode == 'id'
-                          ? 'Gunakan yang lama'
-                          : 'Use an old one',
-                      icon: Icons.copy_all_rounded,
-                      color: const Color(0xFFE65100),
-                      bgColor: const Color(0xFFFFF3E0),
-                      onTap: () {
-                        Get.snackbar(
-                          'Info',
-                          'Duplicate feature is under development',
-                          backgroundColor: Colors.blue.shade100,
-                          colorText: Colors.blue.shade900,
+                    child: Builder(
+                      builder: (ctx) {
+                        final isIndonesian = Get.locale?.languageCode == 'id';
+                        final String dupTitle;
+                        if (mode == 'share_link') {
+                          dupTitle = isIndonesian
+                              ? 'Duplikat Share Link'
+                              : 'Duplicate Share Link';
+                        } else if (mode == 'quick_access') {
+                          dupTitle = isIndonesian
+                              ? 'Duplikat Quick Access'
+                              : 'Duplicate Quick Access';
+                        } else {
+                          dupTitle = isIndonesian
+                              ? 'Duplikat Invitation'
+                              : 'Duplicate Invitation';
+                        }
+
+                        return _buildQuickActionCard(
+                          context: context,
+                          title: dupTitle,
+                          subtitle: isIndonesian
+                              ? 'Gunakan yang lama'
+                              : 'Use an old one',
+                          icon: Icons.copy_all_rounded,
+                          color: const Color(0xFFE65100),
+                          bgColor: const Color(0xFFFFF3E0),
+                          onTap: () {
+                            Get.snackbar(
+                              'Info',
+                              'Duplicate feature is under development',
+                              backgroundColor: Colors.blue.shade100,
+                              colorText: Colors.blue.shade900,
+                            );
+                          },
                         );
                       },
                     ),
@@ -4614,17 +4719,31 @@ class EmptyStateWidget extends StatelessWidget {
               child: Icon(icon, color: color, size: rw(context, 24)),
             ),
             vSpace(context, 12),
-            Text(
-              title,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: rfs(context, 13),
-                fontWeight: FontWeight.w700,
-                color: Colors.black87,
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
+            title == 'Duplicate Quick Access' || title == 'Duplikat Quick Access'
+                ? FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      title,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: rfs(context, 13),
+                        fontWeight: FontWeight.w700,
+                        color: Colors.black87,
+                      ),
+                      maxLines: 1,
+                    ),
+                  )
+                : Text(
+                    title,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: rfs(context, 13),
+                      fontWeight: FontWeight.w700,
+                      color: Colors.black87,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
             vSpace(context, 4),
             Text(
               subtitle,

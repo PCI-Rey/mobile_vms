@@ -60,8 +60,7 @@ class _ScanInvitationPageState extends State<ScanInvitationPage> {
             onDetect: (capture) {
               final List<Barcode> barcodes = capture.barcodes;
               for (final barcode in barcodes) {
-                if (barcode.format == BarcodeFormat.qrCode &&
-                    barcode.rawValue != null &&
+                if (barcode.rawValue != null &&
                     barcode.rawValue!.trim().isNotEmpty) {
                   // Stop scanning immediately and return scanned raw data
                   final code = barcode.rawValue!.trim();
