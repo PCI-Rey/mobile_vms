@@ -811,7 +811,7 @@ class _CreateQuickAccessDialogState extends State<CreateQuickAccessDialog> {
             Padding(
               padding: EdgeInsets.all(rw(context, 16.0)),
               child: Text(
-                title.replaceAll('Select ', 'Pilih '),
+                title,
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: rfs(context, 16),

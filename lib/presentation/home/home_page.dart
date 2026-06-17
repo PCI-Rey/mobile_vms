@@ -1014,6 +1014,9 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                         siteId: model.siteId.isEmpty
                             ? parent.siteId
                             : model.siteId,
+                        sitePlaceId: (model.sitePlaceId ?? '').isEmpty
+                            ? parent.sitePlaceId
+                            : model.sitePlaceId,
                         visitorName:
                             (visitorMap['visitor_name'] ?? '')
                                 .toString()
@@ -2043,9 +2046,14 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
         }).length;
       }
 
+      final now = DateTime.now();
+      final isToday = date.year == now.year &&
+          date.month == now.month &&
+          date.day == now.day;
+
       return Column(
         children: [
-          _buildSectionHeader(context, 'Today Summary'),
+          _buildSectionHeader(context, isToday ? 'Today Summary' : 'Summary'),
           vSpace(context, 16),
           Row(
             children: [

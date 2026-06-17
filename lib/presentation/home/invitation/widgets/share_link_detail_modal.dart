@@ -4,6 +4,8 @@ import 'package:intl/intl.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import '../../../../core/core.dart';
 import '../../../../core/helper/responsive_helper.dart';
+import '../../../../data/datasources/hive_service.dart';
+import '../../../../data/datasources/api_service.dart';
 import '../controller/invitation_controller.dart';
 import 'invite_share_link_dialog.dart';
 
@@ -13,6 +15,34 @@ class ShareLinkDetailModal {
     final int currentUsage = item['current_usage'] ?? 0;
     final bool isSingleUse = item['is_single_use'] == true;
     final String agenda = item['agenda'] ?? '-';
+    final String siteId = (item['site_place_id'] ?? item['site_place'] ?? item['site_id'] ?? '').toString();
+
+    Future<String> fetchSiteNameFromApi() async {
+      if (siteId.isEmpty || siteId == 'null') return '-';
+      final token = HiveService().getUser()?.token;
+      if (token == null) return '-';
+      try {
+        final response = await ApiService().getSiteById(token, siteId);
+        if (response.data != null &&
+            (response.data['status'] == 'success' || response.data['status_code'] == 200)) {
+          final collection = response.data['collection'];
+          if (collection != null) {
+            if (collection is Map) {
+              return collection['name']?.toString() ?? '-';
+            } else if (collection is List && collection.isNotEmpty) {
+              final first = collection.first;
+              if (first is Map) {
+                return first['name']?.toString() ?? '-';
+              }
+            }
+          }
+        }
+        return '-';
+      } catch (e) {
+        debugPrint('fetchSiteNameFromApi error: $e');
+        return '-';
+      }
+    }
 
     final expiredAtStr = item['expired_at'];
     DateTime? expiredAt;
@@ -162,6 +192,24 @@ class ShareLinkDetailModal {
                               Icons.event_note_outlined,
                               'Agenda',
                               agenda,
+                            ),
+                            vSpace(ctx, 12),
+                            FutureBuilder<String>(
+                              future: fetchSiteNameFromApi(),
+                              builder: (context, snapshot) {
+                                String dispName = '-';
+                                if (snapshot.connectionState == ConnectionState.waiting) {
+                                  dispName = 'Loading...';
+                                } else if (snapshot.hasData) {
+                                  dispName = snapshot.data!;
+                                }
+                                return _buildInfoTile(
+                                  ctx,
+                                  Icons.location_on_outlined,
+                                  'Location',
+                                  dispName,
+                                );
+                              },
                             ),
                             vSpace(ctx, 12),
                             Row(

@@ -33,7 +33,8 @@ class InvitationController extends GetxController {
   final RxBool isVisitorTodayLoading = false.obs;
   int _visitorTodayFetchId = 0;
   final RxMap<String, int> transactionVisitorCounts = <String, int>{}.obs;
-  final RxMap<String, List<AccessPassModel>> transactionVisitorsCache = <String, List<AccessPassModel>>{}.obs;
+  final RxMap<String, List<AccessPassModel>> transactionVisitorsCache =
+      <String, List<AccessPassModel>>{}.obs;
   final RxList<AccessPassModel> ongoingInvitations = <AccessPassModel>[].obs;
   final RxList<AccessPassModel> quickAccessInvitations =
       <AccessPassModel>[].obs;
@@ -53,8 +54,6 @@ class InvitationController extends GetxController {
   final RxSet<String> unreadTicketIds = <String>{}.obs;
   final Set<String> _resolvedTickets = {};
   final Set<String> _pendingFetches = {};
-
-
 
   void startReminderTimer(
     int minutes,
@@ -240,7 +239,7 @@ class InvitationController extends GetxController {
     if (selectedSiteId.value.isNotEmpty || selectedSiteName.value.isNotEmpty) {
       filtered = filtered.where((item) {
         return (selectedSiteId.value.isNotEmpty &&
-                item.siteId.toLowerCase() ==
+                (item.sitePlaceId ?? '').toLowerCase() ==
                     selectedSiteId.value.toLowerCase()) ||
             (selectedSiteName.value.isNotEmpty &&
                 item.sitePlaceName.toLowerCase() ==
@@ -290,7 +289,7 @@ class InvitationController extends GetxController {
         selectedSiteNameQuick.value.isNotEmpty) {
       quickAccess = quickAccess.where((item) {
         return (selectedSiteIdQuick.value.isNotEmpty &&
-                item.siteId.toLowerCase() ==
+                (item.sitePlaceId ?? '').toLowerCase() ==
                     selectedSiteIdQuick.value.toLowerCase()) ||
             (selectedSiteNameQuick.value.isNotEmpty &&
                 item.sitePlaceName.toLowerCase() ==
@@ -358,15 +357,16 @@ class InvitationController extends GetxController {
         length: 1,
         search: '',
       );
-      
+
       if (countResponse.data is Map &&
           (countResponse.data['status'] == 'success' ||
               countResponse.data['status_code'] == 200)) {
         final recordsFiltered =
             (countResponse.data['recordsFiltered'] ??
-                countResponse.data['RecordsFiltered'] ??
-                countResponse.data['records_filtered'] ??
-                50) as int;
+                    countResponse.data['RecordsFiltered'] ??
+                    countResponse.data['records_filtered'] ??
+                    50)
+                as int;
         final totalCount = recordsFiltered > 0 ? recordsFiltered : 1;
 
         final response = await _api.getVisitorDt(
@@ -382,7 +382,10 @@ class InvitationController extends GetxController {
                 response.data['status_code'] == 200)) {
           final collection = response.data['collection'];
 
-          final List<AccessPassModel> allVisitors = await compute(_parseAccessPassData, collection);
+          final List<AccessPassModel> allVisitors = await compute(
+            _parseAccessPassData,
+            collection,
+          );
 
           allRawVisitors.assignAll(allVisitors);
 
@@ -441,7 +444,7 @@ class InvitationController extends GetxController {
 
   Future<void> _fetchSites(String token) async {
     try {
-      final response = await _api.getDropPoints(token);
+      final response = await _api.getSitesWithToken(token);
       if (response.data['status'] == 'success') {
         sites.assignAll(
           List<Map<String, dynamic>>.from(response.data['collection']),
@@ -537,42 +540,52 @@ class InvitationController extends GetxController {
 
     isShareLinkLoading.value = true;
     try {
+      // Step 1: Query with length 10 to trigger/get correct records count info
       final countResponse = await _api.getShareLinkDt(
         token,
         start: 0,
-        length: 1,
+        length: 10,
         sortColumn: 'created_at',
         sortDir: 'desc',
       );
 
+      debugPrint('DEBUG: fetchShareLinks count response status: ${countResponse.statusCode}');
       if (countResponse.data is Map &&
           (countResponse.data['status'] == 'success' ||
               countResponse.data['status_code'] == 200)) {
-        final recordsFiltered =
-            (countResponse.data['recordsFiltered'] ??
+        final recordsFiltered = (countResponse.data['recordsFiltered'] ??
                 countResponse.data['RecordsFiltered'] ??
                 countResponse.data['records_filtered'] ??
                 50) as int;
-        final totalCount = recordsFiltered > 0 ? recordsFiltered : 1;
-
-        final response = await _api.getShareLinkDt(
-          token,
-          start: 0,
-          length: totalCount,
-          sortColumn: 'created_at',
-          sortDir: 'desc',
-        );
-
-        if (response.data is Map &&
-            (response.data['status'] == 'success' ||
-                response.data['status_code'] == 200)) {
-          final collection = response.data['collection'] as List<dynamic>? ?? [];
-          allShareLinks.assignAll(collection);
+        
+        final collectionList = countResponse.data['collection'] as List<dynamic>? ?? [];
+        debugPrint('DEBUG: fetchShareLinks RecordsFiltered = $recordsFiltered, collection length = ${collectionList.length}');
+        
+        if (recordsFiltered <= collectionList.length) {
+          // If the total count is <= the retrieved collection size (e.g. 10), we already have the full list!
+          allShareLinks.assignAll(collectionList);
           _applyShareFilters();
-        } else if (response.data is Map &&
-            (response.data['status'] == 'not_found' ||
-                response.data['status_code'] == 404)) {
-          allShareLinks.clear();
+        } else {
+          // Step 2: Fetch the actual total count of items (capped at 500 to prevent backend limit issues)
+          final totalCount = recordsFiltered > 500 ? 500 : recordsFiltered;
+          final response = await _api.getShareLinkDt(
+            token,
+            start: 0,
+            length: totalCount,
+            sortColumn: 'created_at',
+            sortDir: 'desc',
+          );
+          
+          debugPrint('DEBUG: fetchShareLinks second response status: ${response.statusCode}');
+          if (response.data is Map &&
+              (response.data['status'] == 'success' ||
+                  response.data['status_code'] == 200)) {
+            final collection = response.data['collection'] as List<dynamic>? ?? [];
+            debugPrint('DEBUG: fetchShareLinks second collection length = ${collection.length}');
+            allShareLinks.assignAll(collection);
+          } else {
+            allShareLinks.assignAll(collectionList);
+          }
           _applyShareFilters();
         }
       } else if (countResponse.data is Map &&
@@ -589,6 +602,8 @@ class InvitationController extends GetxController {
   }
 
   void _applyShareFilters() {
+    debugPrint('DEBUG: _applyShareFilters starting with ${allShareLinks.length} items');
+    debugPrint('DEBUG: filters: startDateShare=${startDateShare.value}, endDateShare=${endDateShare.value}, selectedSiteIdShare=${selectedSiteIdShare.value}, selectedSiteNameShare=${selectedSiteNameShare.value}, selectedStatusShare=${selectedStatusShare.value}');
     List<dynamic> filtered = List.from(allShareLinks);
 
     // 1. Filter Berdasarkan Tanggal (Lokal)
@@ -642,7 +657,11 @@ class InvitationController extends GetxController {
     if (selectedSiteIdShare.value.isNotEmpty ||
         selectedSiteNameShare.value.isNotEmpty) {
       filtered = filtered.where((item) {
-        final itemSiteId = item['site_id']?.toString() ?? '';
+        final itemSiteId =
+            item['site_place_id']?.toString() ??
+            item['site_place']?.toString() ??
+            item['site_id']?.toString() ??
+            '';
         final itemSiteName = item['site_place_name']?.toString() ?? '';
         return (selectedSiteIdShare.value.isNotEmpty &&
                 itemSiteId.toLowerCase() ==
@@ -734,6 +753,7 @@ class InvitationController extends GetxController {
     });
 
     // 4. Paginate
+    debugPrint('DEBUG: _applyShareFilters: after filtering and sorting, count = ${filtered.length}');
     shareLinkTotalRecords.value = filtered.length;
     final start = shareLinkCurrentPage.value * shareLinkPageSize.value;
 
@@ -748,6 +768,7 @@ class InvitationController extends GetxController {
         .skip(safeStart)
         .take(shareLinkPageSize.value)
         .toList();
+    debugPrint('DEBUG: _applyShareFilters: final pagedList size = ${pagedList.length}');
     shareLinks.assignAll(pagedList);
   }
 
@@ -963,9 +984,10 @@ class InvitationController extends GetxController {
           countResponse.data['status_code'] == 200) {
         final recordsFiltered =
             (countResponse.data['recordsFiltered'] ??
-                countResponse.data['RecordsFiltered'] ??
-                countResponse.data['records_filtered'] ??
-                9999) as int;
+                    countResponse.data['RecordsFiltered'] ??
+                    countResponse.data['records_filtered'] ??
+                    9999)
+                as int;
         final totalCount = recordsFiltered > 0 ? recordsFiltered : 1;
 
         // Step 2: Fetch all records
@@ -979,10 +1001,15 @@ class InvitationController extends GetxController {
         if (response.data['status'] == 'success' ||
             response.data['status_code'] == 200) {
           final collection = response.data['collection'];
-          debugPrint('fetchApprovalTickets raw collection count: ${(collection as List?)?.length}');
+          debugPrint(
+            'fetchApprovalTickets raw collection count: ${(collection as List?)?.length}',
+          );
 
           // Step 3: Parse in background isolate
-          final newTickets = await compute(_parseApprovalTicketData, collection);
+          final newTickets = await compute(
+            _parseApprovalTicketData,
+            collection,
+          );
 
           if (!isSilent) {
             _resolvedTickets.clear();
@@ -1131,7 +1158,10 @@ class InvitationController extends GetxController {
     }
   }
 
-  List<AccessPassModel> _parseAndCacheSubVisitors(AccessPassModel parent, List<Map<String, dynamic>> list) {
+  List<AccessPassModel> _parseAndCacheSubVisitors(
+    AccessPassModel parent,
+    List<Map<String, dynamic>> list,
+  ) {
     final List<AccessPassModel> results = [];
     final parentFlow = parent.flow;
     final parentSiteId = parent.siteId;
@@ -1145,8 +1175,8 @@ class InvitationController extends GetxController {
     final parentGCode = parent.groupCode.isNotEmpty
         ? parent.groupCode
         : (parent.invitationCode.contains('-')
-            ? parent.invitationCode.split('-').first
-            : '');
+              ? parent.invitationCode.split('-').first
+              : '');
 
     for (var visitor in list) {
       final mutableVisitor = Map<String, dynamic>.from(visitor);
@@ -1164,12 +1194,14 @@ class InvitationController extends GetxController {
           mutableVisitor['visit_start'] == null &&
           mutableVisitor['start_date'] == null &&
           mutableVisitor['visit_date'] == null) {
-        mutableVisitor['visitor_period_start'] = parentPeriodStart.toIso8601String();
+        mutableVisitor['visitor_period_start'] = parentPeriodStart
+            .toIso8601String();
       }
       if (mutableVisitor['visitor_period_end'] == null &&
           mutableVisitor['visit_end'] == null &&
           mutableVisitor['end_date'] == null) {
-        mutableVisitor['visitor_period_end'] = parentPeriodEnd.toIso8601String();
+        mutableVisitor['visitor_period_end'] = parentPeriodEnd
+            .toIso8601String();
       }
       if ((mutableVisitor['agenda']?.toString() ?? '').isEmpty) {
         mutableVisitor['agenda'] = parentAgenda;
@@ -1200,7 +1232,7 @@ class InvitationController extends GetxController {
     if (results.isEmpty) {
       results.add(parent);
     }
-    
+
     transactionVisitorsCache[parent.id] = results;
     return results;
   }
@@ -1209,7 +1241,8 @@ class InvitationController extends GetxController {
     final date = selectedDashboardDate.value;
     final todayTransactions = allRawVisitors.where((item) {
       final itemDate = item.visitorPeriodStart;
-      final isEmptyDraft = item.agenda.isEmpty &&
+      final isEmptyDraft =
+          item.agenda.isEmpty &&
           item.hostName.isEmpty &&
           item.visitorTypeName.isEmpty;
       return itemDate.year == date.year &&
@@ -1228,16 +1261,22 @@ class InvitationController extends GetxController {
         results.add(tx);
       }
     }
-    
+
     // Filter out visitors with empty names
-    final filteredResults = results.where((item) => item.visitorName.trim().isNotEmpty).toList();
-    
+    final filteredResults = results
+        .where((item) => item.visitorName.trim().isNotEmpty)
+        .toList();
+
     // Sort descending by visitorPeriodStart
-    filteredResults.sort((a, b) => b.visitorPeriodStart.compareTo(a.visitorPeriodStart));
+    filteredResults.sort(
+      (a, b) => b.visitorPeriodStart.compareTo(a.visitorPeriodStart),
+    );
     return filteredResults;
   }
 
-  Future<void> _prefetchTransactionVisitorCounts(List<AccessPassModel> items) async {
+  Future<void> _prefetchTransactionVisitorCounts(
+    List<AccessPassModel> items,
+  ) async {
     final user = _hive.getUser();
     final token = user?.token;
     if (token == null) return;
@@ -1245,8 +1284,9 @@ class InvitationController extends GetxController {
     final List<Future<void>> tasks = [];
     for (final item in items) {
       if (transactionVisitorCounts.containsKey(item.id)) continue;
-      
-      final isEmptyDraft = item.agenda.isEmpty &&
+
+      final isEmptyDraft =
+          item.agenda.isEmpty &&
           item.hostName.isEmpty &&
           item.visitorTypeName.isEmpty;
       if (isEmptyDraft) continue;
@@ -1255,7 +1295,7 @@ class InvitationController extends GetxController {
         try {
           final list = await fetchTransactionVisitors(item.id);
           _parseAndCacheSubVisitors(item, list);
-          
+
           int count = 1;
           if (list.isNotEmpty) {
             count = list.length;
@@ -1287,7 +1327,8 @@ class InvitationController extends GetxController {
 
     final todayTransactions = allRawVisitors.where((item) {
       final itemDate = item.visitorPeriodStart;
-      final isEmptyDraft = item.agenda.isEmpty &&
+      final isEmptyDraft =
+          item.agenda.isEmpty &&
           item.hostName.isEmpty &&
           item.visitorTypeName.isEmpty;
       return itemDate.year == date.year &&
@@ -1296,8 +1337,12 @@ class InvitationController extends GetxController {
           !isEmptyDraft;
     }).toList();
 
-    debugPrint('fetchVisitorTodayCount: allRawVisitors length is ${allRawVisitors.length}');
-    debugPrint('fetchVisitorTodayCount: todayTransactions on this day is ${todayTransactions.length}');
+    debugPrint(
+      'fetchVisitorTodayCount: allRawVisitors length is ${allRawVisitors.length}',
+    );
+    debugPrint(
+      'fetchVisitorTodayCount: todayTransactions on this day is ${todayTransactions.length}',
+    );
 
     int total = 0;
     final List<AccessPassModel> missingTransactions = [];
@@ -1330,7 +1375,7 @@ class InvitationController extends GetxController {
       final tasks = missingTransactions.map((item) async {
         final list = await fetchTransactionVisitors(item.id);
         _parseAndCacheSubVisitors(item, list);
-        
+
         int count = 1;
         if (list.isNotEmpty) {
           count = list.length;
@@ -1350,12 +1395,14 @@ class InvitationController extends GetxController {
         }
         visitorTodayCount.value = newTotal;
         isVisitorTodayLoading.value = false;
-        
+
         debugPrint('--- Visitor Today Calculation Log for Date: $date ---');
         for (int i = 0; i < todayTransactions.length; i++) {
           final tx = todayTransactions[i];
           final c = transactionVisitorCounts[tx.id] ?? 1;
-          debugPrint('Tx #${i + 1}: ID=${tx.id}, Agenda="${tx.agenda}", Host="${tx.hostName}", Date=${tx.visitorPeriodStart}, Group=${tx.isGroup}, SubCount=$c, Status="${tx.visitorStatus}"');
+          debugPrint(
+            'Tx #${i + 1}: ID=${tx.id}, Agenda="${tx.agenda}", Host="${tx.hostName}", Date=${tx.visitorPeriodStart}, Group=${tx.isGroup}, SubCount=$c, Status="${tx.visitorStatus}"',
+          );
         }
         debugPrint('Total Visitor Today: $newTotal');
         debugPrint('----------------------------------------------------');
@@ -1367,7 +1414,6 @@ class InvitationController extends GetxController {
       }
     }
   }
-
 
   /// POST approve-meetinghost. Returns true on success (no snackbar — caller handles UI).
   Future<bool> approveMeetingHostAction(

@@ -14,6 +14,7 @@ class FilterBottomSheet extends StatefulWidget {
   final bool showStatusFilter;
   final bool showSiteFilter;
   final List<String>? customStatusList;
+  final String? filterMode;
 
   const FilterBottomSheet({
     super.key,
@@ -24,6 +25,7 @@ class FilterBottomSheet extends StatefulWidget {
     this.showStatusFilter = false,
     this.showSiteFilter = true,
     this.customStatusList,
+    this.filterMode,
   });
 
   @override
@@ -85,6 +87,20 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
   }
 
   void _showGedungSelection(BuildContext context) {
+    // Filter the gedungList based on the filterMode
+    final filteredGedungList = gedungList.where((item) {
+      final name = item['name'] ?? '';
+      final lowerName = name.toLowerCase().trim();
+      final mode = widget.filterMode;
+      
+      if (mode == 'invitation') {
+        return lowerName != 'drop point';
+      } else if (mode == 'quick_access') {
+        return lowerName == 'drop point';
+      }
+      return true;
+    }).toList();
+
     showModalBottomSheet(
       context: context,
       shape: RoundedRectangleBorder(
@@ -106,13 +122,19 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                 ),
               ),
               vSpace(context, 16),
-              Expanded(
+              Flexible(
                 child: ListView.builder(
-                  itemCount: gedungList.length,
+                  shrinkWrap: true,
+                  itemCount: filteredGedungList.length,
                   itemBuilder: (context, index) {
-                    final item = gedungList[index];
+                    final item = filteredGedungList[index];
+                    final name = item['name'] ?? '';
+                    
                     return ListTile(
-                      title: Text(item['name'] ?? ''),
+                      title: Text(
+                        name,
+                        style: const TextStyle(color: Colors.black87),
+                      ),
                       trailing: selectedGedung == item['id']
                           ? const Icon(Icons.check, color: AppColors.primary500)
                           : null,

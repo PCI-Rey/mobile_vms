@@ -57,6 +57,18 @@ class _SendInvitationPageState extends State<SendInvitationPage>
   @override
   void initState() {
     super.initState();
+    
+    // Restore filter states from controller
+    startDate = controller.startDate.value;
+    endDate = controller.endDate.value;
+    selectedGedung = controller.selectedSiteName.value.isEmpty ? null : controller.selectedSiteName.value;
+    selectedStatus = controller.selectedStatus.value.isEmpty ? null : controller.selectedStatus.value;
+
+    startDateQuick = controller.startDateQuick.value;
+    endDateQuick = controller.endDateQuick.value;
+    selectedGedungQuick = controller.selectedSiteNameQuick.value.isEmpty ? null : controller.selectedSiteNameQuick.value;
+    selectedStatusQuick = controller.selectedStatusQuick.value.isEmpty ? null : controller.selectedStatusQuick.value;
+
     _tabController = TabController(
       length: 3,
       vsync: this,
@@ -257,6 +269,7 @@ class _SendInvitationPageState extends State<SendInvitationPage>
                             initialSiteId: inviteCtrl.selectedSiteId.value,
                             initialStatus: selectedStatus,
                             showStatusFilter: false,
+                            filterMode: 'invitation',
                           ),
                         );
 
@@ -712,6 +725,7 @@ class _SendInvitationPageState extends State<SendInvitationPage>
                             initialSiteId: inviteCtrl.selectedSiteIdQuick.value,
                             initialStatus: selectedStatusQuick,
                             showStatusFilter: false,
+                            filterMode: 'quick_access',
                           ),
                         );
 
@@ -847,7 +861,7 @@ class _SendInvitationPageState extends State<SendInvitationPage>
                     });
                   },
                   tipsText: 'Use Quick Access for VIP guests or external staff who require recurring access without manual approval.',
-                  showQuickActions: false,
+                  showQuickActions: true,
                 );
               }
 
@@ -1230,6 +1244,7 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
 
       final parentFlow = widget.item.flow;
       final parentSiteId = widget.item.siteId;
+      final parentSitePlaceId = widget.item.sitePlaceId;
       final parentSitePlaceName = widget.item.sitePlaceName;
       final parentPeriodStart = widget.item.visitorPeriodStart;
       final parentPeriodEnd = widget.item.visitorPeriodEnd;
@@ -1300,6 +1315,7 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
           isDriving: model.isDriving,
           tz: model.tz.isEmpty ? widget.item.tz : model.tz,
           siteId: model.siteId.isEmpty ? parentSiteId : model.siteId,
+          sitePlaceId: (model.sitePlaceId ?? '').isEmpty ? parentSitePlaceId : model.sitePlaceId,
           visitorName: model.visitorName,
           isPraregisterDone: model.isPraregisterDone,
           visitorRole: model.visitorRole.isEmpty
@@ -3336,7 +3352,6 @@ class _ShareLinkListInlineState extends State<ShareLinkListInline> {
       : Get.put(InvitationController());
 
   final ScrollController _scrollController = ScrollController();
-  Timer? _timer;
   Worker? _listWorker;
 
   // Local Share Link filter state
@@ -3348,6 +3363,13 @@ class _ShareLinkListInlineState extends State<ShareLinkListInline> {
   @override
   void initState() {
     super.initState();
+    
+    // Restore filter states from controller
+    startDateShare = controller.startDateShare.value;
+    endDateShare = controller.endDateShare.value;
+    selectedGedungShare = controller.selectedSiteNameShare.value.isEmpty ? null : controller.selectedSiteNameShare.value;
+    selectedStatusShare = controller.selectedStatusShare.value.isEmpty ? null : controller.selectedStatusShare.value;
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       controller.shareLinkPageSize.value = 10;
       controller.fetchShareLinks(resetPage: true);
@@ -3364,17 +3386,11 @@ class _ShareLinkListInlineState extends State<ShareLinkListInline> {
       }
     });
 
-    // Start timer for live countdown
-    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (mounted) {
-        setState(() {});
-      }
-    });
+
   }
 
   @override
   void dispose() {
-    _timer?.cancel();
     _listWorker?.dispose();
     _scrollController.dispose();
     super.dispose();
@@ -3393,7 +3409,7 @@ class _ShareLinkListInlineState extends State<ShareLinkListInline> {
       Widget listWidget;
       if (controller.shareLinks.isEmpty) {
         listWidget = EmptyStateWidget(
-          icon: Icons.link_rounded,
+          icon: Icons.add_link_rounded,
           title: 'No share links yet',
           subtitle: 'Create share links to share self-registration access for your guests, either for one-time or recurring use.',
           buttonText: 'Create Share Link',
@@ -3405,7 +3421,7 @@ class _ShareLinkListInlineState extends State<ShareLinkListInline> {
             ).then((_) => controller.fetchShareLinks());
           },
           tipsText: 'Share links are perfect if you want to invite many people without inputting data one by one.',
-          showQuickActions: false,
+          showQuickActions: true,
         );
       } else {
         listWidget = ListView.separated(

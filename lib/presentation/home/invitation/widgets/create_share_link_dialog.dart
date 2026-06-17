@@ -204,7 +204,7 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
                           input: Column(
                             children: [
                               _buildDropdown(
-                                hint: 'Pilih Agenda',
+                                hint: 'Select Agenda',
                                 value: selectedAgendaOption,
                                 items: agendaOptions,
                                 enabled: isAgendaEnabled,
@@ -225,7 +225,7 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
                                   selectedAgendaOption == 'Other') ...[
                                 vSpace(context, 8),
                                 _buildTextField(
-                                  hint: 'Ketik agenda lainnya...',
+                                  hint: 'Type other agenda...',
                                   controller: agendaCtrl,
                                   enabled: isAgendaEnabled,
                                   focusNode: agendaFocusNode,
@@ -285,7 +285,14 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
                             return _buildDropdown(
                               hint: 'Select Host',
                               value: selectedHostId,
-                              items: controller.hosts,
+                              items: controller.hosts
+                                  .map(
+                                    (h) => {
+                                      "id": h['id']?.toString() ?? '',
+                                      "name": h['name']?.toString() ?? '',
+                                    },
+                                  )
+                                  .toList(),
                               enabled: isHostEnabled,
                               onChanged: (v) =>
                                   setState(() => selectedHostId = v),
@@ -346,7 +353,7 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
                           isEnabled: isExpiredEnabled,
                           onToggle: (v) => setState(() => isExpiredEnabled = v),
                           input: _buildDropdown(
-                            hint: 'Pilih Expired Link',
+                            hint: 'Select Link Expiry',
                             value: selectedExpiredMinutes,
                             items: expiryOptions,
                             enabled: isExpiredEnabled,
@@ -598,7 +605,7 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
             Padding(
               padding: EdgeInsets.all(rw(context, 16.0)),
               child: Text(
-                title.replaceAll('Select ', 'Pilih '),
+                title,
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: rfs(context, 16),
@@ -676,7 +683,7 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
       enabled: enabled,
       style: TextStyle(fontSize: rfs(context, 13)),
       decoration: _inputDecoration(enabled: enabled).copyWith(
-        hintText: 'Pilih Tanggal dan Waktu',
+        hintText: 'Select Date and Time',
         hintStyle: TextStyle(color: Colors.grey, fontSize: rfs(context, 13)),
         suffixIcon: Icon(
           Icons.calendar_today_outlined,
@@ -827,8 +834,8 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
 
         if (!isStart && visitStart != null && dt.isBefore(visitStart!)) {
           Get.snackbar(
-            'Waktu Tidak Valid',
-            'Visit End tidak boleh lebih awal dari Visit Start',
+            'Invalid Time',
+            'Visit End cannot be earlier than Visit Start',
             backgroundColor: Colors.red,
             colorText: Colors.white,
             snackPosition: SnackPosition.TOP,
@@ -839,8 +846,8 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
 
         if (isStart && visitEnd != null && dt.isAfter(visitEnd!)) {
           Get.snackbar(
-            'Waktu Tidak Valid',
-            'Visit Start tidak boleh lebih lambat dari Visit End',
+            'Invalid Time',
+            'Visit Start cannot be later than Visit End',
             backgroundColor: Colors.red,
             colorText: Colors.white,
             snackPosition: SnackPosition.TOP,

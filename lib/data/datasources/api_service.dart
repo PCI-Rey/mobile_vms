@@ -278,6 +278,20 @@ class ApiService {
     }
   }
 
+  Future<Response> getSiteById(String token, String id) async {
+    try {
+      final response = await _dio.get(
+        '/$pathApi/site/$id',
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+      return response;
+    } on DioException catch (e) {
+      debugPrint('Dio Error getSiteById: ${e.message}');
+      if (e.response != null) return e.response!;
+      rethrow;
+    }
+  }
+
   Future<Response> getDropPoints(String token) async {
     try {
       final response = await _dio.get(
