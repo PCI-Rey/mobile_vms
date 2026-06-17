@@ -258,17 +258,19 @@ class _SplashscreenState extends State<Splashscreen>
                               fontSize: sw * 0.028,
                             ),
                           ),
-                          const SizedBox(width: 6),
-                          Image.asset(
-                            'assets/images/BioExperience.png',
-                            height: sw * 0.045,
-                            fit: BoxFit.contain,
-                            errorBuilder: (context, error, stackTrace) => Text(
-                              'Bio Experience',
-                              style: TextStyle(
-                                color: Colors.white.withValues(alpha: 0.6),
-                                fontSize: sw * 0.028,
-                                fontWeight: FontWeight.bold,
+                          Transform.translate(
+                            offset: const Offset(-4, 0),
+                            child: Image.asset(
+                              'assets/images/BioExperienceWhite.png',
+                              height: sw * 0.05,
+                              fit: BoxFit.contain,
+                              errorBuilder: (context, error, stackTrace) => Text(
+                                'Bio Experience',
+                                style: TextStyle(
+                                  color: Colors.white.withValues(alpha: 0.6),
+                                  fontSize: sw * 0.028,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                             ),
                           ),
