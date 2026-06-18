@@ -3302,30 +3302,33 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
               ),
 
               // ── Close button ───────────────────────────────────────────
-              Padding(
-                padding: EdgeInsets.fromLTRB(
-                  rw(context, 20),
-                  0,
-                  rw(context, 20),
-                  rh(context, 24),
-                ),
-                child: SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF005596),
-                      padding: EdgeInsets.symmetric(vertical: rh(context, 14)),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(rw(context, 12)),
+              SafeArea(
+                top: false,
+                child: Padding(
+                  padding: EdgeInsets.fromLTRB(
+                    rw(context, 20),
+                    0,
+                    rw(context, 20),
+                    rh(context, 16),
+                  ),
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF005596),
+                        padding: EdgeInsets.symmetric(vertical: rh(context, 14)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(rw(context, 12)),
+                        ),
                       ),
-                    ),
-                    onPressed: () => Navigator.pop(context),
-                    child: Text(
-                      'Close',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: rfs(context, 14),
+                      onPressed: () => Navigator.pop(context),
+                      child: Text(
+                        'Close',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: rfs(context, 14),
+                        ),
                       ),
                     ),
                   ),
