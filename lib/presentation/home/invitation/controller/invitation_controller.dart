@@ -534,7 +534,6 @@ class InvitationController extends GetxController {
         token,
         start: 0,
         length: 500,
-        sortColumn: 'created_at',
         sortDir: 'desc',
       );
       if (response.data['status'] == 'success' ||
@@ -581,7 +580,6 @@ class InvitationController extends GetxController {
         token,
         start: 0,
         length: 10,
-        sortColumn: 'created_at',
         sortDir: 'desc',
       );
 
@@ -608,7 +606,6 @@ class InvitationController extends GetxController {
             token,
             start: 0,
             length: totalCount,
-            sortColumn: 'created_at',
             sortDir: 'desc',
           );
           
@@ -968,7 +965,7 @@ class InvitationController extends GetxController {
       if (response.data is Map &&
           (response.data['status'] == 'success' ||
               response.data['status_code'] == 200)) {
-        await fetchOngoingInvitations(clearFilters: true);
+        await fetchOngoingInvitations(clearFilters: false);
         return true;
       }
 
@@ -1213,7 +1210,7 @@ class InvitationController extends GetxController {
           (data['status'] == 'success' || data['status_code'] == 200)) {
         final raw = data['collection'] ?? data['data'] ?? data['visitors'];
         if (raw is List) {
-          return raw.whereType<Map<String, dynamic>>().toList();
+          return raw.map((e) => Map<String, dynamic>.from(e as Map)).toList();
         }
       }
       return [];

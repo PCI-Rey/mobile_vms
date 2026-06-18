@@ -108,7 +108,11 @@ class AccessPassModel {
       isGroup: json['is_group'] == true ||
           json['is_group'] == 1 ||
           json['is_group']?.toString() == 'true' ||
-          json['type_registered']?.toString() == '1',
+          json['type_registered']?.toString() == '1' ||
+          json['self_only'] == false ||
+          json['self_only'] == 0 ||
+          json['self_only']?.toString() == 'false' ||
+          (json['group_name']?.toString() ?? '').isNotEmpty,
       groupName: json['group_name']?.toString() ?? '',
       visitorPeriodStart:
           (json['visitor_period_start'] ??

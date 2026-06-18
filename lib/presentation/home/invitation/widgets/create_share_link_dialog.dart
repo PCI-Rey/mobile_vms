@@ -6,7 +6,8 @@ import '../../../../core/helper/responsive_helper.dart';
 import '../controller/invitation_controller.dart';
 
 class CreateShareLinkDialog extends StatefulWidget {
-  const CreateShareLinkDialog({super.key});
+  final Map<String, dynamic>? duplicateData;
+  const CreateShareLinkDialog({super.key, this.duplicateData});
 
   @override
   State<CreateShareLinkDialog> createState() => _CreateShareLinkDialogState();
@@ -73,6 +74,76 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
   void initState() {
     super.initState();
     controller.fetchMasterData();
+    if (widget.duplicateData != null) {
+      final data = widget.duplicateData!;
+      
+      // 1. Agenda
+      final agendaVal = data['agenda']?.toString() ?? '';
+      if (agendaVal.isNotEmpty) {
+        isAgendaEnabled = true;
+        final hasOption = agendaOptions.any((opt) => opt['id'] == agendaVal);
+        if (hasOption) {
+          selectedAgendaOption = agendaVal;
+          agendaCtrl.text = agendaVal;
+        } else {
+          selectedAgendaOption = 'Other';
+          agendaCtrl.text = agendaVal;
+        }
+      }
+      
+      // 2. Host
+      final hostVal = (data['host_id'] ?? data['host'] ?? '').toString();
+      if (hostVal.isNotEmpty && hostVal != 'null') {
+        isHostEnabled = true;
+        selectedHostId = hostVal;
+      }
+      
+      // 3. Site
+      final siteVal = (data['site_place_id'] ?? data['site_place'] ?? data['site_id'] ?? '').toString();
+      if (siteVal.isNotEmpty && siteVal != 'null') {
+        isSiteEnabled = true;
+        selectedSiteId = siteVal;
+      }
+      
+      // 4. Visitor Type
+      final vTypeVal = (data['visitor_type_id'] ?? data['visitor_type'] ?? '').toString();
+      if (vTypeVal.isNotEmpty && vTypeVal != 'null') {
+        isVisitorTypeEnabled = true;
+        selectedVisitorTypeId = vTypeVal;
+      }
+      
+      // 5. Expiry & Quota limits
+      final expiredVal = (data['expired_number'] ?? 0).toString();
+      if (expiredVal != '0') {
+        isExpiredEnabled = true;
+        selectedExpiredMinutes = expiredVal;
+      }
+      
+      final maxUsage = data['max_usage'] as int? ?? 0;
+      isSingleUse = data['is_single_use'] == true || maxUsage == 1;
+      quotaCtrl.text = maxUsage > 0 ? maxUsage.toString() : '';
+
+      // 6. Visit Start & End
+      final startVal = data['visitor_period_start']?.toString();
+      if (startVal != null && startVal.isNotEmpty && startVal != 'null') {
+        isVisitStartEnabled = true;
+        String normalized = startVal;
+        if (!normalized.endsWith('Z') && !normalized.contains('+')) {
+          normalized = '${normalized.replaceFirst(' ', 'T')}Z';
+        }
+        visitStart = DateTime.tryParse(normalized)?.toLocal();
+      }
+
+      final endVal = data['visitor_period_end']?.toString();
+      if (endVal != null && endVal.isNotEmpty && endVal != 'null') {
+        isVisitEndEnabled = true;
+        String normalized = endVal;
+        if (!normalized.endsWith('Z') && !normalized.contains('+')) {
+          normalized = '${normalized.replaceFirst(' ', 'T')}Z';
+        }
+        visitEnd = DateTime.tryParse(normalized)?.toLocal();
+      }
+    }
   }
 
   @override
@@ -303,28 +374,28 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
                           label: 'Site',
                           isEnabled: isSiteEnabled,
                           onToggle: (v) => setState(() => isSiteEnabled = v),
-                          input: _buildDropdown(
+                          input: Obx(() => _buildDropdown(
                             hint: 'Select Site',
                             value: selectedSiteId,
-                            items: controller.sites,
+                            items: controller.sites.toList(),
                             enabled: isSiteEnabled,
                             onChanged: (v) =>
                                 setState(() => selectedSiteId = v),
-                          ),
+                          )),
                         ),
                         _buildFieldRow(
                           label: 'Visitor Type',
                           isEnabled: isVisitorTypeEnabled,
                           onToggle: (v) =>
                               setState(() => isVisitorTypeEnabled = v),
-                          input: _buildDropdown(
+                          input: Obx(() => _buildDropdown(
                             hint: 'Select Visitor Type',
                             value: selectedVisitorTypeId,
-                            items: controller.visitorTypes,
+                            items: controller.visitorTypes.toList(),
                             enabled: isVisitorTypeEnabled,
                             onChanged: (v) =>
                                 setState(() => selectedVisitorTypeId = v),
-                          ),
+                          )),
                         ),
                         _buildFieldRow(
                           label: 'Visit Start',

@@ -8,6 +8,7 @@ import '../../../../data/datasources/api_service.dart';
 import '../../../../data/datasources/hive_service.dart';
 import '../../../../data/models/visitor_type_model.dart';
 import '../../../../data/models/visitor_type_detail_model.dart';
+import '../../../../data/models/access_pass_model.dart';
 import '../../invitation/controller/invitation_controller.dart';
 
 // ─── Simple model for dropdown items (Employee, Host, Site) ──────────────────
@@ -66,6 +67,7 @@ class PraRegistrationController extends GetxController {
   final RxBool isLoadingDetail = false.obs;
 
   final Rx<bool?> isGroup = Rx<bool?>(null);
+  final RxBool isDuplicateMode = false.obs;
 
   // ── Visitor Role ──────────────────────────────────────────────────────────
   final RxString selectedVisitorRole = ''.obs;
@@ -143,6 +145,7 @@ class PraRegistrationController extends GetxController {
   final FocusNode agendaFocusNode = FocusNode();
   final RxList<DropdownItem> sites = <DropdownItem>[].obs;
   final RxString selectedSiteId = ''.obs;
+  final RxString selectedSiteName = ''.obs;
   final RxBool isLoadingSites = false.obs;
   final Rx<DateTime?> visitStart = Rx<DateTime?>(null);
   final Rx<DateTime?> visitEnd = Rx<DateTime?>(null);
@@ -153,6 +156,7 @@ class PraRegistrationController extends GetxController {
 
   final RxString groupCode = ''.obs;
   final RxString groupName = ''.obs;
+  final groupNameCtrl = TextEditingController();
   final RxList<GroupVisitorRow> groupVisitors = <GroupVisitorRow>[].obs;
 
   final RxInt formUpdateTrigger = 0.obs;
@@ -166,6 +170,31 @@ class PraRegistrationController extends GetxController {
     fetchEmployees();
     fetchHosts();
     fetchSites();
+
+    // Listen to hosts change to resolve name to UUID
+    ever(hosts, (_) => _resolveHostNameFromList());
+  }
+
+  void _resolveHostNameFromList() {
+    final uuidRegex = RegExp(
+        r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$');
+    if (selectedHostId.value.isNotEmpty && !uuidRegex.hasMatch(selectedHostId.value)) {
+      final matched = hosts.firstWhereOrNull(
+        (h) => h.name.toLowerCase().trim() == selectedHostId.value.toLowerCase().trim(),
+      );
+      if (matched != null) {
+        selectedHostId.value = matched.id;
+        
+        // Also update form field answerText
+        for (var section in formStructure.value?.sectionPageVisitorTypes ?? <SectionPageVisitorType>[]) {
+          for (var field in section.praForm) {
+            if (field.remarks.toLowerCase() == 'host') {
+              field.answerText = matched.id;
+            }
+          }
+        }
+      }
+    }
   }
 
   @override
@@ -176,11 +205,13 @@ class PraRegistrationController extends GetxController {
     phoneCtrl.dispose();
     organizationCtrl.dispose();
     identityIdCtrl.dispose();
+    groupNameCtrl.dispose();
     agendaFocusNode.dispose();
     super.onClose();
   }
 
   void resetFields() {
+    isDuplicateMode.value = false;
     selectedVisitorTypeId.value = '';
     selectedVisitorTypeName.value = '';
     formStructure.value = null;
@@ -199,13 +230,164 @@ class PraRegistrationController extends GetxController {
     phoneCtrl.clear();
     organizationCtrl.clear();
     identityIdCtrl.clear();
+    groupName.value = '';
+    groupNameCtrl.clear();
     groupVisitors.clear();
     selectedHostId.value = '';
     selectedSiteId.value = '';
+    selectedSiteName.value = '';
     visitStart.value = null;
     visitEnd.value = null;
     agenda.value = '';
     currentStep.value = 0;
+  }
+
+  Future<void> autofillFromAccessPass(
+    AccessPassModel model, {
+    List<Map<String, dynamic>>? subVisitors,
+  }) async {
+    // 1. Reset
+    resetFields();
+    isDuplicateMode.value = true;
+
+    // 2. Set Visitor Type
+    selectedVisitorTypeId.value = model.visitorTypeId;
+    selectedVisitorTypeName.value = model.visitorTypeName;
+    await fetchFormStructure(model.visitorTypeId);
+
+    // 3. Set Group status
+    final hasGroupFlag = model.isGroup ||
+        model.groupName.isNotEmpty ||
+        (subVisitors != null && subVisitors.length > 1);
+    isGroup.value = hasGroupFlag;
+    if (hasGroupFlag) {
+      groupName.value = '';
+      groupNameCtrl.clear();
+      groupCode.value = _generateGroupCode(); // Generate new group code for duplicate
+      groupVisitors.clear();
+      if (subVisitors != null && subVisitors.isNotEmpty) {
+        for (final sub in subVisitors) {
+          final row = GroupVisitorRow();
+          row.fullName.text = sub['visitor_name']?.toString() ?? sub['name']?.toString() ?? '';
+          row.email.text = sub['visitor_email']?.toString() ?? sub['email']?.toString() ?? '';
+          row.phone.text = sub['visitor_phone']?.toString() ?? sub['phone']?.toString() ?? '';
+          row.organization.text = sub['visitor_organization_name']?.toString() ?? sub['organization']?.toString() ?? '';
+          row.identityId.text = sub['visitor_identity_id']?.toString() ?? sub['identity_id']?.toString() ?? '';
+          row.selectedVisitorRole.value =
+              sub['visitor_role']?.toString() ?? model.visitorRole;
+          groupVisitors.add(row);
+        }
+      } else {
+        // Fallback: add parent visitor info
+        final row = GroupVisitorRow();
+        row.fullName.text = model.visitorName;
+        row.email.text = model.visitorEmail;
+        row.phone.text = model.visitorPhone;
+        row.organization.text = model.visitorOrganizationName;
+        row.identityId.text = model.visitorIdentityId;
+        row.selectedVisitorRole.value = model.visitorRole;
+        groupVisitors.add(row);
+      }
+    } else {
+      // 4. Set Single Visitor Info
+      if (subVisitors != null && subVisitors.isNotEmpty) {
+        final sub = subVisitors.first;
+        nameCtrl.text = sub['visitor_name']?.toString() ?? model.visitorName;
+        emailCtrl.text = sub['visitor_email']?.toString() ?? model.visitorEmail;
+        phoneCtrl.text = sub['visitor_phone']?.toString() ?? model.visitorPhone;
+        organizationCtrl.text = sub['visitor_organization_name']?.toString() ?? model.visitorOrganizationName;
+        identityIdCtrl.text = sub['visitor_identity_id']?.toString() ?? model.visitorIdentityId;
+        selectedVisitorRole.value = sub['visitor_role']?.toString() ?? model.visitorRole;
+      } else {
+        nameCtrl.text = model.visitorName;
+        emailCtrl.text = model.visitorEmail;
+        phoneCtrl.text = model.visitorPhone;
+        organizationCtrl.text = model.visitorOrganizationName;
+        identityIdCtrl.text = model.visitorIdentityId;
+        selectedVisitorRole.value = model.visitorRole;
+      }
+
+      name.value = nameCtrl.text;
+      email.value = emailCtrl.text;
+      phone.value = phoneCtrl.text;
+      organization.value = organizationCtrl.text;
+      identityId.value = identityIdCtrl.text;
+    }
+
+    // 5. Set Purpose & Details (Step 2)
+    agenda.value = model.agenda;
+
+    final uuidRegex = RegExp(
+        r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$');
+
+    selectedSiteId.value = '';
+    selectedSiteName.value = '';
+
+    // Resolve host UUID/Name
+    String hostIdVal = model.host;
+    if (!uuidRegex.hasMatch(hostIdVal) && hostIdVal.isNotEmpty) {
+      final matched = hosts.firstWhereOrNull(
+        (h) => h.name.toLowerCase().trim() == hostIdVal.toLowerCase().trim(),
+      );
+      if (matched != null) {
+        hostIdVal = matched.id;
+      } else {
+        // Match using name from sub-visitor details if model.host is empty or a different name
+        final hostNameVal = model.hostName;
+        if (hostNameVal.isNotEmpty) {
+          final matchedByName = hosts.firstWhereOrNull(
+            (h) => h.name.toLowerCase().trim() == hostNameVal.toLowerCase().trim(),
+          );
+          if (matchedByName != null) {
+            hostIdVal = matchedByName.id;
+          } else {
+            hostIdVal = hostNameVal;
+          }
+        }
+      }
+    }
+    selectedHostId.value = hostIdVal;
+
+    // Set Dates too
+    visitStart.value = model.visitorPeriodStart;
+    visitEnd.value = model.visitorPeriodEnd;
+
+    // Set formStructure answers
+    for (var section in formStructure.value?.sectionPageVisitorTypes ??
+        <SectionPageVisitorType>[]) {
+      for (var field in section.praForm) {
+        final rem = field.remarks.toLowerCase();
+        if (rem == 'name') field.answerText = name.value;
+        if (rem == 'email') field.answerText = email.value;
+        if (rem == 'phone') field.answerText = phone.value;
+        if (rem == 'organization' || rem == 'company') {
+          field.answerText = organization.value;
+        }
+        if (rem == 'identity_id' || rem == 'indentity_id') {
+          field.answerText = identityId.value;
+        }
+        if (rem == 'visitor_role') field.answerText = selectedVisitorRole.value;
+        if (rem == 'host') field.answerText = selectedHostId.value;
+        if (rem == 'site_place') field.answerText = selectedSiteId.value;
+        if (rem == 'agenda') field.answerText = agenda.value;
+        if (rem == 'visitor_period_start') {
+          final iso = model.visitorPeriodStart
+              .toIso8601String()
+              .replaceAll(RegExp(r'\.\d+'), '');
+          field.answerText = iso;
+          field.answerDatetime = iso;
+        }
+        if (rem == 'visitor_period_end') {
+          final iso = model.visitorPeriodEnd
+              .toIso8601String()
+              .replaceAll(RegExp(r'\.\d+'), '');
+          field.answerText = iso;
+          field.answerDatetime = iso;
+        }
+      }
+    }
+
+    updateForm();
   }
 
   String? get _token => _hive.getUser()?.token;
@@ -411,6 +593,7 @@ class PraRegistrationController extends GetxController {
     identityIdCtrl.clear();
     groupVisitors.clear();
     groupName.value = '';
+    groupNameCtrl.clear();
     groupCode.value = '';
     for (var section
         in formStructure.value?.sectionPageVisitorTypes ??
@@ -590,6 +773,27 @@ class PraRegistrationController extends GetxController {
               ),
             )
             .toList();
+
+        // If selectedHostId is set to a name instead of UUID, match by name!
+        if (selectedHostId.value.isNotEmpty &&
+            !selectedHostId.value.contains('-')) {
+          final matched = hosts.firstWhereOrNull(
+            (h) => h.name.toLowerCase().trim() ==
+                selectedHostId.value.toLowerCase().trim(),
+          );
+          if (matched != null) {
+            selectedHostId.value = matched.id;
+            
+            // Also update the answerText on the host field if formStructure is loaded
+            for (var section in formStructure.value?.sectionPageVisitorTypes ?? <SectionPageVisitorType>[]) {
+              for (var field in section.praForm) {
+                if (field.remarks.toLowerCase() == 'host') {
+                  field.answerText = matched.id;
+                }
+              }
+            }
+          }
+        }
       }
     } catch (e) {
       debugPrint('fetchHosts error: $e');
@@ -694,9 +898,14 @@ class PraRegistrationController extends GetxController {
   }
 
   void goToStep(int targetStep) {
-    if (targetStep > currentStep.value) {
-      for (int i = currentStep.value; i < targetStep; i++) {
-        if (!isStepValid(i)) return;
+    if (isGroup.value == true && groupName.value.trim().isEmpty && targetStep > 0) {
+      return;
+    }
+    if (!isDuplicateMode.value) {
+      if (targetStep > currentStep.value) {
+        for (int i = currentStep.value; i < targetStep; i++) {
+          if (!isStepValid(i)) return;
+        }
       }
     }
     if (currentStep.value == 0 && targetStep >= 1 && isGroup.value == true) {
@@ -708,7 +917,10 @@ class PraRegistrationController extends GetxController {
 
   void nextStep() {
     if (currentStep.value < 2) {
-      if (!isStepValid(currentStep.value)) return;
+      if (currentStep.value == 0 && isGroup.value == true && groupName.value.trim().isEmpty) {
+        return;
+      }
+      if (!isDuplicateMode.value && !isStepValid(currentStep.value)) return;
       if (currentStep.value == 0 && isGroup.value == true) {
         if (groupVisitors.isEmpty) addGroupVisitor();
         if (groupCode.value.isEmpty) groupCode.value = _generateGroupCode();
@@ -746,6 +958,7 @@ class PraRegistrationController extends GetxController {
   void initGroupMode() {
     groupCode.value = _generateGroupCode();
     groupName.value = '';
+    groupNameCtrl.clear();
     for (final v in groupVisitors) {
       v.dispose();
     }

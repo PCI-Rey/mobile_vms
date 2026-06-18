@@ -4,8 +4,16 @@ import '../../../../data/datasources/hive_service.dart';
 import '../../../../core/helper/responsive_helper.dart';
 import '../controller/invitation_controller.dart';
 
+import '../../../../data/models/access_pass_model.dart';
+
 class CreateQuickAccessDialog extends StatefulWidget {
-  const CreateQuickAccessDialog({super.key});
+  final AccessPassModel? duplicateData;
+  final List<Map<String, dynamic>>? subVisitors;
+  const CreateQuickAccessDialog({
+    super.key,
+    this.duplicateData,
+    this.subVisitors,
+  });
 
   @override
   State<CreateQuickAccessDialog> createState() =>
@@ -41,6 +49,92 @@ class _CreateQuickAccessDialogState extends State<CreateQuickAccessDialog> {
   @override
   void initState() {
     super.initState();
+    receiverNameCtrl.addListener(_onTextChanged);
+    receiverEmailCtrl.addListener(_onTextChanged);
+    receiverPhoneCtrl.addListener(_onTextChanged);
+    courierNameCtrl.addListener(_onTextChanged);
+    courierPhoneCtrl.addListener(_onTextChanged);
+    vehiclePlateCtrl.addListener(_onTextChanged);
+
+    if (widget.duplicateData != null) {
+      final model = widget.duplicateData!;
+      
+      // 1. Recipient Mode
+      String recName = model.receiverName;
+      String recEmail = model.receiverEmail;
+      String recPhone = model.receiverPhone;
+
+      if (widget.subVisitors != null && widget.subVisitors!.isNotEmpty) {
+        final sub = widget.subVisitors!.first;
+        final subName = sub['receiver_name']?.toString() ?? '';
+        final subEmail = sub['receiver_email']?.toString() ?? '';
+        final subPhone = sub['receiver_phone']?.toString() ?? '';
+        if (recName.isEmpty) recName = subName;
+        if (recEmail.isEmpty) recEmail = subEmail;
+        if (recPhone.isEmpty) recPhone = subPhone;
+      }
+
+      if (recName.isNotEmpty || recPhone.isNotEmpty || recEmail.isNotEmpty) {
+        selectedRecipientMode = 'others';
+        receiverNameCtrl.text = recName;
+        receiverEmailCtrl.text = recEmail;
+        receiverPhoneCtrl.text = recPhone;
+      } else {
+        selectedRecipientMode = 'self';
+      }
+
+      // 2. Visitor Provider - intentionally ignored for duplicate to let the user select it
+      // 3. Host ID
+      if (model.host.isNotEmpty) {
+        selectedHostId = model.host;
+      }
+
+      // 4. Site ID (Drop Point) - intentionally ignored for duplicate to let auto-selection code select a valid Drop Point
+
+      // 5. Courier/Visitor info
+      if (widget.subVisitors != null && widget.subVisitors!.isNotEmpty) {
+        final sub = widget.subVisitors!.first;
+        courierNameCtrl.text = sub['visitor_name']?.toString() ?? model.visitorName;
+        final emailVal = sub['visitor_email']?.toString() ?? model.visitorEmail;
+        if (emailVal.isNotEmpty && emailVal != 'courier-no@required.com') {
+          courierEmailCtrl.text = emailVal;
+        }
+        courierPhoneCtrl.text = sub['visitor_phone']?.toString() ?? model.visitorPhone;
+      } else {
+        courierNameCtrl.text = model.visitorName;
+        if (model.visitorEmail.isNotEmpty && model.visitorEmail != 'courier-no@required.com') {
+          courierEmailCtrl.text = model.visitorEmail;
+        }
+        courierPhoneCtrl.text = model.visitorPhone;
+      }
+      vehiclePlateCtrl.text = model.vehiclePlateNumber;
+
+      // 6. Duration
+      final differenceMinutes = model.visitorPeriodEnd.difference(model.visitorPeriodStart).inMinutes;
+      final durationOptions = [10, 15, 30, 60, 120];
+      if (durationOptions.contains(differenceMinutes)) {
+        selectedDuration = differenceMinutes;
+      } else if (differenceMinutes > 0) {
+        int closest = durationOptions.first;
+        int minDiff = (differenceMinutes - closest).abs();
+        for (final opt in durationOptions) {
+          final diff = (differenceMinutes - opt).abs();
+          if (diff < minDiff) {
+            minDiff = diff;
+            closest = opt;
+          }
+        }
+        selectedDuration = closest;
+      } else {
+        selectedDuration = 30;
+      }
+    }
+  }
+
+  void _onTextChanged() {
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   void _updateVehiclePlateVisibility() {
@@ -55,6 +149,13 @@ class _CreateQuickAccessDialogState extends State<CreateQuickAccessDialog> {
 
   @override
   void dispose() {
+    receiverNameCtrl.removeListener(_onTextChanged);
+    receiverEmailCtrl.removeListener(_onTextChanged);
+    receiverPhoneCtrl.removeListener(_onTextChanged);
+    courierNameCtrl.removeListener(_onTextChanged);
+    courierPhoneCtrl.removeListener(_onTextChanged);
+    vehiclePlateCtrl.removeListener(_onTextChanged);
+
     receiverNameCtrl.dispose();
     receiverEmailCtrl.dispose();
     receiverPhoneCtrl.dispose();
@@ -63,6 +164,41 @@ class _CreateQuickAccessDialogState extends State<CreateQuickAccessDialog> {
     courierPhoneCtrl.dispose();
     vehiclePlateCtrl.dispose();
     super.dispose();
+  }
+
+  bool get _isFormValid {
+    final user = _hive.getUser();
+    final bool isUserEmp = user?.roleAccess?.toLowerCase() == 'employee';
+
+    if (selectedRecipientMode == null) return false;
+    if (selectedProviderId == null) return false;
+
+    if (selectedRecipientMode == 'others') {
+      if (receiverNameCtrl.text.trim().isEmpty) return false;
+      if (receiverEmailCtrl.text.trim().isEmpty) return false;
+      if (receiverPhoneCtrl.text.trim().isEmpty) return false;
+    }
+
+    if (!isUserEmp) {
+      if (selectedHostId == null) return false;
+    }
+
+    final validSites = controller.sites
+        .where((site) => site['name']?.toString().toLowerCase() == 'drop point')
+        .map((site) => site['id']?.toString())
+        .toList();
+    if (selectedSiteId == null || !validSites.contains(selectedSiteId)) return false;
+
+    if (courierNameCtrl.text.trim().isEmpty) return false;
+    if (courierPhoneCtrl.text.trim().isEmpty) return false;
+
+    if (showVehiclePlate) {
+      if (vehiclePlateCtrl.text.trim().isEmpty) return false;
+    }
+
+    if (selectedDuration == null) return false;
+
+    return true;
   }
 
   void _submit() async {
@@ -83,7 +219,7 @@ class _CreateQuickAccessDialogState extends State<CreateQuickAccessDialog> {
     if (selectedSiteId == null) {
       Get.snackbar(
         'Required',
-        'Please select a Drop Point',
+        'Please select a Destination',
         backgroundColor: Colors.red,
         colorText: Colors.white,
         snackPosition: SnackPosition.TOP,
@@ -459,7 +595,7 @@ class _CreateQuickAccessDialogState extends State<CreateQuickAccessDialog> {
                           ],
 
                           // Drop Point
-                          _buildRequiredLabel(context, 'Drop Point'),
+                          _buildRequiredLabel(context, 'Destination'),
                           vSpace(context, 8),
                           _buildDropPointsGrid(),
                           vSpace(context, 16),
@@ -538,7 +674,9 @@ class _CreateQuickAccessDialogState extends State<CreateQuickAccessDialog> {
                             _buildLabel(context, 'Vehicle Plate Number'),
                             _buildTextField(
                               controller: TextEditingController(
-                                text: 'Not Supported',
+                                text: selectedProviderId == null
+                                    ? 'Please Select Visitor Provider First'
+                                    : 'Not Supported',
                               ),
                               hintText: '',
                               readOnly: true,
@@ -592,7 +730,7 @@ class _CreateQuickAccessDialogState extends State<CreateQuickAccessDialog> {
                             ),
                             elevation: 0,
                           ),
-                          onPressed: isSubmitting ? null : _submit,
+                          onPressed: (isSubmitting || !_isFormValid) ? null : _submit,
                           child: Text(
                             'Submit',
                             style: TextStyle(
@@ -858,15 +996,32 @@ class _CreateQuickAccessDialogState extends State<CreateQuickAccessDialog> {
   }
 
   Widget _buildDropPointsGrid() {
-    final sites = controller.sites.toList();
+    final sites = controller.sites
+        .where((site) => site['name']?.toString().toLowerCase() == 'drop point')
+        .toList();
+
     if (sites.isEmpty) {
       return Padding(
         padding: EdgeInsets.only(top: rh(context, 8)),
         child: Text(
-          'No Drop Point available',
+          'No Destination available',
           style: TextStyle(color: Colors.grey, fontSize: rfs(context, 12)),
         ),
       );
+    }
+
+    // Auto-select "Drop Point" if there is exactly one matching site and selectedSiteId is not set
+    if (selectedSiteId == null && sites.isNotEmpty) {
+      final dropPointId = sites.first['id']?.toString();
+      if (dropPointId != null) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted && selectedSiteId == null) {
+            setState(() {
+              selectedSiteId = dropPointId;
+            });
+          }
+        });
+      }
     }
 
     return Wrap(

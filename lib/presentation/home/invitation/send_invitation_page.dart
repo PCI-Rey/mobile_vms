@@ -26,6 +26,7 @@ import 'widgets/create_share_link_dialog.dart';
 import 'widgets/share_link_card.dart';
 import 'widgets/share_link_detail_modal.dart';
 import 'widgets/create_quick_access_dialog.dart';
+import 'widgets/duplicate_selector_sheet.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 
@@ -152,11 +153,7 @@ class _SendInvitationPageState extends State<SendInvitationPage>
               onPressed: () async {
                 final result = await showAddPraRegistrationDialog(context);
                 if (result == true) {
-                  setState(() {
-                    startDate = null;
-                    endDate = null;
-                    selectedGedung = null;
-                  });
+                  controller.fetchOngoingInvitations(clearFilters: false);
                 }
               },
               icon: Container(
@@ -205,7 +202,7 @@ class _SendInvitationPageState extends State<SendInvitationPage>
                   builder: (context) => const CreateQuickAccessDialog(),
                 ).then((result) {
                   if (result == true) {
-                    controller.fetchOngoingInvitations(clearFilters: true);
+                    controller.fetchOngoingInvitations(clearFilters: false);
                   }
                 });
               },
@@ -445,11 +442,7 @@ class _SendInvitationPageState extends State<SendInvitationPage>
                   onButtonPressed: () async {
                     final result = await showAddPraRegistrationDialog(context);
                     if (result == true) {
-                      setState(() {
-                        startDate = null;
-                        endDate = null;
-                        selectedGedung = null;
-                      });
+                      controller.fetchOngoingInvitations(clearFilters: false);
                     }
                   },
                   tipsText: isIndonesian
@@ -457,6 +450,9 @@ class _SendInvitationPageState extends State<SendInvitationPage>
                       : 'Info: Invitations make it easy for you to invite guests and monitor their attendance in real-time.',
                   showQuickActions: true,
                   mode: 'invitation',
+                  onDuplicateSuccess: () {
+                    controller.fetchOngoingInvitations(clearFilters: false);
+                  },
                 );
               }
 
@@ -927,7 +923,7 @@ class _SendInvitationPageState extends State<SendInvitationPage>
                       builder: (context) => const CreateQuickAccessDialog(),
                     ).then((result) {
                       if (result == true) {
-                        controller.fetchOngoingInvitations(clearFilters: true);
+                        controller.fetchOngoingInvitations(clearFilters: false);
                       }
                     });
                   },
@@ -1425,9 +1421,7 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
 
       final List<AccessPassModel> models = [];
       // 1. Fetch group members directly from API (Dynamic as requested)
-      final String fetchId = widget.item.transactionVisitorId.isNotEmpty
-          ? widget.item.transactionVisitorId
-          : widget.item.id;
+      final String fetchId = widget.item.id;
       final list = await controller.fetchTransactionVisitors(fetchId);
 
       final parentFlow = widget.item.flow;
@@ -4434,6 +4428,7 @@ class EmptyStateWidget extends StatelessWidget {
   final bool showQuickActions;
   final Widget? illustration;
   final String mode;
+  final VoidCallback? onDuplicateSuccess;
 
   const EmptyStateWidget({
     super.key,
@@ -4446,10 +4441,15 @@ class EmptyStateWidget extends StatelessWidget {
     this.showQuickActions = false,
     this.illustration,
     this.mode = 'invitation',
+    this.onDuplicateSuccess,
   });
 
   @override
   Widget build(BuildContext context) {
+    final controller = Get.isRegistered<InvitationController>()
+        ? Get.find<InvitationController>()
+        : Get.put(InvitationController());
+
     return SingleChildScrollView(
       physics: const NeverScrollableScrollPhysics(),
       child: Padding(
@@ -4820,12 +4820,173 @@ class EmptyStateWidget extends StatelessWidget {
                           color: const Color(0xFFE65100),
                           bgColor: const Color(0xFFFFF3E0),
                           onTap: () {
-                            Get.snackbar(
-                              'Info',
-                              'Duplicate feature is under development',
-                              backgroundColor: Colors.blue.shade100,
-                              colorText: Colors.blue.shade900,
-                            );
+                            if (mode == 'share_link') {
+                              DuplicateSelectorSheet.show(
+                                context: context,
+                                title: dupTitle,
+                                items: controller.allShareLinks,
+                                dismissOnSelect: false,
+                                badgeUnit: 'Share Link',
+                                nameExtractor: (item) => item['agenda']?.toString() ?? 'Share Link',
+                                searchMatcher: (item, query) {
+                                  final agenda = item['agenda']?.toString() ?? '';
+                                  final site = item['site_name']?.toString() ?? '';
+                                  return agenda.toLowerCase().contains(query.toLowerCase()) ||
+                                      site.toLowerCase().contains(query.toLowerCase());
+                                },
+                                onSelected: (selectedItem) {
+                                  showDialog<bool>(
+                                    context: context,
+                                    barrierDismissible: false,
+                                    builder: (context) => CreateShareLinkDialog(
+                                      duplicateData: selectedItem as Map<String, dynamic>,
+                                    ),
+                                  ).then((result) {
+                                    controller.fetchShareLinks();
+                                    if (result == true) {
+                                      Navigator.of(context).pop(); // Dismiss DuplicateSelectorSheet
+                                    }
+                                  });
+                                },
+                              );
+                            } else if (mode == 'quick_access') {
+                              final filtered = controller.allRawVisitors.where((item) {
+                                return item.flow.toLowerCase() == 'quickaccessvisit' &&
+                                    !(item.agenda.isEmpty &&
+                                        item.hostName.isEmpty &&
+                                        item.visitorTypeName.isEmpty);
+                              }).toList();
+
+                              filtered.sort((a, b) {
+                                final dateA = a.invitationCreatedAt ?? a.visitorPeriodStart;
+                                final dateB = b.invitationCreatedAt ?? b.visitorPeriodStart;
+                                return dateB.compareTo(dateA);
+                              });
+
+                              DuplicateSelectorSheet.show(
+                                context: context,
+                                title: dupTitle,
+                                items: filtered,
+                                dismissOnSelect: false,
+                                badgeUnit: 'Quick Access',
+                                nameExtractor: (item) {
+                                  final model = item as AccessPassModel;
+                                  if (model.receiverName.isNotEmpty) {
+                                    return model.receiverName;
+                                  }
+                                  return model.visitorName.isNotEmpty
+                                      ? model.visitorName
+                                      : (model.visitorTypeName.isNotEmpty
+                                          ? model.visitorTypeName
+                                          : 'Quick Access');
+                                },
+                                searchMatcher: (item, query) {
+                                  final model = item as AccessPassModel;
+                                  final name = model.visitorName.isNotEmpty
+                                      ? model.visitorName
+                                      : model.visitorTypeName;
+                                  return name.toLowerCase().contains(query.toLowerCase()) ||
+                                      model.receiverName.toLowerCase().contains(query.toLowerCase());
+                                },
+                                onSelected: (selectedItem) async {
+                                  final model = selectedItem as AccessPassModel;
+                                  List<Map<String, dynamic>>? subVisitors;
+
+                                  // Show loading indicator
+                                  showDialog(
+                                    context: context,
+                                    barrierDismissible: false,
+                                    builder: (context) => const Center(
+                                      child: CircularProgressIndicator(),
+                                    ),
+                                  );
+
+                                  final String fetchId = model.id;
+                                  subVisitors = await controller.fetchTransactionVisitors(fetchId);
+
+                                  Navigator.of(context).pop(); // Dismiss loading
+
+                                  showDialog<bool>(
+                                    context: context,
+                                    barrierDismissible: false,
+                                    builder: (context) => CreateQuickAccessDialog(
+                                      duplicateData: model,
+                                      subVisitors: subVisitors,
+                                    ),
+                                  ).then((result) {
+                                    if (result == true) {
+                                      Navigator.of(context).pop(); // Dismiss DuplicateSelectorSheet
+                                      controller.fetchOngoingInvitations(clearFilters: false);
+                                    }
+                                  });
+                                },
+                              );
+                            } else {
+                              final filtered = controller.allRawVisitors.where((item) {
+                                final flowLower = item.flow.toLowerCase();
+                                return flowLower != 'invitation' && flowLower != 'quickaccessvisit' &&
+                                    !(item.agenda.isEmpty &&
+                                        item.hostName.isEmpty &&
+                                        item.visitorTypeName.isEmpty);
+                              }).toList();
+
+                              filtered.sort((a, b) {
+                                final dateA = a.invitationCreatedAt ?? a.visitorPeriodStart;
+                                final dateB = b.invitationCreatedAt ?? b.visitorPeriodStart;
+                                return dateB.compareTo(dateA);
+                              });
+
+                              DuplicateSelectorSheet.show(
+                                context: context,
+                                title: dupTitle,
+                                items: filtered,
+                                dismissOnSelect: false,
+                                badgeUnit: 'Invitation',
+                                nameExtractor: (item) {
+                                  final model = item as AccessPassModel;
+                                  return model.visitorName.isNotEmpty
+                                      ? model.visitorName
+                                      : (model.agenda.isNotEmpty
+                                          ? model.agenda
+                                          : 'Invitation');
+                                },
+                                searchMatcher: (item, query) {
+                                  final model = item as AccessPassModel;
+                                  final name = model.visitorName.isNotEmpty
+                                      ? model.visitorName
+                                      : model.agenda;
+                                  return name.toLowerCase().contains(query.toLowerCase());
+                                },
+                                onSelected: (selectedItem) async {
+                                  final model = selectedItem as AccessPassModel;
+                                  List<Map<String, dynamic>>? subVisitors;
+
+                                  // Show loading indicator
+                                  showDialog(
+                                    context: context,
+                                    barrierDismissible: false,
+                                    builder: (context) => const Center(
+                                      child: CircularProgressIndicator(),
+                                    ),
+                                  );
+
+                                  final String fetchId = model.id;
+                                  subVisitors = await controller.fetchTransactionVisitors(fetchId);
+
+                                  Navigator.of(context).pop(); // Dismiss loading
+
+                                  final result = await showAddPraRegistrationDialog(
+                                    context,
+                                    duplicateData: model,
+                                    subVisitors: subVisitors,
+                                  );
+                                  if (result == true) {
+                                    Navigator.of(context).pop(); // Dismiss DuplicateSelectorSheet
+                                    onDuplicateSuccess?.call();
+                                  }
+                                },
+                              );
+                            }
                           },
                         );
                       },

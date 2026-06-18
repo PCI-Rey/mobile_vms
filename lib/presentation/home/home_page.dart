@@ -983,9 +983,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                 final List<Future<void>> fetchFutures = activeParents.map((
                   parent,
                 ) async {
-                  final String parentId = parent.transactionVisitorId.isNotEmpty
-                      ? parent.transactionVisitorId
-                      : parent.id;
+                  final String parentId = parent.id;
                   if (parentId.isEmpty) return;
 
                   final visitorsList = await invitationController

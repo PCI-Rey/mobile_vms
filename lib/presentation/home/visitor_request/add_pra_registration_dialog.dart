@@ -9,11 +9,22 @@ import '../../../../core/helper/responsive_helper.dart';
 import '../../../../data/datasources/api_service.dart';
 import '../../../../data/models/visitor_type_detail_model.dart';
 import 'controllers/pra_registration_controller.dart';
+import '../../../../data/models/access_pass_model.dart';
 
 /// Shows the Add Pra Registration dialog.
-Future<bool?> showAddPraRegistrationDialog(BuildContext context) {
+Future<bool?> showAddPraRegistrationDialog(
+  BuildContext context, {
+  AccessPassModel? duplicateData,
+  List<Map<String, dynamic>>? subVisitors,
+}) async {
   Get.delete<PraRegistrationController>(force: true);
-  Get.put(PraRegistrationController());
+  final ctrl = Get.put(PraRegistrationController());
+  
+  if (duplicateData != null) {
+    await ctrl.autofillFromAccessPass(duplicateData, subVisitors: subVisitors);
+  }
+
+  if (!context.mounted) return null;
 
   return showDialog<bool>(
     context: context,
@@ -388,7 +399,7 @@ class _StepProgressBar extends StatelessWidget {
                 GestureDetector(
                   onTap: () async {
                     // Jika user mencoba kembali ke Step 0 (Page 1) dari step manapun yang lebih tinggi
-                    if (currentStep > 0 && index == 0) {
+                    if (currentStep > 0 && index == 0 && !controller.isDuplicateMode.value) {
                       final shouldBack = await _showBackConfirmation(context);
                       if (shouldBack) {
                         controller
@@ -401,28 +412,29 @@ class _StepProgressBar extends StatelessWidget {
                   },
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 300),
-                    width: 28,
-                    height: 28,
+                    width: 32,
+                    height: 32,
                     decoration: BoxDecoration(
                       color: isActive
                           ? AppColors.primary500
-                          : const Color(0xFFBDBDBD),
+                          : const Color(0xFFCCCCCC),
                       shape: BoxShape.circle,
                       boxShadow: isCurrent
                           ? [
                               BoxShadow(
                                 color: AppColors.primary500.withValues(
-                                  alpha: 0.3,
+                                  alpha: 0.4,
                                 ),
-                                blurRadius: 8,
-                                spreadRadius: 2,
+                                blurRadius: 10,
+                                spreadRadius: 3,
+                                offset: const Offset(0, 1),
                               ),
                             ]
                           : [],
                     ),
                     child: Center(
                       child: isCompleted
-                          ? Icon(Icons.check, size: 16, color: Colors.white)
+                          ? const Icon(Icons.check, size: 16, color: Colors.white)
                           : Text(
                               '${index + 1}',
                               style: TextStyle(
@@ -430,7 +442,7 @@ class _StepProgressBar extends StatelessWidget {
                                 fontWeight: isCurrent
                                     ? FontWeight.bold
                                     : FontWeight.normal,
-                                fontSize: rfs(context, 12),
+                                fontSize: rfs(context, 13),
                               ),
                             ),
                     ),
@@ -703,6 +715,7 @@ class _Step0UserType extends StatelessWidget {
                   Expanded(
                     flex: 3,
                     child: TextField(
+                      controller: controller.groupNameCtrl,
                       onChanged: (v) => controller.groupName.value = v,
                       decoration: InputDecoration(
                         hintText: 'Enter group name',
@@ -2962,11 +2975,15 @@ class _BottomNav extends StatelessWidget {
                     Navigator.of(ctx).pop();
                   }
                 } else if (step == 1) {
-                  // Kembali dari Page 2 ke Page 1 -> Muncul Warning
-                  final shouldBack = await _showBackConfirmation(ctx);
-                  if (shouldBack) {
-                    controller.clearStep1Fields();
+                  if (controller.isDuplicateMode.value) {
                     controller.prevStep();
+                  } else {
+                    // Kembali dari Page 2 ke Page 1 -> Muncul Warning
+                    final shouldBack = await _showBackConfirmation(ctx);
+                    if (shouldBack) {
+                      controller.clearStep1Fields();
+                      controller.prevStep();
+                    }
                   }
                 } else {
                   // Kembali dari Page 3 ke Page 2 -> Langsung Back (Data Aman)
