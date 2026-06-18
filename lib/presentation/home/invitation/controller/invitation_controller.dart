@@ -93,7 +93,7 @@ class InvitationController extends GetxController {
     postponedTicketIds.clear();
   }
 
-  final Rx<DateTime?> startDate = Rx<DateTime?>(null);
+  final Rx<DateTime?> startDate = Rx<DateTime?>(DateTime.now().subtract(const Duration(days: 7)));
   final Rx<DateTime?> endDate = Rx<DateTime?>(null);
   final Rx<DateTime> selectedDashboardDate = DateTime(
     DateTime.now().year,
@@ -104,19 +104,29 @@ class InvitationController extends GetxController {
   final RxString selectedSiteName = ''.obs;
   final RxString selectedStatus = ''.obs;
 
+  // Invitation Pagination States
+  final RxInt invitationCurrentPage = 0.obs;
+  final RxInt invitationPageSize = 10.obs;
+  final RxInt invitationTotalRecords = 0.obs;
+
   // Share Link Tab filters
-  final Rx<DateTime?> startDateShare = Rx<DateTime?>(null);
+  final Rx<DateTime?> startDateShare = Rx<DateTime?>(DateTime.now().subtract(const Duration(days: 7)));
   final Rx<DateTime?> endDateShare = Rx<DateTime?>(null);
   final RxString selectedSiteIdShare = ''.obs;
   final RxString selectedSiteNameShare = ''.obs;
   final RxString selectedStatusShare = ''.obs;
 
   // Quick Access Tab filters
-  final Rx<DateTime?> startDateQuick = Rx<DateTime?>(null);
+  final Rx<DateTime?> startDateQuick = Rx<DateTime?>(DateTime.now().subtract(const Duration(days: 7)));
   final Rx<DateTime?> endDateQuick = Rx<DateTime?>(null);
   final RxString selectedSiteIdQuick = ''.obs;
   final RxString selectedSiteNameQuick = ''.obs;
   final RxString selectedStatusQuick = ''.obs;
+
+  // Quick Access Pagination States
+  final RxInt quickCurrentPage = 0.obs;
+  final RxInt quickPageSize = 10.obs;
+  final RxInt quickTotalRecords = 0.obs;
 
   @override
   void onInit() {
@@ -142,6 +152,7 @@ class InvitationController extends GetxController {
     String? siteName,
     String? status,
   }) {
+    invitationCurrentPage.value = 0;
     startDate.value = start;
     endDate.value = end;
     selectedSiteId.value = siteId ?? '';
@@ -157,6 +168,7 @@ class InvitationController extends GetxController {
     String? siteName,
     String? status,
   }) {
+    quickCurrentPage.value = 0;
     startDateQuick.value = start;
     endDateQuick.value = end;
     selectedSiteIdQuick.value = siteId ?? '';
@@ -172,6 +184,7 @@ class InvitationController extends GetxController {
     String? siteName,
     String? status,
   }) {
+    shareLinkCurrentPage.value = 0;
     startDateShare.value = start;
     endDateShare.value = end;
     selectedSiteIdShare.value = siteId ?? '';
@@ -322,14 +335,37 @@ class InvitationController extends GetxController {
     filtered.sort(compareAccessPass);
     quickAccess.sort(compareAccessPass);
 
-    ongoingInvitations.assignAll(filtered);
-    quickAccessInvitations.assignAll(quickAccess);
+    // Invitation Pagination
+    invitationTotalRecords.value = filtered.length;
+    int safeStartInv = invitationCurrentPage.value * invitationPageSize.value;
+    if (safeStartInv >= filtered.length) {
+      safeStartInv = 0;
+      invitationCurrentPage.value = 0;
+    }
+    final pagedInv = filtered.skip(safeStartInv).take(invitationPageSize.value).toList();
+
+    // Quick Access Pagination
+    quickTotalRecords.value = quickAccess.length;
+    int safeStartQuick = quickCurrentPage.value * quickPageSize.value;
+    if (safeStartQuick >= quickAccess.length) {
+      safeStartQuick = 0;
+      quickCurrentPage.value = 0;
+    }
+    final pagedQuick = quickAccess.skip(safeStartQuick).take(quickPageSize.value).toList();
+
+    ongoingInvitations.assignAll(pagedInv);
+    quickAccessInvitations.assignAll(pagedQuick);
   }
 
   Future<void> fetchOngoingInvitations({
     bool isSilent = false,
     bool clearFilters = false,
+    bool resetPage = true,
   }) async {
+    if (resetPage) {
+      invitationCurrentPage.value = 0;
+      quickCurrentPage.value = 0;
+    }
     if (clearFilters) {
       startDate.value = null;
       endDate.value = null;
@@ -629,32 +665,33 @@ class InvitationController extends GetxController {
     List<dynamic> filtered = List.from(allShareLinks);
 
     // 1. Filter Berdasarkan Tanggal (Lokal)
-    if (startDateShare.value != null) {
-      filtered = filtered.where((item) {
-        final itemDate = _parseItemDate(item);
-        if (itemDate == null) return false;
-        final start = DateTime(
-          startDateShare.value!.year,
-          startDateShare.value!.month,
-          startDateShare.value!.day,
-        );
-        final date = DateTime(itemDate.year, itemDate.month, itemDate.day);
-        return date.isAtSameMomentAs(start) || date.isAfter(start);
-      }).toList();
-    }
-
-    if (endDateShare.value != null) {
-      filtered = filtered.where((item) {
-        final itemDate = _parseItemDate(item);
-        if (itemDate == null) return false;
-        final end = DateTime(
-          endDateShare.value!.year,
-          endDateShare.value!.month,
-          endDateShare.value!.day,
-        );
-        final date = DateTime(itemDate.year, itemDate.month, itemDate.day);
-        return date.isAtSameMomentAs(end) || date.isBefore(end);
-      }).toList();
+    if (startDateShare.value != null || endDateShare.value != null) {
+      if (startDateShare.value != null) {
+        filtered = filtered.where((item) {
+          final itemDate = _parseItemDate(item);
+          if (itemDate == null) return false;
+          final start = DateTime(
+            startDateShare.value!.year,
+            startDateShare.value!.month,
+            startDateShare.value!.day,
+          );
+          final date = DateTime(itemDate.year, itemDate.month, itemDate.day);
+          return date.isAtSameMomentAs(start) || date.isAfter(start);
+        }).toList();
+      }
+      if (endDateShare.value != null) {
+        filtered = filtered.where((item) {
+          final itemDate = _parseItemDate(item);
+          if (itemDate == null) return false;
+          final end = DateTime(
+            endDateShare.value!.year,
+            endDateShare.value!.month,
+            endDateShare.value!.day,
+          );
+          final date = DateTime(itemDate.year, itemDate.month, itemDate.day);
+          return date.isAtSameMomentAs(end) || date.isBefore(end);
+        }).toList();
+      }
     }
 
     // 2. Filter Berdasarkan Gedung (Lokal)
@@ -782,6 +819,36 @@ class InvitationController extends GetxController {
     if (shareLinkCurrentPage.value > 0) {
       shareLinkCurrentPage.value--;
       _applyShareFilters();
+    }
+  }
+
+  void nextInvitationPage() {
+    if ((invitationCurrentPage.value + 1) * invitationPageSize.value <
+        invitationTotalRecords.value) {
+      invitationCurrentPage.value++;
+      _applyFilters();
+    }
+  }
+
+  void prevInvitationPage() {
+    if (invitationCurrentPage.value > 0) {
+      invitationCurrentPage.value--;
+      _applyFilters();
+    }
+  }
+
+  void nextQuickPage() {
+    if ((quickCurrentPage.value + 1) * quickPageSize.value <
+        quickTotalRecords.value) {
+      quickCurrentPage.value++;
+      _applyFilters();
+    }
+  }
+
+  void prevQuickPage() {
+    if (quickCurrentPage.value > 0) {
+      quickCurrentPage.value--;
+      _applyFilters();
     }
   }
 

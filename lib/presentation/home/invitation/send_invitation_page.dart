@@ -59,6 +59,41 @@ class _SendInvitationPageState extends State<SendInvitationPage>
   void initState() {
     super.initState();
 
+    // Default filters to last 7 days on opening the page
+    controller.startDate.value = DateTime.now().subtract(const Duration(days: 7));
+    controller.endDate.value = DateTime.now();
+    controller.startDateQuick.value = DateTime.now().subtract(const Duration(days: 7));
+    controller.endDateQuick.value = DateTime.now();
+    controller.startDateShare.value = DateTime.now().subtract(const Duration(days: 7));
+    controller.endDateShare.value = DateTime.now();
+
+    controller.invitationCurrentPage.value = 0;
+    controller.quickCurrentPage.value = 0;
+    controller.shareLinkCurrentPage.value = 0;
+
+    // Apply default filters to get the initial list state
+    controller.setFilters(
+      start: controller.startDate.value,
+      end: controller.endDate.value,
+      siteId: controller.selectedSiteId.value.isEmpty ? null : controller.selectedSiteId.value,
+      siteName: controller.selectedSiteName.value.isEmpty ? null : controller.selectedSiteName.value,
+      status: controller.selectedStatus.value.isEmpty ? null : controller.selectedStatus.value,
+    );
+    controller.setQuickFilters(
+      start: controller.startDateQuick.value,
+      end: controller.endDateQuick.value,
+      siteId: controller.selectedSiteIdQuick.value.isEmpty ? null : controller.selectedSiteIdQuick.value,
+      siteName: controller.selectedSiteNameQuick.value.isEmpty ? null : controller.selectedSiteNameQuick.value,
+      status: controller.selectedStatusQuick.value.isEmpty ? null : controller.selectedStatusQuick.value,
+    );
+    controller.setShareFilters(
+      start: controller.startDateShare.value,
+      end: controller.endDateShare.value,
+      siteId: controller.selectedSiteIdShare.value.isEmpty ? null : controller.selectedSiteIdShare.value,
+      siteName: controller.selectedSiteNameShare.value.isEmpty ? null : controller.selectedSiteNameShare.value,
+      status: controller.selectedStatusShare.value.isEmpty ? null : controller.selectedStatusShare.value,
+    );
+
     // Restore filter states from controller
     startDate = controller.startDate.value;
     endDate = controller.endDate.value;
@@ -546,7 +581,7 @@ class _SendInvitationPageState extends State<SendInvitationPage>
                                     shape: BoxShape.circle,
                                   ),
                                   child: Text(
-                                    '${index + 1}',
+                                    '${itemIndex + 1 + (inviteCtrl.invitationCurrentPage.value * inviteCtrl.invitationPageSize.value)}',
                                     style: TextStyle(
                                       color: Colors.white,
                                       fontSize: rfs(context, 12),
@@ -703,6 +738,12 @@ class _SendInvitationPageState extends State<SendInvitationPage>
             }),
           ),
         ),
+        Obx(() {
+          if (controller.invitationTotalRecords.value > 10) {
+            return _buildInvitationPaginationBar();
+          }
+          return const SizedBox.shrink();
+        }),
       ],
     );
   }
@@ -961,7 +1002,7 @@ class _SendInvitationPageState extends State<SendInvitationPage>
                                     shape: BoxShape.circle,
                                   ),
                                   child: Text(
-                                    '${index + 1}',
+                                    '${itemIndex + 1 + (inviteCtrl.quickCurrentPage.value * inviteCtrl.quickPageSize.value)}',
                                     style: TextStyle(
                                       color: Colors.white,
                                       fontSize: rfs(context, 12),
@@ -1091,7 +1132,121 @@ class _SendInvitationPageState extends State<SendInvitationPage>
             }),
           ),
         ),
+        Obx(() {
+          if (controller.quickTotalRecords.value > 10) {
+            return _buildQuickAccessPaginationBar();
+          }
+          return const SizedBox.shrink();
+        }),
       ],
+    );
+  }
+
+  Widget _buildInvitationPaginationBar() {
+    final start =
+        (controller.invitationCurrentPage.value *
+            controller.invitationPageSize.value) +
+        1;
+    final end = start + controller.ongoingInvitations.length - 1;
+    final total = controller.invitationTotalRecords.value;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border(top: BorderSide(color: Colors.grey.shade200)),
+      ),
+      child: SafeArea(
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              'Showing $start to $end of $total',
+              style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+            ),
+            Row(
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.chevron_left, size: 20),
+                  onPressed: controller.invitationCurrentPage.value > 0
+                      ? () => controller.prevInvitationPage()
+                      : null,
+                ),
+                Text(
+                  '${controller.invitationCurrentPage.value + 1}',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13,
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.chevron_right, size: 20),
+                  onPressed:
+                      (controller.invitationCurrentPage.value + 1) *
+                              controller.invitationPageSize.value <
+                          total
+                      ? () => controller.nextInvitationPage()
+                      : null,
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildQuickAccessPaginationBar() {
+    final start =
+        (controller.quickCurrentPage.value *
+            controller.quickPageSize.value) +
+        1;
+    final end = start + controller.quickAccessInvitations.length - 1;
+    final total = controller.quickTotalRecords.value;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border(top: BorderSide(color: Colors.grey.shade200)),
+      ),
+      child: SafeArea(
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              'Showing $start to $end of $total',
+              style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+            ),
+            Row(
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.chevron_left, size: 20),
+                  onPressed: controller.quickCurrentPage.value > 0
+                      ? () => controller.prevQuickPage()
+                      : null,
+                ),
+                Text(
+                  '${controller.quickCurrentPage.value + 1}',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13,
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.chevron_right, size: 20),
+                  onPressed:
+                      (controller.quickCurrentPage.value + 1) *
+                              controller.quickPageSize.value <
+                          total
+                      ? () => controller.nextQuickPage()
+                      : null,
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
     );
   }
 
