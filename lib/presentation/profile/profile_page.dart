@@ -274,18 +274,6 @@ class ProfilePage extends StatelessWidget {
                               ] else ...[
                                 TileMenu(
                                   icon: Icon(
-                                    Icons.lock,
-                                    color: Colors.white,
-                                    size: rw(context, 25),
-                                  ),
-                                  label: 'security'.tr,
-                                  onTap: () {
-                                    context.push(const SecurityPage());
-                                  },
-                                ),
-                                vSpace(context, 12),
-                                TileMenu(
-                                  icon: Icon(
                                     Icons.notifications_none,
                                     color: Colors.white,
                                     size: rw(context, 25),

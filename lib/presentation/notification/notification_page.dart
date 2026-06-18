@@ -831,6 +831,11 @@ class _NotificationPageState extends State<NotificationPage> {
     } else {
       invitationController = Get.put(InvitationController());
     }
+
+    // Refresh approval tickets when notification page opens
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      invitationController.fetchApprovalTickets(isSilent: true);
+    });
   }
 
   bool _checkIsGuest() {
@@ -1405,24 +1410,29 @@ class _NotificationPageState extends State<NotificationPage> {
                   return _buildEmptyState();
                 }
 
-                return ListView.separated(
-                  padding: EdgeInsets.fromLTRB(
-                    rw(context, 16),
-                    0,
-                    rw(context, 16),
-                    rh(context, 16),
+                return RefreshIndicator(
+                  onRefresh: () =>
+                      invitationController.fetchApprovalTickets(),
+                  child: ListView.separated(
+                    padding: EdgeInsets.fromLTRB(
+                      rw(context, 16),
+                      0,
+                      rw(context, 16),
+                      rh(context, 16),
+                    ),
+                    itemCount: pendingTickets.length,
+                    separatorBuilder: (context, index) =>
+                        vSpace(context, 12),
+                    itemBuilder: (context, index) {
+                      final ticket = pendingTickets[index];
+                      return _buildApprovalCard(
+                        context,
+                        ticket,
+                        index + 1,
+                        invitationController,
+                      );
+                    },
                   ),
-                  itemCount: pendingTickets.length,
-                  separatorBuilder: (context, index) => vSpace(context, 12),
-                  itemBuilder: (context, index) {
-                    final ticket = pendingTickets[index];
-                    return _buildApprovalCard(
-                      context,
-                      ticket,
-                      index + 1,
-                      invitationController,
-                    );
-                  },
                 );
               }
             }),

@@ -221,4 +221,51 @@ class AuthDatasource {
   Future<void> clearDashboardData() async {
     await _hiveService.clearDashboardData();
   }
+
+  Future<(bool, String?, String?)> changePassword({
+    required String oldPassword,
+    required String newPassword,
+    required String conPassword,
+  }) async {
+    try {
+      final user = _hiveService.getUser();
+      final token = user?.token;
+      if (token == null) return (false, 'Error', 'Token not found');
+
+      final response = await _apiService.changePassword(
+        token,
+        oldPassword,
+        newPassword,
+        conPassword,
+      );
+
+      if (response.statusCode == 200) {
+        final data = response.data;
+        if (data['status'] == 'success') {
+          return (
+            true,
+            data['title'] as String?,
+            data['msg'] as String? ?? 'Password changed successfully',
+          );
+        }
+        return (
+          false,
+          data['title'] as String?,
+          data['msg'] as String? ?? 'Failed to change password',
+        );
+      }
+
+      if (response.data is Map) {
+        final msg = response.data['msg']?.toString();
+        final title = response.data['title']?.toString();
+        if (msg != null && msg.isNotEmpty) {
+          return (false, title ?? 'Error', msg);
+        }
+      }
+      return (false, 'Error', 'Server Error: ${response.statusCode}');
+    } catch (e) {
+      debugPrint('changePassword Error: $e');
+      return (false, 'Error', 'Connection error occurred');
+    }
+  }
 }

@@ -5,6 +5,7 @@ import '../../core/helper/responsive_helper.dart';
 import '../../core/core.dart';
 import '../auth/controller/user_controller.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../data/datasources/auth_datasource.dart';
 
 // ============================================================================
 // SECURITY PAGE
@@ -46,7 +47,7 @@ class _SecurityPageState extends State<SecurityPage> {
             title: 'Change Password',
             subtitle: 'Update your password regularly',
             onTap: () {
-              Get.snackbar('Info', 'Change Password Feature');
+              Get.to(() => const ChangePasswordPage());
             },
           ),
           vSpace(context, 12),
@@ -165,6 +166,250 @@ class _SecurityPageState extends State<SecurityPage> {
           value: value,
           onChanged: onChanged,
           activeColor: AppColors.primary500,
+        ),
+      ),
+    );
+  }
+}
+
+// ============================================================================
+// CHANGE PASSWORD PAGE
+// ============================================================================
+class ChangePasswordPage extends StatefulWidget {
+  const ChangePasswordPage({super.key});
+
+  @override
+  State<ChangePasswordPage> createState() => _ChangePasswordPageState();
+}
+
+class _ChangePasswordPageState extends State<ChangePasswordPage> {
+  final _oldPasswordCtrl = TextEditingController();
+  final _newPasswordCtrl = TextEditingController();
+  final _conPasswordCtrl = TextEditingController();
+
+  bool _oldObscure = true;
+  bool _newObscure = true;
+  bool _conObscure = true;
+  bool _isLoading = false;
+
+  String? _oldPasswordError;
+  String? _newPasswordError;
+  String? _conPasswordError;
+
+  final _authDatasource = AuthDatasource();
+
+  @override
+  void dispose() {
+    _oldPasswordCtrl.dispose();
+    _newPasswordCtrl.dispose();
+    _conPasswordCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    setState(() {
+      _oldPasswordError = null;
+      _newPasswordError = null;
+      _conPasswordError = null;
+    });
+
+    final oldVal = _oldPasswordCtrl.text.trim();
+    final newVal = _newPasswordCtrl.text.trim();
+    final conVal = _conPasswordCtrl.text.trim();
+
+    bool isValid = true;
+    if (oldVal.isEmpty) {
+      setState(() => _oldPasswordError = 'Old password is required');
+      isValid = false;
+    }
+    if (newVal.isEmpty) {
+      setState(() => _newPasswordError = 'New password is required');
+      isValid = false;
+    } else if (newVal.length < 6) {
+      setState(() => _newPasswordError = 'Password must be at least 6 characters');
+      isValid = false;
+    }
+    if (conVal.isEmpty) {
+      setState(() => _conPasswordError = 'Please confirm your new password');
+      isValid = false;
+    } else if (conVal != newVal) {
+      setState(() => _conPasswordError = 'Passwords do not match');
+      isValid = false;
+    }
+
+    if (!isValid) return;
+
+    setState(() => _isLoading = true);
+
+    final (success, title, msg) = await _authDatasource.changePassword(
+      oldPassword: oldVal,
+      newPassword: newVal,
+      conPassword: conVal,
+    );
+
+    setState(() => _isLoading = false);
+
+    if (success) {
+      Get.back();
+      Get.snackbar(
+        (title ?? 'Success').capitalizeFirst ?? 'Success',
+        msg ?? 'Password changed successfully',
+        backgroundColor: Colors.green,
+        colorText: Colors.white,
+        snackPosition: SnackPosition.TOP,
+        duration: const Duration(seconds: 3),
+      );
+    } else {
+      Get.snackbar(
+        (title ?? 'Failed').capitalizeFirst ?? 'Failed',
+        msg ?? 'Failed to change password',
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+        snackPosition: SnackPosition.TOP,
+        duration: const Duration(seconds: 3),
+      );
+    }
+  }
+
+  Widget _buildPasswordField({
+    required TextEditingController controller,
+    required String label,
+    required String hintText,
+    required bool isObscure,
+    required VoidCallback onTapSuffixIcon,
+    String? errorText,
+  }) {
+    final sw = MediaQuery.of(context).size.width;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: EdgeInsets.only(left: sw * 0.01, bottom: sw * 0.02),
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: rfs(context, 14),
+              fontWeight: FontWeight.w600,
+              color: const Color(0xFF1E293B),
+            ),
+          ),
+        ),
+        TextField(
+          controller: controller,
+          obscureText: isObscure,
+          decoration: InputDecoration(
+            hintText: hintText,
+            hintStyle: TextStyle(
+              color: const Color(0xFF64748B),
+              fontSize: rfs(context, 14),
+            ),
+            prefixIcon: Icon(
+              Icons.lock_outline,
+              color: const Color(0xFF1976D2),
+              size: sw * 0.05,
+            ),
+            suffixIcon: IconButton(
+              onPressed: onTapSuffixIcon,
+              icon: Icon(
+                isObscure
+                    ? Icons.visibility_off_outlined
+                    : Icons.visibility_outlined,
+                color: const Color(0xFF64748B),
+                size: sw * 0.05,
+              ),
+            ),
+            filled: true,
+            fillColor: const Color(0xFFF4F7FB),
+            contentPadding: EdgeInsets.symmetric(
+              horizontal: sw * 0.04,
+              vertical: sw * 0.04,
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(sw * 0.035),
+              borderSide: BorderSide(color: Colors.grey.shade200),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(sw * 0.035),
+              borderSide: const BorderSide(
+                color: Color(0xFF1976D2),
+                width: 1.5,
+              ),
+            ),
+            errorText: errorText,
+            errorStyle: const TextStyle(height: 0.8),
+          ),
+        ),
+      ],
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final sw = MediaQuery.of(context).size.width;
+
+    return Scaffold(
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        centerTitle: true,
+        title: const Text('Change Password'),
+        leading: const BackButton(),
+      ),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+          padding: EdgeInsets.symmetric(
+            horizontal: sw * 0.06,
+            vertical: sw * 0.06,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildPasswordField(
+                controller: _oldPasswordCtrl,
+                label: 'Old Password',
+                hintText: 'Enter your current password',
+                isObscure: _oldObscure,
+                onTapSuffixIcon: () =>
+                    setState(() => _oldObscure = !_oldObscure),
+                errorText: _oldPasswordError,
+              ),
+
+              SizedBox(height: sw * 0.04),
+
+              _buildPasswordField(
+                controller: _newPasswordCtrl,
+                label: 'New Password',
+                hintText: 'Enter your new password',
+                isObscure: _newObscure,
+                onTapSuffixIcon: () =>
+                    setState(() => _newObscure = !_newObscure),
+                errorText: _newPasswordError,
+              ),
+
+              SizedBox(height: sw * 0.04),
+
+              _buildPasswordField(
+                controller: _conPasswordCtrl,
+                label: 'Confirm Password',
+                hintText: 'Re-enter your new password',
+                isObscure: _conObscure,
+                onTapSuffixIcon: () =>
+                    setState(() => _conObscure = !_conObscure),
+                errorText: _conPasswordError,
+              ),
+
+              SizedBox(height: sw * 0.08),
+
+              Button.filled(
+                onPressed: _submit,
+                label: 'Change Password',
+                isLoading: _isLoading,
+                height: 48,
+              ),
+            ],
+          ),
         ),
       ),
     );

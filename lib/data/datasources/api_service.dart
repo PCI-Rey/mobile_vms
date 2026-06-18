@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:developer';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
@@ -745,6 +746,42 @@ class ApiService {
       return response;
     } on DioException catch (e) {
       debugPrint('Dio Error approveMeetingHost: ${e.message}');
+      if (e.response != null) return e.response!;
+      rethrow;
+    }
+  }
+
+  /// POST /api/profile/password
+  Future<Response> changePassword(
+    String token,
+    String oldPassword,
+    String newPassword,
+    String conPassword,
+  ) async {
+    try {
+      final payload = {
+        'old_password': oldPassword,
+        'new_password': newPassword,
+        'con_password': conPassword,
+      };
+      debugPrint('changePassword payload: $payload');
+      debugPrint('jsonEncode(payload): ${jsonEncode(payload)}');
+      debugPrint('runes new_password: ${newPassword.runes.toList()}');
+      debugPrint('runes con_password: ${conPassword.runes.toList()}');
+      final response = await _dio.put(
+        '/$pathApi/profile/password',
+        data: payload,
+        options: Options(
+          headers: {'Authorization': 'Bearer $token'},
+          contentType: 'application/json',
+        ),
+      );
+      debugPrint('changePassword response status: ${response.statusCode}');
+      debugPrint('changePassword response body: ${response.data}');
+      return response;
+    } on DioException catch (e) {
+      debugPrint('Dio Error changePassword status: ${e.response?.statusCode}');
+      debugPrint('Dio Error changePassword body: ${e.response?.data}');
       if (e.response != null) return e.response!;
       rethrow;
     }
