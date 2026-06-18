@@ -21,6 +21,15 @@ android {
     }
 
 
+    signingConfigs {
+        getByName("debug") {
+            storeFile = file("debug-shared.keystore")
+            storePassword = "android"
+            keyAlias = "androiddebugkey"
+            keyPassword = "android"
+        }
+    }
+
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
         applicationId = "com.bioexperience.vmsapp"

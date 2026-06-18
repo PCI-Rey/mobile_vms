@@ -160,260 +160,236 @@ class ProfilePage extends StatelessWidget {
             vSpace(context, 24),
 
             // Menu section
-            if (isEmployee)
-              Expanded(
-                child: SingleChildScrollView(
-                  physics: const BouncingScrollPhysics(),
-                  padding: EdgeInsets.only(
-                    left: rw(context, 20),
-                    right: rw(context, 20),
-                    bottom: rh(context, 16),
-                  ),
-                  child: Column(
-                    children: [
-                      TileMenu(
-                        icon: Icon(
-                          Icons.person,
-                          color: Colors.white,
-                          size: rw(context, 25),
-                        ),
-                        label: 'account'.tr,
-                        onTap: () {
-                          context.push(const DetailProfilePage());
-                        },
+            Expanded(
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  return SingleChildScrollView(
+                    physics: const BouncingScrollPhysics(),
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(
+                        minHeight: constraints.maxHeight,
                       ),
-                      vSpace(context, 12),
-                      TileMenu(
-                        icon: Icon(
-                          Icons.lock,
-                          color: Colors.white,
-                          size: rw(context, 25),
-                        ),
-                        label: 'security'.tr,
-                        onTap: () {
-                          context.push(const SecurityPage());
-                        },
-                      ),
-                      vSpace(context, 12),
-                      TileMenu(
-                        icon: Icon(
-                          Icons.notifications_none,
-                          color: Colors.white,
-                          size: rw(context, 25),
-                        ),
-                        label: 'notification'.tr,
-                        onTap: () {
-                          context.push(const PemberitahuanPage());
-                        },
-                      ),
-                      vSpace(context, 12),
-                      TileMenu(
-                        icon: Icon(
-                          Icons.qr_code_scanner,
-                          color: Colors.white,
-                          size: rw(context, 25),
-                        ),
-                        label: 'Barcode'.tr,
-                        onTap: () {
-                          context.push(const BarcodePage());
-                        },
-                      ),
-                      vSpace(context, 12),
-                      TileMenu(
-                        icon: Icon(
-                          Icons.help_outline,
-                          color: Colors.white,
-                          size: rw(context, 25),
-                        ),
-                        label: 'help_center'.tr,
-                        onTap: () {
-                          context.push(const HelpCenterPage());
-                        },
-                      ),
-                      vSpace(context, 24),
-                      Align(
-                        alignment: Alignment.centerLeft,
-                        child: Text(
-                          'Related Products from Bio Experience',
-                          style: TextStyle(
-                            fontSize: rfs(context, 14),
-                            fontWeight: FontWeight.bold,
-                            color: Colors.grey.shade600,
+                      child: IntrinsicHeight(
+                        child: Padding(
+                          padding: EdgeInsets.only(
+                            left: rw(context, 20),
+                            right: rw(context, 20),
+                            bottom: rw(context, 20),
                           ),
-                        ),
-                      ),
-                      vSpace(context, 16),
-                      SingleChildScrollView(
-                        scrollDirection: Axis.horizontal,
-                        physics: const BouncingScrollPhysics(),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            _buildProductItem(
-                              context,
-                              Icons.meeting_room,
-                              'Meeting\nRoom',
-                            ),
-                            hSpace(context, 16),
-                            _buildProductItem(
-                              context,
-                              Icons.connected_tv,
-                              'Hospitality\nTV',
-                            ),
-                            hSpace(context, 16),
-                            _buildProductItem(
-                              context,
-                              Icons.person_pin_circle,
-                              'Tracking\nPeople',
-                            ),
-                            hSpace(context, 16),
-                            _buildProductItem(
-                              context,
-                              Icons.auto_mode,
-                              'Automation',
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              )
-            else ...[
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: rw(context, 20)),
-                child: Column(
-                  children: [
-                    TileMenu(
-                      icon: Icon(
-                        Icons.lock,
-                        color: Colors.white,
-                        size: rw(context, 25),
-                      ),
-                      label: 'security'.tr,
-                      onTap: () {
-                        context.push(const SecurityPage());
-                      },
-                    ),
-                    vSpace(context, 12),
-                    TileMenu(
-                      icon: Icon(
-                        Icons.notifications_none,
-                        color: Colors.white,
-                        size: rw(context, 25),
-                      ),
-                      label: 'notification'.tr,
-                      onTap: () {
-                        context.push(const PemberitahuanPage());
-                      },
-                    ),
-                    vSpace(context, 12),
-                    TileMenu(
-                      icon: Icon(
-                        Icons.qr_code_scanner,
-                        color: Colors.white,
-                        size: rw(context, 25),
-                      ),
-                      label: 'Barcode'.tr,
-                      onTap: () {
-                        context.push(const BarcodePage());
-                      },
-                    ),
-                    vSpace(context, 12),
-                    TileMenu(
-                      icon: Icon(
-                        Icons.help_outline,
-                        color: Colors.white,
-                        size: rw(context, 25),
-                      ),
-                      label: 'help_center'.tr,
-                      onTap: () {
-                        context.push(const HelpCenterPage());
-                      },
-                    ),
-                  ],
-                ),
-              ),
-              const Spacer(),
-            ],
-
-            Text(
-              'Version 1.0.0',
-              style: TextStyle(color: Colors.grey, fontSize: rfs(context, 12)),
-            ),
-            vSpace(context, 12),
-
-            // Logout button
-            Container(
-              width: double.infinity,
-              height: rh(context, 41),
-              margin: EdgeInsets.only(
-                left: rw(context, 20),
-                right: rw(context, 20),
-                bottom: rw(context, 20),
-              ),
-              child: Obx(() {
-                final isLoading = UserController.to.isLoggingOut.value;
-                return ElevatedButton(
-                  onPressed: isLoading
-                      ? null
-                      : () async {
-                          if (Get.isDialogOpen == true) return;
-
-                          final confirm = await Get.dialog<bool>(
-                            AlertDialog(
-                              title: Text('confirm_exit'.tr),
-                              content: Text('confirm_logout'.tr),
-                              actions: [
-                                TextButton(
-                                  onPressed: () => Get.back(result: false),
-                                  child: Text('cancel'.tr),
+                          child: Column(
+                            children: [
+                              if (isEmployee) ...[
+                                TileMenu(
+                                  icon: Icon(
+                                    Icons.person,
+                                    color: Colors.white,
+                                    size: rw(context, 25),
+                                  ),
+                                  label: 'account'.tr,
+                                  onTap: () {
+                                    context.push(const DetailProfilePage());
+                                  },
                                 ),
-                                ElevatedButton(
-                                  onPressed: () => Get.back(result: true),
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.red,
-                                    elevation: 0,
+                                vSpace(context, 12),
+                                TileMenu(
+                                  icon: Icon(
+                                    Icons.lock,
+                                    color: Colors.white,
+                                    size: rw(context, 25),
                                   ),
+                                  label: 'security'.tr,
+                                  onTap: () {
+                                    context.push(const SecurityPage());
+                                  },
+                                ),
+                                vSpace(context, 12),
+                                TileMenu(
+                                  icon: Icon(
+                                    Icons.notifications_none,
+                                    color: Colors.white,
+                                    size: rw(context, 25),
+                                  ),
+                                  label: 'notification'.tr,
+                                  onTap: () {
+                                    context.push(const PemberitahuanPage());
+                                  },
+                                ),
+                                vSpace(context, 12),
+                                TileMenu(
+                                  icon: Icon(
+                                    Icons.help_outline,
+                                    color: Colors.white,
+                                    size: rw(context, 25),
+                                  ),
+                                  label: 'help_center'.tr,
+                                  onTap: () {
+                                    context.push(const HelpCenterPage());
+                                  },
+                                ),
+                                vSpace(context, 24),
+                                Align(
+                                  alignment: Alignment.centerLeft,
                                   child: Text(
-                                    'logout'.tr,
-                                    style: const TextStyle(color: Colors.white),
+                                    'Related Products from Bio Experience',
+                                    style: TextStyle(
+                                      fontSize: rfs(context, 14),
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.grey.shade600,
+                                    ),
                                   ),
+                                ),
+                                vSpace(context, 16),
+                                SingleChildScrollView(
+                                  scrollDirection: Axis.horizontal,
+                                  physics: const BouncingScrollPhysics(),
+                                  child: Row(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      _buildProductItem(
+                                        context,
+                                        Icons.meeting_room,
+                                        'Meeting\nRoom',
+                                      ),
+                                      hSpace(context, 16),
+                                      _buildProductItem(
+                                        context,
+                                        Icons.connected_tv,
+                                        'Hospitality\nTV',
+                                      ),
+                                      hSpace(context, 16),
+                                      _buildProductItem(
+                                        context,
+                                        Icons.person_pin_circle,
+                                        'Tracking\nPeople',
+                                      ),
+                                      hSpace(context, 16),
+                                      _buildProductItem(
+                                        context,
+                                        Icons.auto_mode,
+                                        'Automation',
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ] else ...[
+                                TileMenu(
+                                  icon: Icon(
+                                    Icons.lock,
+                                    color: Colors.white,
+                                    size: rw(context, 25),
+                                  ),
+                                  label: 'security'.tr,
+                                  onTap: () {
+                                    context.push(const SecurityPage());
+                                  },
+                                ),
+                                vSpace(context, 12),
+                                TileMenu(
+                                  icon: Icon(
+                                    Icons.notifications_none,
+                                    color: Colors.white,
+                                    size: rw(context, 25),
+                                  ),
+                                  label: 'notification'.tr,
+                                  onTap: () {
+                                    context.push(const PemberitahuanPage());
+                                  },
+                                ),
+                                vSpace(context, 12),
+                                TileMenu(
+                                  icon: Icon(
+                                    Icons.help_outline,
+                                    color: Colors.white,
+                                    size: rw(context, 25),
+                                  ),
+                                  label: 'help_center'.tr,
+                                  onTap: () {
+                                    context.push(const HelpCenterPage());
+                                  },
                                 ),
                               ],
-                            ),
-                          );
-                          if (confirm == true) {
-                            await UserController.to.clearUser();
-                            Get.offAll(() => LoginPage());
-                          }
-                        },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.error200,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(rw(context, 10)),
-                      side: const BorderSide(
-                        color: AppColors.error500,
-                        width: 1,
+                              const Spacer(),
+                              vSpace(context, 24),
+                              Text(
+                                'Version 1.0.0',
+                                style: TextStyle(color: Colors.grey, fontSize: rfs(context, 12)),
+                              ),
+                              vSpace(context, 12),
+                              // Logout button
+                              Container(
+                                width: double.infinity,
+                                height: rh(context, 41),
+                                child: Obx(() {
+                                  final isLoading = UserController.to.isLoggingOut.value;
+                                  return ElevatedButton(
+                                    onPressed: isLoading
+                                        ? null
+                                        : () async {
+                                            if (Get.isDialogOpen == true) return;
+
+                                            final confirm = await Get.dialog<bool>(
+                                              AlertDialog(
+                                                title: Text('confirm_exit'.tr),
+                                                content: Text('confirm_logout'.tr),
+                                                actions: [
+                                                  TextButton(
+                                                    onPressed: () => Get.back(result: false),
+                                                    child: Text('cancel'.tr),
+                                                  ),
+                                                  ElevatedButton(
+                                                    onPressed: () => Get.back(result: true),
+                                                    style: ElevatedButton.styleFrom(
+                                                      backgroundColor: Colors.red,
+                                                      elevation: 0,
+                                                    ),
+                                                    child: Text(
+                                                      'logout'.tr,
+                                                      style: const TextStyle(color: Colors.white),
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            );
+                                            if (confirm == true) {
+                                              await UserController.to.clearUser();
+                                              Get.offAll(() => LoginPage());
+                                            }
+                                          },
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: AppColors.error200,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(rw(context, 10)),
+                                        side: const BorderSide(
+                                          color: AppColors.error500,
+                                          width: 1,
+                                        ),
+                                      ),
+                                      padding: EdgeInsets.zero,
+                                    ),
+                                    child: isLoading
+                                        ? SizedBox(
+                                            width: rw(context, 20),
+                                            height: rw(context, 20),
+                                            child: const CircularProgressIndicator(
+                                              strokeWidth: 2,
+                                              color: AppColors.error500,
+                                            ),
+                                          )
+                                        : Text(
+                                            'logout'.tr,
+                                            style: const TextStyle(color: AppColors.error500),
+                                          ),
+                                  );
+                                }),
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
                     ),
-                    padding: EdgeInsets.zero,
-                  ),
-                  child: isLoading
-                      ? SizedBox(
-                          width: rw(context, 20),
-                          height: rw(context, 20),
-                          child: const CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: AppColors.error500,
-                          ),
-                        )
-                      : Text(
-                          'logout'.tr,
-                          style: const TextStyle(color: AppColors.error500),
-                        ),
-                );
-              }),
+                  );
+                }
+              ),
             ),
           ],
         );

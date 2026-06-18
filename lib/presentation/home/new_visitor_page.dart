@@ -157,9 +157,11 @@ class _NewVisitorPageState extends State<NewVisitorPage> {
         }
 
         return ListView.separated(
-          padding: EdgeInsets.symmetric(
-            horizontal: rw(context, 16),
-            vertical: rh(context, 16),
+          padding: EdgeInsets.only(
+            left: rw(context, 16),
+            right: rw(context, 16),
+            top: rh(context, 16),
+            bottom: rh(context, 16) + MediaQuery.of(context).padding.bottom,
           ),
           itemCount: newVisitors.length,
           separatorBuilder: (context, index) => Divider(

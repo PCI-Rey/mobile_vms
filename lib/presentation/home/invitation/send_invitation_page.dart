@@ -891,8 +891,8 @@ class _SendInvitationPageState extends State<SendInvitationPage>
                     });
                   },
                   tipsText: isIndonesian
-                      ? 'Info: Quick Access sangat cocok untuk mitra pengantar makanan atau ojek online agar pengiriman makanan menjadi lebih praktis tanpa perlu persetujuan manual berulang.'
-                      : 'Info: Quick Access is perfect for food delivery partners or online motorcycle taxis to make food delivery more practical without requiring repeated manual approval.',
+                      ? 'Info: Quick Access sangat cocok untuk mitra pengantar makanan agar pengiriman makanan menjadi lebih praktis tanpa perlu persetujuan manual berulang.'
+                      : 'Info: Quick Access is perfect for food delivery partners to make food delivery more practical without requiring repeated manual approval.',
                   showQuickActions: true,
                   mode: 'quick_access',
                 );
@@ -4293,44 +4293,52 @@ class EmptyStateWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
-      physics: const AlwaysScrollableScrollPhysics(),
+      physics: const NeverScrollableScrollPhysics(),
       child: Padding(
         padding: EdgeInsets.symmetric(
           horizontal: rw(context, 20.0),
-          vertical: rh(context, 32.0),
+          vertical: rh(context, 16.0),
         ),
         child: Column(
           children: [
-            // 1. Top Icon Illustration
-            Center(child: illustration ?? _buildDefaultIllustration(context)),
-            vSpace(context, 24),
+            // 1. Top Icon Illustration (balanced scale)
+            Center(
+              child: SizedBox(
+                height: rh(context, 150),
+                child: FittedBox(
+                  fit: BoxFit.contain,
+                  child: illustration ?? _buildDefaultIllustration(context),
+                ),
+              ),
+            ),
+            vSpace(context, 20),
 
             // 2. Title
             Text(
               title,
               style: TextStyle(
                 color: Colors.black87,
-                fontSize: rfs(context, 21),
+                fontSize: rfs(context, 19),
                 fontWeight: FontWeight.w700,
               ),
               textAlign: TextAlign.center,
             ),
-            vSpace(context, 10),
+            vSpace(context, 8),
 
             // 3. Subtitle
             Padding(
-              padding: EdgeInsets.symmetric(horizontal: rw(context, 16.0)),
+              padding: EdgeInsets.symmetric(horizontal: rw(context, 14.0)),
               child: Text(
                 subtitle,
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   color: Colors.grey.shade600,
-                  fontSize: rfs(context, 13.5),
+                  fontSize: rfs(context, 12.5),
                   height: 1.45,
                 ),
               ),
             ),
-            vSpace(context, 24),
+            vSpace(context, 20),
 
             // 4. Create Button
             ElevatedButton(
@@ -4340,7 +4348,7 @@ class EmptyStateWidget extends StatelessWidget {
                 foregroundColor: Colors.white,
                 padding: EdgeInsets.symmetric(
                   horizontal: rw(context, 28),
-                  vertical: rh(context, 14),
+                  vertical: rh(context, 12),
                 ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(rw(context, 12)),
@@ -4362,7 +4370,7 @@ class EmptyStateWidget extends StatelessWidget {
                 ],
               ),
             ),
-            vSpace(context, 36),
+            vSpace(context, 24),
 
             // 5. Quick Actions Section (Optional)
             if (showQuickActions) ...[
@@ -4377,7 +4385,7 @@ class EmptyStateWidget extends StatelessWidget {
                   ),
                 ),
               ),
-              vSpace(context, 16),
+              vSpace(context, 12),
               Row(
                 children: [
                   Expanded(
@@ -4479,24 +4487,31 @@ class EmptyStateWidget extends StatelessWidget {
                                   if (isQuickAccessMode != isQA) return false;
 
                                   final sLower = scannedCode.toLowerCase();
-                                  return v.visitorNumber.toLowerCase() == sLower ||
+                                  return v.visitorNumber.toLowerCase() ==
+                                          sLower ||
                                       v.visitorCode.toLowerCase() == sLower ||
-                                      v.invitationCode.toLowerCase() == sLower ||
-                                      v.initialTrxCode.toLowerCase() == sLower ||
+                                      v.invitationCode.toLowerCase() ==
+                                          sLower ||
+                                      v.initialTrxCode.toLowerCase() ==
+                                          sLower ||
                                       v.id.toLowerCase() == sLower ||
-                                      v.transactionVisitorId
-                                              .toLowerCase() ==
+                                      v.transactionVisitorId.toLowerCase() ==
                                           sLower;
                                 }
 
-                                AccessPassModel? matched = inviteCtrl.allRawVisitors
+                                AccessPassModel? matched = inviteCtrl
+                                    .allRawVisitors
                                     .firstWhereOrNull(isMatch);
 
                                 // 2. If not found locally, search in sub-visitors cache
                                 if (matched == null) {
-                                  for (final subList in inviteCtrl
-                                      .transactionVisitorsCache.values) {
-                                    final found = subList.firstWhereOrNull(isMatch);
+                                  for (final subList
+                                      in inviteCtrl
+                                          .transactionVisitorsCache
+                                          .values) {
+                                    final found = subList.firstWhereOrNull(
+                                      isMatch,
+                                    );
                                     if (found != null) {
                                       matched = found;
                                       break;
@@ -4510,9 +4525,10 @@ class EmptyStateWidget extends StatelessWidget {
                                     Get.dialog(
                                       const Center(
                                         child: CircularProgressIndicator(
-                                          valueColor: AlwaysStoppedAnimation<Color>(
-                                            AppColors.primary500,
-                                          ),
+                                          valueColor:
+                                              AlwaysStoppedAnimation<Color>(
+                                                AppColors.primary500,
+                                              ),
                                         ),
                                       ),
                                       barrierDismissible: false,
@@ -4534,32 +4550,37 @@ class EmptyStateWidget extends StatelessWidget {
                                       }
 
                                       if (response.data is Map &&
-                                          (response.data['status'] == 'success' ||
-                                              response.data['status_code'] == 200)) {
+                                          (response.data['status'] ==
+                                                  'success' ||
+                                              response.data['status_code'] ==
+                                                  200)) {
                                         final collection =
-                                            response.data['collection'] as List? ??
-                                                [];
+                                            response.data['collection']
+                                                as List? ??
+                                            [];
                                         for (final trx in collection) {
-                                          final parentModel = AccessPassModel.fromJson(
-                                            trx as Map<String, dynamic>,
-                                          );
+                                          final parentModel =
+                                              AccessPassModel.fromJson(
+                                                trx as Map<String, dynamic>,
+                                              );
                                           if (isMatch(parentModel)) {
                                             matched = parentModel;
                                             break;
                                           }
 
                                           // Fetch sub-visitors for this transaction
-                                          final subVisitorsRaw = await inviteCtrl
-                                              .fetchTransactionVisitors(
-                                            parentModel.id,
-                                          );
+                                          final subVisitorsRaw =
+                                              await inviteCtrl
+                                                  .fetchTransactionVisitors(
+                                                    parentModel.id,
+                                                  );
                                           final subVisitors = inviteCtrl
                                               .parseAndCacheSubVisitors(
-                                            parentModel,
-                                            subVisitorsRaw,
-                                          );
-                                          final foundSub =
-                                              subVisitors.firstWhereOrNull(isMatch);
+                                                parentModel,
+                                                subVisitorsRaw,
+                                              );
+                                          final foundSub = subVisitors
+                                              .firstWhereOrNull(isMatch);
                                           if (foundSub != null) {
                                             matched = foundSub;
                                             break;
@@ -4572,7 +4593,9 @@ class EmptyStateWidget extends StatelessWidget {
                                       }
                                     }
                                   } catch (e) {
-                                    debugPrint('Fallback backend search error: $e');
+                                    debugPrint(
+                                      'Fallback backend search error: $e',
+                                    );
                                     if (Get.isDialogOpen ?? false) {
                                       Get.back();
                                     }
@@ -4652,12 +4675,12 @@ class EmptyStateWidget extends StatelessWidget {
                   ),
                 ],
               ),
-              vSpace(context, 32),
+              vSpace(context, 24),
             ],
 
             // 6. Tips Box
             Container(
-              padding: EdgeInsets.all(rw(context, 18)),
+              padding: EdgeInsets.all(rw(context, 14)),
               decoration: BoxDecoration(
                 color: const Color(0xFFF4F8FC),
                 borderRadius: BorderRadius.circular(rw(context, 12)),
@@ -4666,8 +4689,8 @@ class EmptyStateWidget extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Container(
-                    width: rw(context, 40),
-                    height: rw(context, 40),
+                    width: rw(context, 36),
+                    height: rw(context, 36),
                     decoration: BoxDecoration(
                       color: AppColors.primary500.withValues(alpha: 0.12),
                       shape: BoxShape.circle,
@@ -4676,10 +4699,10 @@ class EmptyStateWidget extends StatelessWidget {
                     child: Icon(
                       Icons.lightbulb_outline_rounded,
                       color: AppColors.primary500,
-                      size: rw(context, 22),
+                      size: rw(context, 20),
                     ),
                   ),
-                  hSpace(context, 16),
+                  hSpace(context, 14),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -4688,7 +4711,7 @@ class EmptyStateWidget extends StatelessWidget {
                           tipsText,
                           textAlign: TextAlign.justify,
                           style: TextStyle(
-                            fontSize: rfs(context, 13),
+                            fontSize: rfs(context, 12.5),
                             color: const Color(0xFF005596),
                             height: 1.45,
                             fontWeight: FontWeight.w500,
@@ -4779,8 +4802,8 @@ class EmptyStateWidget extends StatelessWidget {
       onTap: onTap,
       child: Container(
         padding: EdgeInsets.symmetric(
-          horizontal: rw(context, 16),
-          vertical: rh(context, 18),
+          horizontal: rw(context, 14),
+          vertical: rh(context, 14),
         ),
         decoration: BoxDecoration(
           color: Colors.white,
@@ -4797,14 +4820,15 @@ class EmptyStateWidget extends StatelessWidget {
         child: Column(
           children: [
             Container(
-              width: rw(context, 48),
-              height: rw(context, 48),
+              width: rw(context, 42),
+              height: rw(context, 42),
               decoration: BoxDecoration(color: bgColor, shape: BoxShape.circle),
               alignment: Alignment.center,
-              child: Icon(icon, color: color, size: rw(context, 24)),
+              child: Icon(icon, color: color, size: rw(context, 22)),
             ),
-            vSpace(context, 12),
-            title == 'Duplicate Quick Access' || title == 'Duplikat Quick Access'
+            vSpace(context, 10),
+            title == 'Duplicate Quick Access' ||
+                    title == 'Duplikat Quick Access'
                 ? FittedBox(
                     fit: BoxFit.scaleDown,
                     child: Text(

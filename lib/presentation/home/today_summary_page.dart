@@ -273,7 +273,12 @@ class TodaySummaryPage extends StatelessWidget {
 
     return SingleChildScrollView(
       physics: const BouncingScrollPhysics(),
-      padding: EdgeInsets.all(rw(context, 20)),
+      padding: EdgeInsets.only(
+        left: rw(context, 20),
+        right: rw(context, 20),
+        top: rw(context, 20),
+        bottom: rw(context, 20) + MediaQuery.of(context).padding.bottom,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -683,7 +688,12 @@ class TodaySummaryPage extends StatelessWidget {
 
     return SingleChildScrollView(
       physics: const BouncingScrollPhysics(),
-      padding: EdgeInsets.all(rw(context, 20)),
+      padding: EdgeInsets.only(
+        left: rw(context, 20),
+        right: rw(context, 20),
+        top: rw(context, 20),
+        bottom: rw(context, 20) + MediaQuery.of(context).padding.bottom,
+      ),
       child: Column(
         children: [
           // 1. Visitor Breakdown
@@ -992,7 +1002,12 @@ class TodaySummaryPage extends StatelessWidget {
 
     return SingleChildScrollView(
       physics: const BouncingScrollPhysics(),
-      padding: EdgeInsets.all(rw(context, 20)),
+      padding: EdgeInsets.only(
+        left: rw(context, 20),
+        right: rw(context, 20),
+        top: rw(context, 20),
+        bottom: rw(context, 20) + MediaQuery.of(context).padding.bottom,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
