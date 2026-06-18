@@ -8,6 +8,7 @@ import '../../../../data/datasources/hive_service.dart';
 import '../../../../data/models/access_pass_model.dart';
 import '../../../../data/models/approval_ticket_model.dart';
 import 'package:flutter/foundation.dart';
+import 'package:intl/intl.dart';
 
 List<AccessPassModel> _parseAccessPassData(dynamic responseData) {
   final collection = responseData as List<dynamic>? ?? [];
@@ -132,11 +133,15 @@ class InvitationController extends GetxController {
   void onInit() {
     super.onInit();
     ever(allRawVisitors, (_) => fetchVisitorTodayCount());
-    ever(selectedDashboardDate, (_) => fetchVisitorTodayCount());
+    ever(selectedDashboardDate, (_) {
+      fetchVisitorTodayCount();
+      fetchTodayActivities();
+    });
     fetchOngoingInvitations();
     fetchApprovalTickets();
     fetchMasterData();
     fetchDashboardShareLinks();
+    fetchTodayActivities();
   }
 
   @override
@@ -547,6 +552,41 @@ class InvitationController extends GetxController {
       }
     } catch (e) {
       debugPrint('fetchDashboardShareLinks error: $e');
+    }
+  }
+
+  final RxList<dynamic> todayActivities = <dynamic>[].obs;
+  final RxBool isActivitiesLoading = false.obs;
+
+  Future<void> fetchTodayActivities({bool isSilent = false}) async {
+    final user = _hive.getUser();
+    final token = user?.token;
+    if (token == null) return;
+
+    if (!isSilent) isActivitiesLoading.value = true;
+    try {
+      final date = selectedDashboardDate.value;
+      final formattedDate = DateFormat('yyyy-MM-dd').format(date);
+      
+      final response = await _api.getTodayActivities(
+        token,
+        startDate: formattedDate,
+        endDate: formattedDate,
+        length: 1000,
+      );
+
+      if (response.data is Map &&
+          (response.data['status'] == 'success' ||
+              response.data['status_code'] == 200)) {
+        final collection = response.data['collection'] as List<dynamic>? ?? [];
+        todayActivities.assignAll(collection);
+      } else {
+        todayActivities.clear();
+      }
+    } catch (e) {
+      debugPrint('fetchTodayActivities error: $e');
+    } finally {
+      if (!isSilent) isActivitiesLoading.value = false;
     }
   }
 

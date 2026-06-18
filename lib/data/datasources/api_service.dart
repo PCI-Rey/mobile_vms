@@ -409,6 +409,30 @@ class ApiService {
     }
   }
 
+  Future<Response> getTodayActivities(
+    String token, {
+    required String startDate,
+    required String endDate,
+    int length = 1000,
+  }) async {
+    try {
+      final response = await _dio.get(
+        '/$pathApi/dashboard/today/activities',
+        queryParameters: {
+          'start-date': startDate,
+          'end-date': endDate,
+          'length': length,
+        },
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+      return response;
+    } on DioException catch (e) {
+      debugPrint('Dio Error getTodayActivities: ${e.message}');
+      if (e.response != null) return e.response!;
+      rethrow;
+    }
+  }
+
   Future<Response> getActiveVisits(String token) async {
     try {
       final response = await _dio.get(

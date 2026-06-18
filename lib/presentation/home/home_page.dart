@@ -712,6 +712,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                         invitationController.fetchShareLinks(resetPage: true),
                         invitationController.fetchApprovalTickets(),
                         invitationController.fetchDashboardShareLinks(),
+                        invitationController.fetchTodayActivities(),
                       ]);
                     },
                     child: SingleChildScrollView(
@@ -1402,171 +1403,97 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
 
       final List<_ActivityItem> activities = [];
 
-      // 1. Invitations created today
-      for (final item in invitationController.allRawVisitors) {
-        if (item.flow.toLowerCase() == 'quickaccessvisit') continue;
-        if (item.agenda.isEmpty &&
-            item.hostName.isEmpty &&
-            item.visitorTypeName.isEmpty)
-          continue;
-
-        final createdAt = item.invitationCreatedAt ?? item.visitorPeriodStart;
-        if (createdAt.year == date.year &&
-            createdAt.month == date.month &&
-            createdAt.day == date.day) {
-          activities.add(
-            _ActivityItem(
-              title: isId ? 'Undangan dibuat' : 'Invitation created',
-              description: item.visitorName.trim().isEmpty
-                  ? item.agenda
-                  : '${item.visitorName.trim()} - ${item.agenda}',
-              timestamp: createdAt,
-              icon: Icons.calendar_month_outlined,
-              iconColor: const Color(0xFF3B6D11),
-              bgColor: const Color(0xFFEAF3DE),
-            ),
-          );
-        }
-      }
-
-      // 2. Quick Access created today
-      for (final item in invitationController.allRawVisitors) {
-        if (item.flow.toLowerCase() != 'quickaccessvisit') continue;
-        if (item.agenda.isEmpty &&
-            item.hostName.isEmpty &&
-            item.visitorTypeName.isEmpty)
-          continue;
-
-        final createdAt = item.invitationCreatedAt ?? item.visitorPeriodStart;
-        if (createdAt.year == date.year &&
-            createdAt.month == date.month &&
-            createdAt.day == date.day) {
-          activities.add(
-            _ActivityItem(
-              title: isId ? 'Quick Access dibuat' : 'Quick Access created',
-              description: item.visitorName.trim().isEmpty
-                  ? item.agenda
-                  : '${item.visitorName.trim()} - ${item.agenda}',
-              timestamp: createdAt,
-              icon: Icons.flash_on_rounded,
-              iconColor: const Color(0xFFFF9800),
-              bgColor: const Color(0xFFFFF4E5),
-            ),
-          );
-        }
-      }
-
-      // 3. Share Links created today
-      for (final item in invitationController.dashboardShareLinks) {
-        final dateStr =
-            item['created_at']?.toString() ??
-            item['visitor_period_start']?.toString() ??
-            item['expired_at']?.toString();
+      for (final item in invitationController.todayActivities) {
+        final dateStr = item['actionAt']?.toString() ?? item['createdAt']?.toString();
+        DateTime timestamp = DateTime.now();
         if (dateStr != null) {
           try {
             String normalized = dateStr;
+            final dotIndex = normalized.indexOf('.');
+            if (dotIndex != -1) {
+              final tIndex = normalized.indexOf('T', dotIndex);
+              final zIndex = normalized.indexOf('Z', dotIndex);
+              final plusIndex = normalized.indexOf('+', dotIndex);
+              int endSubSeconds = normalized.length;
+              if (zIndex != -1) endSubSeconds = zIndex;
+              else if (plusIndex != -1) endSubSeconds = plusIndex;
+              
+              final subSecondsStr = normalized.substring(dotIndex + 1, endSubSeconds);
+              if (subSecondsStr.length > 6) {
+                final trimmed = subSecondsStr.substring(0, 6);
+                final suffix = endSubSeconds < normalized.length ? normalized.substring(endSubSeconds) : '';
+                normalized = '${normalized.substring(0, dotIndex)}.$trimmed$suffix';
+              }
+            }
             if (!normalized.endsWith('Z') && !normalized.contains('+')) {
-              normalized = '${normalized.replaceFirst(' ', 'T')}Z';
+              normalized = '${normalized}Z';
             }
-            final createdAt = DateTime.parse(normalized).toLocal();
-            if (createdAt.year == date.year &&
-                createdAt.month == date.month &&
-                createdAt.day == date.day) {
-              activities.add(
-                _ActivityItem(
-                  title: isId ? 'Tautan dibagikan' : 'Link shared',
-                  description:
-                      '${item['site_place_name'] ?? item['site_name'] ?? 'Gedung'} - ${item['agenda'] ?? ''}',
-                  timestamp: createdAt,
-                  icon: Icons.add_link,
-                  iconColor: const Color(0xFF534AB7),
-                  bgColor: const Color(0xFFF3EEFE),
-                ),
-              );
-            }
+            timestamp = DateTime.parse(normalized).toLocal();
           } catch (e) {
-            debugPrint('Error parsing share link date: $e');
+            debugPrint('Error parsing activity timestamp: $e');
           }
         }
-      }
 
-      // 4. Approvals processed today
-      for (final ticket in invitationController.approvalTickets) {
-        final isPending =
-            (ticket.approvalActorStatus ?? '').toLowerCase() == 'pending' ||
-            (ticket.approvalStatus ?? '').toLowerCase() == 'pending';
-        final isApproved =
-            (ticket.approvalActorStatus ?? '').toLowerCase() == 'approved' ||
-            (ticket.approvalStatus ?? '').toLowerCase() == 'approved';
-        final isRejected =
-            (ticket.approvalActorStatus ?? '').toLowerCase() == 'rejected' ||
-            (ticket.approvalActorStatus ?? '').toLowerCase() == 'denied' ||
-            (ticket.approvalStatus ?? '').toLowerCase() == 'rejected' ||
-            (ticket.approvalStatus ?? '').toLowerCase() == 'denied';
+        final String action = (item['action']?.toString() ?? '').toLowerCase();
+        final String title;
+        final IconData icon;
+        final Color iconColor;
+        final Color bgColor;
 
-        if (isPending) {
-          final createdAt = ticket.approvalTicketAt;
-          if (createdAt != null &&
-              createdAt.year == date.year &&
-              createdAt.month == date.month &&
-              createdAt.day == date.day) {
-            activities.add(
-              _ActivityItem(
-                title: isId
-                    ? 'Persetujuan diterima'
-                    : 'Approval request received',
-                description:
-                    'Akses pending untuk ${ticket.hostName ?? 'Visitor'} - ${ticket.agenda ?? ''}',
-                timestamp: createdAt,
-                icon: Icons.access_time,
-                iconColor: const Color(0xFFE65100),
-                bgColor: const Color(0xFFFFF3E0),
-              ),
-            );
-          }
-        } else if (isApproved) {
-          final approvedAt = ticket.approvedAt ?? ticket.approvalTicketAt;
-          if (approvedAt != null &&
-              approvedAt.year == date.year &&
-              approvedAt.month == date.month &&
-              approvedAt.day == date.day) {
-            activities.add(
-              _ActivityItem(
-                title: isId ? 'Persetujuan disetujui' : 'Approval approved',
-                description:
-                    'Akses disetujui untuk ${ticket.hostName ?? 'Visitor'} - ${ticket.agenda ?? ''}',
-                timestamp: approvedAt,
-                icon: Icons.check_circle_outline,
-                iconColor: const Color(0xFF43A047),
-                bgColor: const Color(0xFFE8F5E9),
-              ),
-            );
-          }
-        } else if (isRejected) {
-          final approvedAt = ticket.approvedAt ?? ticket.approvalTicketAt;
-          if (approvedAt != null &&
-              approvedAt.year == date.year &&
-              approvedAt.month == date.month &&
-              approvedAt.day == date.day) {
-            activities.add(
-              _ActivityItem(
-                title: isId ? 'Persetujuan ditolak' : 'Approval rejected',
-                description:
-                    'Akses ditolak untuk ${ticket.hostName ?? 'Visitor'} - ${ticket.agenda ?? ''}',
-                timestamp: approvedAt,
-                icon: Icons.cancel_outlined,
-                iconColor: const Color(0xFFD32F2F),
-                bgColor: const Color(0xFFFFEBEE),
-              ),
-            );
-          }
+        if (action.contains('approve')) {
+          title = isId ? 'Persetujuan disetujui' : 'Approval approved';
+          icon = Icons.check_circle_outline;
+          iconColor = const Color(0xFF43A047);
+          bgColor = const Color(0xFFE8F5E9);
+        } else if (action.contains('reject') || action.contains('deny')) {
+          title = isId ? 'Persetujuan ditolak' : 'Approval rejected';
+          icon = Icons.cancel_outlined;
+          iconColor = const Color(0xFFD32F2F);
+          bgColor = const Color(0xFFFFEBEE);
+        } else if (action.contains('password')) {
+          title = isId ? 'Ubah Kata Sandi' : 'Change Password';
+          icon = Icons.lock_outline;
+          iconColor = const Color(0xFF534AB7);
+          bgColor = const Color(0xFFF3EEFE);
+        } else {
+          title = item['action']?.toString() ?? 'Activity';
+          icon = Icons.info_outline;
+          iconColor = const Color(0xFF1976D2);
+          bgColor = const Color(0xFFE8F1FD);
         }
+
+        final description = item['description']?.toString() ?? '';
+
+        activities.add(
+          _ActivityItem(
+            title: title,
+            description: description,
+            timestamp: timestamp,
+            icon: icon,
+            iconColor: iconColor,
+            bgColor: bgColor,
+          ),
+        );
       }
 
       // Sort activities descending by timestamp
       activities.sort((a, b) => b.timestamp.compareTo(a.timestamp));
 
-      final sectionHeaderTitle = isId ? 'Aktivitas Hari Ini' : 'Activity Today';
+      final now = DateTime.now();
+      final today = DateTime(now.year, now.month, now.day);
+      final yesterday = today.subtract(const Duration(days: 1));
+      
+      final isToday = date.year == today.year && date.month == today.month && date.day == today.day;
+      final isYesterday = date.year == yesterday.year && date.month == yesterday.month && date.day == yesterday.day;
+      
+      final String sectionHeaderTitle;
+      if (isToday) {
+        sectionHeaderTitle = isId ? 'Aktivitas Hari Ini' : 'Activity Today';
+      } else if (isYesterday) {
+        sectionHeaderTitle = isId ? 'Aktivitas Kemarin' : 'Activity Yesterday';
+      } else {
+        sectionHeaderTitle = isId ? 'Aktivitas' : 'Activity';
+      }
 
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
