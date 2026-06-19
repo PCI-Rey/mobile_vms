@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:intl/intl.dart';
 
 import '../../core/helper/responsive_helper.dart';
 import '../../core/core.dart';
+import '../../data/models/access_pass_model.dart';
+import '../auth/controller/language_controller.dart';
 import 'controller/history_controller.dart';
+import 'widgets/filter_bottom_sheet.dart';
 
 class HistoryPage extends StatefulWidget {
   const HistoryPage({super.key});
@@ -15,7 +19,6 @@ class HistoryPage extends StatefulWidget {
 class _HistoryPageState extends State<HistoryPage> {
   DateTime? startDate;
   DateTime? endDate;
-  String? selectedGedung;
   late final HistoryController controller;
 
   @override
@@ -26,6 +29,9 @@ class _HistoryPageState extends State<HistoryPage> {
     } else {
       controller = Get.put(HistoryController());
     }
+    // Sync local state dates with controller dates
+    startDate = controller.startDate.value;
+    endDate = controller.endDate.value;
   }
 
   @override
@@ -47,68 +53,100 @@ class _HistoryPageState extends State<HistoryPage> {
           child: Container(color: AppColors.grey300, height: 1.0),
         ),
       ),
-      body: _buildHistoryContent(),
+      body: Obx(() => _buildHistoryContent()),
     );
   }
 
   Widget _buildHistoryContent() {
-    final dummyData = [
-      {
-        'agenda': 'Visit',
-        'status': 'Completed',
-        'visitorType': 'Visitor (DKUT)',
-        'host': 'Endru',
-        'organization': 'Kantor A',
-        'flow': 'Praregis',
-        'periodStart': '14 July 2025, 10:00',
-        'periodEnd': '14 July 2025, 12:00',
-      },
-      {
-        'agenda': 'Meeting',
-        'status': 'Completed',
-        'visitorType': 'Employee (DKUT)',
-        'host': 'Budi',
-        'organization': 'Kantor B',
-        'flow': 'Invitation',
-        'periodStart': '15 July 2025, 13:00',
-        'periodEnd': '15 July 2025, 15:00',
-      },
-      {
-        'agenda': 'Interview',
-        'status': 'Completed',
-        'visitorType': 'Visitor (DKUT)',
-        'host': 'Andi',
-        'organization': 'Kantor C',
-        'flow': 'Praregis',
-        'periodStart': '16 July 2025, 09:00',
-        'periodEnd': '16 July 2025, 11:00',
-      },
-      {
-        'agenda': 'Training',
-        'status': 'Completed',
-        'visitorType': 'Employee (DKUT)',
-        'host': 'Rina',
-        'organization': 'Kantor D',
-        'flow': 'Invitation',
-        'periodStart': '17 July 2025, 08:00',
-        'periodEnd': '17 July 2025, 10:00',
-      },
-    ];
+    if (controller.isLoading.value && !controller.isRefreshing.value) {
+      return const Center(child: CircularProgressIndicator());
+    }
 
-    return ListView.builder(
-      padding: EdgeInsets.all(rw(context, 20.0)),
-      itemCount: dummyData.length,
-      itemBuilder: (context, index) {
-        final data = dummyData[index];
-        return Padding(
-          padding: EdgeInsets.only(bottom: rh(context, 16.0)),
-          child: _buildHistoryCard(index, data),
-        );
-      },
+    if (controller.errorMessage.value != null) {
+      return Center(
+        child: Padding(
+          padding: EdgeInsets.all(rw(context, 20.0)),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                controller.errorMessage.value!,
+                style: const TextStyle(color: Colors.red),
+                textAlign: TextAlign.center,
+              ),
+              vSpace(context, 16),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary500,
+                ),
+                onPressed: () => controller.loadHistory(
+                  startDate: startDate,
+                  endDate: endDate,
+                ),
+                child: const Text('Retry', style: TextStyle(color: Colors.white)),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    if (controller.filteredHistory.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.history, size: rw(context, 64), color: Colors.grey.shade400),
+            vSpace(context, 16),
+            Text(
+              'No history found',
+              style: TextStyle(
+                fontSize: rfs(context, 16),
+                color: Colors.grey.shade600,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return RefreshIndicator(
+      onRefresh: () => controller.refreshHistory(),
+      child: ListView.builder(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: EdgeInsets.all(rw(context, 20.0)),
+        itemCount: controller.filteredHistory.length,
+        itemBuilder: (context, index) {
+          final item = controller.filteredHistory[index];
+          return Padding(
+            padding: EdgeInsets.only(bottom: rh(context, 16.0)),
+            child: _buildHistoryCard(index, item),
+          );
+        },
+      ),
     );
   }
 
-  Widget _buildHistoryCard(int index, Map<String, String> data) {
+  Widget _buildHistoryCard(int index, AccessPassModel item) {
+    final String lang = Get.isRegistered<LanguageController>()
+        ? LanguageController.to.selectedLang.value
+        : 'id';
+
+    String formatDate(DateTime d) {
+      try {
+        return DateFormat(
+          'd MMMM yyyy, HH:mm',
+          lang == 'id' ? 'id_ID' : 'en_US',
+        ).format(d);
+      } catch (_) {
+        return DateFormat('d MMMM yyyy, HH:mm').format(d);
+      }
+    }
+
+    final badgeColors = _getBadgeColors(item.visitorStatus);
+    final displayStatus = _displayStatus(item.visitorStatus);
+
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -155,7 +193,7 @@ class _HistoryPageState extends State<HistoryPage> {
                 hSpace(context, 10),
                 Expanded(
                   child: Text(
-                    data['agenda']!,
+                    item.agenda.isNotEmpty ? item.agenda : 'Visit',
                     style: TextStyle(
                       fontWeight: FontWeight.w700,
                       fontSize: rfs(context, 16),
@@ -171,15 +209,15 @@ class _HistoryPageState extends State<HistoryPage> {
                     vertical: rh(context, 4),
                   ),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF2E7D32),
+                    color: badgeColors['bg'],
                     borderRadius: BorderRadius.circular(rw(context, 20)),
                   ),
                   child: Text(
-                    data['status']!,
+                    displayStatus,
                     style: TextStyle(
                       fontSize: rfs(context, 12),
                       fontWeight: FontWeight.w600,
-                      color: Colors.white,
+                      color: badgeColors['text'],
                     ),
                   ),
                 ),
@@ -205,7 +243,7 @@ class _HistoryPageState extends State<HistoryPage> {
                         context,
                         Icons.badge_outlined,
                         'Visitor Type',
-                        data['visitorType']!,
+                        item.visitorTypeName.isNotEmpty ? item.visitorTypeName : 'Visitor',
                       ),
                     ),
                     hSpace(context, 8),
@@ -213,8 +251,8 @@ class _HistoryPageState extends State<HistoryPage> {
                       child: _buildCardField(
                         context,
                         Icons.person_outline,
-                        'Host',
-                        data['host']!,
+                        'Visitor',
+                        item.visitorName.isNotEmpty ? item.visitorName : '-',
                       ),
                     ),
                   ],
@@ -227,7 +265,7 @@ class _HistoryPageState extends State<HistoryPage> {
                         context,
                         Icons.business_outlined,
                         'Organization',
-                        data['organization']!,
+                        item.visitorOrganizationName.isNotEmpty ? item.visitorOrganizationName : '-',
                       ),
                     ),
                     hSpace(context, 8),
@@ -236,7 +274,7 @@ class _HistoryPageState extends State<HistoryPage> {
                         context,
                         Icons.timeline,
                         'Flow',
-                        data['flow']!,
+                        item.flow.isNotEmpty ? item.flow : 'Invitation',
                       ),
                     ),
                   ],
@@ -249,7 +287,7 @@ class _HistoryPageState extends State<HistoryPage> {
                         context,
                         Icons.login_outlined,
                         'Period Start',
-                        data['periodStart']!,
+                        formatDate(item.visitorPeriodStart),
                       ),
                     ),
                     hSpace(context, 8),
@@ -258,7 +296,7 @@ class _HistoryPageState extends State<HistoryPage> {
                         context,
                         Icons.logout_outlined,
                         'Period End',
-                        data['periodEnd']!,
+                        formatDate(item.visitorPeriodEnd),
                       ),
                     ),
                   ],
@@ -310,5 +348,55 @@ class _HistoryPageState extends State<HistoryPage> {
         ),
       ],
     );
+  }
+
+  Map<String, Color> _getBadgeColors(String status) {
+    final lower = status.toLowerCase().trim();
+    if (lower == 'checkin') {
+      return {'bg': const Color(0xFFE8F5E9), 'text': const Color(0xFF2E7D32)};
+    } else if (lower == 'checkout' || lower == 'completed') {
+      return {'bg': const Color(0xFFE8EAF6), 'text': const Color(0xFF283593)};
+    } else if (lower == 'pending' || lower == 'waiting') {
+      return {'bg': const Color(0xFFFFF3E0), 'text': const Color(0xFFEF6C00)};
+    } else if (lower == 'reject' ||
+        lower == 'rejected' ||
+        lower == 'denied' ||
+        lower == 'deny') {
+      return {'bg': const Color(0xFFFFEBEE), 'text': const Color(0xFFC62828)};
+    } else {
+      // Active, Available, or others
+      return {'bg': const Color(0xFFE0F7FA), 'text': const Color(0xFF006064)};
+    }
+  }
+
+  String _displayStatus(String status) {
+    final lowerStatus = status.toLowerCase().trim();
+    if (lowerStatus == 'available') {
+      return 'Available';
+    } else if (lowerStatus == 'pending' || lowerStatus == 'waiting') {
+      return 'Pending';
+    } else if (lowerStatus == 'undercreated') {
+      return 'Under Created';
+    } else if (lowerStatus == 'checkin') {
+      return 'Checked In';
+    } else if (lowerStatus == 'checkout') {
+      return 'Checked Out';
+    } else if (lowerStatus == 'reject' ||
+        lowerStatus == 'rejected' ||
+        lowerStatus == 'denied' ||
+        lowerStatus == 'deny') {
+      return 'Rejected';
+    } else if (lowerStatus == 'preregis' ||
+        lowerStatus == 'praregis' ||
+        lowerStatus == 'praregister') {
+      return 'Praregis';
+    } else if (lowerStatus == 'quickaccess') {
+      return 'Quick Access';
+    } else if (lowerStatus == 'completed') {
+      return 'Completed';
+    } else if (status.isNotEmpty) {
+      return status[0].toUpperCase() + status.substring(1);
+    }
+    return 'Active';
   }
 }

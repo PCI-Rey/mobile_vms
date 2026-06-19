@@ -1030,12 +1030,6 @@ class TodaySummaryPage extends StatelessWidget {
                     color: Colors.black87,
                   ),
                 ),
-                Row(
-                  children: [
-                    const Icon(Icons.filter_list, color: Colors.grey, size: 18),
-                    hSpace(context, 4),
-                  ],
-                ),
               ],
             ),
           ),

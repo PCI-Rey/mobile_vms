@@ -474,6 +474,39 @@ class ApiService {
     }
   }
 
+  /// GET /api/invitation/history
+  Future<Response> getInvitationHistory(
+    String token, {
+    int draw = 1,
+    int start = 0,
+    int length = 100,
+    String sortDir = 'desc',
+    String? startDate,
+    String? endDate,
+  }) async {
+    try {
+      final queryParams = {
+        'draw': draw,
+        'start': start,
+        'length': length,
+        'sort_dir': sortDir,
+        if (startDate != null) 'start-date': startDate,
+        if (endDate != null) 'end-date': endDate,
+      };
+      final response = await _dio.get(
+        '/$pathApi/invitation/history',
+        queryParameters: queryParams,
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+      return response;
+    } on DioException catch (e) {
+      debugPrint('Dio Error getInvitationHistory: ${e.message}');
+      if (e.response != null) return e.response!;
+      rethrow;
+    }
+  }
+
+
   /// GET /api/visitor/transaction/dt
   /// Datatable endpoint — returns all visitor transactions (including history).
   Future<Response> getVisitorDt(

@@ -1,29 +1,63 @@
+import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
-import '../../../../data/datasources/visit_history_datasource.dart';
-import '../../../../data/models/visit_history_model.dart';
-// import '../../../../core/core.dart'; // Removed unused import
+import 'package:intl/intl.dart';
+import '../../../data/datasources/api_service.dart';
+import '../../../data/datasources/hive_service.dart';
+import '../../../data/models/access_pass_model.dart';
 
 class HistoryController extends GetxController {
   final isLoading = false.obs;
-  final history = <VisitHistoryModel>[].obs;
-  final filteredHistory = <VisitHistoryModel>[].obs;
+  final history = <AccessPassModel>[].obs;
+  final filteredHistory = <AccessPassModel>[].obs;
   final errorMessage = Rxn<String>();
   final isRefreshing = false.obs;
+
+  final Rx<DateTime?> startDate = Rx<DateTime?>(DateTime(DateTime.now().year, 1, 1));
+  final Rx<DateTime?> endDate = Rx<DateTime?>(DateTime(DateTime.now().year, 12, 31));
 
   @override
   void onInit() {
     super.onInit();
-    loadHistory();
+    loadHistory(startDate: startDate.value, endDate: endDate.value);
   }
 
-  Future<void> loadHistory() async {
+  Future<void> loadHistory({
+    DateTime? startDate,
+    DateTime? endDate,
+  }) async {
+    this.startDate.value = startDate;
+    this.endDate.value = endDate;
+
     isLoading.value = true;
     errorMessage.value = null;
     try {
-      final result = await dummyGetAllHistory();
-      history.assignAll(result);
-      filteredHistory.assignAll(result);
+      final token = HiveService().getUser()?.token;
+      if (token == null) {
+        errorMessage.value = 'User token not found. Please log in again.';
+        return;
+      }
+
+      final startStr = startDate != null ? DateFormat('yyyy-MM-dd').format(startDate) : null;
+      final endStr = endDate != null ? DateFormat('yyyy-MM-dd').format(endDate) : null;
+
+      final response = await ApiService().getInvitationHistory(
+        token,
+        startDate: startStr,
+        endDate: endStr,
+      );
+
+      if (response.data != null && response.data['status'] == 'success') {
+        final collection = response.data['collection'] as List<dynamic>? ?? [];
+        final parsed = collection
+            .map((item) => AccessPassModel.fromJson(item as Map<String, dynamic>))
+            .toList();
+        history.assignAll(parsed);
+        filteredHistory.assignAll(parsed);
+      } else {
+        errorMessage.value = response.data?['msg']?.toString() ?? 'Failed to load history';
+      }
     } catch (e) {
+      debugPrint('Error loadHistory: $e');
       errorMessage.value = e.toString();
     } finally {
       isLoading.value = false;
@@ -33,30 +67,9 @@ class HistoryController extends GetxController {
   Future<void> refreshHistory() async {
     isRefreshing.value = true;
     try {
-      await loadHistory();
+      await loadHistory(startDate: startDate.value, endDate: endDate.value);
     } finally {
       isRefreshing.value = false;
-    }
-  }
-
-  Future<void> applyFilters({
-    DateTime? startDate,
-    DateTime? endDate,
-    String? location,
-  }) async {
-    isLoading.value = true;
-    errorMessage.value = null;
-    try {
-      final result = await dummyGetHistoryWithFilters(
-        startDate: startDate,
-        endDate: endDate,
-        location: location,
-      );
-      filteredHistory.assignAll(result);
-    } catch (e) {
-      errorMessage.value = e.toString();
-    } finally {
-      isLoading.value = false;
     }
   }
 }
