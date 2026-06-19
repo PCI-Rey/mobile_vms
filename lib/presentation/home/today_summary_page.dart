@@ -1506,7 +1506,11 @@ class TodaySummaryPage extends StatelessWidget {
         xl.CellIndex.indexByColumnRow(columnIndex: 2, rowIndex: 0),
       );
       for (int i = 0; i <= 2; i++) {
-        writeCell(sheet1, i, 0, i == 0 ? xl.TextCellValue(isIndo ? 'LAPORAN RINGKASAN HARIAN' : 'DAILY SUMMARY REPORT') : xl.TextCellValue(''), headerStyle);
+        final cell = sheet1.cell(xl.CellIndex.indexByColumnRow(columnIndex: i, rowIndex: 0));
+        if (i == 0) {
+          cell.value = xl.TextCellValue(isIndo ? 'LAPORAN RINGKASAN HARIAN' : 'DAILY SUMMARY REPORT');
+        }
+        cell.cellStyle = headerStyle;
       }
 
       // Metadata
@@ -1568,7 +1572,11 @@ class TodaySummaryPage extends StatelessWidget {
         xl.CellIndex.indexByColumnRow(columnIndex: 5, rowIndex: s2Row),
       );
       for (int i = 0; i <= 5; i++) {
-        writeCell(sheet2, i, s2Row, i == 0 ? xl.TextCellValue(isIndo ? 'DAFTAR VISITOR HARI INI' : 'TODAY VISITOR LIST') : xl.TextCellValue(''), visitorHeaderStyle);
+        final cell = sheet2.cell(xl.CellIndex.indexByColumnRow(columnIndex: i, rowIndex: s2Row));
+        if (i == 0) {
+          cell.value = xl.TextCellValue(isIndo ? 'DAFTAR VISITOR HARI INI' : 'TODAY VISITOR LIST');
+        }
+        cell.cellStyle = visitorHeaderStyle;
       }
       s2Row++;
 
@@ -1610,7 +1618,11 @@ class TodaySummaryPage extends StatelessWidget {
         xl.CellIndex.indexByColumnRow(columnIndex: 4, rowIndex: s2Row),
       );
       for (int i = 0; i <= 4; i++) {
-        writeCell(sheet2, i, s2Row, i == 0 ? xl.TextCellValue(isIndo ? 'DAFTAR PERSETUJUAN HARI INI' : 'TODAY APPROVAL LIST') : xl.TextCellValue(''), approvalHeaderStyle);
+        final cell = sheet2.cell(xl.CellIndex.indexByColumnRow(columnIndex: i, rowIndex: s2Row));
+        if (i == 0) {
+          cell.value = xl.TextCellValue(isIndo ? 'DAFTAR PERSETUJUAN HARI INI' : 'TODAY APPROVAL LIST');
+        }
+        cell.cellStyle = approvalHeaderStyle;
       }
       s2Row++;
 
@@ -1653,7 +1665,11 @@ class TodaySummaryPage extends StatelessWidget {
         xl.CellIndex.indexByColumnRow(columnIndex: 4, rowIndex: s2Row),
       );
       for (int i = 0; i <= 4; i++) {
-        writeCell(sheet2, i, s2Row, i == 0 ? xl.TextCellValue(isIndo ? 'DAFTAR ALARM HARI INI' : 'TODAY ALARM LIST') : xl.TextCellValue(''), alarmHeaderStyle);
+        final cell = sheet2.cell(xl.CellIndex.indexByColumnRow(columnIndex: i, rowIndex: s2Row));
+        if (i == 0) {
+          cell.value = xl.TextCellValue(isIndo ? 'DAFTAR ALARM HARI INI' : 'TODAY ALARM LIST');
+        }
+        cell.cellStyle = alarmHeaderStyle;
       }
       s2Row++;
 
@@ -1709,7 +1725,11 @@ class TodaySummaryPage extends StatelessWidget {
         verticalAlign: xl.VerticalAlign.Center,
       );
       for (int i = 0; i <= 3; i++) {
-        writeCell(sheet3, i, 0, i == 0 ? xl.TextCellValue(isIndo ? 'DAFTAR RIWAYAT AKTIVITAS' : 'ACTIVITY LOG HISTORY') : xl.TextCellValue(''), darkGreyHeaderStyle);
+        final cell = sheet3.cell(xl.CellIndex.indexByColumnRow(columnIndex: i, rowIndex: 0));
+        if (i == 0) {
+          cell.value = xl.TextCellValue(isIndo ? 'DAFTAR RIWAYAT AKTIVITAS' : 'ACTIVITY LOG HISTORY');
+        }
+        cell.cellStyle = darkGreyHeaderStyle;
       }
 
       int s3Row = 2;

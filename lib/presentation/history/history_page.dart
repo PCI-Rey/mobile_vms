@@ -7,7 +7,6 @@ import '../../core/core.dart';
 import '../../data/models/access_pass_model.dart';
 import '../auth/controller/language_controller.dart';
 import 'controller/history_controller.dart';
-import 'widgets/filter_bottom_sheet.dart';
 
 class HistoryPage extends StatefulWidget {
   const HistoryPage({super.key});
@@ -83,7 +82,10 @@ class _HistoryPageState extends State<HistoryPage> {
                   startDate: startDate,
                   endDate: endDate,
                 ),
-                child: const Text('Retry', style: TextStyle(color: Colors.white)),
+                child: const Text(
+                  'Retry',
+                  style: TextStyle(color: Colors.white),
+                ),
               ),
             ],
           ),
@@ -96,7 +98,11 @@ class _HistoryPageState extends State<HistoryPage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.history, size: rw(context, 64), color: Colors.grey.shade400),
+            Icon(
+              Icons.history,
+              size: rw(context, 64),
+              color: Colors.grey.shade400,
+            ),
             vSpace(context, 16),
             Text(
               'No history found',
@@ -243,7 +249,9 @@ class _HistoryPageState extends State<HistoryPage> {
                         context,
                         Icons.badge_outlined,
                         'Visitor Type',
-                        item.visitorTypeName.isNotEmpty ? item.visitorTypeName : 'Visitor',
+                        item.visitorTypeName.isNotEmpty
+                            ? item.visitorTypeName
+                            : 'Visitor',
                       ),
                     ),
                     hSpace(context, 8),
@@ -265,7 +273,9 @@ class _HistoryPageState extends State<HistoryPage> {
                         context,
                         Icons.business_outlined,
                         'Organization',
-                        item.visitorOrganizationName.isNotEmpty ? item.visitorOrganizationName : '-',
+                        item.visitorOrganizationName.isNotEmpty
+                            ? item.visitorOrganizationName
+                            : '-',
                       ),
                     ),
                     hSpace(context, 8),

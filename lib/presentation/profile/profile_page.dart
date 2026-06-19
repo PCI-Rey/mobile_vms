@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import '../../presentation/auth/controller/user_controller.dart';
 import '../../presentation/auth/login_page.dart';
 import 'profile_dummy_pages.dart';
@@ -298,13 +299,35 @@ class ProfilePage extends StatelessWidget {
                               ],
                               const Spacer(),
                               vSpace(context, 24),
-                              Text(
-                                'Version 1.0.0',
-                                style: TextStyle(color: Colors.grey, fontSize: rfs(context, 12)),
+                              FutureBuilder<PackageInfo>(
+                                future: PackageInfo.fromPlatform(),
+                                builder: (context, snapshot) {
+                                  if (snapshot.hasData) {
+                                    final info = snapshot.data!;
+                                    final versionParts = info.version.split('.');
+                                    final displayVersion = versionParts.length >= 2 && info.buildNumber.isNotEmpty
+                                        ? '${versionParts[0]}.${versionParts[1]}.${info.buildNumber}'
+                                        : info.version;
+                                    return Text(
+                                      'Version $displayVersion',
+                                      style: TextStyle(
+                                        color: Colors.grey,
+                                        fontSize: rfs(context, 12),
+                                      ),
+                                    );
+                                  }
+                                  return Text(
+                                    'Version 1.0.0',
+                                    style: TextStyle(
+                                      color: Colors.grey,
+                                      fontSize: rfs(context, 12),
+                                    ),
+                                  );
+                                },
                               ),
                               vSpace(context, 12),
                               // Logout button
-                              Container(
+                              SizedBox(
                                 width: double.infinity,
                                 height: rh(context, 41),
                                 child: Obx(() {

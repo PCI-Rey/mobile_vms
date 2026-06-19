@@ -3,7 +3,7 @@ description: "Visitor App"
 
 publish_to: "none"
 
-version: 1.0.0+6
+version: 1.0.0+9
 
 environment:
   sdk: ^3.8.1
@@ -39,6 +39,7 @@ dependencies:
   pinput: ^5.0.1
   shared_preferences: ^2.5.3
   shimmer: ^3.0.0
+  package_info_plus: ^8.1.2
   signature: ^6.3.0
   dio: ^5.7.0
   hive: ^2.2.3
