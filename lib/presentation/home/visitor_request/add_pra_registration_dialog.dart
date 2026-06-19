@@ -2013,8 +2013,8 @@ class _FormFieldWidget extends StatelessWidget {
     return Obx(() {
       final list = items.toList();
       final currentId = selectedId.value;
-      final selectedItem = list.any((e) => e.id == currentId)
-          ? list.firstWhere((e) => e.id == currentId)
+      final selectedItem = list.any((e) => e.id.toLowerCase() == currentId.toLowerCase())
+          ? list.firstWhere((e) => e.id.toLowerCase() == currentId.toLowerCase())
           : null;
 
       return _buildPickerTrigger(
@@ -2026,7 +2026,7 @@ class _FormFieldWidget extends StatelessWidget {
             title: hint,
             items: list,
             labelOf: (e) => e.name,
-            isSelected: (e) => e.id == currentId,
+            isSelected: (e) => e.id.toLowerCase() == currentId.toLowerCase(),
           );
           if (result != null) onSelected(result.id, result.name);
         },

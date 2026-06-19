@@ -320,8 +320,19 @@ class PraRegistrationController extends GetxController {
     final uuidRegex = RegExp(
         r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$');
 
-    selectedSiteId.value = '';
-    selectedSiteName.value = '';
+    final String siteIdVal = model.sitePlaceId ?? model.siteId ?? '';
+    selectedSiteId.value = siteIdVal;
+
+    String siteNameVal = model.sitePlaceName;
+    if (siteNameVal.isEmpty && siteIdVal.isNotEmpty) {
+      final matchedSite = sites.firstWhereOrNull(
+        (s) => s.id.toLowerCase() == siteIdVal.toLowerCase(),
+      );
+      if (matchedSite != null) {
+        siteNameVal = matchedSite.name;
+      }
+    }
+    selectedSiteName.value = siteNameVal;
 
     // Resolve host UUID/Name
     String hostIdVal = model.host;

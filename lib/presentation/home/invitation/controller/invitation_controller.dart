@@ -96,7 +96,9 @@ class InvitationController extends GetxController {
     postponedTicketIds.clear();
   }
 
-  final Rx<DateTime?> startDate = Rx<DateTime?>(DateTime.now().subtract(const Duration(days: 7)));
+  final Rx<DateTime?> startDate = Rx<DateTime?>(
+    DateTime.now().subtract(const Duration(days: 7)),
+  );
   final Rx<DateTime?> endDate = Rx<DateTime?>(null);
   final Rx<DateTime> selectedDashboardDate = DateTime(
     DateTime.now().year,
@@ -114,14 +116,18 @@ class InvitationController extends GetxController {
   final RxInt invitationTotalRecords = 0.obs;
 
   // Share Link Tab filters
-  final Rx<DateTime?> startDateShare = Rx<DateTime?>(DateTime.now().subtract(const Duration(days: 7)));
+  final Rx<DateTime?> startDateShare = Rx<DateTime?>(
+    DateTime.now().subtract(const Duration(days: 7)),
+  );
   final Rx<DateTime?> endDateShare = Rx<DateTime?>(null);
   final RxString selectedSiteIdShare = ''.obs;
   final RxString selectedSiteNameShare = ''.obs;
   final RxString selectedStatusShare = ''.obs;
 
   // Quick Access Tab filters
-  final Rx<DateTime?> startDateQuick = Rx<DateTime?>(DateTime.now().subtract(const Duration(days: 7)));
+  final Rx<DateTime?> startDateQuick = Rx<DateTime?>(
+    DateTime.now().subtract(const Duration(days: 7)),
+  );
   final Rx<DateTime?> endDateQuick = Rx<DateTime?>(null);
   final RxString selectedSiteIdQuick = ''.obs;
   final RxString selectedSiteNameQuick = ''.obs;
@@ -161,7 +167,7 @@ class InvitationController extends GetxController {
     fetchApprovalTickets();
     fetchMasterData();
     fetchDashboardShareLinks();
-    
+
     // Initial fetch of today's activities with limited polling
     triggerActivityRefresh();
   }
@@ -293,9 +299,13 @@ class InvitationController extends GetxController {
     // Filter Berdasarkan Status (Lokal)
     if (selectedStatus.value.isNotEmpty) {
       if (selectedStatus.value.toLowerCase() == 'active') {
-        filtered = filtered.where((item) => !item.visitorPeriodEnd.isBefore(DateTime.now())).toList();
+        filtered = filtered
+            .where((item) => !item.visitorPeriodEnd.isBefore(DateTime.now()))
+            .toList();
       } else if (selectedStatus.value.toLowerCase() == 'expired') {
-        filtered = filtered.where((item) => item.visitorPeriodEnd.isBefore(DateTime.now())).toList();
+        filtered = filtered
+            .where((item) => item.visitorPeriodEnd.isBefore(DateTime.now()))
+            .toList();
       } else {
         filtered = filtered
             .where(
@@ -388,7 +398,10 @@ class InvitationController extends GetxController {
       safeStartInv = 0;
       invitationCurrentPage.value = 0;
     }
-    final pagedInv = filtered.skip(safeStartInv).take(invitationPageSize.value).toList();
+    final pagedInv = filtered
+        .skip(safeStartInv)
+        .take(invitationPageSize.value)
+        .toList();
 
     // Quick Access Pagination
     quickTotalRecords.value = quickAccess.length;
@@ -397,7 +410,10 @@ class InvitationController extends GetxController {
       safeStartQuick = 0;
       quickCurrentPage.value = 0;
     }
-    final pagedQuick = quickAccess.skip(safeStartQuick).take(quickPageSize.value).toList();
+    final pagedQuick = quickAccess
+        .skip(safeStartQuick)
+        .take(quickPageSize.value)
+        .toList();
 
     ongoingInvitations.assignAll(pagedInv);
     quickAccessInvitations.assignAll(pagedQuick);
@@ -645,7 +661,7 @@ class InvitationController extends GetxController {
     try {
       final date = selectedDashboardDate.value;
       final formattedDate = DateFormat('yyyy-MM-dd').format(date);
-      
+
       final response = await _api.getTodayActivities(
         token,
         startDate: formattedDate,
@@ -701,18 +717,25 @@ class InvitationController extends GetxController {
         sortDir: 'desc',
       );
 
-      debugPrint('DEBUG: fetchShareLinks count response status: ${countResponse.statusCode}');
+      debugPrint(
+        'DEBUG: fetchShareLinks count response status: ${countResponse.statusCode}',
+      );
       if (countResponse.data is Map &&
           (countResponse.data['status'] == 'success' ||
               countResponse.data['status_code'] == 200)) {
-        final recordsFiltered = (countResponse.data['recordsFiltered'] ??
-                countResponse.data['RecordsFiltered'] ??
-                countResponse.data['records_filtered'] ??
-                50) as int;
-        
-        final collectionList = countResponse.data['collection'] as List<dynamic>? ?? [];
-        debugPrint('DEBUG: fetchShareLinks RecordsFiltered = $recordsFiltered, collection length = ${collectionList.length}');
-        
+        final recordsFiltered =
+            (countResponse.data['recordsFiltered'] ??
+                    countResponse.data['RecordsFiltered'] ??
+                    countResponse.data['records_filtered'] ??
+                    50)
+                as int;
+
+        final collectionList =
+            countResponse.data['collection'] as List<dynamic>? ?? [];
+        debugPrint(
+          'DEBUG: fetchShareLinks RecordsFiltered = $recordsFiltered, collection length = ${collectionList.length}',
+        );
+
         if (recordsFiltered <= collectionList.length) {
           // If the total count is <= the retrieved collection size (e.g. 10), we already have the full list!
           allShareLinks.assignAll(collectionList);
@@ -726,13 +749,18 @@ class InvitationController extends GetxController {
             length: totalCount,
             sortDir: 'desc',
           );
-          
-          debugPrint('DEBUG: fetchShareLinks second response status: ${response.statusCode}');
+
+          debugPrint(
+            'DEBUG: fetchShareLinks second response status: ${response.statusCode}',
+          );
           if (response.data is Map &&
               (response.data['status'] == 'success' ||
                   response.data['status_code'] == 200)) {
-            final collection = response.data['collection'] as List<dynamic>? ?? [];
-            debugPrint('DEBUG: fetchShareLinks second collection length = ${collection.length}');
+            final collection =
+                response.data['collection'] as List<dynamic>? ?? [];
+            debugPrint(
+              'DEBUG: fetchShareLinks second collection length = ${collection.length}',
+            );
             allShareLinks.assignAll(collection);
           } else {
             allShareLinks.assignAll(collectionList);
@@ -775,8 +803,12 @@ class InvitationController extends GetxController {
   }
 
   void _applyShareFilters() {
-    debugPrint('DEBUG: _applyShareFilters starting with ${allShareLinks.length} items');
-    debugPrint('DEBUG: filters: startDateShare=${startDateShare.value}, endDateShare=${endDateShare.value}, selectedSiteIdShare=${selectedSiteIdShare.value}, selectedSiteNameShare=${selectedSiteNameShare.value}, selectedStatusShare=${selectedStatusShare.value}');
+    debugPrint(
+      'DEBUG: _applyShareFilters starting with ${allShareLinks.length} items',
+    );
+    debugPrint(
+      'DEBUG: filters: startDateShare=${startDateShare.value}, endDateShare=${endDateShare.value}, selectedSiteIdShare=${selectedSiteIdShare.value}, selectedSiteNameShare=${selectedSiteNameShare.value}, selectedStatusShare=${selectedStatusShare.value}',
+    );
     List<dynamic> filtered = List.from(allShareLinks);
 
     // 1. Filter Berdasarkan Tanggal (Lokal)
@@ -903,7 +935,9 @@ class InvitationController extends GetxController {
     });
 
     // 4. Paginate
-    debugPrint('DEBUG: _applyShareFilters: after filtering and sorting, count = ${filtered.length}');
+    debugPrint(
+      'DEBUG: _applyShareFilters: after filtering and sorting, count = ${filtered.length}',
+    );
     shareLinkTotalRecords.value = filtered.length;
     final start = shareLinkCurrentPage.value * shareLinkPageSize.value;
 
@@ -918,7 +952,9 @@ class InvitationController extends GetxController {
         .skip(safeStart)
         .take(shareLinkPageSize.value)
         .toList();
-    debugPrint('DEBUG: _applyShareFilters: final pagedList size = ${pagedList.length}');
+    debugPrint(
+      'DEBUG: _applyShareFilters: final pagedList size = ${pagedList.length}',
+    );
     shareLinks.assignAll(pagedList);
   }
 
@@ -1618,7 +1654,8 @@ class InvitationController extends GetxController {
         listTrxVisitorId,
       );
       if (response.data is Map) {
-        final success = response.data['status'] == 'success' ||
+        final success =
+            response.data['status'] == 'success' ||
             response.data['status_code'] == 200;
         if (success) {
           triggerActivityRefresh();

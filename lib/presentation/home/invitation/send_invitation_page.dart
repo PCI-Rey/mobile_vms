@@ -4870,9 +4870,9 @@ class EmptyStateWidget extends StatelessWidget {
                                   return agenda.toLowerCase().contains(query.toLowerCase()) ||
                                       site.toLowerCase().contains(query.toLowerCase());
                                 },
-                                onSelected: (selectedItem) {
+                                  onSelected: (selectedItem) {
                                   showDialog<bool>(
-                                    context: context,
+                                    context: Get.context!,
                                     barrierDismissible: false,
                                     builder: (context) => CreateShareLinkDialog(
                                       duplicateData: selectedItem as Map<String, dynamic>,
@@ -4880,7 +4880,7 @@ class EmptyStateWidget extends StatelessWidget {
                                   ).then((result) {
                                     controller.fetchShareLinks();
                                     if (result == true) {
-                                      Navigator.of(context).pop(); // Dismiss DuplicateSelectorSheet
+                                      Get.back(); // Dismiss DuplicateSelectorSheet
                                     }
                                   });
                                 },
@@ -4930,7 +4930,7 @@ class EmptyStateWidget extends StatelessWidget {
 
                                   // Show loading indicator
                                   showDialog(
-                                    context: context,
+                                    context: Get.context!,
                                     barrierDismissible: false,
                                     builder: (context) => const Center(
                                       child: CircularProgressIndicator(),
@@ -4940,10 +4940,10 @@ class EmptyStateWidget extends StatelessWidget {
                                   final String fetchId = model.id;
                                   subVisitors = await controller.fetchTransactionVisitors(fetchId);
 
-                                  Navigator.of(context).pop(); // Dismiss loading
+                                  Get.back(); // Dismiss loading
 
                                   showDialog<bool>(
-                                    context: context,
+                                    context: Get.context!,
                                     barrierDismissible: false,
                                     builder: (context) => CreateQuickAccessDialog(
                                       duplicateData: model,
@@ -4951,7 +4951,7 @@ class EmptyStateWidget extends StatelessWidget {
                                     ),
                                   ).then((result) {
                                     if (result == true) {
-                                      Navigator.of(context).pop(); // Dismiss DuplicateSelectorSheet
+                                      Get.back(); // Dismiss DuplicateSelectorSheet
                                       controller.fetchOngoingInvitations(clearFilters: false);
                                     }
                                   });
@@ -4960,7 +4960,7 @@ class EmptyStateWidget extends StatelessWidget {
                             } else {
                               final filtered = controller.allRawVisitors.where((item) {
                                 final flowLower = item.flow.toLowerCase();
-                                return flowLower != 'invitation' && flowLower != 'quickaccessvisit' &&
+                                return flowLower != 'quickaccessvisit' &&
                                     !(item.agenda.isEmpty &&
                                         item.hostName.isEmpty &&
                                         item.visitorTypeName.isEmpty);
@@ -4999,7 +4999,7 @@ class EmptyStateWidget extends StatelessWidget {
 
                                   // Show loading indicator
                                   showDialog(
-                                    context: context,
+                                    context: Get.context!,
                                     barrierDismissible: false,
                                     builder: (context) => const Center(
                                       child: CircularProgressIndicator(),
@@ -5009,15 +5009,15 @@ class EmptyStateWidget extends StatelessWidget {
                                   final String fetchId = model.id;
                                   subVisitors = await controller.fetchTransactionVisitors(fetchId);
 
-                                  Navigator.of(context).pop(); // Dismiss loading
+                                  Get.back(); // Dismiss loading
 
                                   final result = await showAddPraRegistrationDialog(
-                                    context,
+                                    Get.context!,
                                     duplicateData: model,
                                     subVisitors: subVisitors,
                                   );
                                   if (result == true) {
-                                    Navigator.of(context).pop(); // Dismiss DuplicateSelectorSheet
+                                    Get.back(); // Dismiss DuplicateSelectorSheet
                                     onDuplicateSuccess?.call();
                                   }
                                 },

@@ -15,10 +15,28 @@ class ShareLinkDetailModal {
     final int currentUsage = item['current_usage'] ?? 0;
     final bool isSingleUse = item['is_single_use'] == true;
     final String agenda = item['agenda'] ?? '-';
-    final String siteId = (item['site_place_id'] ?? item['site_place'] ?? item['site_id'] ?? '').toString();
+    dynamic siteRaw = item['site_place_id'] ?? item['site_place'] ?? item['site_id'];
+    String siteId = '';
+    if (siteRaw != null) {
+      if (siteRaw is Map) {
+        siteId = (siteRaw['id'] ?? siteRaw['site_place_id'] ?? siteRaw['site_id'] ?? '').toString();
+      } else {
+        siteId = siteRaw.toString();
+      }
+    }
+
+    String? localSiteName;
+    if (item['site_place_name'] != null && item['site_place_name'].toString().isNotEmpty) {
+      localSiteName = item['site_place_name'].toString();
+    } else if (item['site_place'] is Map && item['site_place']['name'] != null) {
+      localSiteName = item['site_place']['name'].toString();
+    }
 
     Future<String> fetchSiteNameFromApi() async {
-      if (siteId.isEmpty || siteId == 'null') return '-';
+      if (localSiteName != null && localSiteName.isNotEmpty) {
+        return localSiteName;
+      }
+      if (siteId.isEmpty || siteId == 'null' || siteId.contains('{')) return '-';
       final token = HiveService().getUser()?.token;
       if (token == null) return '-';
       try {

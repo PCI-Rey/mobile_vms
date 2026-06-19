@@ -92,21 +92,45 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
       }
       
       // 2. Host
-      final hostVal = (data['host_id'] ?? data['host'] ?? '').toString();
+      dynamic hostRaw = data['host_id'] ?? data['host'];
+      String hostVal = '';
+      if (hostRaw != null) {
+        if (hostRaw is Map) {
+          hostVal = (hostRaw['id'] ?? hostRaw['host_id'] ?? '').toString();
+        } else {
+          hostVal = hostRaw.toString();
+        }
+      }
       if (hostVal.isNotEmpty && hostVal != 'null') {
         isHostEnabled = true;
         selectedHostId = hostVal;
       }
       
       // 3. Site
-      final siteVal = (data['site_place_id'] ?? data['site_place'] ?? data['site_id'] ?? '').toString();
+      dynamic siteRaw = data['site_place_id'] ?? data['site_place'] ?? data['site_id'];
+      String siteVal = '';
+      if (siteRaw != null) {
+        if (siteRaw is Map) {
+          siteVal = (siteRaw['id'] ?? siteRaw['site_place_id'] ?? siteRaw['site_id'] ?? '').toString();
+        } else {
+          siteVal = siteRaw.toString();
+        }
+      }
       if (siteVal.isNotEmpty && siteVal != 'null') {
         isSiteEnabled = true;
         selectedSiteId = siteVal;
       }
       
       // 4. Visitor Type
-      final vTypeVal = (data['visitor_type_id'] ?? data['visitor_type'] ?? '').toString();
+      dynamic vTypeRaw = data['visitor_type_id'] ?? data['visitor_type'];
+      String vTypeVal = '';
+      if (vTypeRaw != null) {
+        if (vTypeRaw is Map) {
+          vTypeVal = (vTypeRaw['id'] ?? vTypeRaw['visitor_type_id'] ?? '').toString();
+        } else {
+          vTypeVal = vTypeRaw.toString();
+        }
+      }
       if (vTypeVal.isNotEmpty && vTypeVal != 'null') {
         isVisitorTypeEnabled = true;
         selectedVisitorTypeId = vTypeVal;
@@ -623,7 +647,7 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
     String? selectedName;
     if (value != null) {
       final selectedItem = items.firstWhere(
-        (i) => i['id'].toString() == value,
+        (i) => i['id'].toString().toLowerCase() == value.toLowerCase(),
         orElse: () => {},
       );
       selectedName = selectedItem['name'];
@@ -690,7 +714,8 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
                 itemCount: items.length,
                 itemBuilder: (context, index) {
                   final item = items[index];
-                  final isSelected = item['id'].toString() == currentValue;
+                  final isSelected = item['id'].toString().toLowerCase() ==
+                      currentValue?.toLowerCase();
                   return ListTile(
                     title: Text(
                       item['name'] ?? '',
