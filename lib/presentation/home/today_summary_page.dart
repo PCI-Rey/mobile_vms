@@ -5,6 +5,8 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:open_filex/open_filex.dart';
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
 import '../../core/core.dart';
 import '../../core/helper/responsive_helper.dart';
 import '../auth/controller/language_controller.dart';
@@ -337,23 +339,17 @@ class TodaySummaryPage extends StatelessWidget {
               border: Border.all(color: Colors.grey.shade200),
             ),
             child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Row(
-                  children: [
-                    const Icon(Icons.calendar_month, size: 18, color: Color(0xFF1976D2)),
-                    hSpace(context, 8),
-                    Text(
-                      formattedDate,
-                      style: TextStyle(
-                        fontSize: rfs(context, 14),
-                        fontWeight: FontWeight.w500,
-                        color: Colors.black87,
-                      ),
-                    ),
-                  ],
+                const Icon(Icons.calendar_month, size: 18, color: Color(0xFF1976D2)),
+                hSpace(context, 8),
+                Text(
+                  formattedDate,
+                  style: TextStyle(
+                    fontSize: rfs(context, 14),
+                    fontWeight: FontWeight.w500,
+                    color: Colors.black87,
+                  ),
                 ),
-                const Icon(Icons.keyboard_arrow_down, color: Colors.grey),
               ],
             ),
           ),

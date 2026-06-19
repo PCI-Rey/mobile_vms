@@ -6,6 +6,7 @@ import '../../core/core.dart';
 import '../auth/controller/user_controller.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../data/datasources/auth_datasource.dart';
+import '../home/invitation/controller/invitation_controller.dart';
 
 // ============================================================================
 // SECURITY PAGE
@@ -251,6 +252,9 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
 
     if (success) {
       Get.back();
+      if (Get.isRegistered<InvitationController>()) {
+        Get.find<InvitationController>().triggerActivityRefresh();
+      }
       Get.snackbar(
         (title ?? 'Success').capitalizeFirst ?? 'Success',
         msg ?? 'Password changed successfully',

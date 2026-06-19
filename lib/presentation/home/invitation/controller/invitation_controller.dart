@@ -49,6 +49,8 @@ class InvitationController extends GetxController {
   bool hasShownPendingPopup = false;
   Timer? _reminderTimer;
   Timer? _countdownTimer;
+  Timer? _activitiesTimer;
+  int _pendingPollCount = 0;
   final RxInt reminderCountdown = 0.obs;
   final RxSet<String> postponedTicketIds = <String>{}.obs;
   final RxMap<String, String> ticketVisitorNames = <String, String>{}.obs;
@@ -129,6 +131,23 @@ class InvitationController extends GetxController {
   final RxInt quickPageSize = 10.obs;
   final RxInt quickTotalRecords = 0.obs;
 
+  void triggerActivityRefresh() {
+    _pendingPollCount = 5;
+    fetchTodayActivities(isSilent: true);
+
+    if (_activitiesTimer == null || !_activitiesTimer!.isActive) {
+      _activitiesTimer = Timer.periodic(const Duration(seconds: 2), (timer) {
+        if (_pendingPollCount > 0) {
+          fetchTodayActivities(isSilent: true);
+          _pendingPollCount--;
+        } else {
+          timer.cancel();
+          _activitiesTimer = null;
+        }
+      });
+    }
+  }
+
   @override
   void onInit() {
     super.onInit();
@@ -141,12 +160,15 @@ class InvitationController extends GetxController {
     fetchApprovalTickets();
     fetchMasterData();
     fetchDashboardShareLinks();
-    fetchTodayActivities();
+    
+    // Initial fetch of today's activities with limited polling
+    triggerActivityRefresh();
   }
 
   @override
   void onClose() {
     _reminderTimer?.cancel();
+    _activitiesTimer?.cancel();
     super.onClose();
   }
 
@@ -906,6 +928,7 @@ class InvitationController extends GetxController {
           response.data['status_code'] == 200) {
         await fetchShareLinks(resetPage: true); // Refresh list
         fetchDashboardShareLinks(); // Refresh dashboard list
+        triggerActivityRefresh();
 
         // Return the created item if available in response
         Map<String, dynamic>? createdItem;
@@ -981,6 +1004,7 @@ class InvitationController extends GetxController {
           fetchDashboardShareLinks();
         });
 
+        triggerActivityRefresh();
         return true;
       }
       return false;
@@ -1006,6 +1030,7 @@ class InvitationController extends GetxController {
           (response.data['status'] == 'success' ||
               response.data['status_code'] == 200)) {
         await fetchOngoingInvitations(clearFilters: false);
+        triggerActivityRefresh();
         return true;
       }
 
@@ -1156,6 +1181,7 @@ class InvitationController extends GetxController {
           colorText: Colors.white,
         );
         fetchApprovalTickets(isSilent: true); // Refresh list
+        triggerActivityRefresh();
         return true;
       }
       Get.snackbar(
@@ -1203,6 +1229,7 @@ class InvitationController extends GetxController {
           colorText: Colors.white,
         );
         fetchApprovalTickets(isSilent: true); // Refresh list
+        triggerActivityRefresh();
         return true;
       }
       Get.snackbar(
@@ -1533,8 +1560,12 @@ class InvitationController extends GetxController {
         listTrxVisitorId,
       );
       if (response.data is Map) {
-        return response.data['status'] == 'success' ||
+        final success = response.data['status'] == 'success' ||
             response.data['status_code'] == 200;
+        if (success) {
+          triggerActivityRefresh();
+        }
+        return success;
       }
       return false;
     } catch (e) {
@@ -1602,6 +1633,7 @@ class InvitationController extends GetxController {
           colorText: Colors.white,
         );
         fetchApprovalTickets(isSilent: true);
+        triggerActivityRefresh();
         return true;
       }
 
@@ -1661,6 +1693,7 @@ class InvitationController extends GetxController {
           colorText: Colors.white,
         );
         fetchApprovalTickets(isSilent: true);
+        triggerActivityRefresh();
         return true;
       }
 

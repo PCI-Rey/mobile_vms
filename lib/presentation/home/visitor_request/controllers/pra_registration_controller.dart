@@ -1326,9 +1326,9 @@ class PraRegistrationController extends GetxController {
 
         // Auto Refresh Invitation List if available
         if (Get.isRegistered<InvitationController>()) {
-          Get.find<InvitationController>().fetchOngoingInvitations(
-            isSilent: true,
-          );
+          final invCtrl = Get.find<InvitationController>();
+          invCtrl.fetchOngoingInvitations(isSilent: true);
+          invCtrl.triggerActivityRefresh();
         }
 
         return true;
