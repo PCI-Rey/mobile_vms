@@ -1,12 +1,10 @@
-import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:open_filex/open_filex.dart';
-import 'package:pdf/pdf.dart';
-import 'package:pdf/widgets.dart' as pw;
+import 'package:excel/excel.dart' as xl;
 import '../../core/core.dart';
 import '../../core/helper/responsive_helper.dart';
 import '../auth/controller/language_controller.dart';
@@ -1199,7 +1197,7 @@ class TodaySummaryPage extends StatelessWidget {
         : Get.put(AlarmController());
 
     final formatDate = DateFormat('yyyy-MM-dd').format(date);
-    final String filename = 'summary_report_$formatDate.csv';
+    final String filename = 'summary_report_$formatDate.xlsx';
 
     try {
       // 1. Show exporting SnackBar
@@ -1296,84 +1294,456 @@ class TodaySummaryPage extends StatelessWidget {
       final int mediumPriorityAlarms = dateAlarms.where((a) => a.status == AlarmStatus.medium).length;
       final int lowPriorityAlarms = dateAlarms.where((a) => a.status == AlarmStatus.low).length;
 
-      // 3. Build CSV string content
-      final StringBuffer csv = StringBuffer();
-      
-      // Header Section
-      csv.writeln('=========================================');
-      csv.writeln(isIndo ? 'LAPORAN RINGKASAN HARIAN' : 'DAILY SUMMARY REPORT');
-      csv.writeln('=========================================');
-      csv.writeln('${isIndo ? "Tanggal Laporan" : "Report Date"}: $formatDate');
-      csv.writeln('${isIndo ? "Waktu Dibuat" : "Generated At"}: ${DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now())}');
-      csv.writeln('');
+      // 3. Compile Activities (similar to Tab 3)
+      final List<_ActivityItem> activities = [];
 
-      // Statistics Section
-      csv.writeln(isIndo ? '1. STATISTIK RINGKASAN' : '1. SUMMARY STATISTICS');
-      csv.writeln('${isIndo ? "Kategori" : "Category"},${isIndo ? "Metrik" : "Metric"},${isIndo ? "Nilai" : "Value"}');
-      csv.writeln('Visitor Today,${isIndo ? "Total Visitor" : "Total Visitors"},$totalTodayVisitors');
-      csv.writeln('Visitor Today,${isIndo ? "Sudah Check-in" : "Checked In"},$checkedInToday');
-      csv.writeln('Visitor Today,${isIndo ? "Belum Check-in" : "Not Checked In"},$notCheckedInToday');
-      csv.writeln('Visitor Today,${isIndo ? "Sudah Check-out" : "Checked Out"},$checkedOutToday');
-      csv.writeln('Visitor Today,${isIndo ? "Masih Berada Di Lokasi" : "Still In Location"},$stillOnSiteToday');
-      
-      csv.writeln('Waiting Approval,${isIndo ? "Total Permintaan" : "Total Requests"},$totalRequests');
-      csv.writeln('Waiting Approval,${isIndo ? "Menunggu Persetujuan" : "Awaiting Approval"},$awaitingApproval');
-      csv.writeln('Waiting Approval,${isIndo ? "Disetujui" : "Approved"},$approved');
-      csv.writeln('Waiting Approval,${isIndo ? "Ditolak" : "Rejected"},$rejected');
-      
-      csv.writeln('Active Invitation,${isIndo ? "Total Undangan Aktif" : "Total Active Invitations"},$activeInvitations');
-      csv.writeln('Active Invitation,${isIndo ? "Akan Kadaluarsa (<= 3 hari)" : "Expiring Soon (<= 3 days)"},$expiringSoonInvitations');
-      csv.writeln('Active Invitation,${isIndo ? "Kadaluarsa" : "Expired"},$expiredInvitations');
-      
-      csv.writeln('Active Alarm,${isIndo ? "Total Alarm Aktif" : "Total Active Alarms"},$totalActiveAlarms');
-      csv.writeln('Active Alarm,${isIndo ? "Prioritas Tinggi" : "High Priority"},$highPriorityAlarms');
-      csv.writeln('Active Alarm,${isIndo ? "Prioritas Sedang" : "Medium Priority"},$mediumPriorityAlarms');
-      csv.writeln('Active Alarm,${isIndo ? "Prioritas Rendah" : "Low Priority"},$lowPriorityAlarms');
-      csv.writeln('');
-
-      // Detail Visitors Section
-      csv.writeln(isIndo ? '2. DAFTAR VISITOR HARI INI' : '2. TODAY VISITOR LIST');
-      csv.writeln('${isIndo ? "Nama Visitor" : "Visitor Name"},${isIndo ? "Tipe Visitor" : "Visitor Type"},${isIndo ? "Nama Host" : "Host Name"},${isIndo ? "Mulai Kunjungan" : "Period Start"},${isIndo ? "Selesai Kunjungan" : "Period End"},Status');
+      // 3.1. Visitors Check-in / Check-out
       for (final v in todayVisitorsList) {
-        final name = v.visitorName.replaceAll(',', ' ');
-        final type = v.visitorTypeName.replaceAll(',', ' ');
-        final host = v.hostName.replaceAll(',', ' ');
-        final start = DateFormat('yyyy-MM-dd HH:mm').format(v.visitorPeriodStart);
-        final end = DateFormat('yyyy-MM-dd HH:mm').format(v.visitorPeriodEnd);
-        csv.writeln('$name,$type,$host,$start,$end,${v.visitorStatus}');
-      }
-      csv.writeln('');
-
-      // Detail Approval Tickets Section
-      csv.writeln(isIndo ? '3. DAFTAR PERSETUJUAN HARI INI' : '3. TODAY APPROVAL LIST');
-      csv.writeln('Agenda,${isIndo ? "Nama Pengaju" : "Visitor Name"},${isIndo ? "Mulai Kunjungan" : "Period Start"},${isIndo ? "Selesai Kunjungan" : "Period End"},Status Approval');
-      for (final t in dateTickets) {
-        final agenda = (t.agenda ?? '-').replaceAll(',', ' ');
-        final String ticketId = t.ticketId ?? '';
-        final String visName = invitationController.ticketVisitorNames[ticketId] ?? t.hostName ?? '-';
-        final name = visName.replaceAll(',', ' ');
-        final start = t.visitorPeriodStart != null ? DateFormat('yyyy-MM-dd HH:mm').format(t.visitorPeriodStart!) : '-';
-        final end = t.visitorPeriodEnd != null ? DateFormat('yyyy-MM-dd HH:mm').format(t.visitorPeriodEnd!) : '-';
-        csv.writeln('$agenda,$name,$start,$end,${t.approvalActorStatus}');
-      }
-      csv.writeln('');
-
-      // Detail Alarms Section
-      csv.writeln(isIndo ? '4. DAFTAR ALARM HARI INI' : '4. TODAY ALARM LIST');
-      csv.writeln('${isIndo ? "Deskripsi" : "Description"},${isIndo ? "Lokasi" : "Location"},${isIndo ? "Status/Prioritas" : "Priority/Status"},${isIndo ? "Waktu Muncul" : "Created At"},Status');
-      for (final a in dateAlarms) {
-        final desc = a.alarmDescription.replaceAll(',', ' ');
-        final loc = a.location.replaceAll(',', ' ');
-        final priority = a.status == AlarmStatus.high ? 'High' : a.status == AlarmStatus.medium ? 'Medium' : 'Low';
-        final start = DateFormat('yyyy-MM-dd HH:mm').format(a.createdAt);
-        final status = a.isApproved ? 'Approved' : a.isDenied ? 'Denied' : 'Active';
-        csv.writeln('$desc,$loc,$priority,$start,$status');
+        final statusLower = v.visitorStatus.toLowerCase();
+        if (statusLower == 'checkin' || statusLower == 'checkout') {
+          activities.add(_ActivityItem(
+            icon: Icons.login,
+            titleIndo: 'Visitor Check-in',
+            titleEng: 'Visitor Check-in',
+            time: DateFormat('HH:mm').format(v.visitorPeriodStart),
+            subtitle: v.visitorName,
+            timestamp: v.visitorPeriodStart,
+          ));
+        }
+        if (statusLower == 'checkout') {
+          activities.add(_ActivityItem(
+            icon: Icons.logout,
+            titleIndo: 'Visitor Check-out',
+            titleEng: 'Visitor Check-out',
+            time: DateFormat('HH:mm').format(v.visitorPeriodEnd),
+            subtitle: v.visitorName,
+            timestamp: v.visitorPeriodEnd,
+          ));
+        }
       }
 
-      // 4. Save to file
+      // 3.2. Invitations Created
+      for (final inv in dateInvitations) {
+        final createTime = inv.invitationCreatedAt ?? inv.visitorPeriodStart;
+        activities.add(_ActivityItem(
+          icon: Icons.note_add_outlined,
+          titleIndo: 'Undangan Dibuat',
+          titleEng: 'Invitation Created',
+          time: DateFormat('HH:mm').format(createTime),
+          subtitle: inv.agenda,
+          timestamp: createTime,
+        ));
+      }
+
+      // 3.3. Approval Requests
+      for (final ticket in dateTickets) {
+        final status = (ticket.approvalStatus ?? '').toLowerCase();
+        final actorStatus = (ticket.approvalActorStatus ?? '').toLowerCase();
+        final timestamp = ticket.approvedAt ?? ticket.approvalTicketAt ?? ticket.visitorPeriodStart ?? DateTime.now();
+        
+        if (status == 'approved' || status == 'success' || actorStatus == 'approved' || actorStatus == 'success') {
+          activities.add(_ActivityItem(
+            icon: Icons.check_circle_outline,
+            titleIndo: 'Permintaan Disetujui',
+            titleEng: 'Request Approved',
+            time: DateFormat('HH:mm').format(timestamp),
+            subtitle: ticket.agenda ?? 'Request',
+            timestamp: timestamp,
+          ));
+        } else if (status == 'rejected' || status == 'reject' || actorStatus == 'rejected' || actorStatus == 'reject') {
+          activities.add(_ActivityItem(
+            icon: Icons.cancel_outlined,
+            titleIndo: 'Permintaan Ditolak',
+            titleEng: 'Request Rejected',
+            time: DateFormat('HH:mm').format(timestamp),
+            subtitle: ticket.agenda ?? 'Request',
+            timestamp: timestamp,
+          ));
+        } else {
+          activities.add(_ActivityItem(
+            icon: Icons.access_time,
+            titleIndo: 'Menunggu Persetujuan',
+            titleEng: 'Awaiting Approval',
+            time: DateFormat('HH:mm').format(timestamp),
+            subtitle: ticket.agenda ?? 'Request',
+            timestamp: timestamp,
+          ));
+        }
+      }
+
+      // 3.4. Alarms
+      for (final alarm in dateAlarms) {
+        final String badgeIndo = alarm.status == AlarmStatus.high
+            ? 'Tinggi'
+            : alarm.status == AlarmStatus.medium
+                ? 'Sedang'
+                : 'Rendah';
+        final String badgeEng = alarm.status == AlarmStatus.high
+            ? 'High'
+            : alarm.status == AlarmStatus.medium
+                ? 'Medium'
+                : 'Low';
+
+        activities.add(_ActivityItem(
+          icon: Icons.warning_amber_rounded,
+          titleIndo: 'Alarm Aktif',
+          titleEng: 'Active Alarm',
+          time: DateFormat('HH:mm').format(alarm.createdAt),
+          subtitle: '${alarm.alarmDescription} - ${alarm.location}',
+          badgeIndo: badgeIndo,
+          badgeEng: badgeEng,
+          timestamp: alarm.createdAt,
+        ));
+
+        if (alarm.isApproved || alarm.isDenied) {
+          activities.add(_ActivityItem(
+            icon: Icons.check_circle,
+            titleIndo: 'Alarm Selesai',
+            titleEng: 'Alarm Cleared',
+            time: DateFormat('HH:mm').format(alarm.createdAt.add(const Duration(minutes: 5))),
+            subtitle: '${alarm.alarmDescription} - ${alarm.location}',
+            timestamp: alarm.createdAt.add(const Duration(minutes: 5)),
+          ));
+        }
+      }
+
+      // Sort descending by timestamp
+      activities.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+
+      // 4. Build Excel Object
+      final xl.Excel excelObj = xl.Excel.createExcel();
+      
+      // Rename default sheet to 'All Summary'
+      final String defaultSheet = excelObj.getDefaultSheet() ?? 'Sheet1';
+      final String sheet1Name = isIndo ? 'Semua Ringkasan' : 'All Summary';
+      excelObj.rename(defaultSheet, sheet1Name);
+      
+      final xl.Sheet sheet1 = excelObj[sheet1Name];
+      final String sheet2Name = isIndo ? 'Detail' : 'Detail';
+      final String sheet3Name = isIndo ? 'Riwayat Aktivitas' : 'Activity Log';
+      final xl.Sheet sheet2 = excelObj[sheet2Name];
+      final xl.Sheet sheet3 = excelObj[sheet3Name];
+
+      // Custom Styles
+      final headerStyle = xl.CellStyle(
+        bold: true,
+        fontSize: 14,
+        fontColorHex: xl.ExcelColor.fromHexString('#FFFFFF'),
+        backgroundColorHex: xl.ExcelColor.fromHexString('#1976D2'),
+        horizontalAlign: xl.HorizontalAlign.Center,
+        verticalAlign: xl.VerticalAlign.Center,
+      );
+
+      final visitorHeaderStyle = xl.CellStyle(
+        bold: true,
+        fontSize: 12,
+        fontColorHex: xl.ExcelColor.fromHexString('#FFFFFF'),
+        backgroundColorHex: xl.ExcelColor.fromHexString('#1976D2'), // Blue
+        horizontalAlign: xl.HorizontalAlign.Center,
+        verticalAlign: xl.VerticalAlign.Center,
+      );
+
+      final approvalHeaderStyle = xl.CellStyle(
+        bold: true,
+        fontSize: 12,
+        fontColorHex: xl.ExcelColor.fromHexString('#FFFFFF'),
+        backgroundColorHex: xl.ExcelColor.fromHexString('#F57C00'), // Orange
+        horizontalAlign: xl.HorizontalAlign.Center,
+        verticalAlign: xl.VerticalAlign.Center,
+      );
+
+      final alarmHeaderStyle = xl.CellStyle(
+        bold: true,
+        fontSize: 12,
+        fontColorHex: xl.ExcelColor.fromHexString('#FFFFFF'),
+        backgroundColorHex: xl.ExcelColor.fromHexString('#D32F2F'), // Red
+        horizontalAlign: xl.HorizontalAlign.Center,
+        verticalAlign: xl.VerticalAlign.Center,
+      );
+
+      final subHeaderStyle = xl.CellStyle(
+        bold: true,
+        fontSize: 11,
+        fontColorHex: xl.ExcelColor.fromHexString('#333333'),
+        backgroundColorHex: xl.ExcelColor.fromHexString('#E0E0E0'),
+        horizontalAlign: xl.HorizontalAlign.Center,
+        verticalAlign: xl.VerticalAlign.Center,
+      );
+      
+      final centeredBoldStyle = xl.CellStyle(
+        bold: true,
+        horizontalAlign: xl.HorizontalAlign.Center,
+        verticalAlign: xl.VerticalAlign.Center,
+      );
+
+      final centeredNormalStyle = xl.CellStyle(
+        horizontalAlign: xl.HorizontalAlign.Center,
+        verticalAlign: xl.VerticalAlign.Center,
+      );
+      
+      final leftNormalStyle = xl.CellStyle(
+        horizontalAlign: xl.HorizontalAlign.Center,
+        verticalAlign: xl.VerticalAlign.Center,
+      );
+
+      // Helper function to write to cells easily
+      void writeCell(xl.Sheet sheet, int col, int row, xl.CellValue value, xl.CellStyle style) {
+        final cell = sheet.cell(xl.CellIndex.indexByColumnRow(columnIndex: col, rowIndex: row));
+        cell.value = value;
+        cell.cellStyle = style;
+      }
+
+      // ==========================================
+      // SHEET 1: ALL SUMMARY
+      // ==========================================
+      sheet1.setColumnWidth(0, 30.0);
+      sheet1.setColumnWidth(1, 35.0);
+      sheet1.setColumnWidth(2, 20.0);
+
+      // Title Banner A1:C1
+      sheet1.merge(
+        xl.CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: 0),
+        xl.CellIndex.indexByColumnRow(columnIndex: 2, rowIndex: 0),
+      );
+      for (int i = 0; i <= 2; i++) {
+        writeCell(sheet1, i, 0, i == 0 ? xl.TextCellValue(isIndo ? 'LAPORAN RINGKASAN HARIAN' : 'DAILY SUMMARY REPORT') : xl.TextCellValue(''), headerStyle);
+      }
+
+      // Metadata
+      writeCell(sheet1, 0, 2, xl.TextCellValue(isIndo ? 'Tanggal Laporan:' : 'Report Date:'), centeredBoldStyle);
+      writeCell(sheet1, 1, 2, xl.TextCellValue(formatDate), leftNormalStyle);
+      
+      writeCell(sheet1, 0, 3, xl.TextCellValue(isIndo ? 'Waktu Dibuat:' : 'Generated At:'), centeredBoldStyle);
+      writeCell(sheet1, 1, 3, xl.TextCellValue(DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now())), leftNormalStyle);
+
+      // Section Header
+      writeCell(sheet1, 0, 5, xl.TextCellValue(isIndo ? 'Kategori' : 'Category'), subHeaderStyle);
+      writeCell(sheet1, 1, 5, xl.TextCellValue(isIndo ? 'Metrik' : 'Metric'), subHeaderStyle);
+      writeCell(sheet1, 2, 5, xl.TextCellValue(isIndo ? 'Nilai' : 'Value'), subHeaderStyle);
+
+      // Populate Statistics Rows
+      int rowIdx = 6;
+      void addStatRow(String category, String metric, int value) {
+        writeCell(sheet1, 0, rowIdx, xl.TextCellValue(category), centeredNormalStyle);
+        writeCell(sheet1, 1, rowIdx, xl.TextCellValue(metric), leftNormalStyle);
+        writeCell(sheet1, 2, rowIdx, xl.IntCellValue(value), centeredNormalStyle);
+        rowIdx++;
+      }
+
+      addStatRow('Visitor Today', isIndo ? 'Total Visitor' : 'Total Visitors', totalTodayVisitors);
+      addStatRow('Visitor Today', isIndo ? 'Sudah Check-in' : 'Checked In', checkedInToday);
+      addStatRow('Visitor Today', isIndo ? 'Belum Check-in' : 'Not Checked In', notCheckedInToday);
+      addStatRow('Visitor Today', isIndo ? 'Sudah Check-out' : 'Checked Out', checkedOutToday);
+      addStatRow('Visitor Today', isIndo ? 'Masih Berada Di Lokasi' : 'Still In Location', stillOnSiteToday);
+      
+      addStatRow('Waiting Approval', isIndo ? 'Total Permintaan' : 'Total Requests', totalRequests);
+      addStatRow('Waiting Approval', isIndo ? 'Menunggu Persetujuan' : 'Awaiting Approval', awaitingApproval);
+      addStatRow('Waiting Approval', isIndo ? 'Disetujui' : 'Approved', approved);
+      addStatRow('Waiting Approval', isIndo ? 'Ditolak' : 'Rejected', rejected);
+      
+      addStatRow('Active Invitation', isIndo ? 'Total Undangan Aktif' : 'Total Active Invitations', activeInvitations);
+      addStatRow('Active Invitation', isIndo ? 'Akan Kadaluarsa (<= 3 hari)' : 'Expiring Soon (<= 3 days)', expiringSoonInvitations);
+      addStatRow('Active Invitation', isIndo ? 'Kadaluarsa' : 'Expired', expiredInvitations);
+      
+      addStatRow('Active Alarm', isIndo ? 'Total Alarm Aktif' : 'Total Active Alarms', totalActiveAlarms);
+      addStatRow('Active Alarm', isIndo ? 'Prioritas Tinggi' : 'High Priority', highPriorityAlarms);
+      addStatRow('Active Alarm', isIndo ? 'Prioritas Sedang' : 'Medium Priority', mediumPriorityAlarms);
+      addStatRow('Active Alarm', isIndo ? 'Prioritas Rendah' : 'Low Priority', lowPriorityAlarms);
+
+      // ==========================================
+      // SHEET 2: DETAIL
+      // ==========================================
+      sheet2.setColumnWidth(0, 35.0);
+      sheet2.setColumnWidth(1, 30.0);
+      sheet2.setColumnWidth(2, 30.0);
+      sheet2.setColumnWidth(3, 30.0);
+      sheet2.setColumnWidth(4, 30.0);
+      sheet2.setColumnWidth(5, 20.0);
+
+      int s2Row = 0;
+
+      // 2.1. Today's Visitor List
+      sheet2.merge(
+        xl.CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: s2Row),
+        xl.CellIndex.indexByColumnRow(columnIndex: 5, rowIndex: s2Row),
+      );
+      for (int i = 0; i <= 5; i++) {
+        writeCell(sheet2, i, s2Row, i == 0 ? xl.TextCellValue(isIndo ? 'DAFTAR VISITOR HARI INI' : 'TODAY VISITOR LIST') : xl.TextCellValue(''), visitorHeaderStyle);
+      }
+      s2Row++;
+
+      writeCell(sheet2, 0, s2Row, xl.TextCellValue(isIndo ? 'Nama Visitor' : 'Visitor Name'), subHeaderStyle);
+      writeCell(sheet2, 1, s2Row, xl.TextCellValue(isIndo ? 'Tipe Visitor' : 'Visitor Type'), subHeaderStyle);
+      writeCell(sheet2, 2, s2Row, xl.TextCellValue(isIndo ? 'Nama Host' : 'Host Name'), subHeaderStyle);
+      writeCell(sheet2, 3, s2Row, xl.TextCellValue(isIndo ? 'Mulai Kunjungan' : 'Period Start'), subHeaderStyle);
+      writeCell(sheet2, 4, s2Row, xl.TextCellValue(isIndo ? 'Selesai Kunjungan' : 'Period End'), subHeaderStyle);
+      writeCell(sheet2, 5, s2Row, xl.TextCellValue('Status'), subHeaderStyle);
+      s2Row++;
+
+      if (todayVisitorsList.isEmpty) {
+        sheet2.merge(
+          xl.CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: s2Row),
+          xl.CellIndex.indexByColumnRow(columnIndex: 5, rowIndex: s2Row),
+          customValue: xl.TextCellValue(isIndo ? 'Tidak ada visitor hari ini' : 'No visitors today'),
+        );
+        writeCell(sheet2, 0, s2Row, xl.TextCellValue(isIndo ? 'Tidak ada visitor hari ini' : 'No visitors today'), centeredNormalStyle);
+        s2Row++;
+      } else {
+        for (final v in todayVisitorsList) {
+          final start = DateFormat('yyyy-MM-dd HH:mm').format(v.visitorPeriodStart);
+          final end = DateFormat('yyyy-MM-dd HH:mm').format(v.visitorPeriodEnd);
+          writeCell(sheet2, 0, s2Row, xl.TextCellValue(v.visitorName), centeredNormalStyle);
+          writeCell(sheet2, 1, s2Row, xl.TextCellValue(v.visitorTypeName), centeredNormalStyle);
+          writeCell(sheet2, 2, s2Row, xl.TextCellValue(v.hostName), centeredNormalStyle);
+          writeCell(sheet2, 3, s2Row, xl.TextCellValue(start), centeredNormalStyle);
+          writeCell(sheet2, 4, s2Row, xl.TextCellValue(end), centeredNormalStyle);
+          writeCell(sheet2, 5, s2Row, xl.TextCellValue(v.visitorStatus), centeredNormalStyle);
+          s2Row++;
+        }
+      }
+
+      s2Row += 2;
+
+      // 2.2. Today's Approval List
+      sheet2.merge(
+        xl.CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: s2Row),
+        xl.CellIndex.indexByColumnRow(columnIndex: 4, rowIndex: s2Row),
+      );
+      for (int i = 0; i <= 4; i++) {
+        writeCell(sheet2, i, s2Row, i == 0 ? xl.TextCellValue(isIndo ? 'DAFTAR PERSETUJUAN HARI INI' : 'TODAY APPROVAL LIST') : xl.TextCellValue(''), approvalHeaderStyle);
+      }
+      s2Row++;
+
+      writeCell(sheet2, 0, s2Row, xl.TextCellValue('Agenda'), subHeaderStyle);
+      writeCell(sheet2, 1, s2Row, xl.TextCellValue(isIndo ? 'Nama Pengaju' : 'Visitor Name'), subHeaderStyle);
+      writeCell(sheet2, 2, s2Row, xl.TextCellValue(isIndo ? 'Mulai Kunjungan' : 'Period Start'), subHeaderStyle);
+      writeCell(sheet2, 3, s2Row, xl.TextCellValue(isIndo ? 'Selesai Kunjungan' : 'Period End'), subHeaderStyle);
+      writeCell(sheet2, 4, s2Row, xl.TextCellValue(isIndo ? 'Status Approval' : 'Approval Status'), subHeaderStyle);
+      s2Row++;
+
+      if (dateTickets.isEmpty) {
+        sheet2.merge(
+          xl.CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: s2Row),
+          xl.CellIndex.indexByColumnRow(columnIndex: 4, rowIndex: s2Row),
+          customValue: xl.TextCellValue(isIndo ? 'Tidak ada permintaan persetujuan' : 'No approval requests today'),
+        );
+        writeCell(sheet2, 0, s2Row, xl.TextCellValue(isIndo ? 'Tidak ada permintaan persetujuan' : 'No approval requests today'), centeredNormalStyle);
+        s2Row++;
+      } else {
+        for (final t in dateTickets) {
+          final ticketId = t.ticketId ?? '';
+          final String visName = invitationController.ticketVisitorNames[ticketId] ?? t.hostName ?? '-';
+          final start = t.visitorPeriodStart != null ? DateFormat('yyyy-MM-dd HH:mm').format(t.visitorPeriodStart!) : '-';
+          final end = t.visitorPeriodEnd != null ? DateFormat('yyyy-MM-dd HH:mm').format(t.visitorPeriodEnd!) : '-';
+          
+          writeCell(sheet2, 0, s2Row, xl.TextCellValue(t.agenda ?? '-'), centeredNormalStyle);
+          writeCell(sheet2, 1, s2Row, xl.TextCellValue(visName), centeredNormalStyle);
+          writeCell(sheet2, 2, s2Row, xl.TextCellValue(start), centeredNormalStyle);
+          writeCell(sheet2, 3, s2Row, xl.TextCellValue(end), centeredNormalStyle);
+          writeCell(sheet2, 4, s2Row, xl.TextCellValue(t.approvalActorStatus ?? t.approvalStatus ?? 'Pending'), centeredNormalStyle);
+          s2Row++;
+        }
+      }
+
+      s2Row += 2;
+
+      // 2.3. Today's Alarm List
+      sheet2.merge(
+        xl.CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: s2Row),
+        xl.CellIndex.indexByColumnRow(columnIndex: 4, rowIndex: s2Row),
+      );
+      for (int i = 0; i <= 4; i++) {
+        writeCell(sheet2, i, s2Row, i == 0 ? xl.TextCellValue(isIndo ? 'DAFTAR ALARM HARI INI' : 'TODAY ALARM LIST') : xl.TextCellValue(''), alarmHeaderStyle);
+      }
+      s2Row++;
+
+      writeCell(sheet2, 0, s2Row, xl.TextCellValue(isIndo ? 'Deskripsi' : 'Description'), subHeaderStyle);
+      writeCell(sheet2, 1, s2Row, xl.TextCellValue(isIndo ? 'Lokasi' : 'Location'), subHeaderStyle);
+      writeCell(sheet2, 2, s2Row, xl.TextCellValue(isIndo ? 'Prioritas' : 'Priority'), subHeaderStyle);
+      writeCell(sheet2, 3, s2Row, xl.TextCellValue(isIndo ? 'Waktu Muncul' : 'Created At'), subHeaderStyle);
+      writeCell(sheet2, 4, s2Row, xl.TextCellValue('Status'), subHeaderStyle);
+      s2Row++;
+
+      if (dateAlarms.isEmpty) {
+        sheet2.merge(
+          xl.CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: s2Row),
+          xl.CellIndex.indexByColumnRow(columnIndex: 4, rowIndex: s2Row),
+          customValue: xl.TextCellValue(isIndo ? 'Tidak ada alarm hari ini' : 'No alarms today'),
+        );
+        writeCell(sheet2, 0, s2Row, xl.TextCellValue(isIndo ? 'Tidak ada alarm hari ini' : 'No alarms today'), centeredNormalStyle);
+        s2Row++;
+      } else {
+        for (final a in dateAlarms) {
+          final priority = a.status == AlarmStatus.high ? 'High' : a.status == AlarmStatus.medium ? 'Medium' : 'Low';
+          final start = DateFormat('yyyy-MM-dd HH:mm').format(a.createdAt);
+          final status = a.isApproved ? 'Approved' : a.isDenied ? 'Denied' : 'Active';
+
+          writeCell(sheet2, 0, s2Row, xl.TextCellValue(a.alarmDescription), centeredNormalStyle);
+          writeCell(sheet2, 1, s2Row, xl.TextCellValue(a.location), centeredNormalStyle);
+          writeCell(sheet2, 2, s2Row, xl.TextCellValue(priority), centeredNormalStyle);
+          writeCell(sheet2, 3, s2Row, xl.TextCellValue(start), centeredNormalStyle);
+          writeCell(sheet2, 4, s2Row, xl.TextCellValue(status), centeredNormalStyle);
+          s2Row++;
+        }
+      }
+
+      // ==========================================
+      // SHEET 3: ACTIVITY LOG
+      // ==========================================
+      sheet3.setColumnWidth(0, 20.0);
+      sheet3.setColumnWidth(1, 35.0);
+      sheet3.setColumnWidth(2, 50.0);
+      sheet3.setColumnWidth(3, 25.0);
+
+      // Title Banner A1:D1
+      sheet3.merge(
+        xl.CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: 0),
+        xl.CellIndex.indexByColumnRow(columnIndex: 3, rowIndex: 0),
+      );
+      final darkGreyHeaderStyle = xl.CellStyle(
+        bold: true,
+        fontSize: 14,
+        fontColorHex: xl.ExcelColor.fromHexString('#FFFFFF'),
+        backgroundColorHex: xl.ExcelColor.fromHexString('#37474F'), // Dark grey-blue
+        horizontalAlign: xl.HorizontalAlign.Center,
+        verticalAlign: xl.VerticalAlign.Center,
+      );
+      for (int i = 0; i <= 3; i++) {
+        writeCell(sheet3, i, 0, i == 0 ? xl.TextCellValue(isIndo ? 'DAFTAR RIWAYAT AKTIVITAS' : 'ACTIVITY LOG HISTORY') : xl.TextCellValue(''), darkGreyHeaderStyle);
+      }
+
+      int s3Row = 2;
+      writeCell(sheet3, 0, s3Row, xl.TextCellValue(isIndo ? 'Waktu' : 'Time'), subHeaderStyle);
+      writeCell(sheet3, 1, s3Row, xl.TextCellValue(isIndo ? 'Aktivitas' : 'Event'), subHeaderStyle);
+      writeCell(sheet3, 2, s3Row, xl.TextCellValue(isIndo ? 'Deskripsi' : 'Description'), subHeaderStyle);
+      writeCell(sheet3, 3, s3Row, xl.TextCellValue(isIndo ? 'Prioritas / Lencana' : 'Priority / Badge'), subHeaderStyle);
+      s3Row++;
+
+      if (activities.isEmpty) {
+        sheet3.merge(
+          xl.CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: s3Row),
+          xl.CellIndex.indexByColumnRow(columnIndex: 3, rowIndex: s3Row),
+          customValue: xl.TextCellValue(isIndo ? 'Tidak ada riwayat aktivitas' : 'No activity logs found'),
+        );
+        writeCell(sheet3, 0, s3Row, xl.TextCellValue(isIndo ? 'Tidak ada riwayat aktivitas' : 'No activity logs found'), centeredNormalStyle);
+      } else {
+        for (final act in activities) {
+          writeCell(sheet3, 0, s3Row, xl.TextCellValue(act.time), centeredNormalStyle);
+          writeCell(sheet3, 1, s3Row, xl.TextCellValue(isIndo ? act.titleIndo : act.titleEng), centeredNormalStyle);
+          writeCell(sheet3, 2, s3Row, xl.TextCellValue(act.subtitle), centeredNormalStyle);
+          writeCell(sheet3, 3, s3Row, xl.TextCellValue(isIndo ? (act.badgeIndo ?? '-') : (act.badgeEng ?? '-')), centeredNormalStyle);
+          s3Row++;
+        }
+      }
+
+      // 5. Save and Write Excel Bytes
+      final List<int>? fileBytes = excelObj.save();
+      if (fileBytes == null) {
+        throw Exception('Failed to generate Excel file bytes');
+      }
+
       String? path;
       bool saveSuccess = false;
-      final bytes = utf8.encode(csv.toString());
 
       if (Platform.isAndroid) {
         try {
@@ -1381,12 +1751,12 @@ class TodaySummaryPage extends StatelessWidget {
           if (await dir.exists()) {
             final testPath = '${dir.path}/$filename';
             final file = File(testPath);
-            await file.writeAsBytes(bytes);
+            await file.writeAsBytes(fileBytes);
             path = testPath;
             saveSuccess = true;
           }
         } catch (e) {
-          debugPrint('Failed to save CSV to public Download folder: $e');
+          debugPrint('Failed to save Excel to public Download folder: $e');
         }
       }
 
@@ -1394,10 +1764,10 @@ class TodaySummaryPage extends StatelessWidget {
         final dir = await getApplicationDocumentsDirectory();
         path = '${dir.path}/$filename';
         final file = File(path);
-        await file.writeAsBytes(bytes);
+        await file.writeAsBytes(fileBytes);
       }
 
-      // 5. Show Get.snackbar with OPEN button
+      // 6. Show Get.snackbar with OPEN button
       Get.snackbar(
         'Success',
         isIndo ? 'Laporan ringkasan berhasil diunduh!' : 'Summary report downloaded successfully!',
@@ -1436,6 +1806,10 @@ class TodaySummaryPage extends StatelessWidget {
           ),
         ),
       );
+
+      // Auto open
+      OpenFilex.open(path!);
+
     } catch (e) {
       debugPrint("Unexpected error while exporting summary Excel: $e");
       Get.snackbar(

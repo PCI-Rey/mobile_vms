@@ -45,6 +45,7 @@ class _SendInvitationPageState extends State<SendInvitationPage>
   DateTime? endDate;
   String? selectedGedung;
   String? selectedStatus;
+  String? selectedFlow;
 
   // Share Link filter variables (moved to ShareLinkListInline for self-containment)
 
@@ -79,6 +80,7 @@ class _SendInvitationPageState extends State<SendInvitationPage>
       siteId: controller.selectedSiteId.value.isEmpty ? null : controller.selectedSiteId.value,
       siteName: controller.selectedSiteName.value.isEmpty ? null : controller.selectedSiteName.value,
       status: controller.selectedStatus.value.isEmpty ? null : controller.selectedStatus.value,
+      flow: controller.selectedFlow.value.isEmpty ? null : controller.selectedFlow.value,
     );
     controller.setQuickFilters(
       start: controller.startDateQuick.value,
@@ -104,6 +106,9 @@ class _SendInvitationPageState extends State<SendInvitationPage>
     selectedStatus = controller.selectedStatus.value.isEmpty
         ? null
         : controller.selectedStatus.value;
+    selectedFlow = controller.selectedFlow.value.isEmpty
+        ? null
+        : controller.selectedFlow.value;
 
     startDateQuick = controller.startDateQuick.value;
     endDateQuick = controller.endDateQuick.value;
@@ -311,6 +316,7 @@ class _SendInvitationPageState extends State<SendInvitationPage>
                             initialEndDate: endDate,
                             initialSiteId: inviteCtrl.selectedSiteId.value,
                             initialStatus: selectedStatus,
+                            initialFlow: selectedFlow,
                             showStatusFilter: false,
                             filterMode: 'invitation',
                           ),
@@ -322,6 +328,7 @@ class _SendInvitationPageState extends State<SendInvitationPage>
                         endDate = result['endDate'];
                         selectedGedung = result['siteName'];
                         selectedStatus = result['status'];
+                        selectedFlow = result['flow'];
                       });
                       inviteCtrl.setFilters(
                         start: startDate,
@@ -329,6 +336,7 @@ class _SendInvitationPageState extends State<SendInvitationPage>
                         siteId: result['siteId'],
                         siteName: result['siteName'],
                         status: result['status'],
+                        flow: result['flow'],
                       );
                     }
                   },
@@ -348,6 +356,7 @@ class _SendInvitationPageState extends State<SendInvitationPage>
                         siteId: null,
                         siteName: null,
                         status: selectedStatus,
+                        flow: selectedFlow,
                       );
                     },
                   ),
@@ -369,6 +378,7 @@ class _SendInvitationPageState extends State<SendInvitationPage>
                         siteId: inviteCtrl.selectedSiteId.value,
                         siteName: inviteCtrl.selectedSiteName.value,
                         status: selectedStatus,
+                        flow: selectedFlow,
                       );
                     },
                   ),
@@ -387,6 +397,26 @@ class _SendInvitationPageState extends State<SendInvitationPage>
                         siteId: inviteCtrl.selectedSiteId.value,
                         siteName: inviteCtrl.selectedSiteName.value,
                         status: null,
+                        flow: selectedFlow,
+                      );
+                    },
+                  ),
+                ],
+                if (selectedFlow != null && selectedFlow!.isNotEmpty) ...[
+                  hSpace(context, 8),
+                  _buildFilterValueChip(
+                    context,
+                    'Flow: $selectedFlow',
+                    onClear: () {
+                      final inviteCtrl = Get.find<InvitationController>();
+                      setState(() => selectedFlow = null);
+                      inviteCtrl.setFilters(
+                        start: startDate,
+                        end: endDate,
+                        siteId: inviteCtrl.selectedSiteId.value,
+                        siteName: inviteCtrl.selectedSiteName.value,
+                        status: selectedStatus,
+                        flow: null,
                       );
                     },
                   ),
@@ -2164,6 +2194,9 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
           ),
         ),
       );
+
+      // Auto open the PDF file immediately
+      OpenFilex.open(path!);
     } catch (e) {
       Get.snackbar(
         'Error',
@@ -3239,6 +3272,9 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
                                     ),
                                   ),
                                 );
+
+                                // Auto open the Visitor Card file immediately
+                                OpenFilex.open(path!);
                               } catch (e) {
                                 Get.snackbar(
                                   'Error',

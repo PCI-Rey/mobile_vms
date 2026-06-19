@@ -106,6 +106,7 @@ class InvitationController extends GetxController {
   final RxString selectedSiteId = ''.obs;
   final RxString selectedSiteName = ''.obs;
   final RxString selectedStatus = ''.obs;
+  final RxString selectedFlow = ''.obs;
 
   // Invitation Pagination States
   final RxInt invitationCurrentPage = 0.obs;
@@ -178,6 +179,7 @@ class InvitationController extends GetxController {
     String? siteId,
     String? siteName,
     String? status,
+    String? flow,
   }) {
     invitationCurrentPage.value = 0;
     startDate.value = start;
@@ -185,6 +187,7 @@ class InvitationController extends GetxController {
     selectedSiteId.value = siteId ?? '';
     selectedSiteName.value = siteName ?? '';
     selectedStatus.value = status ?? '';
+    selectedFlow.value = flow ?? '';
     _applyFilters();
   }
 
@@ -289,13 +292,27 @@ class InvitationController extends GetxController {
 
     // Filter Berdasarkan Status (Lokal)
     if (selectedStatus.value.isNotEmpty) {
-      filtered = filtered
-          .where(
-            (item) =>
-                item.visitorStatus.toLowerCase() ==
-                selectedStatus.value.toLowerCase(),
-          )
-          .toList();
+      if (selectedStatus.value.toLowerCase() == 'active') {
+        filtered = filtered.where((item) => !item.visitorPeriodEnd.isBefore(DateTime.now())).toList();
+      } else if (selectedStatus.value.toLowerCase() == 'expired') {
+        filtered = filtered.where((item) => item.visitorPeriodEnd.isBefore(DateTime.now())).toList();
+      } else {
+        filtered = filtered
+            .where(
+              (item) =>
+                  item.visitorStatus.toLowerCase() ==
+                  selectedStatus.value.toLowerCase(),
+            )
+            .toList();
+      }
+    }
+
+    // Filter Berdasarkan Flow (Lokal)
+    if (selectedFlow.value.isNotEmpty) {
+      filtered = filtered.where((item) {
+        final label = _getAccessPassJenis(item);
+        return label.toLowerCase() == selectedFlow.value.toLowerCase();
+      }).toList();
     }
 
     // ─── Filter Quick Access (Lokal) ───
@@ -384,6 +401,42 @@ class InvitationController extends GetxController {
     quickAccessInvitations.assignAll(pagedQuick);
   }
 
+  String _getAccessPassJenis(AccessPassModel item) {
+    if (item.visitorStatus.isEmpty && item.flow.isEmpty) {
+      return 'Invitation';
+    }
+    final lowerFlow = item.flow.toLowerCase();
+    if (lowerFlow == 'quickaccessvisit') {
+      return 'Quick Access';
+    } else if (lowerFlow == 'praregister') {
+      return 'Praregis';
+    } else if (lowerFlow == 'invitation') {
+      return 'Invitation';
+    } else {
+      final lowerStatus = item.visitorStatus.toLowerCase();
+      if (lowerStatus == 'available') {
+        return 'Available';
+      } else if (lowerStatus == 'pending') {
+        return 'Pending';
+      } else if (lowerStatus == 'undercreated') {
+        return 'Under Created';
+      } else if (lowerStatus == 'checkin') {
+        return 'Checkin';
+      } else if (lowerStatus == 'checkout') {
+        return 'Checkout';
+      } else if (lowerStatus == 'reject' ||
+          lowerStatus == 'rejected' ||
+          lowerStatus == 'denied') {
+        return 'Rejected';
+      } else if (item.visitorStatus.isNotEmpty) {
+        return item.visitorStatus[0].toUpperCase() +
+            item.visitorStatus.substring(1);
+      } else {
+        return 'Invitation';
+      }
+    }
+  }
+
   Future<void> fetchOngoingInvitations({
     bool isSilent = false,
     bool clearFilters = false,
@@ -399,6 +452,7 @@ class InvitationController extends GetxController {
       selectedSiteId.value = '';
       selectedSiteName.value = '';
       selectedStatus.value = '';
+      selectedFlow.value = '';
 
       startDateQuick.value = null;
       endDateQuick.value = null;

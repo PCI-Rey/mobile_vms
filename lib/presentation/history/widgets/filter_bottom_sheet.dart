@@ -11,6 +11,7 @@ class FilterBottomSheet extends StatefulWidget {
   final DateTime? initialEndDate;
   final String? initialSiteId;
   final String? initialStatus;
+  final String? initialFlow;
   final bool showStatusFilter;
   final bool showSiteFilter;
   final List<String>? customStatusList;
@@ -22,6 +23,7 @@ class FilterBottomSheet extends StatefulWidget {
     this.initialEndDate,
     this.initialSiteId,
     this.initialStatus,
+    this.initialFlow,
     this.showStatusFilter = false,
     this.showSiteFilter = true,
     this.customStatusList,
@@ -37,6 +39,7 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
   DateTime? endDate;
   String? selectedGedung;
   String? selectedStatus;
+  String? selectedFlow;
   late final List<String> statusList;
   final List<Map<String, String>> gedungList = [];
   bool isLoadingGedung = false;
@@ -49,7 +52,12 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
     endDate = widget.initialEndDate;
     selectedGedung = widget.initialSiteId;
     selectedStatus = widget.initialStatus;
-    statusList = widget.customStatusList ?? ['Praregis', 'Checkin', 'Checkout'];
+    selectedFlow = widget.initialFlow;
+    if (widget.filterMode == 'invitation') {
+      statusList = ['Active', 'Expired'];
+    } else {
+      statusList = widget.customStatusList ?? ['Praregis', 'Checkin', 'Checkout'];
+    }
     _fetchGedung();
   }
 
@@ -251,6 +259,55 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
     );
   }
 
+  void _showFlowSelection(BuildContext context) {
+    final flowList = ['Praregis', 'Invitation', 'Checkin', 'Checkout'];
+    showModalBottomSheet(
+      context: context,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(rw(context, 20)),
+        ),
+      ),
+      builder: (context) {
+        return Container(
+          padding: EdgeInsets.all(rw(context, 20)),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Select Flow',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: rfs(context, 18),
+                ),
+              ),
+              vSpace(context, 16),
+              Flexible(
+                child: ListView.builder(
+                  shrinkWrap: true,
+                  itemCount: flowList.length,
+                  itemBuilder: (context, index) {
+                    final item = flowList[index];
+                    return ListTile(
+                      title: Text(item),
+                      trailing: selectedFlow == item
+                          ? const Icon(Icons.check, color: AppColors.primary500)
+                          : null,
+                      onTap: () {
+                        setState(() => selectedFlow = item);
+                        Navigator.pop(context);
+                      },
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
@@ -406,7 +463,7 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                     ),
             ],
 
-            if (widget.showStatusFilter) ...[
+            if (widget.showStatusFilter || widget.filterMode == 'invitation') ...[
               vSpace(context, 16),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -435,6 +492,52 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                               color:
                                   selectedStatus == null ||
                                       selectedStatus!.isEmpty
+                                  ? Colors.grey
+                                  : Colors.black,
+                              fontSize: rfs(context, 14),
+                            ),
+                          ),
+                          const Icon(
+                            Icons.keyboard_arrow_down,
+                            color: Colors.grey,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+
+            if (widget.filterMode == 'invitation') ...[
+              vSpace(context, 16),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text("Flow", style: TextStyles.subtitle2),
+                  vSpace(context, 6),
+                  GestureDetector(
+                    onTap: () => _showFlowSelection(context),
+                    child: Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: rw(context, 12),
+                        vertical: rh(context, 16),
+                      ),
+                      decoration: BoxDecoration(
+                        color: const Color(0xffF2F8FD),
+                        borderRadius: BorderRadius.circular(rw(context, 8)),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            selectedFlow?.isNotEmpty == true
+                                ? selectedFlow!
+                                : 'Select Flow',
+                            style: TextStyle(
+                              color:
+                                  selectedFlow == null ||
+                                      selectedFlow!.isEmpty
                                   ? Colors.grey
                                   : Colors.black,
                               fontSize: rfs(context, 14),
@@ -497,6 +600,7 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                     'siteId': selectedGedung,
                     'siteName': selectedSite?['name'],
                     'status': selectedStatus,
+                    'flow': selectedFlow,
                   });
                 },
                 child: const Text(

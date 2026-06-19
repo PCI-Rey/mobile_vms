@@ -924,6 +924,9 @@ class _AccessPassDialogState extends State<AccessPassDialog> {
           ),
         ),
       );
+      
+      // Auto open the PDF file immediately
+      OpenFilex.open(path!);
     } catch (e) {
       debugPrint("Unexpected error while saving access pass PDF: $e");
       Get.snackbar(
