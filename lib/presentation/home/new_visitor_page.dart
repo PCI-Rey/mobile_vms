@@ -200,7 +200,7 @@ class _NewVisitorPageState extends State<NewVisitorPage> {
   }
 
   Widget _buildVisitorRow(BuildContext context, AccessPassModel visitor, int index) {
-    final timeStr = DateFormat('HH:mm').format(visitor.visitorPeriodStart);
+    final timeStr = DateFormat('HH:mm').format(visitor.invitationCreatedAt ?? visitor.visitorPeriodStart);
     final badgeColors = _getBadgeColors(visitor.visitorStatus);
     final displayStatus = _displayStatus(visitor.visitorStatus);
 

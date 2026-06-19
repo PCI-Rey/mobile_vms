@@ -254,7 +254,7 @@ class InvitationController extends GetxController {
     // 1. Filter Berdasarkan Tanggal (Lokal)
     if (startDate.value != null) {
       filtered = filtered.where((item) {
-        final itemDate = item.visitorPeriodStart;
+        final itemDate = item.invitationCreatedAt ?? item.visitorPeriodStart;
         final start = DateTime(
           startDate.value!.year,
           startDate.value!.month,
@@ -267,7 +267,7 @@ class InvitationController extends GetxController {
 
     if (endDate.value != null) {
       filtered = filtered.where((item) {
-        final itemDate = item.visitorPeriodStart;
+        final itemDate = item.invitationCreatedAt ?? item.visitorPeriodStart;
         final end = DateTime(
           endDate.value!.year,
           endDate.value!.month,
@@ -318,7 +318,7 @@ class InvitationController extends GetxController {
     // ─── Filter Quick Access (Lokal) ───
     if (startDateQuick.value != null) {
       quickAccess = quickAccess.where((item) {
-        final itemDate = item.visitorPeriodStart;
+        final itemDate = item.invitationCreatedAt ?? item.visitorPeriodStart;
         final start = DateTime(
           startDateQuick.value!.year,
           startDateQuick.value!.month,
@@ -331,7 +331,7 @@ class InvitationController extends GetxController {
 
     if (endDateQuick.value != null) {
       quickAccess = quickAccess.where((item) {
-        final itemDate = item.visitorPeriodStart;
+        final itemDate = item.invitationCreatedAt ?? item.visitorPeriodStart;
         final end = DateTime(
           endDateQuick.value!.year,
           endDateQuick.value!.month,
@@ -371,9 +371,11 @@ class InvitationController extends GetxController {
       if (aExpired != bExpired) {
         return aExpired ? 1 : -1;
       }
+      final aDate = a.invitationCreatedAt ?? a.visitorPeriodStart;
+      final bDate = b.invitationCreatedAt ?? b.visitorPeriodStart;
       return isNewestFirst.value
-          ? b.visitorPeriodStart.compareTo(a.visitorPeriodStart)
-          : a.visitorPeriodStart.compareTo(b.visitorPeriodStart);
+          ? bDate.compareTo(aDate)
+          : aDate.compareTo(bDate);
     }
 
     filtered.sort(compareAccessPass);
@@ -1450,10 +1452,12 @@ class InvitationController extends GetxController {
         .where((item) => item.visitorName.trim().isNotEmpty)
         .toList();
 
-    // Sort descending by visitorPeriodStart
-    filteredResults.sort(
-      (a, b) => b.visitorPeriodStart.compareTo(a.visitorPeriodStart),
-    );
+    // Sort descending by invitationCreatedAt
+    filteredResults.sort((a, b) {
+      final aDate = a.invitationCreatedAt ?? a.visitorPeriodStart;
+      final bDate = b.invitationCreatedAt ?? b.visitorPeriodStart;
+      return bDate.compareTo(aDate);
+    });
     return filteredResults;
   }
 
