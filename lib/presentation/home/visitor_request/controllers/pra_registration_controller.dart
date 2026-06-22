@@ -320,7 +320,7 @@ class PraRegistrationController extends GetxController {
     final uuidRegex = RegExp(
         r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$');
 
-    final String siteIdVal = model.sitePlaceId ?? model.siteId ?? '';
+    final String siteIdVal = model.sitePlaceId ?? model.siteId;
     selectedSiteId.value = siteIdVal;
 
     String siteNameVal = model.sitePlaceName;
