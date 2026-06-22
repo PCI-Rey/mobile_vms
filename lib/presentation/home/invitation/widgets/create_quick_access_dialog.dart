@@ -83,7 +83,9 @@ class _CreateQuickAccessDialogState extends State<CreateQuickAccessDialog> {
       bool isSelf = model.isReceiverSelf;
       if (!isSelf) {
         if (recEmailLower.isNotEmpty && recEmailLower == userEmail) {
-          isSelf = true;
+          if (recNameLower.isEmpty || recNameLower == userFullname) {
+            isSelf = true;
+          }
         } else if (recNameLower.isNotEmpty && recNameLower == userFullname) {
           isSelf = true;
         } else if (recNameLower.isEmpty && recEmailLower.isEmpty && recPhone.isEmpty) {
@@ -100,7 +102,53 @@ class _CreateQuickAccessDialogState extends State<CreateQuickAccessDialog> {
         receiverPhoneCtrl.text = recPhone;
       }
 
-      // 2. Visitor Provider - intentionally ignored for duplicate to let the user select it
+      // 2. Visitor Provider
+      final providers = controller.visitorProviders
+          .where((p) => p['active'] == true && p['is_quick_access'] == true)
+          .toList();
+
+      String? matchedProviderId;
+      if (widget.subVisitors != null && widget.subVisitors!.isNotEmpty) {
+        final sub = widget.subVisitors!.first;
+        matchedProviderId = sub['visitor_provider_id']?.toString();
+      }
+
+      Map<String, dynamic>? matchedProvider;
+      if (matchedProviderId != null && matchedProviderId.isNotEmpty) {
+        for (final p in providers) {
+          if (p['id']?.toString() == matchedProviderId) {
+            matchedProvider = p;
+            break;
+          }
+        }
+      }
+
+      if (matchedProvider == null && model.visitorTypeId.isNotEmpty) {
+        for (final p in providers) {
+          if (p['id']?.toString() == model.visitorTypeId) {
+            matchedProvider = p;
+            break;
+          }
+        }
+      }
+
+      if (matchedProvider == null && model.visitorTypeName.isNotEmpty) {
+        for (final p in providers) {
+          if (p['name']?.toString().toLowerCase() == model.visitorTypeName.toLowerCase()) {
+            matchedProvider = p;
+            break;
+          }
+        }
+      }
+
+      if (matchedProvider != null) {
+        selectedProviderId = matchedProvider['id']?.toString();
+        selectedProvider = matchedProvider;
+        showVehiclePlate =
+            matchedProvider['need_plate_number'] == true ||
+            matchedProvider['support_vehicle'] == true;
+      }
+
       // 3. Host ID
       if (model.host.isNotEmpty) {
         selectedHostId = model.host;
@@ -117,14 +165,16 @@ class _CreateQuickAccessDialogState extends State<CreateQuickAccessDialog> {
           courierEmailCtrl.text = emailVal;
         }
         courierPhoneCtrl.text = sub['visitor_phone']?.toString() ?? model.visitorPhone;
+        // Pre-fill vehicle plate from sub-visitor if present
+        vehiclePlateCtrl.text = sub['vehicle_plate_number']?.toString() ?? model.vehiclePlateNumber;
       } else {
         courierNameCtrl.text = model.visitorName;
         if (model.visitorEmail.isNotEmpty && model.visitorEmail != 'courier-no@required.com') {
           courierEmailCtrl.text = model.visitorEmail;
         }
         courierPhoneCtrl.text = model.visitorPhone;
+        vehiclePlateCtrl.text = model.vehiclePlateNumber;
       }
-      vehiclePlateCtrl.text = model.vehiclePlateNumber;
 
       // 6. Duration
       final differenceMinutes = model.visitorPeriodEnd.difference(model.visitorPeriodStart).inMinutes;
@@ -504,6 +554,7 @@ class _CreateQuickAccessDialogState extends State<CreateQuickAccessDialog> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+
                         // Recipient
                         _buildRequiredLabel(
                           context,
