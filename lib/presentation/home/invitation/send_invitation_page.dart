@@ -4960,7 +4960,7 @@ class EmptyStateWidget extends StatelessWidget {
                             } else {
                               final filtered = controller.allRawVisitors.where((item) {
                                 final flowLower = item.flow.toLowerCase();
-                                return flowLower != 'quickaccessvisit' &&
+                                return flowLower == 'praregister' &&
                                     !(item.agenda.isEmpty &&
                                         item.hostName.isEmpty &&
                                         item.visitorTypeName.isEmpty);
@@ -4977,7 +4977,7 @@ class EmptyStateWidget extends StatelessWidget {
                                 title: dupTitle,
                                 items: filtered,
                                 dismissOnSelect: false,
-                                badgeUnit: 'Invitation',
+                                badgeUnit: 'Praregis',
                                 nameExtractor: (item) {
                                   final model = item as AccessPassModel;
                                   return model.visitorName.isNotEmpty

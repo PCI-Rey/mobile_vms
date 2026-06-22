@@ -312,6 +312,8 @@ class _IteneraryListState extends State<IteneraryList> {
 
     final needsApproval = isPending;
 
+    final decisionDate = ticket.approvedAt ?? ticket.approvalTicketAt;
+
     Color statusBg;
     Color statusFg;
     bool hasBorder = true;
@@ -586,7 +588,7 @@ class _IteneraryListState extends State<IteneraryList> {
                   ],
                 ),
               ),
-            ] else if (isApproved && ticket.approvedAt != null) ...[
+            ] else if (isApproved && decisionDate != null) ...[
                Container(height: 1, color: const Color(0xFFF0F0F0)),
                Padding(
                  padding: EdgeInsets.symmetric(
@@ -594,14 +596,14 @@ class _IteneraryListState extends State<IteneraryList> {
                    vertical: rh(context, 10),
                  ),
                  child: Text(
-                   'Disetujui: ${DateFormat('dd MMMM yyyy, HH:mm').format(ticket.approvedAt!)}',
+                   'Disetujui: ${DateFormat('dd MMMM yyyy, HH:mm').format(decisionDate)}',
                    style: TextStyle(
                      fontSize: rfs(context, 13),
                      color: const Color(0xFF2E7D32),
                    ),
                  ),
                ),
-             ] else if (isRejected && ticket.approvedAt != null) ...[
+             ] else if (isRejected && decisionDate != null) ...[
                Container(height: 1, color: const Color(0xFFF0F0F0)),
                Padding(
                  padding: EdgeInsets.symmetric(
@@ -609,7 +611,7 @@ class _IteneraryListState extends State<IteneraryList> {
                    vertical: rh(context, 10),
                  ),
                  child: Text(
-                   'Ditolak: ${DateFormat('dd MMMM yyyy, HH:mm').format(ticket.approvedAt!)}',
+                   'Ditolak: ${DateFormat('dd MMMM yyyy, HH:mm').format(decisionDate)}',
                    style: TextStyle(
                      fontSize: rfs(context, 13),
                      color: const Color(0xFFC62828),

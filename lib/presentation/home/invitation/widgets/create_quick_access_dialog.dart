@@ -74,13 +74,30 @@ class _CreateQuickAccessDialogState extends State<CreateQuickAccessDialog> {
         if (recPhone.isEmpty) recPhone = subPhone;
       }
 
-      if (recName.isNotEmpty || recPhone.isNotEmpty || recEmail.isNotEmpty) {
+      final user = _hive.getUser();
+      final userEmail = (user?.email ?? '').toLowerCase().trim();
+      final userFullname = (user?.fullname ?? '').toLowerCase().trim();
+      final recNameLower = recName.toLowerCase().trim();
+      final recEmailLower = recEmail.toLowerCase().trim();
+
+      bool isSelf = model.isReceiverSelf;
+      if (!isSelf) {
+        if (recEmailLower.isNotEmpty && recEmailLower == userEmail) {
+          isSelf = true;
+        } else if (recNameLower.isNotEmpty && recNameLower == userFullname) {
+          isSelf = true;
+        } else if (recNameLower.isEmpty && recEmailLower.isEmpty && recPhone.isEmpty) {
+          isSelf = true;
+        }
+      }
+
+      if (isSelf) {
+        selectedRecipientMode = 'self';
+      } else {
         selectedRecipientMode = 'others';
         receiverNameCtrl.text = recName;
         receiverEmailCtrl.text = recEmail;
         receiverPhoneCtrl.text = recPhone;
-      } else {
-        selectedRecipientMode = 'self';
       }
 
       // 2. Visitor Provider - intentionally ignored for duplicate to let the user select it

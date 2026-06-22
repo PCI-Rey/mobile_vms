@@ -21,13 +21,24 @@ class _ApprovalPageState extends State<ApprovalPage>
   // Tab controller
   late TabController _tabController;
 
-  // Per-tab filter state
-  DateTime? _pendingStartDate;
-  DateTime? _pendingEndDate;
-  DateTime? _approvedStartDate;
-  DateTime? _approvedEndDate;
-  DateTime? _rejectedStartDate;
-  DateTime? _rejectedEndDate;
+  // Per-tab filter state redirected to persistent fields in the controller
+  DateTime? get _pendingStartDate => controller.approvalPendingStartDate;
+  set _pendingStartDate(DateTime? val) => controller.approvalPendingStartDate = val;
+
+  DateTime? get _pendingEndDate => controller.approvalPendingEndDate;
+  set _pendingEndDate(DateTime? val) => controller.approvalPendingEndDate = val;
+
+  DateTime? get _approvedStartDate => controller.approvalApprovedStartDate;
+  set _approvedStartDate(DateTime? val) => controller.approvalApprovedStartDate = val;
+
+  DateTime? get _approvedEndDate => controller.approvalApprovedEndDate;
+  set _approvedEndDate(DateTime? val) => controller.approvalApprovedEndDate = val;
+
+  DateTime? get _rejectedStartDate => controller.approvalRejectedStartDate;
+  set _rejectedStartDate(DateTime? val) => controller.approvalRejectedStartDate = val;
+
+  DateTime? get _rejectedEndDate => controller.approvalRejectedEndDate;
+  set _rejectedEndDate(DateTime? val) => controller.approvalRejectedEndDate = val;
 
   late final InvitationController controller;
 
@@ -56,9 +67,17 @@ class _ApprovalPageState extends State<ApprovalPage>
   // ── Filtered lists ────────────────────────────────────────────────────────
 
   List<ApprovalTicketModel> get _pendingTickets {
-    List<ApprovalTicketModel> list = controller.approvalTickets
-        .where((t) => (t.approvalActorStatus ?? '').toLowerCase() == 'pending')
-        .toList();
+    List<ApprovalTicketModel> list = controller.approvalTickets.where((t) {
+      final actorStatus = (t.approvalActorStatus ?? '').toLowerCase();
+      final ticketStatus = (t.approvalStatus ?? '').toLowerCase();
+      final isApproved = actorStatus == 'approved' || ticketStatus == 'approved';
+      final isRejected = actorStatus == 'rejected' ||
+          actorStatus == 'denied' ||
+          ticketStatus == 'rejected' ||
+          ticketStatus == 'denied';
+      final isPending = !isApproved && !isRejected;
+      return isPending;
+    }).toList();
 
     if (_pendingStartDate != null) {
       list = list.where((t) {
@@ -95,9 +114,11 @@ class _ApprovalPageState extends State<ApprovalPage>
   }
 
   List<ApprovalTicketModel> get _approvedTickets {
-    List<ApprovalTicketModel> list = controller.approvalTickets
-        .where((t) => (t.approvalActorStatus ?? '').toLowerCase() == 'approved')
-        .toList();
+    List<ApprovalTicketModel> list = controller.approvalTickets.where((t) {
+      final actorStatus = (t.approvalActorStatus ?? '').toLowerCase();
+      final ticketStatus = (t.approvalStatus ?? '').toLowerCase();
+      return actorStatus == 'approved' || ticketStatus == 'approved';
+    }).toList();
 
     if (_approvedStartDate != null) {
       list = list.where((t) {
@@ -134,13 +155,14 @@ class _ApprovalPageState extends State<ApprovalPage>
   }
 
   List<ApprovalTicketModel> get _rejectedTickets {
-    List<ApprovalTicketModel> list = controller.approvalTickets
-        .where(
-          (t) =>
-              (t.approvalActorStatus ?? '').toLowerCase() == 'rejected' ||
-              (t.approvalActorStatus ?? '').toLowerCase() == 'reject',
-        )
-        .toList();
+    List<ApprovalTicketModel> list = controller.approvalTickets.where((t) {
+      final actorStatus = (t.approvalActorStatus ?? '').toLowerCase();
+      final ticketStatus = (t.approvalStatus ?? '').toLowerCase();
+      return actorStatus == 'rejected' ||
+          actorStatus == 'denied' ||
+          ticketStatus == 'rejected' ||
+          ticketStatus == 'denied';
+    }).toList();
 
     if (_rejectedStartDate != null) {
       list = list.where((t) {
@@ -290,7 +312,11 @@ class _ApprovalPageState extends State<ApprovalPage>
           top: Radius.circular(rw(context, 16)),
         ),
       ),
-      builder: (context) => const FilterBottomSheet(showSiteFilter: false),
+      builder: (context) => FilterBottomSheet(
+        showSiteFilter: false,
+        initialStartDate: _pendingStartDate,
+        initialEndDate: _pendingEndDate,
+      ),
     );
 
     if (result != null) {
@@ -312,7 +338,11 @@ class _ApprovalPageState extends State<ApprovalPage>
           top: Radius.circular(rw(context, 16)),
         ),
       ),
-      builder: (context) => const FilterBottomSheet(showSiteFilter: false),
+      builder: (context) => FilterBottomSheet(
+        showSiteFilter: false,
+        initialStartDate: _approvedStartDate,
+        initialEndDate: _approvedEndDate,
+      ),
     );
 
     if (result != null) {
@@ -334,7 +364,11 @@ class _ApprovalPageState extends State<ApprovalPage>
           top: Radius.circular(rw(context, 16)),
         ),
       ),
-      builder: (context) => const FilterBottomSheet(showSiteFilter: false),
+      builder: (context) => FilterBottomSheet(
+        showSiteFilter: false,
+        initialStartDate: _rejectedStartDate,
+        initialEndDate: _rejectedEndDate,
+      ),
     );
 
     if (result != null) {
@@ -1022,26 +1056,38 @@ class _ApprovalCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isPending =
-        (ticket.approvalActorStatus ?? '').toLowerCase() == 'pending';
-    final isApproved =
-        (ticket.approvalActorStatus ?? '').toLowerCase() == 'approved';
+    final actorStatus = (ticket.approvalActorStatus ?? '').toLowerCase();
+    final ticketStatus = (ticket.approvalStatus ?? '').toLowerCase();
+
+    final isApproved = actorStatus == 'approved' || ticketStatus == 'approved';
+    final isRejected = actorStatus == 'rejected' ||
+        actorStatus == 'denied' ||
+        ticketStatus == 'rejected' ||
+        ticketStatus == 'denied';
+    final isPending = !isApproved && !isRejected;
+
+    final decisionDate = ticket.approvedAt ?? ticket.approvalTicketAt;
 
     Color statusBg;
     Color statusFg;
     bool hasBorder = true;
-    if (isPending) {
-      statusBg = const Color(0xFFFFF3E0);
-      statusFg = const Color(0xFFE65100);
-      hasBorder = true;
-    } else if (isApproved) {
+    String statusText = 'Pending';
+
+    if (isApproved) {
       statusBg = const Color(0xFF43A047);
       statusFg = Colors.white;
       hasBorder = false;
-    } else {
+      statusText = 'Approved';
+    } else if (isRejected) {
       statusBg = const Color(0xFFE53935);
       statusFg = Colors.white;
       hasBorder = false;
+      statusText = 'Rejected';
+    } else {
+      statusBg = const Color(0xFFFFF3E0);
+      statusFg = const Color(0xFFE65100);
+      hasBorder = true;
+      statusText = 'Pending';
     }
 
     final start = ticket.visitorPeriodStart;
@@ -1124,7 +1170,7 @@ class _ApprovalCard extends StatelessWidget {
                           : null,
                     ),
                     child: Text(
-                      ticket.approvalActorStatus ?? '-',
+                      statusText,
                       style: TextStyle(
                         fontSize: rfs(context, 12),
                         fontWeight: FontWeight.w600,
@@ -1301,7 +1347,7 @@ class _ApprovalCard extends StatelessWidget {
                   ],
                 ),
               ),
-            ] else if (isApproved && ticket.approvedAt != null) ...[
+            ] else if (isApproved && decisionDate != null) ...[
               Container(height: 1, color: const Color(0xFFF0F0F0)),
               Padding(
                 padding: EdgeInsets.fromLTRB(
@@ -1311,7 +1357,7 @@ class _ApprovalCard extends StatelessWidget {
                   rh(context, 10),
                 ),
                 child: Text(
-                  'Disetujui: ${DateFormat('dd MMMM yyyy, HH:mm').format(ticket.approvedAt!)}',
+                  'Disetujui: ${DateFormat('dd MMMM yyyy, HH:mm').format(decisionDate)}',
                   style: TextStyle(
                     fontSize: rfs(context, 13),
                     color: const Color(0xFF2E7D32),
@@ -1338,6 +1384,36 @@ class _RejectedCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final actorStatus = (ticket.approvalActorStatus ?? '').toLowerCase();
+    final ticketStatus = (ticket.approvalStatus ?? '').toLowerCase();
+
+    final isApproved = actorStatus == 'approved' || ticketStatus == 'approved';
+    final isRejected = actorStatus == 'rejected' ||
+        actorStatus == 'denied' ||
+        ticketStatus == 'rejected' ||
+        ticketStatus == 'denied';
+    final isPending = !isApproved && !isRejected;
+
+    final decisionDate = ticket.approvedAt ?? ticket.approvalTicketAt;
+
+    Color statusBg = const Color(0xFFE53935);
+    Color statusFg = Colors.white;
+    bool isPendingState = false;
+    String statusText = 'Rejected';
+
+    if (isApproved) {
+      statusBg = const Color(0xFF43A047);
+      statusText = 'Approved';
+    } else if (isPending) {
+      statusBg = const Color(0xFFFFF3E0);
+      statusFg = const Color(0xFFE65100);
+      statusText = 'Pending';
+      isPendingState = true;
+    } else {
+      statusBg = const Color(0xFFE53935);
+      statusText = 'Rejected';
+    }
+
     final start = ticket.visitorPeriodStart;
     final end = ticket.visitorPeriodEnd;
     final startStr = start != null
@@ -1411,15 +1487,18 @@ class _RejectedCard extends StatelessWidget {
                       vertical: rh(context, 4),
                     ),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFE53935),
+                      color: statusBg,
                       borderRadius: BorderRadius.circular(rw(context, 20)),
+                      border: isPendingState
+                          ? Border.all(color: statusFg.withValues(alpha: 0.4))
+                          : null,
                     ),
                     child: Text(
-                      ticket.approvalActorStatus ?? 'Rejected',
+                      statusText,
                       style: TextStyle(
                         fontSize: rfs(context, 12),
                         fontWeight: FontWeight.w600,
-                        color: Colors.white,
+                        color: statusFg,
                       ),
                     ),
                   ),
@@ -1517,7 +1596,7 @@ class _RejectedCard extends StatelessWidget {
               ),
             ),
 
-            if (ticket.approvedAt != null) ...[
+            if (decisionDate != null) ...[
               Container(height: 1, color: const Color(0xFFF0F0F0)),
               Padding(
                 padding: EdgeInsets.fromLTRB(
@@ -1527,7 +1606,7 @@ class _RejectedCard extends StatelessWidget {
                   rh(context, 10),
                 ),
                 child: Text(
-                  'Ditolak: ${DateFormat('dd MMMM yyyy, HH:mm').format(ticket.approvedAt!)}',
+                  'Ditolak: ${DateFormat('dd MMMM yyyy, HH:mm').format(decisionDate)}',
                   style: TextStyle(
                     fontSize: rfs(context, 13),
                     color: const Color(0xFFC62828),

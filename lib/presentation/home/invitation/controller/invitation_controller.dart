@@ -46,6 +46,15 @@ class InvitationController extends GetxController {
   final RxList<ApprovalTicketModel> approvalTickets =
       <ApprovalTicketModel>[].obs;
   final RxBool isApprovalLoading = false.obs;
+  
+  // Persistent date filters for Approval tabs
+  DateTime? approvalPendingStartDate;
+  DateTime? approvalPendingEndDate;
+  DateTime? approvalApprovedStartDate;
+  DateTime? approvalApprovedEndDate;
+  DateTime? approvalRejectedStartDate;
+  DateTime? approvalRejectedEndDate;
+
   bool hasShownPendingPopup = false;
   Timer? _reminderTimer;
   Timer? _countdownTimer;

@@ -356,11 +356,15 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                 Expanded(
                   child: GestureDetector(
                     onTap: () async {
+                      DateTime initial = startDate ?? DateTime.now();
+                      if (endDate != null && initial.isAfter(endDate!)) {
+                        initial = endDate!;
+                      }
                       final picked = await showDatePicker(
                         context: context,
-                        initialDate: startDate ?? DateTime.now(),
+                        initialDate: initial,
                         firstDate: DateTime(2020),
-                        lastDate: DateTime(2030),
+                        lastDate: endDate ?? DateTime(2030),
                         locale: const Locale('en', 'US'),
                       );
                       if (picked != null) {
@@ -386,10 +390,14 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                     alignment: Alignment.centerRight,
                     child: GestureDetector(
                       onTap: () async {
+                        DateTime initial = endDate ?? DateTime.now();
+                        if (startDate != null && initial.isBefore(startDate!)) {
+                          initial = startDate!;
+                        }
                         final picked = await showDatePicker(
                           context: context,
-                          initialDate: endDate ?? DateTime.now(),
-                          firstDate: DateTime(2020),
+                          initialDate: initial,
+                          firstDate: startDate ?? DateTime(2020),
                           lastDate: DateTime(2030),
                           locale: const Locale('en', 'US'),
                         );
