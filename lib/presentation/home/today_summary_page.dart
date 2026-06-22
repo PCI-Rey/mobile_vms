@@ -41,9 +41,14 @@ class TodaySummaryPage extends StatelessWidget {
     final todaySummaryCount = invitationController.visitorTodayCount.value;
 
     final waitingApprovalCount = invitationController.approvalTickets.where((t) {
-      final isPending =
-          (t.approvalActorStatus ?? '').toLowerCase() == 'pending' ||
-          (t.approvalStatus ?? '').toLowerCase() == 'pending';
+      final actorStatus = (t.approvalActorStatus ?? '').toLowerCase();
+      final ticketStatus = (t.approvalStatus ?? '').toLowerCase();
+      final isApproved = actorStatus == 'approved' || ticketStatus == 'approved';
+      final isRejected = actorStatus == 'rejected' ||
+          actorStatus == 'denied' ||
+          ticketStatus == 'rejected' ||
+          ticketStatus == 'denied';
+      final isPending = !isApproved && !isRejected;
       if (!isPending) {
         return false;
       }
@@ -105,9 +110,14 @@ class TodaySummaryPage extends StatelessWidget {
       }).length;
     } else {
       notificationCount = invitationController.approvalTickets.where((t) {
-        final isPending =
-            (t.approvalActorStatus ?? '').toLowerCase() == 'pending' ||
-            (t.approvalStatus ?? '').toLowerCase() == 'pending';
+        final actorStatus = (t.approvalActorStatus ?? '').toLowerCase();
+        final ticketStatus = (t.approvalStatus ?? '').toLowerCase();
+        final isApproved = actorStatus == 'approved' || ticketStatus == 'approved';
+        final isRejected = actorStatus == 'rejected' ||
+            actorStatus == 'denied' ||
+            ticketStatus == 'rejected' ||
+            ticketStatus == 'denied';
+        final isPending = !isApproved && !isRejected;
         if (!isPending) {
           return false;
         }

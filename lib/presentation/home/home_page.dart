@@ -145,8 +145,14 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     if (invitationController.hasShownPendingPopup) return;
 
     List<ApprovalTicketModel> pendingTickets = tickets.where((t) {
-      final isPending =
-          (t.approvalActorStatus ?? '').toLowerCase() == 'pending';
+      final actorStatus = (t.approvalActorStatus ?? '').toLowerCase();
+      final ticketStatus = (t.approvalStatus ?? '').toLowerCase();
+      final isApproved = actorStatus == 'approved' || ticketStatus == 'approved';
+      final isRejected = actorStatus == 'rejected' ||
+          actorStatus == 'denied' ||
+          ticketStatus == 'rejected' ||
+          ticketStatus == 'denied';
+      final isPending = !isApproved && !isRejected;
       return isPending;
     }).toList();
 
@@ -1974,13 +1980,17 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
       // 1. Today Summary
       final todaySummaryCount = invitationController.visitorTodayCount.value;
 
-      // 2. Waiting Approval
       final waitingApprovalCount = invitationController.approvalTickets.where((
         t,
       ) {
-        final isPending =
-            (t.approvalActorStatus ?? '').toLowerCase() == 'pending' ||
-            (t.approvalStatus ?? '').toLowerCase() == 'pending';
+        final actorStatus = (t.approvalActorStatus ?? '').toLowerCase();
+        final ticketStatus = (t.approvalStatus ?? '').toLowerCase();
+        final isApproved = actorStatus == 'approved' || ticketStatus == 'approved';
+        final isRejected = actorStatus == 'rejected' ||
+            actorStatus == 'denied' ||
+            ticketStatus == 'rejected' ||
+            ticketStatus == 'denied';
+        final isPending = !isApproved && !isRejected;
         if (!isPending) return false;
         final itemDate = t.visitorPeriodStart;
         if (itemDate == null) return false;
@@ -2036,9 +2046,14 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
         }).length;
       } else {
         notificationCount = invitationController.approvalTickets.where((t) {
-          final isPending =
-              (t.approvalActorStatus ?? '').toLowerCase() == 'pending' ||
-              (t.approvalStatus ?? '').toLowerCase() == 'pending';
+          final actorStatus = (t.approvalActorStatus ?? '').toLowerCase();
+          final ticketStatus = (t.approvalStatus ?? '').toLowerCase();
+          final isApproved = actorStatus == 'approved' || ticketStatus == 'approved';
+          final isRejected = actorStatus == 'rejected' ||
+              actorStatus == 'denied' ||
+              ticketStatus == 'rejected' ||
+              ticketStatus == 'denied';
+          final isPending = !isApproved && !isRejected;
           if (!isPending) return false;
           final itemDate = t.visitorPeriodStart;
           if (itemDate == null) return false;
