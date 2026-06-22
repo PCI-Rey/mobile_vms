@@ -4881,6 +4881,16 @@ class EmptyStateWidget extends StatelessWidget {
                                     controller.fetchShareLinks();
                                     if (result == true) {
                                       Get.back(); // Dismiss DuplicateSelectorSheet
+                                      Get.snackbar(
+                                        isIndonesian ? 'Sukses' : 'Success',
+                                        isIndonesian
+                                            ? 'Share link berhasil diduplikasi'
+                                            : 'Share link duplicated successfully',
+                                        backgroundColor: Colors.green,
+                                        colorText: Colors.white,
+                                        snackPosition: SnackPosition.TOP,
+                                        margin: const EdgeInsets.all(12),
+                                      );
                                     }
                                   });
                                 },
@@ -4928,19 +4938,12 @@ class EmptyStateWidget extends StatelessWidget {
                                   final model = selectedItem as AccessPassModel;
                                   List<Map<String, dynamic>>? subVisitors;
 
-                                  // Show loading indicator
-                                  showDialog(
-                                    context: Get.context!,
-                                    barrierDismissible: false,
-                                    builder: (context) => const Center(
-                                      child: CircularProgressIndicator(),
-                                    ),
-                                  );
-
                                   final String fetchId = model.id;
-                                  subVisitors = await controller.fetchTransactionVisitors(fetchId);
-
-                                  Get.back(); // Dismiss loading
+                                  try {
+                                    subVisitors = await controller.fetchTransactionVisitors(fetchId);
+                                  } catch (e) {
+                                    debugPrint('Error fetching visitors for duplicate: $e');
+                                  }
 
                                   showDialog<bool>(
                                     context: Get.context!,
@@ -4953,6 +4956,16 @@ class EmptyStateWidget extends StatelessWidget {
                                     if (result == true) {
                                       Get.back(); // Dismiss DuplicateSelectorSheet
                                       controller.fetchOngoingInvitations(clearFilters: false);
+                                      Get.snackbar(
+                                        isIndonesian ? 'Sukses' : 'Success',
+                                        isIndonesian
+                                            ? 'Quick access berhasil diduplikasi'
+                                            : 'Quick access duplicated successfully',
+                                        backgroundColor: Colors.green,
+                                        colorText: Colors.white,
+                                        snackPosition: SnackPosition.TOP,
+                                        margin: const EdgeInsets.all(12),
+                                      );
                                     }
                                   });
                                 },
@@ -4997,19 +5010,12 @@ class EmptyStateWidget extends StatelessWidget {
                                   final model = selectedItem as AccessPassModel;
                                   List<Map<String, dynamic>>? subVisitors;
 
-                                  // Show loading indicator
-                                  showDialog(
-                                    context: Get.context!,
-                                    barrierDismissible: false,
-                                    builder: (context) => const Center(
-                                      child: CircularProgressIndicator(),
-                                    ),
-                                  );
-
                                   final String fetchId = model.id;
-                                  subVisitors = await controller.fetchTransactionVisitors(fetchId);
-
-                                  Get.back(); // Dismiss loading
+                                  try {
+                                    subVisitors = await controller.fetchTransactionVisitors(fetchId);
+                                  } catch (e) {
+                                    debugPrint('Error fetching visitors for duplicate: $e');
+                                  }
 
                                   final result = await showAddPraRegistrationDialog(
                                     Get.context!,
@@ -5019,6 +5025,16 @@ class EmptyStateWidget extends StatelessWidget {
                                   if (result == true) {
                                     Get.back(); // Dismiss DuplicateSelectorSheet
                                     onDuplicateSuccess?.call();
+                                    Get.snackbar(
+                                      isIndonesian ? 'Sukses' : 'Success',
+                                      isIndonesian
+                                          ? 'Undangan berhasil diduplikasi'
+                                          : 'Invitation duplicated successfully',
+                                      backgroundColor: Colors.green,
+                                      colorText: Colors.white,
+                                      snackPosition: SnackPosition.TOP,
+                                      margin: const EdgeInsets.all(12),
+                                    );
                                   }
                                 },
                               );

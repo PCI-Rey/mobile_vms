@@ -1327,13 +1327,15 @@ class PraRegistrationController extends GetxController {
 
       if (status == 'success' || transactionStatus == 'UnderCreated') {
         final msg = data['msg']?.toString() ?? 'Registrasi berhasil!';
-        Get.snackbar(
-          'Sukses',
-          msg,
-          backgroundColor: Colors.green,
-          colorText: Colors.white,
-          snackPosition: SnackPosition.TOP,
-        );
+        if (!isDuplicateMode.value) {
+          Get.snackbar(
+            'Sukses',
+            msg,
+            backgroundColor: Colors.green,
+            colorText: Colors.white,
+            snackPosition: SnackPosition.TOP,
+          );
+        }
 
         // Auto Refresh Invitation List if available
         if (Get.isRegistered<InvitationController>()) {

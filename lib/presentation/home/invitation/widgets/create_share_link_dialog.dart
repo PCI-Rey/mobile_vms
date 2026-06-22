@@ -1077,17 +1077,19 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
         setState(() {
           _success = true;
         });
-        Get.snackbar(
-          'Success',
-          'Share link created successfully',
-          backgroundColor: Colors.green,
-          colorText: Colors.white,
-          snackPosition: SnackPosition.TOP,
-        );
+        if (widget.duplicateData == null) {
+          Get.snackbar(
+            'Success',
+            'Share link created successfully',
+            backgroundColor: Colors.green,
+            colorText: Colors.white,
+            snackPosition: SnackPosition.TOP,
+          );
+        }
         if (mounted) {
           Future.delayed(const Duration(milliseconds: 100), () {
             if (mounted) {
-              Navigator.of(context).pop(); // Close Create dialog
+              Navigator.of(context).pop(true); // Close Create dialog
             }
           });
         }

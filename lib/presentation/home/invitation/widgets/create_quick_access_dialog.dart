@@ -359,14 +359,16 @@ class _CreateQuickAccessDialogState extends State<CreateQuickAccessDialog> {
 
       if (success) {
         setState(() => _success = true);
-        Get.snackbar(
-          'Success',
-          'Quick Access Visit created successfully',
-          backgroundColor: Colors.green,
-          colorText: Colors.white,
-          snackPosition: SnackPosition.TOP,
-          margin: EdgeInsets.all(rw(context, 12)),
-        );
+        if (widget.duplicateData == null) {
+          Get.snackbar(
+            'Success',
+            'Quick Access Visit created successfully',
+            backgroundColor: Colors.green,
+            colorText: Colors.white,
+            snackPosition: SnackPosition.TOP,
+            margin: EdgeInsets.all(rw(context, 12)),
+          );
+        }
         Navigator.pop(context, true);
       } else {
         Get.snackbar(
