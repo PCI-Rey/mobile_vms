@@ -62,11 +62,17 @@ class _SendInvitationPageState extends State<SendInvitationPage>
     super.initState();
 
     // Default filters to last 7 days on opening the page
-    controller.startDate.value = DateTime.now().subtract(const Duration(days: 7));
+    controller.startDate.value = DateTime.now().subtract(
+      const Duration(days: 7),
+    );
     controller.endDate.value = DateTime.now();
-    controller.startDateQuick.value = DateTime.now().subtract(const Duration(days: 7));
+    controller.startDateQuick.value = DateTime.now().subtract(
+      const Duration(days: 7),
+    );
     controller.endDateQuick.value = DateTime.now();
-    controller.startDateShare.value = DateTime.now().subtract(const Duration(days: 7));
+    controller.startDateShare.value = DateTime.now().subtract(
+      const Duration(days: 7),
+    );
     controller.endDateShare.value = DateTime.now();
 
     controller.invitationCurrentPage.value = 0;
@@ -77,24 +83,44 @@ class _SendInvitationPageState extends State<SendInvitationPage>
     controller.setFilters(
       start: controller.startDate.value,
       end: controller.endDate.value,
-      siteId: controller.selectedSiteId.value.isEmpty ? null : controller.selectedSiteId.value,
-      siteName: controller.selectedSiteName.value.isEmpty ? null : controller.selectedSiteName.value,
-      status: controller.selectedStatus.value.isEmpty ? null : controller.selectedStatus.value,
-      flow: controller.selectedFlow.value.isEmpty ? null : controller.selectedFlow.value,
+      siteId: controller.selectedSiteId.value.isEmpty
+          ? null
+          : controller.selectedSiteId.value,
+      siteName: controller.selectedSiteName.value.isEmpty
+          ? null
+          : controller.selectedSiteName.value,
+      status: controller.selectedStatus.value.isEmpty
+          ? null
+          : controller.selectedStatus.value,
+      flow: controller.selectedFlow.value.isEmpty
+          ? null
+          : controller.selectedFlow.value,
     );
     controller.setQuickFilters(
       start: controller.startDateQuick.value,
       end: controller.endDateQuick.value,
-      siteId: controller.selectedSiteIdQuick.value.isEmpty ? null : controller.selectedSiteIdQuick.value,
-      siteName: controller.selectedSiteNameQuick.value.isEmpty ? null : controller.selectedSiteNameQuick.value,
-      status: controller.selectedStatusQuick.value.isEmpty ? null : controller.selectedStatusQuick.value,
+      siteId: controller.selectedSiteIdQuick.value.isEmpty
+          ? null
+          : controller.selectedSiteIdQuick.value,
+      siteName: controller.selectedSiteNameQuick.value.isEmpty
+          ? null
+          : controller.selectedSiteNameQuick.value,
+      status: controller.selectedStatusQuick.value.isEmpty
+          ? null
+          : controller.selectedStatusQuick.value,
     );
     controller.setShareFilters(
       start: controller.startDateShare.value,
       end: controller.endDateShare.value,
-      siteId: controller.selectedSiteIdShare.value.isEmpty ? null : controller.selectedSiteIdShare.value,
-      siteName: controller.selectedSiteNameShare.value.isEmpty ? null : controller.selectedSiteNameShare.value,
-      status: controller.selectedStatusShare.value.isEmpty ? null : controller.selectedStatusShare.value,
+      siteId: controller.selectedSiteIdShare.value.isEmpty
+          ? null
+          : controller.selectedSiteIdShare.value,
+      siteName: controller.selectedSiteNameShare.value.isEmpty
+          ? null
+          : controller.selectedSiteNameShare.value,
+      status: controller.selectedStatusShare.value.isEmpty
+          ? null
+          : controller.selectedStatusShare.value,
     );
 
     // Restore filter states from controller
@@ -625,31 +651,6 @@ class _SendInvitationPageState extends State<SendInvitationPage>
                                       color: Colors.black87,
                                     ),
                                     overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                                hSpace(context, 6),
-                                // Jenis badge
-                                Container(
-                                  padding: EdgeInsets.symmetric(
-                                    horizontal: rw(context, 8),
-                                    vertical: rh(context, 4),
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: jenisColor.withValues(alpha: 0.12),
-                                    borderRadius: BorderRadius.circular(
-                                      rw(context, 20),
-                                    ),
-                                    border: Border.all(
-                                      color: jenisColor.withValues(alpha: 0.4),
-                                    ),
-                                  ),
-                                  child: Text(
-                                    jenis,
-                                    style: TextStyle(
-                                      fontSize: rfs(context, 12),
-                                      fontWeight: FontWeight.w600,
-                                      color: jenisColor,
-                                    ),
                                   ),
                                 ),
                                 hSpace(context, 6),
@@ -1224,8 +1225,7 @@ class _SendInvitationPageState extends State<SendInvitationPage>
 
   Widget _buildQuickAccessPaginationBar() {
     final start =
-        (controller.quickCurrentPage.value *
-            controller.quickPageSize.value) +
+        (controller.quickCurrentPage.value * controller.quickPageSize.value) +
         1;
     final end = start + controller.quickAccessInvitations.length - 1;
     final total = controller.quickTotalRecords.value;
@@ -1513,9 +1513,12 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
           invitationCode: model.invitationCode.isEmpty
               ? widget.item.invitationCode
               : model.invitationCode,
-          visitorStatus: model.visitorStatus.isEmpty
-              ? widget.item.visitorStatus
-              : model.visitorStatus,
+          visitorStatus:
+              (mutableVisitor["visitor_status"]?.toString() ?? "").isNotEmpty
+              ? mutableVisitor["visitor_status"].toString()
+              : (model.visitorStatus.isNotEmpty
+                    ? model.visitorStatus
+                    : widget.item.visitorStatus),
           sitePlaceName: model.sitePlaceName.isEmpty
               ? parentSitePlaceName
               : model.sitePlaceName,
@@ -2381,7 +2384,30 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
                       ),
                     ),
                     hSpace(context, 8),
-                    if (selectedItem.visitorStatus.isNotEmpty &&
+                    if (_loadingGroupVisitors) ...[
+                      Container(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: rw(context, 12),
+                          vertical: rh(context, 5),
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade100,
+                          borderRadius: BorderRadius.circular(rw(context, 20)),
+                          border: Border.all(color: Colors.grey.shade300),
+                        ),
+                        child: SizedBox(
+                          width: rw(context, 12),
+                          height: rw(context, 12),
+                          child: CircularProgressIndicator(
+                            strokeWidth: 1.5,
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              Colors.grey.shade600,
+                            ),
+                          ),
+                        ),
+                      ),
+                      hSpace(context, 8),
+                    ] else if (selectedItem.visitorStatus.isNotEmpty &&
                         selectedItem.visitorStatus.toLowerCase().trim() !=
                             'quickaccess') ...[
                       Container(
@@ -3346,7 +3372,9 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF005596),
-                        padding: EdgeInsets.symmetric(vertical: rh(context, 14)),
+                        padding: EdgeInsets.symmetric(
+                          vertical: rh(context, 14),
+                        ),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(rw(context, 12)),
                         ),
@@ -4863,19 +4891,27 @@ class EmptyStateWidget extends StatelessWidget {
                                 items: controller.allShareLinks,
                                 dismissOnSelect: false,
                                 badgeUnit: 'Share Link',
-                                nameExtractor: (item) => item['agenda']?.toString() ?? 'Share Link',
+                                nameExtractor: (item) =>
+                                    item['agenda']?.toString() ?? 'Share Link',
                                 searchMatcher: (item, query) {
-                                  final agenda = item['agenda']?.toString() ?? '';
-                                  final site = item['site_name']?.toString() ?? '';
-                                  return agenda.toLowerCase().contains(query.toLowerCase()) ||
-                                      site.toLowerCase().contains(query.toLowerCase());
+                                  final agenda =
+                                      item['agenda']?.toString() ?? '';
+                                  final site =
+                                      item['site_name']?.toString() ?? '';
+                                  return agenda.toLowerCase().contains(
+                                        query.toLowerCase(),
+                                      ) ||
+                                      site.toLowerCase().contains(
+                                        query.toLowerCase(),
+                                      );
                                 },
-                                  onSelected: (selectedItem) {
+                                onSelected: (selectedItem) {
                                   showDialog<bool>(
                                     context: Get.context!,
                                     barrierDismissible: false,
                                     builder: (context) => CreateShareLinkDialog(
-                                      duplicateData: selectedItem as Map<String, dynamic>,
+                                      duplicateData:
+                                          selectedItem as Map<String, dynamic>,
                                     ),
                                   ).then((result) {
                                     controller.fetchShareLinks();
@@ -4896,16 +4932,23 @@ class EmptyStateWidget extends StatelessWidget {
                                 },
                               );
                             } else if (mode == 'quick_access') {
-                              final filtered = controller.allRawVisitors.where((item) {
-                                return item.flow.toLowerCase() == 'quickaccessvisit' &&
+                              final filtered = controller.allRawVisitors.where((
+                                item,
+                              ) {
+                                return item.flow.toLowerCase() ==
+                                        'quickaccessvisit' &&
                                     !(item.agenda.isEmpty &&
                                         item.hostName.isEmpty &&
                                         item.visitorTypeName.isEmpty);
                               }).toList();
 
                               filtered.sort((a, b) {
-                                final dateA = a.invitationCreatedAt ?? a.visitorPeriodStart;
-                                final dateB = b.invitationCreatedAt ?? b.visitorPeriodStart;
+                                final dateA =
+                                    a.invitationCreatedAt ??
+                                    a.visitorPeriodStart;
+                                final dateB =
+                                    b.invitationCreatedAt ??
+                                    b.visitorPeriodStart;
                                 return dateB.compareTo(dateA);
                               });
 
@@ -4923,16 +4966,20 @@ class EmptyStateWidget extends StatelessWidget {
                                   return model.visitorName.isNotEmpty
                                       ? model.visitorName
                                       : (model.visitorTypeName.isNotEmpty
-                                          ? model.visitorTypeName
-                                          : 'Quick Access');
+                                            ? model.visitorTypeName
+                                            : 'Quick Access');
                                 },
                                 searchMatcher: (item, query) {
                                   final model = item as AccessPassModel;
                                   final name = model.visitorName.isNotEmpty
                                       ? model.visitorName
                                       : model.visitorTypeName;
-                                  return name.toLowerCase().contains(query.toLowerCase()) ||
-                                      model.receiverName.toLowerCase().contains(query.toLowerCase());
+                                  return name.toLowerCase().contains(
+                                        query.toLowerCase(),
+                                      ) ||
+                                      model.receiverName.toLowerCase().contains(
+                                        query.toLowerCase(),
+                                      );
                                 },
                                 onSelected: (selectedItem) async {
                                   final model = selectedItem as AccessPassModel;
@@ -4940,22 +4987,28 @@ class EmptyStateWidget extends StatelessWidget {
 
                                   final String fetchId = model.id;
                                   try {
-                                    subVisitors = await controller.fetchTransactionVisitors(fetchId);
+                                    subVisitors = await controller
+                                        .fetchTransactionVisitors(fetchId);
                                   } catch (e) {
-                                    debugPrint('Error fetching visitors for duplicate: $e');
+                                    debugPrint(
+                                      'Error fetching visitors for duplicate: $e',
+                                    );
                                   }
 
                                   showDialog<bool>(
                                     context: Get.context!,
                                     barrierDismissible: false,
-                                    builder: (context) => CreateQuickAccessDialog(
-                                      duplicateData: model,
-                                      subVisitors: subVisitors,
-                                    ),
+                                    builder: (context) =>
+                                        CreateQuickAccessDialog(
+                                          duplicateData: model,
+                                          subVisitors: subVisitors,
+                                        ),
                                   ).then((result) {
                                     if (result == true) {
                                       Get.back(); // Dismiss DuplicateSelectorSheet
-                                      controller.fetchOngoingInvitations(clearFilters: false);
+                                      controller.fetchOngoingInvitations(
+                                        clearFilters: false,
+                                      );
                                       Get.snackbar(
                                         isIndonesian ? 'Sukses' : 'Success',
                                         isIndonesian
@@ -4971,7 +5024,9 @@ class EmptyStateWidget extends StatelessWidget {
                                 },
                               );
                             } else {
-                              final filtered = controller.allRawVisitors.where((item) {
+                              final filtered = controller.allRawVisitors.where((
+                                item,
+                              ) {
                                 final flowLower = item.flow.toLowerCase();
                                 return flowLower == 'praregister' &&
                                     !(item.agenda.isEmpty &&
@@ -4980,8 +5035,12 @@ class EmptyStateWidget extends StatelessWidget {
                               }).toList();
 
                               filtered.sort((a, b) {
-                                final dateA = a.invitationCreatedAt ?? a.visitorPeriodStart;
-                                final dateB = b.invitationCreatedAt ?? b.visitorPeriodStart;
+                                final dateA =
+                                    a.invitationCreatedAt ??
+                                    a.visitorPeriodStart;
+                                final dateB =
+                                    b.invitationCreatedAt ??
+                                    b.visitorPeriodStart;
                                 return dateB.compareTo(dateA);
                               });
 
@@ -4996,15 +5055,17 @@ class EmptyStateWidget extends StatelessWidget {
                                   return model.visitorName.isNotEmpty
                                       ? model.visitorName
                                       : (model.agenda.isNotEmpty
-                                          ? model.agenda
-                                          : 'Invitation');
+                                            ? model.agenda
+                                            : 'Invitation');
                                 },
                                 searchMatcher: (item, query) {
                                   final model = item as AccessPassModel;
                                   final name = model.visitorName.isNotEmpty
                                       ? model.visitorName
                                       : model.agenda;
-                                  return name.toLowerCase().contains(query.toLowerCase());
+                                  return name.toLowerCase().contains(
+                                    query.toLowerCase(),
+                                  );
                                 },
                                 onSelected: (selectedItem) async {
                                   final model = selectedItem as AccessPassModel;
@@ -5012,16 +5073,20 @@ class EmptyStateWidget extends StatelessWidget {
 
                                   final String fetchId = model.id;
                                   try {
-                                    subVisitors = await controller.fetchTransactionVisitors(fetchId);
+                                    subVisitors = await controller
+                                        .fetchTransactionVisitors(fetchId);
                                   } catch (e) {
-                                    debugPrint('Error fetching visitors for duplicate: $e');
+                                    debugPrint(
+                                      'Error fetching visitors for duplicate: $e',
+                                    );
                                   }
 
-                                  final result = await showAddPraRegistrationDialog(
-                                    Get.context!,
-                                    duplicateData: model,
-                                    subVisitors: subVisitors,
-                                  );
+                                  final result =
+                                      await showAddPraRegistrationDialog(
+                                        Get.context!,
+                                        duplicateData: model,
+                                        subVisitors: subVisitors,
+                                      );
                                   if (result == true) {
                                     Get.back(); // Dismiss DuplicateSelectorSheet
                                     onDuplicateSuccess?.call();

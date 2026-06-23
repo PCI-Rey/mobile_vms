@@ -261,7 +261,7 @@ class _SplashscreenState extends State<Splashscreen>
                           ),
                           const SizedBox(width: 0),
                           Transform.translate(
-                            offset: const Offset(-6, 0),
+                            offset: const Offset(-3, 0),
                             child: Image.asset(
                               'assets/images/BioExperienceWhite.png',
                               height: sw * 0.05,
