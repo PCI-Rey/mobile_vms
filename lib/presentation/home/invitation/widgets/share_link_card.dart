@@ -427,6 +427,22 @@ class _CountdownBadgeState extends State<_CountdownBadge> {
   @override
   void initState() {
     super.initState();
+    _startOrStopTimer();
+  }
+
+  @override
+  void didUpdateWidget(covariant _CountdownBadge oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.isExpired != widget.isExpired ||
+        oldWidget.expiredNumber != widget.expiredNumber ||
+        oldWidget.expiredAt != widget.expiredAt) {
+      _startOrStopTimer();
+    }
+  }
+
+  void _startOrStopTimer() {
+    _timer?.cancel();
+    _timer = null;
     if (!widget.isExpired && widget.expiredNumber != 0) {
       _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
         if (mounted) setState(() {});

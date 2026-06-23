@@ -1329,7 +1329,7 @@ class PraRegistrationController extends GetxController {
         final msg = data['msg']?.toString() ?? 'Registrasi berhasil!';
         if (!isDuplicateMode.value) {
           Get.snackbar(
-            'Sukses',
+            Get.locale?.languageCode == 'id' ? 'Sukses' : 'Success',
             msg,
             backgroundColor: Colors.green,
             colorText: Colors.white,
