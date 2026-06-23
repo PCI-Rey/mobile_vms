@@ -51,6 +51,11 @@ class HistoryController extends GetxController {
         final parsed = collection
             .map((item) => AccessPassModel.fromJson(item as Map<String, dynamic>))
             .toList();
+        parsed.sort((a, b) {
+          final dateA = a.invitationCreatedAt ?? a.visitorPeriodStart;
+          final dateB = b.invitationCreatedAt ?? b.visitorPeriodStart;
+          return dateB.compareTo(dateA);
+        });
         history.assignAll(parsed);
         filteredHistory.assignAll(parsed);
       } else {
