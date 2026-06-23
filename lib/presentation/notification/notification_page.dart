@@ -728,6 +728,9 @@ class _NotificationDialogState extends State<NotificationDialog> {
           Get.to(() => const ApprovalPage());
         },
         onLongPress: () {
+          final isPostponed = tId.isNotEmpty &&
+              controller.postponedTicketIds.contains(tId) &&
+              controller.reminderCountdown.value > 0;
           showModalBottomSheet(
             context: context,
             shape: RoundedRectangleBorder(
@@ -759,14 +762,23 @@ class _NotificationDialogState extends State<NotificationDialog> {
                       },
                     ),
                     ListTile(
-                      leading: const Icon(Icons.access_time),
-                      title: const Text('Remind Me'),
+                      leading: Icon(
+                        isPostponed ? Icons.close : Icons.access_time,
+                        color: isPostponed ? Colors.red : null,
+                      ),
+                      title: Text(
+                        isPostponed ? 'Cancel Remind Me' : 'Remind Me',
+                      ),
                       onTap: () {
                         Navigator.pop(ctx);
                         if (tId.isNotEmpty) {
-                          controller.startReminderTimer(30, tId, () {
-                            controller.fetchApprovalTickets();
-                          });
+                          if (isPostponed) {
+                            controller.cancelReminderTimer();
+                          } else {
+                            controller.startReminderTimer(30, tId, () {
+                              controller.fetchApprovalTickets();
+                            });
+                          }
                         }
                       },
                     ),
@@ -1153,6 +1165,9 @@ class _NotificationPageState extends State<NotificationPage> {
           Get.to(() => const ApprovalPage());
         },
         onLongPress: () {
+          final isPostponed = tId.isNotEmpty &&
+              controller.postponedTicketIds.contains(tId) &&
+              controller.reminderCountdown.value > 0;
           showModalBottomSheet(
             context: context,
             shape: RoundedRectangleBorder(
@@ -1184,14 +1199,23 @@ class _NotificationPageState extends State<NotificationPage> {
                       },
                     ),
                     ListTile(
-                      leading: const Icon(Icons.access_time),
-                      title: const Text('Remind Me'),
+                      leading: Icon(
+                        isPostponed ? Icons.close : Icons.access_time,
+                        color: isPostponed ? Colors.red : null,
+                      ),
+                      title: Text(
+                        isPostponed ? 'Cancel Remind Me' : 'Remind Me',
+                      ),
                       onTap: () {
                         Navigator.pop(ctx);
                         if (tId.isNotEmpty) {
-                          controller.startReminderTimer(30, tId, () {
-                            controller.fetchApprovalTickets();
-                          });
+                          if (isPostponed) {
+                            controller.cancelReminderTimer();
+                          } else {
+                            controller.startReminderTimer(30, tId, () {
+                              controller.fetchApprovalTickets();
+                            });
+                          }
                         }
                       },
                     ),
