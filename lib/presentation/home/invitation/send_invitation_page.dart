@@ -55,6 +55,104 @@ class _SendInvitationPageState extends State<SendInvitationPage>
   String? selectedGedungQuick;
   String? selectedStatusQuick;
 
+  List<String> activeFilterKeys = ['date'];
+  List<String> activeFilterKeysQuick = ['date'];
+
+  void _updateActiveFilters({
+    required String? newGedung,
+    required String? newStatus,
+    required String? newFlow,
+    required DateTime? newStartDate,
+    required DateTime? newEndDate,
+  }) {
+    final wasGedungActive = selectedGedung != null;
+    final wasStatusActive = selectedStatus != null && selectedStatus!.isNotEmpty;
+    final wasFlowActive = selectedFlow != null && selectedFlow!.isNotEmpty;
+    final wasDateActive = startDate != null || endDate != null;
+
+    final isGedungActive = newGedung != null;
+    final isStatusActive = newStatus != null && newStatus.isNotEmpty;
+    final isFlowActive = newFlow != null && newFlow.isNotEmpty;
+    final isDateActive = newStartDate != null || newEndDate != null;
+
+    final addedGedung = isGedungActive && (!wasGedungActive || selectedGedung != newGedung);
+    final addedStatus = isStatusActive && (!wasStatusActive || selectedStatus != newStatus);
+    final addedFlow = isFlowActive && (!wasFlowActive || selectedFlow != newFlow);
+    final addedDate = isDateActive && (!wasDateActive || startDate != newStartDate || endDate != newEndDate);
+
+    final List<String> newOrder = [];
+
+    if (addedFlow) newOrder.add('flow');
+    if (addedStatus) newOrder.add('status');
+    if (addedGedung) newOrder.add('gedung');
+    if (addedDate) newOrder.add('date');
+
+    for (final key in activeFilterKeys) {
+      if (key == 'flow' && isFlowActive && !newOrder.contains('flow')) {
+        newOrder.add('flow');
+      }
+      if (key == 'status' && isStatusActive && !newOrder.contains('status')) {
+        newOrder.add('status');
+      }
+      if (key == 'gedung' && isGedungActive && !newOrder.contains('gedung')) {
+        newOrder.add('gedung');
+      }
+      if (key == 'date' && isDateActive && !newOrder.contains('date')) {
+        newOrder.add('date');
+      }
+    }
+
+    if (isFlowActive && !newOrder.contains('flow')) newOrder.add('flow');
+    if (isStatusActive && !newOrder.contains('status')) newOrder.add('status');
+    if (isGedungActive && !newOrder.contains('gedung')) newOrder.add('gedung');
+    if (isDateActive && !newOrder.contains('date')) newOrder.add('date');
+
+    activeFilterKeys = newOrder;
+  }
+
+  void _updateActiveFiltersQuick({
+    required String? newGedung,
+    required String? newStatus,
+    required DateTime? newStartDate,
+    required DateTime? newEndDate,
+  }) {
+    final wasGedungActive = selectedGedungQuick != null;
+    final wasStatusActive = selectedStatusQuick != null && selectedStatusQuick!.isNotEmpty;
+    final wasDateActive = startDateQuick != null || endDateQuick != null;
+
+    final isGedungActive = newGedung != null;
+    final isStatusActive = newStatus != null && newStatus.isNotEmpty;
+    final isDateActive = newStartDate != null || newEndDate != null;
+
+    final addedGedung = isGedungActive && (!wasGedungActive || selectedGedungQuick != newGedung);
+    final addedStatus = isStatusActive && (!wasStatusActive || selectedStatusQuick != newStatus);
+    final addedDate = isDateActive && (!wasDateActive || startDateQuick != newStartDate || endDateQuick != newEndDate);
+
+    final List<String> newOrder = [];
+
+    if (addedStatus) newOrder.add('status');
+    if (addedGedung) newOrder.add('gedung');
+    if (addedDate) newOrder.add('date');
+
+    for (final key in activeFilterKeysQuick) {
+      if (key == 'status' && isStatusActive && !newOrder.contains('status')) {
+        newOrder.add('status');
+      }
+      if (key == 'gedung' && isGedungActive && !newOrder.contains('gedung')) {
+        newOrder.add('gedung');
+      }
+      if (key == 'date' && isDateActive && !newOrder.contains('date')) {
+        newOrder.add('date');
+      }
+    }
+
+    if (isStatusActive && !newOrder.contains('status')) newOrder.add('status');
+    if (isGedungActive && !newOrder.contains('gedung')) newOrder.add('gedung');
+    if (isDateActive && !newOrder.contains('date')) newOrder.add('date');
+
+    activeFilterKeysQuick = newOrder;
+  }
+
   late TabController _tabController;
 
   @override
@@ -350,6 +448,13 @@ class _SendInvitationPageState extends State<SendInvitationPage>
 
                     if (result != null) {
                       setState(() {
+                        _updateActiveFilters(
+                          newGedung: result['siteName'],
+                          newStatus: result['status'],
+                          newFlow: result['flow'],
+                          newStartDate: result['startDate'],
+                          newEndDate: result['endDate'],
+                        );
                         startDate = result['startDate'];
                         endDate = result['endDate'];
                         selectedGedung = result['siteName'];
@@ -368,85 +473,106 @@ class _SendInvitationPageState extends State<SendInvitationPage>
                   },
                   child: _buildFilterChip(context, 'Filter'),
                 ),
-                if (selectedGedung != null) ...[
-                  hSpace(context, 8),
-                  _buildFilterValueChip(
-                    context,
-                    selectedGedung!,
-                    onClear: () {
-                      final inviteCtrl = Get.find<InvitationController>();
-                      setState(() => selectedGedung = null);
-                      inviteCtrl.setFilters(
-                        start: startDate,
-                        end: endDate,
-                        siteId: null,
-                        siteName: null,
-                        status: selectedStatus,
-                        flow: selectedFlow,
-                      );
-                    },
-                  ),
-                ],
-                if (startDate != null || endDate != null) ...[
-                  hSpace(context, 8),
-                  _buildFilterValueChip(
-                    context,
-                    _formatDateRange(startDate, endDate),
-                    onClear: () {
-                      final inviteCtrl = Get.find<InvitationController>();
-                      setState(() {
-                        startDate = null;
-                        endDate = null;
-                      });
-                      inviteCtrl.setFilters(
-                        start: null,
-                        end: null,
-                        siteId: inviteCtrl.selectedSiteId.value,
-                        siteName: inviteCtrl.selectedSiteName.value,
-                        status: selectedStatus,
-                        flow: selectedFlow,
-                      );
-                    },
-                  ),
-                ],
-                if (selectedStatus != null && selectedStatus!.isNotEmpty) ...[
-                  hSpace(context, 8),
-                  _buildFilterValueChip(
-                    context,
-                    'Status: $selectedStatus',
-                    onClear: () {
-                      final inviteCtrl = Get.find<InvitationController>();
-                      setState(() => selectedStatus = null);
-                      inviteCtrl.setFilters(
-                        start: startDate,
-                        end: endDate,
-                        siteId: inviteCtrl.selectedSiteId.value,
-                        siteName: inviteCtrl.selectedSiteName.value,
-                        status: null,
-                        flow: selectedFlow,
-                      );
-                    },
-                  ),
-                ],
-                if (selectedFlow != null && selectedFlow!.isNotEmpty) ...[
-                  hSpace(context, 8),
-                  _buildFilterValueChip(
-                    context,
-                    'Flow: $selectedFlow',
-                    onClear: () {
-                      final inviteCtrl = Get.find<InvitationController>();
-                      setState(() => selectedFlow = null);
-                      inviteCtrl.setFilters(
-                        start: startDate,
-                        end: endDate,
-                        siteId: inviteCtrl.selectedSiteId.value,
-                        siteName: inviteCtrl.selectedSiteName.value,
-                        status: selectedStatus,
-                        flow: null,
-                      );
-                    },
-                  ),
-                ],
+                ...activeFilterKeys.map((key) {
+                  if (key == 'flow' && selectedFlow != null && selectedFlow!.isNotEmpty) {
+                    return Padding(
+                      padding: EdgeInsets.only(left: rw(context, 8)),
+                      child: _buildFilterValueChip(
+                        context,
+                        'Flow: $selectedFlow',
+                        onClear: () {
+                          final inviteCtrl = Get.find<InvitationController>();
+                          setState(() {
+                            selectedFlow = null;
+                            activeFilterKeys.remove('flow');
+                          });
+                          inviteCtrl.setFilters(
+                            start: startDate,
+                            end: endDate,
+                            siteId: inviteCtrl.selectedSiteId.value,
+                            siteName: inviteCtrl.selectedSiteName.value,
+                            status: selectedStatus,
+                            flow: null,
+                          );
+                        },
+                      ),
+                    );
+                  }
+                  if (key == 'status' && selectedStatus != null && selectedStatus!.isNotEmpty) {
+                    return Padding(
+                      padding: EdgeInsets.only(left: rw(context, 8)),
+                      child: _buildFilterValueChip(
+                        context,
+                        'Status: $selectedStatus',
+                        onClear: () {
+                          final inviteCtrl = Get.find<InvitationController>();
+                          setState(() {
+                            selectedStatus = null;
+                            activeFilterKeys.remove('status');
+                          });
+                          inviteCtrl.setFilters(
+                            start: startDate,
+                            end: endDate,
+                            siteId: inviteCtrl.selectedSiteId.value,
+                            siteName: inviteCtrl.selectedSiteName.value,
+                            status: null,
+                            flow: selectedFlow,
+                          );
+                        },
+                      ),
+                    );
+                  }
+                  if (key == 'gedung' && selectedGedung != null) {
+                    return Padding(
+                      padding: EdgeInsets.only(left: rw(context, 8)),
+                      child: _buildFilterValueChip(
+                        context,
+                        selectedGedung!,
+                        onClear: () {
+                          final inviteCtrl = Get.find<InvitationController>();
+                          setState(() {
+                            selectedGedung = null;
+                            activeFilterKeys.remove('gedung');
+                          });
+                          inviteCtrl.setFilters(
+                            start: startDate,
+                            end: endDate,
+                            siteId: null,
+                            siteName: null,
+                            status: selectedStatus,
+                            flow: selectedFlow,
+                          );
+                        },
+                      ),
+                    );
+                  }
+                  if (key == 'date' && (startDate != null || endDate != null)) {
+                    return Padding(
+                      padding: EdgeInsets.only(left: rw(context, 8)),
+                      child: _buildFilterValueChip(
+                        context,
+                        _formatDateRange(startDate, endDate),
+                        onClear: () {
+                          final inviteCtrl = Get.find<InvitationController>();
+                          setState(() {
+                            startDate = null;
+                            endDate = null;
+                            activeFilterKeys.remove('date');
+                          });
+                          inviteCtrl.setFilters(
+                            start: null,
+                            end: null,
+                            siteId: inviteCtrl.selectedSiteId.value,
+                            siteName: inviteCtrl.selectedSiteName.value,
+                            status: selectedStatus,
+                            flow: selectedFlow,
+                          );
+                        },
+                      ),
+                    );
+                  }
+                  return const SizedBox.shrink();
+                }),
               ],
             ),
           ),
@@ -821,6 +947,12 @@ class _SendInvitationPageState extends State<SendInvitationPage>
 
                     if (result != null) {
                       setState(() {
+                        _updateActiveFiltersQuick(
+                          newGedung: result['siteName'],
+                          newStatus: result['status'],
+                          newStartDate: result['startDate'],
+                          newEndDate: result['endDate'],
+                        );
                         startDateQuick = result['startDate'];
                         endDateQuick = result['endDate'];
                         selectedGedungQuick = result['siteName'];
@@ -837,64 +969,79 @@ class _SendInvitationPageState extends State<SendInvitationPage>
                   },
                   child: _buildFilterChip(context, 'Filter'),
                 ),
-                if (selectedGedungQuick != null) ...[
-                  hSpace(context, 8),
-                  _buildFilterValueChip(
-                    context,
-                    selectedGedungQuick!,
-                    onClear: () {
-                      final inviteCtrl = Get.find<InvitationController>();
-                      setState(() => selectedGedungQuick = null);
-                      inviteCtrl.setQuickFilters(
-                        start: startDateQuick,
-                        end: endDateQuick,
-                        siteId: null,
-                        siteName: null,
-                        status: selectedStatusQuick,
-                      );
-                    },
-                  ),
-                ],
-                if (startDateQuick != null || endDateQuick != null) ...[
-                  hSpace(context, 8),
-                  _buildFilterValueChip(
-                    context,
-                    _formatDateRange(startDateQuick, endDateQuick),
-                    onClear: () {
-                      final inviteCtrl = Get.find<InvitationController>();
-                      setState(() {
-                        startDateQuick = null;
-                        endDateQuick = null;
-                      });
-                      inviteCtrl.setQuickFilters(
-                        start: null,
-                        end: null,
-                        siteId: inviteCtrl.selectedSiteIdQuick.value,
-                        siteName: inviteCtrl.selectedSiteNameQuick.value,
-                        status: selectedStatusQuick,
-                      );
-                    },
-                  ),
-                ],
-                if (selectedStatusQuick != null &&
-                    selectedStatusQuick!.isNotEmpty) ...[
-                  hSpace(context, 8),
-                  _buildFilterValueChip(
-                    context,
-                    'Status: $selectedStatusQuick',
-                    onClear: () {
-                      final inviteCtrl = Get.find<InvitationController>();
-                      setState(() => selectedStatusQuick = null);
-                      inviteCtrl.setQuickFilters(
-                        start: startDateQuick,
-                        end: endDateQuick,
-                        siteId: inviteCtrl.selectedSiteIdQuick.value,
-                        siteName: inviteCtrl.selectedSiteNameQuick.value,
-                        status: null,
-                      );
-                    },
-                  ),
-                ],
+                ...activeFilterKeysQuick.map((key) {
+                  if (key == 'status' && selectedStatusQuick != null && selectedStatusQuick!.isNotEmpty) {
+                    return Padding(
+                      padding: EdgeInsets.only(left: rw(context, 8)),
+                      child: _buildFilterValueChip(
+                        context,
+                        'Status: $selectedStatusQuick',
+                        onClear: () {
+                          final inviteCtrl = Get.find<InvitationController>();
+                          setState(() {
+                            selectedStatusQuick = null;
+                            activeFilterKeysQuick.remove('status');
+                          });
+                          inviteCtrl.setQuickFilters(
+                            start: startDateQuick,
+                            end: endDateQuick,
+                            siteId: inviteCtrl.selectedSiteIdQuick.value,
+                            siteName: inviteCtrl.selectedSiteNameQuick.value,
+                            status: null,
+                          );
+                        },
+                      ),
+                    );
+                  }
+                  if (key == 'gedung' && selectedGedungQuick != null) {
+                    return Padding(
+                      padding: EdgeInsets.only(left: rw(context, 8)),
+                      child: _buildFilterValueChip(
+                        context,
+                        selectedGedungQuick!,
+                        onClear: () {
+                          final inviteCtrl = Get.find<InvitationController>();
+                          setState(() {
+                            selectedGedungQuick = null;
+                            activeFilterKeysQuick.remove('gedung');
+                          });
+                          inviteCtrl.setQuickFilters(
+                            start: startDateQuick,
+                            end: endDateQuick,
+                            siteId: null,
+                            siteName: null,
+                            status: selectedStatusQuick,
+                          );
+                        },
+                      ),
+                    );
+                  }
+                  if (key == 'date' && (startDateQuick != null || endDateQuick != null)) {
+                    return Padding(
+                      padding: EdgeInsets.only(left: rw(context, 8)),
+                      child: _buildFilterValueChip(
+                        context,
+                        _formatDateRange(startDateQuick, endDateQuick),
+                        onClear: () {
+                          final inviteCtrl = Get.find<InvitationController>();
+                          setState(() {
+                            startDateQuick = null;
+                            endDateQuick = null;
+                            activeFilterKeysQuick.remove('date');
+                          });
+                          inviteCtrl.setQuickFilters(
+                            start: null,
+                            end: null,
+                            siteId: inviteCtrl.selectedSiteIdQuick.value,
+                            siteName: inviteCtrl.selectedSiteNameQuick.value,
+                            status: selectedStatusQuick,
+                          );
+                        },
+                      ),
+                    );
+                  }
+                  return const SizedBox.shrink();
+                }),
               ],
             ),
           ),

@@ -429,39 +429,24 @@ class InvitationController extends GetxController {
   }
 
   String _getAccessPassJenis(AccessPassModel item) {
-    if (item.visitorStatus.isEmpty && item.flow.isEmpty) {
-      return 'Invitation';
-    }
-    final lowerFlow = item.flow.toLowerCase();
-    if (lowerFlow == 'quickaccessvisit') {
-      return 'Quick Access';
-    } else if (lowerFlow == 'praregister') {
+    final lowerStatus = item.visitorStatus.toLowerCase().trim();
+    if (lowerStatus == 'checkin') {
+      return 'Checkin';
+    } else if (lowerStatus == 'checkout') {
+      return 'Checkout';
+    } else if (lowerStatus == 'preregis' ||
+        lowerStatus == 'praregis' ||
+        lowerStatus == 'praregister' ||
+        item.flow.toLowerCase() == 'praregister') {
       return 'Praregis';
-    } else if (lowerFlow == 'invitation') {
-      return 'Invitation';
-    } else {
-      final lowerStatus = item.visitorStatus.toLowerCase();
-      if (lowerStatus == 'available') {
-        return 'Available';
-      } else if (lowerStatus == 'pending') {
-        return 'Pending';
-      } else if (lowerStatus == 'undercreated') {
-        return 'Under Created';
-      } else if (lowerStatus == 'checkin') {
-        return 'Checkin';
-      } else if (lowerStatus == 'checkout') {
-        return 'Checkout';
-      } else if (lowerStatus == 'reject' ||
-          lowerStatus == 'rejected' ||
-          lowerStatus == 'denied') {
-        return 'Rejected';
-      } else if (item.visitorStatus.isNotEmpty) {
-        return item.visitorStatus[0].toUpperCase() +
-            item.visitorStatus.substring(1);
-      } else {
-        return 'Invitation';
-      }
     }
+
+    final lowerFlow = item.flow.toLowerCase();
+    if (lowerFlow == 'quickaccessvisit' || lowerStatus == 'quickaccess') {
+      return 'Quick Access';
+    }
+
+    return 'Invitation';
   }
 
   Future<void> fetchOngoingInvitations({
