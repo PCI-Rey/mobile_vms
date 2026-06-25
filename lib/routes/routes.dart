@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../presentation/home/visitor/search_visitor_page.dart';
-import '../../presentation/parking/as_operator/parking_page.dart';
+import '../../presentation/parking/as_guest/guest_parking_page.dart';
 import '../../splashscreen.dart';
 import '../../presentation/home/invitation/add_invitation_page.dart';
 import '../../presentation/home/invitation/send_invitation_page.dart';
@@ -61,7 +61,7 @@ class Routes {
   // Routes for Guest role
   static final Map<String, WidgetBuilder> guestRoutes = {
     guestHomePage: (_) => GuestHomePage(),
-    guestParking: (_) => ParkingPage(),
+    guestParking: (_) => const GuestParkingPage(),
     
   };
 
@@ -75,7 +75,7 @@ class Routes {
 
   // Routes for Operator role
   static final Map<String, WidgetBuilder> operatorRoutes = {
-    operatorParking: (_) => ParkingPage(),
+    operatorParking: (_) => const GuestParkingPage(),
   };
 
   /// All routes combined – useful for MaterialApp `routes: Routes.getAll()`

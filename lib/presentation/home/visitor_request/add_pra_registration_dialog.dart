@@ -1137,69 +1137,7 @@ class _Step1VisitorInfo extends StatelessWidget {
                               ],
                             ),
                             vSpace(context, 16),
-                            Opacity(
-                              opacity: empEnabled ? 1.0 : 0.4,
-                              child: IgnorePointer(
-                                ignoring: !empEnabled,
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    RichText(
-                                      text: TextSpan(
-                                        text: 'Employee Name',
-                                        style: TextStyle(
-                                          fontSize: rfs(context, 13),
-                                          fontWeight: FontWeight.w600,
-                                          color: Colors.black87,
-                                        ),
-                                        children: [
-                                          TextSpan(
-                                            text: ' *',
-                                            style: TextStyle(
-                                              color: Colors.red,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    vSpace(context, 8),
-                                    Obx(() {
-                                      final list = controller.employees
-                                          .toList();
-                                      final currentId =
-                                          v.selectedEmployeeId.value;
-                                      final selectedItem =
-                                          list.any((e) => e.id == currentId)
-                                          ? list.firstWhere(
-                                              (e) => e.id == currentId,
-                                            )
-                                          : null;
-                                      return GestureDetector(
-                                        onTap: () async {
-                                          final result =
-                                              await _showEmployeePicker(
-                                                context,
-                                                controller.employees.toList(),
-                                                currentId,
-                                              );
-                                          if (result != null) {
-                                            controller.onGroupEmployeeSelected(
-                                              v,
-                                              result.id,
-                                            );
-                                          }
-                                        },
-                                        child: _DropdownTrigger(
-                                          text: selectedItem?.name ?? '',
-                                          hint: 'Pilih Employee',
-                                        ),
-                                      );
-                                    }),
-                                  ],
-                                ),
-                              ),
-                            ),
+                            // Employee Name dropdown is hidden as per request; employee is selected from search field
                             vSpace(context, 16),
                           ],
                         );
@@ -1279,6 +1217,9 @@ class _Step1VisitorInfo extends StatelessWidget {
                         label: 'Full Name',
                         controller: v.fullName,
                         hint: 'Enter full name',
+                        readOnly: controller.selectedVisitorTypeName.value
+                            .toLowerCase()
+                            .contains('employee'),
                         onChanged: (_) => controller.updateForm(),
                       ),
                       vSpace(context, 16),
@@ -1645,12 +1586,14 @@ class _GroupTextField extends StatelessWidget {
   final String hint;
   final TextInputType? keyboardType;
   final ValueChanged<String>? onChanged;
+  final bool readOnly;
   const _GroupTextField({
     required this.label,
     required this.controller,
     required this.hint,
     this.keyboardType,
     this.onChanged,
+    this.readOnly = false,
   });
 
   @override
@@ -1682,10 +1625,11 @@ class _GroupTextField extends StatelessWidget {
           controller: controller,
           keyboardType: keyboardType,
           onChanged: onChanged,
+          readOnly: readOnly,
           style: TextStyle(fontSize: rfs(context, 14)),
           decoration: InputDecoration(
             filled: true,
-            fillColor: Colors.white,
+            fillColor: readOnly ? Colors.grey.shade100 : Colors.white,
             hintText: hint,
             hintStyle: TextStyle(
               fontSize: rfs(context, 13),
@@ -1705,10 +1649,12 @@ class _GroupTextField extends StatelessWidget {
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(rw(context, 10)),
-              borderSide: const BorderSide(
-                color: AppColors.primary500,
-                width: 1.5,
-              ),
+              borderSide: readOnly
+                  ? const BorderSide(color: Color(0xFFDDDDDD))
+                  : const BorderSide(
+                      color: AppColors.primary500,
+                      width: 1.5,
+                    ),
             ),
             isDense: true,
           ),
@@ -1778,6 +1724,15 @@ class _FormFieldWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext ctx) {
+    final isEmployeeType = controller.selectedVisitorTypeName.value
+        .toLowerCase()
+        .contains('employee');
+
+    if (isEmployeeType &&
+        (field.remarks == 'employee_name' || field.remarks == 'employee')) {
+      return const SizedBox.shrink();
+    }
+
     return Padding(
       padding: EdgeInsets.only(bottom: rh(context, 18)),
       child: Column(
@@ -2247,6 +2202,11 @@ class _FormFieldWidget extends StatelessWidget {
   }) {
     final dedicatedCtrl = controller.getFieldController(field.remarks);
 
+    final isEmployeeType = controller.selectedVisitorTypeName.value
+        .toLowerCase()
+        .contains('employee');
+    final bool isReadOnly = isEmployeeType && field.remarks == 'name';
+
     void onChanged(String v) {
       field.answerText = v;
       switch (field.remarks) {
@@ -2279,6 +2239,8 @@ class _FormFieldWidget extends StatelessWidget {
     }
 
     final decoration = InputDecoration(
+      filled: isReadOnly,
+      fillColor: isReadOnly ? Colors.grey.shade100 : Colors.white,
       contentPadding: EdgeInsets.symmetric(
         horizontal: rw(context, 12),
         vertical: rh(context, 12),
@@ -2293,7 +2255,9 @@ class _FormFieldWidget extends StatelessWidget {
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(rw(context, 10)),
-        borderSide: const BorderSide(color: AppColors.primary500, width: 1.5),
+        borderSide: isReadOnly 
+            ? const BorderSide(color: Color(0xFFDDDDDD))
+            : const BorderSide(color: AppColors.primary500, width: 1.5),
       ),
     );
 
@@ -2305,6 +2269,7 @@ class _FormFieldWidget extends StatelessWidget {
         controller: dedicatedCtrl,
         keyboardType: keyboardType,
         focusNode: focusNode,
+        readOnly: isReadOnly,
         decoration: decoration,
         onChanged: onChanged,
       );
@@ -2314,6 +2279,7 @@ class _FormFieldWidget extends StatelessWidget {
       initialValue: field.answerText,
       keyboardType: keyboardType,
       focusNode: focusNode,
+      readOnly: isReadOnly,
       decoration: decoration,
       onChanged: onChanged,
     );
@@ -2401,11 +2367,34 @@ class _FormFieldWidget extends StatelessWidget {
             color: AppColors.grey400,
             fontSize: rfs(context, 13),
           ),
-          suffixIcon: Icon(
-            Icons.calendar_today_outlined,
-            color: AppColors.grey500,
-            size: 18,
-          ),
+          suffixIcon: displayCtrl.text.isNotEmpty
+              ? GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () {
+                    field.answerDatetime = '';
+                    field.answerText = '';
+                    displayCtrl.clear();
+                    bool isStart = field.remarks == 'visitor_period_start';
+                    bool isEnd = field.remarks == 'visitor_period_end';
+                    if (isStart) {
+                      controller.visitStart.value = null;
+                    } else if (isEnd) {
+                      controller.visitEnd.value = null;
+                    }
+                    setState(() {});
+                    controller.updateForm();
+                  },
+                  child: Icon(
+                    Icons.close_rounded,
+                    color: AppColors.grey500,
+                    size: 18,
+                  ),
+                )
+              : Icon(
+                  Icons.calendar_today_outlined,
+                  color: AppColors.grey500,
+                  size: 18,
+                ),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(rw(context, 10)),
             borderSide: const BorderSide(color: Color(0xFFDDDDDD)),
@@ -2444,6 +2433,7 @@ class _FormFieldWidget extends StatelessWidget {
 
     DateTime initialDate = now;
     DateTime firstDate = DateTime(now.year - 1);
+    DateTime lastDate = DateTime(now.year + 5);
 
     if (isEnd && controller.visitStart.value != null) {
       firstDate = DateTime(
@@ -2455,11 +2445,21 @@ class _FormFieldWidget extends StatelessWidget {
       }
     }
 
+    if (isStart && controller.visitEnd.value != null) {
+      lastDate = DateTime(
+          controller.visitEnd.value!.year,
+          controller.visitEnd.value!.month,
+          controller.visitEnd.value!.day);
+      if (initialDate.isAfter(lastDate)) {
+        initialDate = lastDate;
+      }
+    }
+
     final picked = await showDatePicker(
       context: ctx,
       initialDate: initialDate,
       firstDate: firstDate,
-      lastDate: DateTime(now.year + 5),
+      lastDate: lastDate,
       builder: (context, child) => Theme(
         data: Theme.of(context).copyWith(
           colorScheme: const ColorScheme.light(primary: AppColors.primary500),
@@ -2468,22 +2468,6 @@ class _FormFieldWidget extends StatelessWidget {
       ),
     );
     if (picked != null) {
-      if (isEnd && controller.visitStart.value != null) {
-        final startDt = controller.visitStart.value!;
-        final startOnlyDate = DateTime(startDt.year, startDt.month, startDt.day);
-        if (picked.isBefore(startOnlyDate)) {
-          Get.snackbar('Waktu Tidak Valid', 'Visit End tidak boleh lebih awal dari Visit Start', backgroundColor: Colors.red, colorText: Colors.white, snackPosition: SnackPosition.TOP);
-          return;
-        }
-      }
-      if (isStart && controller.visitEnd.value != null) {
-        final endDt = controller.visitEnd.value!;
-        final endOnlyDate = DateTime(endDt.year, endDt.month, endDt.day);
-        if (picked.isAfter(endOnlyDate)) {
-          Get.snackbar('Waktu Tidak Valid', 'Visit Start tidak boleh lebih lambat dari Visit End', backgroundColor: Colors.red, colorText: Colors.white, snackPosition: SnackPosition.TOP);
-          return;
-        }
-      }
 
       final iso = picked.toIso8601String().replaceAll(RegExp(r'\.\d+'), '');
       field.answerDatetime = iso;
@@ -2510,6 +2494,7 @@ class _FormFieldWidget extends StatelessWidget {
 
     DateTime initialDate = now;
     DateTime firstDate = DateTime(now.year - 1);
+    DateTime lastDate = DateTime(now.year + 5);
 
     if (isEnd && controller.visitStart.value != null) {
       firstDate = DateTime(
@@ -2521,11 +2506,21 @@ class _FormFieldWidget extends StatelessWidget {
       }
     }
 
+    if (isStart && controller.visitEnd.value != null) {
+      lastDate = DateTime(
+          controller.visitEnd.value!.year,
+          controller.visitEnd.value!.month,
+          controller.visitEnd.value!.day);
+      if (initialDate.isAfter(lastDate)) {
+        initialDate = lastDate;
+      }
+    }
+
     final date = await showDatePicker(
       context: ctx,
       initialDate: initialDate,
       firstDate: firstDate,
-      lastDate: DateTime(now.year + 5),
+      lastDate: lastDate,
       builder: (context, child) => Theme(
         data: Theme.of(context).copyWith(
           colorScheme: const ColorScheme.light(primary: AppColors.primary500),
@@ -2558,12 +2553,28 @@ class _FormFieldWidget extends StatelessWidget {
       initialTime.hour,
       initialTime.minute,
     );
+
     DateTime? cupertinoMinDate;
     if (isEnd && controller.visitStart.value != null) {
       if (date.year == controller.visitStart.value!.year &&
           date.month == controller.visitStart.value!.month &&
           date.day == controller.visitStart.value!.day) {
         cupertinoMinDate = controller.visitStart.value!;
+        if (cupertinoInitialDate.isBefore(cupertinoMinDate)) {
+          cupertinoInitialDate = cupertinoMinDate;
+        }
+      }
+    }
+
+    DateTime? cupertinoMaxDate;
+    if (isStart && controller.visitEnd.value != null) {
+      if (date.year == controller.visitEnd.value!.year &&
+          date.month == controller.visitEnd.value!.month &&
+          date.day == controller.visitEnd.value!.day) {
+        cupertinoMaxDate = controller.visitEnd.value!;
+        if (cupertinoInitialDate.isAfter(cupertinoMaxDate)) {
+          cupertinoInitialDate = cupertinoMaxDate;
+        }
       }
     }
 
@@ -2605,6 +2616,7 @@ class _FormFieldWidget extends StatelessWidget {
                   use24hFormat: true,
                   initialDateTime: cupertinoInitialDate,
                   minimumDate: cupertinoMinDate,
+                  maximumDate: cupertinoMaxDate,
                   onDateTimeChanged: (DateTime newDateTime) {
                     time = TimeOfDay.fromDateTime(newDateTime);
                   },
@@ -2626,6 +2638,7 @@ class _FormFieldWidget extends StatelessWidget {
       time!.minute,
     );
 
+    // Strict validator check fallback (snackbar) to ensure correctness
     if (isEnd && controller.visitStart.value != null && dtRaw.isBefore(controller.visitStart.value!)) {
       Get.snackbar('Waktu Tidak Valid', 'Visit End tidak boleh lebih awal dari Visit Start', backgroundColor: Colors.red, colorText: Colors.white, snackPosition: SnackPosition.TOP);
       return;

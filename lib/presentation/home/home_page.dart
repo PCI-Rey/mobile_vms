@@ -15,6 +15,7 @@ import '../../presentation/auth/controller/user_controller.dart';
 import '../../core/core.dart';
 import 'access_pass/access_pass_page.dart';
 import 'approval/approval_page.dart';
+import '../parking/as_guest/guest_parking_page.dart';
 import 'today_activity_page.dart';
 import 'new_visitor_page.dart';
 import 'today_summary_page.dart';
@@ -758,7 +759,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           GestureDetector(
-            onTap: () => Dashboard.state?.changeTab(3),
+            onTap: () => Dashboard.state?.changeTab(2),
             child: CustomCircleImage(
               image: Assets.images.avaPerson1.image(fit: BoxFit.cover),
               size: rw(context, 48),
@@ -815,7 +816,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
             setState(() {
               _showBellRedDot = false;
             });
-            Dashboard.state?.changeTab(2);
+            context.push(const NotificationPage());
           },
           child: ScaleTransition(
             scale: _bellScaleAnimation,
@@ -1178,11 +1179,11 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
           'onTap': () => context.push(const ApprovalPage()),
         },
         {
-          'label': 'alarm'.tr,
-          'icon': Icons.notifications_active_outlined,
-          'bgColor': const Color(0xFFFFEBEB),
-          'iconColor': const Color(0xFFD32F2F),
-          'onTap': () => context.push(const AlarmListPage()),
+          'label': 'parking'.tr,
+          'icon': Icons.local_parking_rounded,
+          'bgColor': const Color(0xFFEDE7F6),
+          'iconColor': const Color(0xFF5E35B1),
+          'onTap': () => context.push(const GuestParkingPage()),
         },
       ];
 

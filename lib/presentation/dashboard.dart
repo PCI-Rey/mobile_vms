@@ -116,7 +116,6 @@ class _DashboardState extends State<Dashboard>
     List<Widget> widgets = [
       const HomePage(),
       const HistoryPage(),
-      const NotificationPage(),
       const ProfilePage(),
     ];
 
@@ -126,7 +125,6 @@ class _DashboardState extends State<Dashboard>
       widgets = [
         const HomePage(),
         const HistoryPage(),
-        const NotificationPage(),
         const ProfilePage(),
       ];
     }
@@ -169,19 +167,6 @@ class _DashboardState extends State<Dashboard>
         label: 'history'.tr,
       ),
       BottomNavigationBarItem(
-        icon: Icon(
-          Icons.notifications_none_rounded,
-          size: rw(context, 24),
-          color: Colors.grey.shade500,
-        ),
-        activeIcon: Icon(
-          Icons.notifications_rounded,
-          size: rw(context, 24),
-          color: AppColors.primary500,
-        ),
-        label: 'notification'.tr,
-      ),
-      BottomNavigationBarItem(
         icon: Assets.icons.profile.image(
           height: rw(context, 24),
           width: rw(context, 24),
@@ -195,7 +180,7 @@ class _DashboardState extends State<Dashboard>
     ];
 
     if (_checkIsGuest(role, user)) {
-      return [items[0], items[3]];
+      return [items[0], items[2]];
     }
 
     return items;

@@ -683,6 +683,7 @@ class PraRegistrationController extends GetxController {
 
   void onEmployeeSelected(String employeeId) {
     selectedEmployeeId.value = employeeId;
+    isEmployee.value = true;
     final emp = _rawEmployees.firstWhereOrNull(
       (e) => e['id'].toString() == employeeId,
     );
@@ -736,6 +737,7 @@ class PraRegistrationController extends GetxController {
 
   void onGroupEmployeeSelected(GroupVisitorRow row, String employeeId) {
     row.selectedEmployeeId.value = employeeId;
+    row.isEmployee.value = true;
     final emp = _rawEmployees.firstWhereOrNull(
       (e) => e['id'].toString() == employeeId,
     );

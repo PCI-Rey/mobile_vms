@@ -430,6 +430,7 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
                             value: visitStart,
                             enabled: isVisitStartEnabled,
                             onTap: () => _pickDateTime(true),
+                            onClear: () => setState(() => visitStart = null),
                           ),
                         ),
                         _buildFieldRow(
@@ -441,6 +442,7 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
                             value: visitEnd,
                             enabled: isVisitEndEnabled,
                             onTap: () => _pickDateTime(false),
+                            onClear: () => setState(() => visitEnd = null),
                           ),
                         ),
                         _buildFieldRow(
@@ -767,6 +769,7 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
     required DateTime? value,
     required bool enabled,
     required VoidCallback onTap,
+    required VoidCallback onClear,
   }) {
     final displayValue = value != null
         ? DateFormat('EEEE, dd MMMM yyyy, HH:mm', 'en').format(value.toLocal())
@@ -781,11 +784,21 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
       decoration: _inputDecoration(enabled: enabled).copyWith(
         hintText: 'Select Date and Time',
         hintStyle: TextStyle(color: Colors.grey, fontSize: rfs(context, 13)),
-        suffixIcon: Icon(
-          Icons.calendar_today_outlined,
-          color: Colors.grey,
-          size: rw(context, 18),
-        ),
+        suffixIcon: enabled && value != null
+            ? GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: onClear,
+                child: Icon(
+                  Icons.close_rounded,
+                  color: Colors.grey,
+                  size: rw(context, 18),
+                ),
+              )
+            : Icon(
+                Icons.calendar_today_outlined,
+                color: Colors.grey,
+                size: rw(context, 18),
+              ),
       ),
       onTap: enabled ? onTap : null,
     );
@@ -818,6 +831,7 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
   Future<void> _pickDateTime(bool isStart) async {
     DateTime initialDate = DateTime.now();
     DateTime firstDate = DateTime.now().subtract(const Duration(days: 365));
+    DateTime lastDate = DateTime.now().add(const Duration(days: 365));
 
     if (!isStart && visitStart != null) {
       firstDate = DateTime(visitStart!.year, visitStart!.month, visitStart!.day);
@@ -826,11 +840,18 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
       }
     }
 
+    if (isStart && visitEnd != null) {
+      lastDate = DateTime(visitEnd!.year, visitEnd!.month, visitEnd!.day);
+      if (initialDate.isAfter(lastDate)) {
+        initialDate = lastDate;
+      }
+    }
+
     final DateTime? date = await showDatePicker(
       context: context,
       initialDate: initialDate,
       firstDate: firstDate,
-      lastDate: DateTime.now().add(const Duration(days: 365)),
+      lastDate: lastDate,
       builder: (context, child) => Theme(
         data: Theme.of(context).copyWith(
           colorScheme: const ColorScheme.light(primary: Color(0xFF005596)),
@@ -861,12 +882,28 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
         initialTime.hour,
         initialTime.minute,
       );
+
       DateTime? cupertinoMinDate;
       if (!isStart && visitStart != null) {
         if (date.year == visitStart!.year &&
             date.month == visitStart!.month &&
             date.day == visitStart!.day) {
           cupertinoMinDate = visitStart!;
+          if (cupertinoInitialDate.isBefore(cupertinoMinDate)) {
+            cupertinoInitialDate = cupertinoMinDate;
+          }
+        }
+      }
+
+      DateTime? cupertinoMaxDate;
+      if (isStart && visitEnd != null) {
+        if (date.year == visitEnd!.year &&
+            date.month == visitEnd!.month &&
+            date.day == visitEnd!.day) {
+          cupertinoMaxDate = visitEnd!;
+          if (cupertinoInitialDate.isAfter(cupertinoMaxDate)) {
+            cupertinoInitialDate = cupertinoMaxDate;
+          }
         }
       }
 
@@ -908,6 +945,7 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
                     use24hFormat: true,
                     initialDateTime: cupertinoInitialDate,
                     minimumDate: cupertinoMinDate,
+                    maximumDate: cupertinoMaxDate,
                     onDateTimeChanged: (DateTime newDateTime) {
                       time = TimeOfDay.fromDateTime(newDateTime);
                     },
