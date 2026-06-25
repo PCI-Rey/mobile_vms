@@ -66,7 +66,8 @@ class _SendInvitationPageState extends State<SendInvitationPage>
     required DateTime? newEndDate,
   }) {
     final wasGedungActive = selectedGedung != null;
-    final wasStatusActive = selectedStatus != null && selectedStatus!.isNotEmpty;
+    final wasStatusActive =
+        selectedStatus != null && selectedStatus!.isNotEmpty;
     final wasFlowActive = selectedFlow != null && selectedFlow!.isNotEmpty;
     final wasDateActive = startDate != null || endDate != null;
 
@@ -75,10 +76,15 @@ class _SendInvitationPageState extends State<SendInvitationPage>
     final isFlowActive = newFlow != null && newFlow.isNotEmpty;
     final isDateActive = newStartDate != null || newEndDate != null;
 
-    final addedGedung = isGedungActive && (!wasGedungActive || selectedGedung != newGedung);
-    final addedStatus = isStatusActive && (!wasStatusActive || selectedStatus != newStatus);
-    final addedFlow = isFlowActive && (!wasFlowActive || selectedFlow != newFlow);
-    final addedDate = isDateActive && (!wasDateActive || startDate != newStartDate || endDate != newEndDate);
+    final addedGedung =
+        isGedungActive && (!wasGedungActive || selectedGedung != newGedung);
+    final addedStatus =
+        isStatusActive && (!wasStatusActive || selectedStatus != newStatus);
+    final addedFlow =
+        isFlowActive && (!wasFlowActive || selectedFlow != newFlow);
+    final addedDate =
+        isDateActive &&
+        (!wasDateActive || startDate != newStartDate || endDate != newEndDate);
 
     final List<String> newOrder = [];
 
@@ -117,16 +123,25 @@ class _SendInvitationPageState extends State<SendInvitationPage>
     required DateTime? newEndDate,
   }) {
     final wasGedungActive = selectedGedungQuick != null;
-    final wasStatusActive = selectedStatusQuick != null && selectedStatusQuick!.isNotEmpty;
+    final wasStatusActive =
+        selectedStatusQuick != null && selectedStatusQuick!.isNotEmpty;
     final wasDateActive = startDateQuick != null || endDateQuick != null;
 
     final isGedungActive = newGedung != null;
     final isStatusActive = newStatus != null && newStatus.isNotEmpty;
     final isDateActive = newStartDate != null || newEndDate != null;
 
-    final addedGedung = isGedungActive && (!wasGedungActive || selectedGedungQuick != newGedung);
-    final addedStatus = isStatusActive && (!wasStatusActive || selectedStatusQuick != newStatus);
-    final addedDate = isDateActive && (!wasDateActive || startDateQuick != newStartDate || endDateQuick != newEndDate);
+    final addedGedung =
+        isGedungActive &&
+        (!wasGedungActive || selectedGedungQuick != newGedung);
+    final addedStatus =
+        isStatusActive &&
+        (!wasStatusActive || selectedStatusQuick != newStatus);
+    final addedDate =
+        isDateActive &&
+        (!wasDateActive ||
+            startDateQuick != newStartDate ||
+            endDateQuick != newEndDate);
 
     final List<String> newOrder = [];
 
@@ -256,6 +271,21 @@ class _SendInvitationPageState extends State<SendInvitationPage>
 
   @override
   void dispose() {
+    controller.setFilters(
+      start: controller.startDate.value,
+      end: controller.endDate.value,
+      siteId: '',
+      siteName: '',
+      status: '',
+      flow: '',
+    );
+    controller.setQuickFilters(
+      start: controller.startDateQuick.value,
+      end: controller.endDateQuick.value,
+      siteId: '',
+      siteName: '',
+      status: '',
+    );
     _tabController.dispose();
     super.dispose();
   }
@@ -474,12 +504,14 @@ class _SendInvitationPageState extends State<SendInvitationPage>
                   child: _buildFilterChip(context, 'Filter'),
                 ),
                 ...activeFilterKeys.map((key) {
-                  if (key == 'flow' && selectedFlow != null && selectedFlow!.isNotEmpty) {
+                  if (key == 'flow' &&
+                      selectedFlow != null &&
+                      selectedFlow!.isNotEmpty) {
                     return Padding(
                       padding: EdgeInsets.only(left: rw(context, 8)),
                       child: _buildFilterValueChip(
                         context,
-                        'Flow: $selectedFlow',
+                        'Visitor Status: $selectedFlow',
                         onClear: () {
                           final inviteCtrl = Get.find<InvitationController>();
                           setState(() {
@@ -498,12 +530,14 @@ class _SendInvitationPageState extends State<SendInvitationPage>
                       ),
                     );
                   }
-                  if (key == 'status' && selectedStatus != null && selectedStatus!.isNotEmpty) {
+                  if (key == 'status' &&
+                      selectedStatus != null &&
+                      selectedStatus!.isNotEmpty) {
                     return Padding(
                       padding: EdgeInsets.only(left: rw(context, 8)),
                       child: _buildFilterValueChip(
                         context,
-                        'Status: $selectedStatus',
+                        'Status Invitation: $selectedStatus',
                         onClear: () {
                           final inviteCtrl = Get.find<InvitationController>();
                           setState(() {
@@ -527,7 +561,7 @@ class _SendInvitationPageState extends State<SendInvitationPage>
                       padding: EdgeInsets.only(left: rw(context, 8)),
                       child: _buildFilterValueChip(
                         context,
-                        selectedGedung!,
+                        'Location: $selectedGedung',
                         onClear: () {
                           final inviteCtrl = Get.find<InvitationController>();
                           setState(() {
@@ -970,12 +1004,14 @@ class _SendInvitationPageState extends State<SendInvitationPage>
                   child: _buildFilterChip(context, 'Filter'),
                 ),
                 ...activeFilterKeysQuick.map((key) {
-                  if (key == 'status' && selectedStatusQuick != null && selectedStatusQuick!.isNotEmpty) {
+                  if (key == 'status' &&
+                      selectedStatusQuick != null &&
+                      selectedStatusQuick!.isNotEmpty) {
                     return Padding(
                       padding: EdgeInsets.only(left: rw(context, 8)),
                       child: _buildFilterValueChip(
                         context,
-                        'Status: $selectedStatusQuick',
+                        'Status Invitation: $selectedStatusQuick',
                         onClear: () {
                           final inviteCtrl = Get.find<InvitationController>();
                           setState(() {
@@ -998,7 +1034,7 @@ class _SendInvitationPageState extends State<SendInvitationPage>
                       padding: EdgeInsets.only(left: rw(context, 8)),
                       child: _buildFilterValueChip(
                         context,
-                        selectedGedungQuick!,
+                        'Location: $selectedGedungQuick',
                         onClear: () {
                           final inviteCtrl = Get.find<InvitationController>();
                           setState(() {
@@ -1016,7 +1052,8 @@ class _SendInvitationPageState extends State<SendInvitationPage>
                       ),
                     );
                   }
-                  if (key == 'date' && (startDateQuick != null || endDateQuick != null)) {
+                  if (key == 'date' &&
+                      (startDateQuick != null || endDateQuick != null)) {
                     return Padding(
                       padding: EdgeInsets.only(left: rw(context, 8)),
                       child: _buildFilterValueChip(
@@ -4017,7 +4054,7 @@ class _ShareLinkListInlineState extends State<ShareLinkListInline> {
                     hSpace(context, 8),
                     _buildFilterValueChip(
                       context,
-                      'Status: $selectedStatusShare',
+                      'Status Invitation: $selectedStatusShare',
                       onClear: () {
                         setState(() => selectedStatusShare = null);
                         controller.setShareFilters(

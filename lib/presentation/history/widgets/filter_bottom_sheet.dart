@@ -173,7 +173,7 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                'Select Building',
+                'Select Location',
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: rfs(context, 18),
@@ -226,7 +226,7 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                'Select Status',
+                'Select Status Invitation',
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: rfs(context, 18),
@@ -260,7 +260,7 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
   }
 
   void _showFlowSelection(BuildContext context) {
-    final flowList = ['Praregis', 'Invitation', 'Checkin', 'Checkout'];
+    final flowList = ['Praregis', 'Available', 'Checkin', 'Checkout'];
     showModalBottomSheet(
       context: context,
       shape: RoundedRectangleBorder(
@@ -275,7 +275,7 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                'Select Flow',
+                'Select Visitor Status',
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: rfs(context, 18),
@@ -432,7 +432,7 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text("Building", style: TextStyles.subtitle2),
+                          Text("Location", style: TextStyles.subtitle2),
                           vSpace(context, 6),
                           Container(
                             padding: EdgeInsets.symmetric(
@@ -450,7 +450,7 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                                    gedungList.firstWhereOrNull(
                                          (e) => e['id'] == selectedGedung,
                                        )?['name'] ??
-                                       'Select Building',
+                                       'Select Location',
                                   style: TextStyle(
                                     color: selectedGedung == null ||
                                             selectedGedung!.isEmpty
@@ -476,7 +476,7 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text("Status", style: TextStyles.subtitle2),
+                  Text("Status Invitation", style: TextStyles.subtitle2),
                   vSpace(context, 6),
                   GestureDetector(
                     onTap: () => _showStatusSelection(context),
@@ -495,7 +495,7 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                           Text(
                             selectedStatus?.isNotEmpty == true
                                 ? selectedStatus!
-                                : 'Select Status',
+                                : 'Select Status Invitation',
                             style: TextStyle(
                               color:
                                   selectedStatus == null ||
@@ -522,7 +522,7 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text("Flow", style: TextStyles.subtitle2),
+                  Text("Visitor Status", style: TextStyles.subtitle2),
                   vSpace(context, 6),
                   GestureDetector(
                     onTap: () => _showFlowSelection(context),
@@ -541,7 +541,7 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                           Text(
                             selectedFlow?.isNotEmpty == true
                                 ? selectedFlow!
-                                : 'Select Flow',
+                                : 'Select Visitor Status',
                             style: TextStyle(
                               color:
                                   selectedFlow == null ||

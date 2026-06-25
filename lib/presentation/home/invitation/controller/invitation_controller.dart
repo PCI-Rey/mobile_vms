@@ -46,7 +46,7 @@ class InvitationController extends GetxController {
   final RxList<ApprovalTicketModel> approvalTickets =
       <ApprovalTicketModel>[].obs;
   final RxBool isApprovalLoading = false.obs;
-  
+
   // Persistent date filters for Approval tabs
   DateTime? approvalPendingStartDate;
   DateTime? approvalPendingEndDate;
@@ -429,7 +429,12 @@ class InvitationController extends GetxController {
   }
 
   String _getAccessPassJenis(AccessPassModel item) {
-    final lowerStatus = item.visitorStatus.toLowerCase().trim();
+    final cached = transactionVisitorsCache[item.id];
+    final targetItem = (cached != null && cached.isNotEmpty)
+        ? cached.first
+        : item;
+
+    final lowerStatus = targetItem.visitorStatus.toLowerCase().trim();
     if (lowerStatus == 'checkin') {
       return 'Checkin';
     } else if (lowerStatus == 'checkout') {
@@ -437,16 +442,16 @@ class InvitationController extends GetxController {
     } else if (lowerStatus == 'preregis' ||
         lowerStatus == 'praregis' ||
         lowerStatus == 'praregister' ||
-        item.flow.toLowerCase() == 'praregister') {
+        targetItem.flow.toLowerCase() == 'praregister') {
       return 'Praregis';
     }
 
-    final lowerFlow = item.flow.toLowerCase();
+    final lowerFlow = targetItem.flow.toLowerCase();
     if (lowerFlow == 'quickaccessvisit' || lowerStatus == 'quickaccess') {
       return 'Quick Access';
     }
 
-    return 'Invitation';
+    return 'Available';
   }
 
   Future<void> fetchOngoingInvitations({
@@ -1528,6 +1533,7 @@ class InvitationController extends GetxController {
     if (tasks.isNotEmpty) {
       await Future.wait(tasks);
       fetchVisitorTodayCount();
+      _applyFilters();
     }
   }
 
