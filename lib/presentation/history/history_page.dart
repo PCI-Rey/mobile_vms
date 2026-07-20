@@ -1,11 +1,12 @@
+// ignore_for_file: deprecated_member_use
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
 import '../../core/helper/responsive_helper.dart';
 import '../../core/core.dart';
-import '../../data/models/access_pass_model.dart';
 import '../auth/controller/language_controller.dart';
+import '../home/invitation/controller/invitation_controller.dart';
 import 'controller/history_controller.dart';
 
 class HistoryPage extends StatefulWidget {
@@ -16,9 +17,11 @@ class HistoryPage extends StatefulWidget {
 }
 
 class _HistoryPageState extends State<HistoryPage> {
-  DateTime? startDate;
-  DateTime? endDate;
   late final HistoryController controller;
+
+  /// One-way sync worker: Home selectedDashboardDate → History.
+  /// Cancelled in dispose so it never affects the home date.
+  Worker? _dateWorker;
 
   @override
   void initState() {
@@ -28,288 +31,413 @@ class _HistoryPageState extends State<HistoryPage> {
     } else {
       controller = Get.put(HistoryController());
     }
-    // Sync local state dates with controller dates
-    startDate = controller.startDate.value;
-    endDate = controller.endDate.value;
+
+    // One-way sync: whenever Home changes its dashboard date,
+    // History follows automatically.
+    // The reverse (History date picker) does NOT touch InvitationController.
+    if (Get.isRegistered<InvitationController>()) {
+      final invCtrl = Get.find<InvitationController>();
+      _dateWorker = ever(
+        invCtrl.selectedDashboardDate,
+        (date) => controller.fetchActivities(date: date),
+      );
+    }
   }
+
+  @override
+  void dispose() {
+    _dateWorker?.dispose();
+    super.dispose();
+  }
+
+  // ── Date picker ───────────────────────────────────────────────────────────
+
+  Future<void> _pickDate() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: controller.selectedDate.value,
+      firstDate: DateTime(2020),
+      lastDate: DateTime.now(),
+      locale: const Locale('en', 'US'),
+    );
+    if (picked != null) {
+      final normalized = DateTime(picked.year, picked.month, picked.day);
+      controller.fetchActivities(date: normalized);
+    }
+  }
+
+  // ── Build ─────────────────────────────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFFF8FAFF),
       appBar: AppBar(
         backgroundColor: Colors.white,
-        title: Text(
-          'History',
-          style: TextStyle(
-            fontSize: rfs(context, 24),
-            fontWeight: FontWeight.w700,
-            color: Colors.black87,
-          ),
-        ),
+        elevation: 0,
+        title: Obx(() {
+          final lang = Get.isRegistered<LanguageController>()
+              ? LanguageController.to.selectedLang.value
+              : 'id';
+          final isId = lang == 'id';
+          final date = controller.selectedDate.value;
+
+          String dateLabel;
+          try {
+            dateLabel = DateFormat(
+              'd MMMM yyyy',
+              isId ? 'id_ID' : 'en_US',
+            ).format(date);
+          } catch (_) {
+            dateLabel = DateFormat('d MMMM yyyy').format(date);
+          }
+
+          return Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'History',
+                style: TextStyle(
+                  fontSize: rfs(context, 22),
+                  fontWeight: FontWeight.w700,
+                  color: Colors.black87,
+                ),
+              ),
+              vSpace(context, 4),
+              Text(
+                '${isId ? 'Tanggal' : 'Date'}: $dateLabel',
+                style: TextStyle(
+                  fontSize: rfs(context, 12),
+                  fontWeight: FontWeight.w400,
+                  color: Colors.grey.shade500,
+                ),
+              ),
+            ],
+          );
+        }),
         centerTitle: true,
+        actions: [
+          Obx(() {
+            // Show refresh spinner inline if refreshing
+            if (controller.isRefreshing.value) {
+              return Padding(
+                padding: EdgeInsets.symmetric(horizontal: rw(context, 16)),
+                child: SizedBox(
+                  width: rw(context, 20),
+                  height: rw(context, 20),
+                  child: const CircularProgressIndicator(strokeWidth: 2),
+                ),
+              );
+            }
+            return IconButton(
+              onPressed: _pickDate,
+              icon: Icon(
+                Icons.calendar_today_outlined,
+                color: Colors.black87,
+                size: rw(context, 22),
+              ),
+              tooltip: 'Pick date',
+            );
+          }),
+        ],
         bottom: PreferredSize(
           preferredSize: Size.fromHeight(rh(context, 1.0)),
           child: Container(color: AppColors.grey300, height: 1.0),
         ),
       ),
-      body: Obx(() => _buildHistoryContent()),
+      body: Obx(() => _buildBody(context)),
     );
   }
 
-  Widget _buildHistoryContent() {
+  // ── Body states ───────────────────────────────────────────────────────────
+
+  Widget _buildBody(BuildContext context) {
     if (controller.isLoading.value && !controller.isRefreshing.value) {
       return const Center(child: CircularProgressIndicator());
     }
 
     if (controller.errorMessage.value != null) {
-      return Center(
-        child: Padding(
-          padding: EdgeInsets.all(rw(context, 20.0)),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                controller.errorMessage.value!,
-                style: const TextStyle(color: Colors.red),
-                textAlign: TextAlign.center,
-              ),
-              vSpace(context, 16),
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary500,
-                ),
-                onPressed: () => controller.loadHistory(
-                  startDate: startDate,
-                  endDate: endDate,
-                ),
-                child: const Text(
-                  'Retry',
-                  style: TextStyle(color: Colors.white),
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
+      return _buildError(context);
     }
 
-    if (controller.filteredHistory.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.history,
-              size: rw(context, 64),
-              color: Colors.grey.shade400,
-            ),
-            vSpace(context, 16),
-            Text(
-              'No history found',
-              style: TextStyle(
-                fontSize: rfs(context, 16),
-                color: Colors.grey.shade600,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ],
-        ),
-      );
+    final activities = _parseActivities(context);
+
+    if (activities.isEmpty) {
+      return _buildEmpty(context);
     }
 
     return RefreshIndicator(
-      onRefresh: () => controller.refreshHistory(),
-      child: ListView.builder(
+      onRefresh: () => controller.refreshActivities(),
+      child: ListView.separated(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: EdgeInsets.all(rw(context, 20.0)),
-        itemCount: controller.filteredHistory.length,
+        padding: EdgeInsets.only(
+          left: rw(context, 16),
+          right: rw(context, 16),
+          top: rh(context, 16),
+          bottom: rh(context, 16) + MediaQuery.of(context).padding.bottom,
+        ),
+        itemCount: activities.length,
+        separatorBuilder: (_, _) => Divider(
+          height: 1,
+          thickness: 0.5,
+          color: Colors.grey.shade100,
+          indent: rw(context, 76),
+        ),
         itemBuilder: (context, index) {
-          final item = controller.filteredHistory[index];
-          return Padding(
-            padding: EdgeInsets.only(bottom: rh(context, 16.0)),
-            child: _buildHistoryCard(index, item),
+          final isFirst = index == 0;
+          final isLast = index == activities.length - 1;
+          return Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.only(
+                topLeft: isFirst ? const Radius.circular(16) : Radius.zero,
+                topRight: isFirst ? const Radius.circular(16) : Radius.zero,
+                bottomLeft: isLast ? const Radius.circular(16) : Radius.zero,
+                bottomRight: isLast ? const Radius.circular(16) : Radius.zero,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.015),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: _buildActivityRow(context, activities[index]),
           );
         },
       ),
     );
   }
 
-  Widget _buildHistoryCard(int index, AccessPassModel item) {
-    final String lang = Get.isRegistered<LanguageController>()
+  // ── Parse raw API data → _ActivityItem list ───────────────────────────────
+
+  List<_ActivityItem> _parseActivities(BuildContext context) {
+    final lang = Get.isRegistered<LanguageController>()
         ? LanguageController.to.selectedLang.value
         : 'id';
+    final isId = lang == 'id';
 
-    String formatDate(DateTime d) {
-      try {
-        return DateFormat(
-          'd MMMM yyyy, HH:mm',
-          lang == 'id' ? 'id_ID' : 'en_US',
-        ).format(d);
-      } catch (_) {
-        return DateFormat('d MMMM yyyy, HH:mm').format(d);
+    final List<_ActivityItem> activities = [];
+
+    for (final item in controller.todayActivities) {
+      final dateStr =
+          item['actionAt']?.toString() ?? item['createdAt']?.toString();
+      final DateTime timestamp = dateStr != null
+          ? HistoryController.parseTimestamp(dateStr)
+          : DateTime.now();
+
+      final String action = (item['action']?.toString() ?? '').toLowerCase();
+      final String title;
+      final IconData icon;
+      final Color iconColor;
+      final Color bgColor;
+
+      if (action.contains('approve')) {
+        title = isId ? 'Persetujuan disetujui' : 'Approval approved';
+        icon = Icons.check_circle_outline;
+        iconColor = const Color(0xFF43A047);
+        bgColor = const Color(0xFFE8F5E9);
+      } else if (action.contains('reject') || action.contains('deny')) {
+        title = isId ? 'Persetujuan ditolak' : 'Approval rejected';
+        icon = Icons.cancel_outlined;
+        iconColor = const Color(0xFFD32F2F);
+        bgColor = const Color(0xFFFFEBEE);
+      } else if (action.contains('checkin')) {
+        title = isId ? 'Visitor Check-In' : 'Visitor Check-In';
+        icon = Icons.login_outlined;
+        iconColor = const Color(0xFF1976D2);
+        bgColor = const Color(0xFFE8F1FD);
+      } else if (action.contains('checkout')) {
+        title = isId ? 'Visitor Check-Out' : 'Visitor Check-Out';
+        icon = Icons.logout_outlined;
+        iconColor = const Color(0xFF0288D1);
+        bgColor = const Color(0xFFE1F5FE);
+      } else if (action.contains('password')) {
+        title = isId ? 'Ubah Kata Sandi' : 'Change Password';
+        icon = Icons.lock_outline;
+        iconColor = const Color(0xFF534AB7);
+        bgColor = const Color(0xFFF3EEFE);
+      } else if (action.contains('invitation') || action.contains('invite')) {
+        title = isId ? 'Undangan Dibuat' : 'Invitation Created';
+        icon = Icons.mail_outline_rounded;
+        iconColor = const Color(0xFF0F6E56);
+        bgColor = const Color(0xFFE1F5EE);
+      } else {
+        // Fallback: capitalise the raw action string
+        final raw = item['action']?.toString() ?? 'Activity';
+        title = raw.isNotEmpty
+            ? raw[0].toUpperCase() + raw.substring(1)
+            : 'Activity';
+        icon = Icons.info_outline;
+        iconColor = const Color(0xFF1976D2);
+        bgColor = const Color(0xFFE8F1FD);
       }
+
+      final description = item['description']?.toString() ?? '';
+
+      activities.add(
+        _ActivityItem(
+          title: title,
+          description: description,
+          timestamp: timestamp,
+          icon: icon,
+          iconColor: iconColor,
+          bgColor: bgColor,
+        ),
+      );
     }
 
-    final badgeColors = _getBadgeColors(item.visitorStatus);
-    final displayStatus = _displayStatus(item.visitorStatus);
+    // Newest first
+    activities.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+    return activities;
+  }
 
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(rw(context, 12)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.06),
-            blurRadius: rw(context, 10),
-            offset: Offset(0, rh(context, 3)),
-          ),
-        ],
-        border: Border.all(color: Colors.grey.shade100),
+  // ── Activity row card ─────────────────────────────────────────────────────
+
+  Widget _buildActivityRow(BuildContext context, _ActivityItem activity) {
+    final timeStr = DateFormat('HH:mm').format(activity.timestamp);
+    return Padding(
+      padding: EdgeInsets.symmetric(
+        horizontal: rw(context, 16),
+        vertical: rh(context, 14),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          // Header
-          Padding(
-            padding: EdgeInsets.only(
-              left: rw(context, 16),
-              right: rw(context, 16),
-              top: rh(context, 16),
-              bottom: rh(context, 12),
+          // Icon circle
+          Container(
+            width: rw(context, 44),
+            height: rw(context, 44),
+            decoration: BoxDecoration(
+              color: activity.bgColor,
+              shape: BoxShape.circle,
             ),
-            child: Row(
+            child: Icon(
+              activity.icon,
+              color: activity.iconColor,
+              size: rw(context, 20),
+            ),
+          ),
+          hSpace(context, 16),
+          // Title + description
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Container(
-                  width: rw(context, 26),
-                  height: rw(context, 26),
-                  alignment: Alignment.center,
-                  decoration: const BoxDecoration(
-                    color: Color(0xFF005596),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Text(
-                    '${index + 1}',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: rfs(context, 12),
-                      fontWeight: FontWeight.bold,
-                    ),
+                Text(
+                  activity.title,
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: rfs(context, 13.5),
+                    color: Colors.black87,
                   ),
                 ),
-                hSpace(context, 10),
-                Expanded(
-                  child: Text(
-                    item.agenda.isNotEmpty ? item.agenda : 'Visit',
+                if (activity.description.isNotEmpty) ...[
+                  vSpace(context, 4),
+                  Text(
+                    activity.description,
                     style: TextStyle(
-                      fontWeight: FontWeight.w700,
-                      fontSize: rfs(context, 16),
-                      color: Colors.black87,
+                      fontSize: rfs(context, 12),
+                      color: Colors.grey.shade600,
                     ),
+                    maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
-                ),
-                hSpace(context, 6),
-                Container(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: rw(context, 12),
-                    vertical: rh(context, 4),
-                  ),
-                  decoration: BoxDecoration(
-                    color: badgeColors['bg'],
-                    borderRadius: BorderRadius.circular(rw(context, 20)),
-                  ),
-                  child: Text(
-                    displayStatus,
-                    style: TextStyle(
-                      fontSize: rfs(context, 12),
-                      fontWeight: FontWeight.w600,
-                      color: badgeColors['text'],
-                    ),
-                  ),
-                ),
+                ],
               ],
             ),
           ),
-          Divider(height: 1, thickness: 1, color: Colors.grey.shade100),
-
-          // Body
-          Padding(
-            padding: EdgeInsets.only(
-              left: rw(context, 16),
-              right: rw(context, 16),
-              top: rh(context, 12),
-              bottom: rh(context, 16),
+          hSpace(context, 12),
+          // Time
+          Text(
+            timeStr,
+            style: TextStyle(
+              fontSize: rfs(context, 12),
+              fontWeight: FontWeight.w600,
+              color: Colors.grey.shade500,
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── Empty state ───────────────────────────────────────────────────────────
+
+  Widget _buildEmpty(BuildContext context) {
+    final lang = Get.isRegistered<LanguageController>()
+        ? LanguageController.to.selectedLang.value
+        : 'id';
+    final isId = lang == 'id';
+
+    return RefreshIndicator(
+      onRefresh: () => controller.refreshActivities(),
+      child: ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        children: [
+          SizedBox(height: MediaQuery.of(context).size.height * 0.3),
+          Center(
             child: Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: _buildCardField(
-                        context,
-                        Icons.badge_outlined,
-                        'Visitor Type',
-                        item.visitorTypeName.isNotEmpty
-                            ? item.visitorTypeName
-                            : 'Visitor',
-                      ),
-                    ),
-                    hSpace(context, 8),
-                    Expanded(
-                      child: _buildCardField(
-                        context,
-                        Icons.person_outline,
-                        'Visitor',
-                        item.visitorName.isNotEmpty ? item.visitorName : '-',
-                      ),
-                    ),
-                  ],
+                Container(
+                  padding: EdgeInsets.all(rw(context, 24)),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade100,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.history_toggle_off_rounded,
+                    size: rw(context, 48),
+                    color: Colors.grey.shade400,
+                  ),
+                ),
+                vSpace(context, 20),
+                Text(
+                  isId
+                      ? 'Tidak ada aktivitas pada tanggal ini'
+                      : 'No activity found for this date',
+                  style: TextStyle(
+                    fontSize: rfs(context, 15),
+                    color: Colors.grey.shade600,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  textAlign: TextAlign.center,
                 ),
                 vSpace(context, 8),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _buildCardField(
-                        context,
-                        Icons.business_outlined,
-                        'Organization',
-                        item.visitorOrganizationName.isNotEmpty
-                            ? item.visitorOrganizationName
-                            : '-',
-                      ),
-                    ),
-                    hSpace(context, 8),
-                    Expanded(
-                      child: _buildCardField(
-                        context,
-                        Icons.timeline,
-                        'Flow',
-                        item.flow.isNotEmpty ? item.flow : 'Invitation',
-                      ),
-                    ),
-                  ],
+                Text(
+                  isId
+                      ? 'Coba pilih tanggal yang lain'
+                      : 'Try selecting a different date',
+                  style: TextStyle(
+                    fontSize: rfs(context, 13),
+                    color: Colors.grey.shade400,
+                  ),
                 ),
-                vSpace(context, 8),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _buildCardField(
-                        context,
-                        Icons.login_outlined,
-                        'Period Start',
-                        formatDate(item.visitorPeriodStart),
-                      ),
+                vSpace(context, 20),
+                OutlinedButton.icon(
+                  onPressed: _pickDate,
+                  icon: Icon(
+                    Icons.calendar_today_outlined,
+                    size: rw(context, 16),
+                  ),
+                  label: Text(
+                    isId ? 'Pilih Tanggal Lain' : 'Pick Another Date',
+                    style: TextStyle(fontSize: rfs(context, 13)),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.primary500,
+                    side: BorderSide(color: AppColors.primary500),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: rw(context, 20),
+                      vertical: rh(context, 10),
                     ),
-                    hSpace(context, 8),
-                    Expanded(
-                      child: _buildCardField(
-                        context,
-                        Icons.logout_outlined,
-                        'Period End',
-                        formatDate(item.visitorPeriodEnd),
-                      ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(rw(context, 10)),
                     ),
-                  ],
+                  ),
                 ),
               ],
             ),
@@ -319,94 +447,71 @@ class _HistoryPageState extends State<HistoryPage> {
     );
   }
 
-  Widget _buildCardField(
-    BuildContext context,
-    IconData icon,
-    String label,
-    String value,
-  ) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        Icon(icon, size: rw(context, 14), color: Colors.grey.shade400),
-        hSpace(context, 6),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: rfs(context, 12),
-                  color: Colors.grey.shade500,
-                  fontWeight: FontWeight.w500,
+  // ── Error state ───────────────────────────────────────────────────────────
+
+  Widget _buildError(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: EdgeInsets.all(rw(context, 24)),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.error_outline_rounded,
+              size: rw(context, 52),
+              color: Colors.red.shade300,
+            ),
+            vSpace(context, 16),
+            Text(
+              controller.errorMessage.value!,
+              style: TextStyle(
+                color: Colors.red.shade600,
+                fontSize: rfs(context, 14),
+              ),
+              textAlign: TextAlign.center,
+            ),
+            vSpace(context, 20),
+            ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary500,
+                padding: EdgeInsets.symmetric(
+                  horizontal: rw(context, 24),
+                  vertical: rh(context, 12),
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(rw(context, 10)),
                 ),
               ),
-              vSpace(context, 2),
-              Text(
-                value,
-                style: TextStyle(
-                  fontSize: rfs(context, 10),
-                  fontWeight: FontWeight.w600,
-                  color: Colors.black87,
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
+              onPressed: () => controller.refreshActivities(),
+              icon: const Icon(Icons.refresh, color: Colors.white),
+              label: const Text(
+                'Retry',
+                style: TextStyle(color: Colors.white),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
-      ],
+      ),
     );
   }
+}
 
-  Map<String, Color> _getBadgeColors(String status) {
-    final lower = status.toLowerCase().trim();
-    if (lower == 'checkin') {
-      return {'bg': const Color(0xFFE8F5E9), 'text': const Color(0xFF2E7D32)};
-    } else if (lower == 'checkout' || lower == 'completed') {
-      return {'bg': const Color(0xFFE8EAF6), 'text': const Color(0xFF283593)};
-    } else if (lower == 'pending' || lower == 'waiting') {
-      return {'bg': const Color(0xFFFFF3E0), 'text': const Color(0xFFEF6C00)};
-    } else if (lower == 'reject' ||
-        lower == 'rejected' ||
-        lower == 'denied' ||
-        lower == 'deny') {
-      return {'bg': const Color(0xFFFFEBEE), 'text': const Color(0xFFC62828)};
-    } else {
-      // Active, Available, or others
-      return {'bg': const Color(0xFFE0F7FA), 'text': const Color(0xFF006064)};
-    }
-  }
+// ── Data class ────────────────────────────────────────────────────────────────
 
-  String _displayStatus(String status) {
-    final lowerStatus = status.toLowerCase().trim();
-    if (lowerStatus == 'available') {
-      return 'Available';
-    } else if (lowerStatus == 'pending' || lowerStatus == 'waiting') {
-      return 'Pending';
-    } else if (lowerStatus == 'undercreated') {
-      return 'Under Created';
-    } else if (lowerStatus == 'checkin') {
-      return 'Checked In';
-    } else if (lowerStatus == 'checkout') {
-      return 'Checked Out';
-    } else if (lowerStatus == 'reject' ||
-        lowerStatus == 'rejected' ||
-        lowerStatus == 'denied' ||
-        lowerStatus == 'deny') {
-      return 'Rejected';
-    } else if (lowerStatus == 'preregis' ||
-        lowerStatus == 'praregis' ||
-        lowerStatus == 'praregister') {
-      return 'Praregis';
-    } else if (lowerStatus == 'quickaccess') {
-      return 'Quick Access';
-    } else if (lowerStatus == 'completed') {
-      return 'Completed';
-    } else if (status.isNotEmpty) {
-      return status[0].toUpperCase() + status.substring(1);
-    }
-    return 'Active';
-  }
+class _ActivityItem {
+  final String title;
+  final String description;
+  final DateTime timestamp;
+  final IconData icon;
+  final Color iconColor;
+  final Color bgColor;
+
+  const _ActivityItem({
+    required this.title,
+    required this.description,
+    required this.timestamp,
+    required this.icon,
+    required this.iconColor,
+    required this.bgColor,
+  });
 }

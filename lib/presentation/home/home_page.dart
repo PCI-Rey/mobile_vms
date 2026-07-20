@@ -28,6 +28,7 @@ import '../../data/models/approval_ticket_model.dart';
 import '../../data/datasources/api_service.dart';
 import '../../data/datasources/hive_service.dart';
 import '../dashboard.dart';
+import '../history/controller/history_controller.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -1576,7 +1577,18 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                       color: Colors.grey.shade100,
                     ),
                     TextButton(
-                      onPressed: () => context.push(const TodayActivityPage()),
+                      onPressed: () {
+                        // Sync selected dashboard date → HistoryController,
+                        // then switch to History tab (index 1) in Dashboard.
+                        final date = invitationController.selectedDashboardDate.value;
+                        if (Get.isRegistered<HistoryController>()) {
+                          Get.find<HistoryController>().fetchActivities(date: date);
+                        } else {
+                          final hc = Get.put(HistoryController());
+                          hc.fetchActivities(date: date);
+                        }
+                        Dashboard.state?.changeTab(1);
+                      },
                       style: TextButton.styleFrom(
                         padding: EdgeInsets.symmetric(
                           vertical: rh(context, 14),
