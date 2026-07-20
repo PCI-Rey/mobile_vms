@@ -209,7 +209,10 @@ class _GuestHomePageState extends State<GuestHomePage> {
                     () => VisitSummaryCard(
                       item: guestCtrl.activeVisits[i],
                       isSelected: guestCtrl.selectedVisitIndex.value == i,
-                      onTap: () => guestCtrl.selectVisit(i),
+                      onTap: () {
+                        guestCtrl.selectVisit(i);
+                        AccessPassModal.show(context, guestCtrl.activeVisits[i]);
+                      },
                     ),
                   ),
                   if (i < guestCtrl.activeVisits.length - 1)

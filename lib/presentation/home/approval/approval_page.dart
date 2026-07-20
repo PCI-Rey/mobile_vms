@@ -927,7 +927,7 @@ class _FilterChip extends StatelessWidget {
             style: TextStyle(fontSize: rfs(context, 12), color: Colors.black87),
           ),
           hSpace(context, 6),
-          Icon(
+          FaIcon(
             FontAwesomeIcons.chevronDown,
             size: rw(context, 11),
             color: Colors.grey,

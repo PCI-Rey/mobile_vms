@@ -42,7 +42,10 @@ class VisitSummaryCard extends StatelessWidget {
         rawStatus.contains('preregis') ||
         rawStatus.contains('praregis') ||
         (item.visitorStatus.toString().isEmpty && item.isPraregisterDone);
-    final bool isDone = item.isPraregisterDone;
+    final bool isDone = item.isPraregisterDone ||
+        rawStatus == 'active' ||
+        rawStatus == 'checkin' ||
+        rawStatus == 'checkout';
 
     final String statusText =
         (item.visitorStatus.toString().isEmpty && item.isPraregisterDone)

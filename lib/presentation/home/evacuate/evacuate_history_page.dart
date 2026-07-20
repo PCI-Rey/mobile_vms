@@ -164,7 +164,7 @@ class _EvacuateHistoryPageState extends State<EvacuateHistoryPage> {
         children: [
           Text(label, style: TextStyle(fontSize: rfs(context, 14))),
           hSpace(context, 8),
-          Icon(FontAwesomeIcons.chevronDown, size: rw(context, 14)),
+          FaIcon(FontAwesomeIcons.chevronDown, size: rw(context, 14)),
         ],
       ),
     );

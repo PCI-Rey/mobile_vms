@@ -107,7 +107,7 @@ class _VisitorReportPageState extends State<VisitorReportPage> {
                       child: DropdownButton<String>(
                         value: selectedValue,
                         hint: const Text('Export'),
-                        icon: Icon(
+                        icon: FaIcon(
                           FontAwesomeIcons.chevronDown,
                           size: rw(context, 16),
                         ),
@@ -186,7 +186,7 @@ class _VisitorReportPageState extends State<VisitorReportPage> {
         children: [
           Text(label),
           hSpace(context, 8),
-          Icon(FontAwesomeIcons.chevronDown, size: rw(context, 14)),
+          FaIcon(FontAwesomeIcons.chevronDown, size: rw(context, 14)),
         ],
       ),
     );

@@ -130,7 +130,7 @@ class _InvitationListPageState extends State<InvitationListPage> {
         children: [
           Text(label),
           hSpace(context, 8),
-          Icon(FontAwesomeIcons.chevronDown, size: rw(context, 14)),
+          FaIcon(FontAwesomeIcons.chevronDown, size: rw(context, 14)),
         ],
       ),
     );

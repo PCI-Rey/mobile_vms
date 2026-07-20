@@ -143,111 +143,120 @@ class AccessPassCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final userCtrl = UserController.to;
+    final String rawStatus = item.visitorStatus.toString().toLowerCase();
+    final bool isDone = item.isPraregisterDone ||
+        rawStatus == 'active' ||
+        rawStatus == 'checkin' ||
+        rawStatus == 'checkout';
+
     return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        margin: EdgeInsets.symmetric(horizontal: rw(context, 16)),
-        padding: EdgeInsets.all(rw(context, 20)),
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            colors: [_blue, _blueDark],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
+      onTap: isDone ? onTap : null,
+      child: Opacity(
+        opacity: isDone ? 1.0 : 0.5,
+        child: Container(
+          margin: EdgeInsets.symmetric(horizontal: rw(context, 16)),
+          padding: EdgeInsets.all(rw(context, 20)),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [_blue, _blueDark],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(rw(context, 24)),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.18)),
+            boxShadow: [
+              BoxShadow(
+                color: _blue.withValues(alpha: 0.45),
+                blurRadius: rw(context, 20),
+                offset: Offset(0, rh(context, 8)),
+              ),
+            ],
           ),
-          borderRadius: BorderRadius.circular(rw(context, 24)),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.18)),
-          boxShadow: [
-            BoxShadow(
-              color: _blue.withValues(alpha: 0.45),
-              blurRadius: rw(context, 20),
-              offset: Offset(0, rh(context, 8)),
-            ),
-          ],
-        ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            // ── Left: badge + name + status ───────────────
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              // ── Left: badge + name + status ───────────────
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
 
 
-                  // Visitor name
-                  Obx(() {
-                    final String defaultName = userCtrl.fullName;
-                    final String displayName =
-                        (item.visitorName as String).isNotEmpty
-                            ? item.visitorName
-                            : defaultName;
-                    return Text(
-                      displayName,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: rfs(context, 18),
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: -0.3,
-                      ),
-                    );
-                  }),
-                  vSpace(context, 8),
-
-                  // Agenda Icon + Agenda Text
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.event_note_outlined,
-                        color: Colors.white.withValues(alpha: 0.8),
-                        size: rw(context, 16),
-                      ),
-                      hSpace(context, 6),
-                      Expanded(
-                        child: Text(
-                          item.agenda,
-                          style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.8),
-                            fontSize: rfs(context, 16),
-                            fontWeight: FontWeight.w500,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                    // Visitor name
+                    Obx(() {
+                      final String defaultName = userCtrl.fullName;
+                      final String displayName =
+                          (item.visitorName as String).isNotEmpty
+                              ? item.visitorName
+                              : defaultName;
+                      return Text(
+                        displayName,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: rfs(context, 18),
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: -0.3,
                         ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            hSpace(context, 16),
+                      );
+                    }),
+                    vSpace(context, 8),
 
-            // ── Right: Barcode only centered ─────────────
-            Container(
-              width: rw(context, 76),
-              height: rw(context, 76),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(rw(context, 12)),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.15),
-                    blurRadius: 6,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
+                    // Agenda Icon + Agenda Text
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.event_note_outlined,
+                          color: Colors.white.withValues(alpha: 0.8),
+                          size: rw(context, 16),
+                        ),
+                        hSpace(context, 6),
+                        Expanded(
+                          child: Text(
+                            item.agenda,
+                            style: TextStyle(
+                              color: Colors.white.withValues(alpha: 0.8),
+                              fontSize: rfs(context, 16),
+                              fontWeight: FontWeight.w500,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
-              padding: const EdgeInsets.all(4),
-              child: QrImageView(
-                data: item.visitorNumber,
-                version: QrVersions.auto,
-                size: rw(context, 76),
-                padding: EdgeInsets.zero,
+              hSpace(context, 16),
+
+              // ── Right: Barcode only centered ─────────────
+              Container(
+                width: rw(context, 76),
+                height: rw(context, 76),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(rw(context, 12)),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.15),
+                      blurRadius: 6,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                padding: const EdgeInsets.all(4),
+                child: QrImageView(
+                  data: item.visitorNumber,
+                  version: QrVersions.auto,
+                  size: rw(context, 76),
+                  padding: EdgeInsets.zero,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

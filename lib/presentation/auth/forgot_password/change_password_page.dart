@@ -46,8 +46,8 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
               label: 'Kata sandi baru',
               isObscure: _obscurePassword,
               suffixIconData: _obscurePassword
-                  ? FontAwesomeIcons.eyeSlash
-                  : FontAwesomeIcons.eye,
+                  ? Icons.visibility_off
+                  : Icons.visibility,
               onTapSuffixIcon: () {
                 setState(() {
                   _obscurePassword = !_obscurePassword;
@@ -61,8 +61,8 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
               label: 'Konfirmasi kata sandi',
               isObscure: _obscurePassword,
               suffixIconData: _obscurePassword
-                  ? FontAwesomeIcons.eyeSlash
-                  : FontAwesomeIcons.eye,
+                  ? Icons.visibility_off
+                  : Icons.visibility,
               onTapSuffixIcon: () {
                 setState(() {
                   _obscurePassword = !_obscurePassword;
