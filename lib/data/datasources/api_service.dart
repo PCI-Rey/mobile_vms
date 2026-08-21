@@ -506,7 +506,6 @@ class ApiService {
     }
   }
 
-
   /// GET /api/visitor/transaction/dt
   /// Datatable endpoint — returns all visitor transactions (including history).
   Future<Response> getVisitorDt(
