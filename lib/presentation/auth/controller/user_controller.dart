@@ -52,11 +52,10 @@ class UserController extends GetxController {
     // Clear Hive dashboard data
     await _authDatasource.clearDashboardData();
 
-    // Show dynamic message from API response
+    // Show logout message
     Get.snackbar(
-      (title ?? (success ? 'success' : 'pemberitahuan')).capitalizeFirst ??
-          (success ? 'Success' : 'Pemberitahuan'),
-      msg ?? 'Berhasil keluar',
+      'Success',
+      'Log Out Successfully',
       backgroundColor: success ? Colors.green : Colors.orange,
       colorText: Colors.white,
       snackPosition: SnackPosition.TOP,

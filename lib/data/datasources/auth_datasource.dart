@@ -129,22 +129,23 @@ class AuthDatasource {
       final token = user?.token;
 
       bool isSuccess = true;
-      String? revokeMsg;
-      String? revokeTitle;
-      
+
       // Call revoke token API if token exists (works for both Employee and Visitor)
       if (token != null && token.isNotEmpty) {
-        final response = await _apiService.logoutResponse(token); // Use a new method that returns full Response
+        final response = await _apiService.logoutResponse(token);
         if (response.data is Map) {
-          revokeMsg = response.data['msg']?.toString();
-          revokeTitle = response.data['title']?.toString();
-          isSuccess = response.statusCode == 200 && response.data['status'] == 'success';
+          isSuccess =
+              response.statusCode == 200 && response.data['status'] == 'success';
         }
       }
 
       // Always clear local session regardless of API result
       await _hiveService.removeUser();
-      return (isSuccess, revokeMsg ?? 'Berhasil Logout', revokeTitle ?? (isSuccess ? 'Success' : 'Pemberitahuan'));
+      return (
+        isSuccess,
+        'Log Out Successfully',
+        isSuccess ? 'Success' : 'Pemberitahuan',
+      );
     } catch (e) {
       debugPrint('Logout Error: $e');
       // Still remove local data even if API call fails
