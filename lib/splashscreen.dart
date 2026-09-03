@@ -64,18 +64,22 @@ class _SplashscreenState extends State<Splashscreen>
             ? Get.find<InvitationController>()
             : Get.put(InvitationController());
 
-        await Future.wait([
+        // Run prefetch in parallel with the 5-second splash timer.
+        // It will never block navigation past 5 seconds.
+        Future.wait([
           controller.fetchOngoingInvitations(isSilent: true),
           controller.fetchApprovalTickets(isSilent: true),
-          controller.fetchMasterData(),
-          controller.fetchShareLinks(resetPage: true),
           controller.fetchDashboardShareLinks(),
-        ]).timeout(const Duration(seconds: 15));
+        ]).catchError((e) {
+          debugPrint('Splash prefetch error: $e');
+          return <void>[];
+        });
       } catch (e) {
         debugPrint('Splash prefetch error: $e');
       }
     }
 
+    // Exactly 5 seconds total duration
     await delayFuture;
 
     if (!mounted) return;
@@ -99,8 +103,8 @@ class _SplashscreenState extends State<Splashscreen>
     Get.off(
       () => nextScreen,
       transition: Transition.fade,
-      duration: const Duration(milliseconds: 1200),
-      curve: Curves.easeIn,
+      duration: const Duration(milliseconds: 600),
+      curve: Curves.easeInOut,
     );
   }
 

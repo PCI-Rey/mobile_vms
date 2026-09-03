@@ -39,18 +39,24 @@ class LoginController extends GetxController {
     final password = passwordController.text;
 
     isLoading.value = true;
+    final stopwatch = Stopwatch()..start();
 
     final (userModel, title, message) = await authDatasource.login(
       email,
       password,
     );
+    stopwatch.stop();
+    debugPrint(
+      '[Auth] Login API round-trip took: ${stopwatch.elapsedMilliseconds} ms',
+    );
+
     isLoading.value = false;
 
     if (userModel != null) {
       final userCtrl = Get.isRegistered<UserController>()
           ? Get.find<UserController>()
           : Get.put(UserController());
-      await userCtrl.loadUser();
+      userCtrl.user.value = userModel;
       Get.snackbar(
         (title ?? 'success').capitalizeFirst ?? 'Success',
         message ?? 'Berhasil masuk',

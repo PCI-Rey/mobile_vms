@@ -172,13 +172,23 @@ class InvitationController extends GetxController {
       fetchVisitorTodayCount();
       fetchTodayActivities();
     });
+
+    // ── STAGE 1: Immediate & High Priority (Critical for Home Screen) ──
     fetchOngoingInvitations();
     fetchApprovalTickets();
-    fetchMasterData();
-    fetchDashboardShareLinks();
 
-    // Initial fetch of today's activities with limited polling
-    triggerActivityRefresh();
+    // ── STAGE 2: Secondary Data (Staggered by 400ms after initial build) ──
+    Future.delayed(const Duration(milliseconds: 400), () {
+      if (isClosed) return;
+      fetchDashboardShareLinks();
+      fetchTodayActivities(isSilent: true);
+    });
+
+    // ── STAGE 3: Background / On-demand Masters (Deferred by 1500ms) ──
+    Future.delayed(const Duration(milliseconds: 1500), () {
+      if (isClosed) return;
+      fetchMasterData();
+    });
   }
 
   @override
@@ -1503,37 +1513,51 @@ class InvitationController extends GetxController {
     final token = user?.token;
     if (token == null) return;
 
-    final List<Future<void>> tasks = [];
-    for (final item in items) {
-      if (transactionVisitorCounts.containsKey(item.id)) continue;
-
+    final uncounted = items.where((item) {
+      if (transactionVisitorCounts.containsKey(item.id)) return false;
       final isEmptyDraft =
           item.agenda.isEmpty &&
           item.hostName.isEmpty &&
           item.visitorTypeName.isEmpty;
-      if (isEmptyDraft) continue;
+      return !isEmptyDraft;
+    }).toList();
 
-      tasks.add(() async {
-        try {
-          final list = await fetchTransactionVisitors(item.id);
-          parseAndCacheSubVisitors(item, list);
+    if (uncounted.isEmpty) return;
 
-          int count = 1;
-          if (list.isNotEmpty) {
-            count = list.length;
-          } else if (item.isGroup) {
-            final parsed = int.tryParse(item.visitorNumber) ?? 1;
-            count = parsed > 0 ? parsed : 1;
-          }
-          transactionVisitorCounts[item.id] = count;
-        } catch (_) {}
-      }());
-    }
+    // Process in small batches of 3 items to avoid saturating network sockets
+    const int batchSize = 3;
+    for (int i = 0; i < uncounted.length; i += batchSize) {
+      if (isClosed) return;
+      final batch = uncounted.skip(i).take(batchSize).toList();
 
-    if (tasks.isNotEmpty) {
-      await Future.wait(tasks);
-      fetchVisitorTodayCount();
-      _applyFilters();
+      await Future.wait(
+        batch.map((item) async {
+          try {
+            final list = await fetchTransactionVisitors(item.id);
+            parseAndCacheSubVisitors(item, list);
+
+            int count = 1;
+            if (list.isNotEmpty) {
+              count = list.length;
+            } else if (item.isGroup) {
+              final parsed = int.tryParse(item.visitorNumber) ?? 1;
+              count = parsed > 0 ? parsed : 1;
+            }
+            transactionVisitorCounts[item.id] = count;
+          } catch (_) {}
+        }),
+      );
+
+      // Refresh filters & counts periodically as batches finish
+      if (i == 0 || i + batchSize >= uncounted.length) {
+        fetchVisitorTodayCount();
+        _applyFilters();
+      }
+
+      // Small 100ms pause between batches to yield CPU to UI frame rendering
+      if (i + batchSize < uncounted.length) {
+        await Future.delayed(const Duration(milliseconds: 100));
+      }
     }
   }
 
