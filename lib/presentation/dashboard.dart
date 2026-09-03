@@ -4,7 +4,6 @@ import 'home/guest_home_page.dart';
 import 'history/history_page.dart';
 import 'home/home_page.dart';
 import 'profile/profile_page.dart';
-import 'notification/notification_page.dart';
 import '../core/core.dart';
 import '../core/helper/responsive_helper.dart';
 import '../data/datasources/auth_datasource.dart';

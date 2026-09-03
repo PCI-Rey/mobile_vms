@@ -82,7 +82,7 @@ class UserModel {
               json['groupAccess'].map((x) => GroupAccess.fromJson(x)))
           : null,
       roleAccess: json['role_access']?.toString(),
-      id: json['id'].toString(),
+      id: (json['id'] ?? json['user_id'])?.toString() ?? '',
       status: json['status'],
       // Visitor fields
       phone: json['phone']?.toString(),

@@ -1324,7 +1324,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                     child: Container(
                       padding: EdgeInsets.symmetric(
                         vertical: rh(context, 12),
-                        horizontal: rw(context, 16),
+                        horizontal: rw(context, 10),
                       ),
                       decoration: BoxDecoration(
                         color: Colors.white,
@@ -1346,13 +1346,19 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                             color: Colors.black87,
                             size: rw(context, 18),
                           ),
-                          hSpace(context, 8),
-                          Text(
-                            dateStr,
-                            style: TextStyle(
-                              fontSize: rfs(context, 14),
-                              fontWeight: FontWeight.w600,
-                              color: Colors.black87,
+                          hSpace(context, 6),
+                          Flexible(
+                            child: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: Text(
+                                dateStr,
+                                maxLines: 1,
+                                style: TextStyle(
+                                  fontSize: rfs(context, 14),
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.black87,
+                                ),
+                              ),
                             ),
                           ),
                           hSpace(context, 4),

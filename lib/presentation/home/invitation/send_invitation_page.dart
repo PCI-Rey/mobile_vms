@@ -1,5 +1,6 @@
 // ignore_for_file: unused_import, unused_local_variable, unused_element, use_build_context_synchronously, sized_box_for_whitespace, unnecessary_underscores, unnecessary_import, unnecessary_null_comparison, curly_braces_in_flow_control_structures, unused_element_parameter, deprecated_member_use
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 import 'dart:ui' as ui;
 import 'package:flutter/rendering.dart';
@@ -1618,10 +1619,16 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
   bool _loadingGroupVisitors = false;
   List<AccessPassModel> _groupVisitorModels = [];
   AccessPassModel? _selectedGroupVisitor;
+  late AccessPassModel _currentItem;
+  String _currentUserId = '';
+  bool _isCanceling = false;
 
   @override
   void initState() {
     super.initState();
+    _currentItem = widget.item;
+    _currentUserId = _resolveLocalUserId();
+    _fetchCurrentUserProfile();
     _fetchSiteDetail();
     _fetchGroupVisitors();
   }
@@ -1941,6 +1948,171 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
       debugPrint('fetchSiteDetail error: $e');
     }
     if (mounted) setState(() => _loadingSite = false);
+  }
+
+  String _resolveLocalUserId() {
+    final hiveUser = HiveService().getUser();
+    if (hiveUser != null) {
+      if (hiveUser.id.isNotEmpty && hiveUser.id != 'null') {
+        return hiveUser.id;
+      }
+      if (hiveUser.extraData != null && hiveUser.extraData!.isNotEmpty) {
+        try {
+          final decoded = json.decode(hiveUser.extraData!);
+          final uid = decoded['user_id'] ?? decoded['id'];
+          if (uid != null && uid.toString().isNotEmpty) {
+            return uid.toString();
+          }
+        } catch (_) {}
+      }
+    }
+    return '';
+  }
+
+  Future<void> _fetchCurrentUserProfile() async {
+    final token = HiveService().getUser()?.token ?? '';
+    if (token.isEmpty) return;
+    try {
+      final res = await ApiService().getProfile(token);
+      if (res.statusCode == 200 && res.data is Map) {
+        final col = res.data['collection'];
+        if (col is Map && col['user_id'] != null) {
+          final fetchedId = col['user_id'].toString();
+          if (mounted && fetchedId.isNotEmpty && fetchedId != _currentUserId) {
+            setState(() {
+              _currentUserId = fetchedId;
+            });
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint('Error fetchCurrentUserProfile: $e');
+    }
+  }
+
+  bool _canShowCancelButton(AccessPassModel item) {
+    final status = item.visitorStatus.toLowerCase().trim();
+    // 1. Hilang jika sudah Canceled
+    if (status == 'canceled' || status == 'cancelled') {
+      return false;
+    }
+
+    // 2. Hanya bisa cancel ketika orang yang cancel sama orangnya dengan yang login (invited_by == user_id)
+    final invitedBy = item.invitedBy.trim().isNotEmpty
+        ? item.invitedBy.trim()
+        : widget.item.invitedBy.trim();
+
+    if (invitedBy.isEmpty || _currentUserId.isEmpty) {
+      return false;
+    }
+
+    return _currentUserId.toLowerCase() == invitedBy.toLowerCase();
+  }
+
+  Future<void> _handleCancelInvitation(AccessPassModel item) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(rw(context, 16)),
+        ),
+        title: Text(
+          'Cancel Invitation',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: rfs(context, 16),
+          ),
+        ),
+        content: Text(
+          'Are you sure you want to cancel this invitation? This action cannot be undone.',
+          style: TextStyle(
+            fontSize: rfs(context, 13),
+            color: Colors.grey.shade700,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(
+              'No',
+              style: TextStyle(
+                color: Colors.grey.shade600,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFE53935),
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(rw(context, 8)),
+              ),
+            ),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text(
+              'Yes, Cancel',
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+
+    setState(() => _isCanceling = true);
+
+    final controller = Get.isRegistered<InvitationController>()
+        ? Get.find<InvitationController>()
+        : Get.put(InvitationController());
+
+    final trxId = widget.item.id.isNotEmpty
+        ? widget.item.id
+        : (widget.item.transactionVisitorId.isNotEmpty
+            ? widget.item.transactionVisitorId
+            : item.id);
+
+    debugPrint(
+      'Canceling transaction: trxId=$trxId, widget.item.id=${widget.item.id}, item.id=${item.id}',
+    );
+
+    final (success, msg) = await controller.cancelTransaction(trxId);
+
+    if (!mounted) return;
+    setState(() => _isCanceling = false);
+
+    if (success) {
+      setState(() {
+        _currentItem = _currentItem.copyWith(visitorStatus: 'Canceled');
+        if (_selectedGroupVisitor != null) {
+          _selectedGroupVisitor =
+              _selectedGroupVisitor!.copyWith(visitorStatus: 'Canceled');
+        }
+        _groupVisitorModels = _groupVisitorModels
+            .map((v) => v.copyWith(visitorStatus: 'Canceled'))
+            .toList();
+      });
+
+      Get.snackbar(
+        'Success',
+        msg ?? 'Invitation cancelled successfully',
+        backgroundColor: const Color(0xFF43A047),
+        colorText: Colors.white,
+        snackPosition: SnackPosition.TOP,
+      );
+    } else {
+      Get.snackbar(
+        'Error',
+        msg ?? 'Failed to cancel invitation',
+        backgroundColor: const Color(0xFFE53935),
+        colorText: Colors.white,
+        snackPosition: SnackPosition.TOP,
+      );
+    }
   }
 
   Future<void> _downloadBarcodePdf(List<AccessPassModel> models) async {
@@ -2460,7 +2632,7 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final item = widget.item;
+    final item = _currentItem;
     // Fallback to _selectedGroupVisitor if it's loaded, otherwise use item
     final selectedItem = _selectedGroupVisitor ?? item;
     final isExpired = selectedItem.visitorPeriodEnd.isBefore(DateTime.now());
@@ -3541,7 +3713,7 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
                 ),
               ),
 
-              // ── Close button ───────────────────────────────────────────
+              // ── Action buttons (Cancel & Close) ────────────────────────
               SafeArea(
                 top: false,
                 child: Padding(
@@ -3551,28 +3723,76 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
                     rw(context, 20),
                     rh(context, 16),
                   ),
-                  child: SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF005596),
-                        padding: EdgeInsets.symmetric(
-                          vertical: rh(context, 14),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Cancel button: only shown if inviter is the logged-in user AND not already canceled
+                      if (_canShowCancelButton(selectedItem)) ...[
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFFE53935),
+                              elevation: 0,
+                              padding: EdgeInsets.symmetric(
+                                vertical: rh(context, 14),
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius:
+                                    BorderRadius.circular(rw(context, 12)),
+                              ),
+                            ),
+                            onPressed: _isCanceling
+                                ? null
+                                : () => _handleCancelInvitation(selectedItem),
+                            child: _isCanceling
+                                ? SizedBox(
+                                    width: rw(context, 18),
+                                    height: rw(context, 18),
+                                    child: const CircularProgressIndicator(
+                                      color: Colors.white,
+                                      strokeWidth: 2,
+                                    ),
+                                  )
+                                : Text(
+                                    'Cancel',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: rfs(context, 14),
+                                    ),
+                                  ),
+                          ),
                         ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(rw(context, 12)),
+                        vSpace(context, 10),
+                      ],
+                      // Close button
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF005596),
+                            elevation: 0,
+                            padding: EdgeInsets.symmetric(
+                              vertical: rh(context, 14),
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius:
+                                  BorderRadius.circular(rw(context, 12)),
+                            ),
+                          ),
+                          onPressed: () => Navigator.pop(context),
+                          child: Text(
+                            'Close',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: rfs(context, 14),
+                            ),
+                          ),
                         ),
                       ),
-                      onPressed: () => Navigator.pop(context),
-                      child: Text(
-                        'Close',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: rfs(context, 14),
-                        ),
-                      ),
-                    ),
+                    ],
                   ),
                 ),
               ),

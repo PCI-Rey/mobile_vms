@@ -1812,4 +1812,59 @@ class InvitationController extends GetxController {
       isApprovalLoading.value = false;
     }
   }
+
+  /// Cancel an invitation transaction by its ID (from GET /visitor/transaction/dt)
+  Future<(bool, String?)> cancelTransaction(String transactionVisitorId) async {
+    final user = _hive.getUser();
+    final token = user?.token;
+    if (token == null || token.isEmpty) {
+      return (false, 'Token tidak ditemukan');
+    }
+
+    try {
+      final response = await _api.cancelVisitorTransaction(
+        token,
+        transactionVisitorId,
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final data = response.data;
+        if (data is Map &&
+            (data['status'] == 'success' || data['status_code'] == 200)) {
+          // Update in-memory lists
+          for (int i = 0; i < allInvitations.length; i++) {
+            if (allInvitations[i].id == transactionVisitorId) {
+              allInvitations[i] =
+                  allInvitations[i].copyWith(visitorStatus: 'Canceled');
+            }
+          }
+          for (int i = 0; i < allRawVisitors.length; i++) {
+            if (allRawVisitors[i].id == transactionVisitorId) {
+              allRawVisitors[i] =
+                  allRawVisitors[i].copyWith(visitorStatus: 'Canceled');
+            }
+          }
+          _applyFilters();
+          fetchVisitorTodayCount();
+          fetchOngoingInvitations(isSilent: true);
+          return (
+            true,
+            data['msg']?.toString() ?? 'Invitation cancelled successfully'
+          );
+        } else if (data is Map && data['msg'] != null) {
+          return (false, data['msg'].toString());
+        }
+        return (true, 'Invitation cancelled successfully');
+      } else {
+        String msg = 'Failed to cancel invitation (${response.statusCode})';
+        if (response.data is Map && response.data['msg'] != null) {
+          msg = response.data['msg'].toString();
+        }
+        return (false, msg);
+      }
+    } catch (e) {
+      debugPrint('cancelTransaction error: $e');
+      return (false, 'Failed to cancel invitation: $e');
+    }
+  }
 }

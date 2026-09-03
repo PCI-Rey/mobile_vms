@@ -840,4 +840,22 @@ class ApiService {
       rethrow;
     }
   }
+
+  /// POST /api/visitor/transaction/{transaction_visitor_id}/cancel
+  Future<Response> cancelVisitorTransaction(
+    String token,
+    String transactionVisitorId,
+  ) async {
+    try {
+      final response = await _dio.post(
+        '/$pathApi/visitor/transaction/$transactionVisitorId/cancel',
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+      return response;
+    } on DioException catch (e) {
+      debugPrint('Dio Error cancelVisitorTransaction: ${e.message}');
+      if (e.response != null) return e.response!;
+      rethrow;
+    }
+  }
 }
