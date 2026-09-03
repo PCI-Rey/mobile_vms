@@ -374,6 +374,7 @@ class _Step1 extends StatelessWidget {
               showLabel: false,
               hintText: 'nama@email.com',
               keyboardType: TextInputType.emailAddress,
+              readOnly: true,
               errorText: ctrl.fieldErrors['email'],
               onChanged: (v) => ctrl.validateField('email', v, 'email'.tr),
             ),
@@ -459,9 +460,39 @@ class _Step2 extends StatelessWidget {
           _label(context, 'destination'.tr),
           _readOnlyField(ctrl.destinationController),
           _label(context, 'visit_start'.tr),
-          _readOnlyField(ctrl.visitStartController),
+          GestureDetector(
+            onTap: () => ctrl.pickDateTime(context, isStart: true),
+            child: AbsorbPointer(
+              child: CustomTextField(
+                controller: ctrl.visitStartController,
+                label: '',
+                showLabel: false,
+                readOnly: true,
+                suffixIcon: Icon(
+                  Icons.calendar_today_outlined,
+                  color: AppColors.primary500,
+                  size: rw(context, 18),
+                ),
+              ),
+            ),
+          ),
           _label(context, 'visit_end'.tr),
-          _readOnlyField(ctrl.visitEndController),
+          GestureDetector(
+            onTap: () => ctrl.pickDateTime(context, isStart: false),
+            child: AbsorbPointer(
+              child: CustomTextField(
+                controller: ctrl.visitEndController,
+                label: '',
+                showLabel: false,
+                readOnly: true,
+                suffixIcon: Icon(
+                  Icons.calendar_today_outlined,
+                  color: AppColors.primary500,
+                  size: rw(context, 18),
+                ),
+              ),
+            ),
+          ),
           vSpace(context, 20),
         ],
       ),

@@ -718,6 +718,8 @@ class _Step0UserType extends StatelessWidget {
                       controller: controller.groupNameCtrl,
                       onChanged: (v) => controller.groupName.value = v,
                       decoration: InputDecoration(
+                        filled: true,
+                        fillColor: Colors.white,
                         hintText: 'Enter group name',
                         hintStyle: TextStyle(
                           color: AppColors.grey400,
@@ -2147,7 +2149,7 @@ class _FormFieldWidget extends StatelessWidget {
     }
 
     final decoration = InputDecoration(
-      filled: isReadOnly,
+      filled: true,
       fillColor: isReadOnly ? Colors.grey.shade100 : Colors.white,
       contentPadding: EdgeInsets.symmetric(
         horizontal: rw(context, 12),

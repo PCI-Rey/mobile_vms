@@ -8,6 +8,7 @@ import 'dart:io';
 import 'package:image_picker/image_picker.dart';
 import 'dart:convert';
 import 'package:intl/intl.dart';
+import '../../../core/core.dart';
 import '../../../data/datasources/auth_datasource.dart';
 import '../../../data/datasources/api_service.dart';
 import '../../../data/models/user_model.dart';
@@ -61,12 +62,14 @@ class InformasiUmumController extends GetxController {
   final organizationController = TextEditingController();
   final identityIdController = TextEditingController();
 
-  // Step 2: Purpose Visit (Read Only)
+  // Step 2: Purpose Visit
   final picHostController = TextEditingController();
   final agendaController = TextEditingController();
   final destinationController = TextEditingController();
   final visitStartController = TextEditingController();
   final visitEndController = TextEditingController();
+  final Rx<DateTime?> visitStartDateTime = Rx<DateTime?>(null);
+  final Rx<DateTime?> visitEndDateTime = Rx<DateTime?>(null);
 
   // Step 3: Vehicle/Parking Information
   final isDriving = true.obs;
@@ -244,12 +247,32 @@ class InformasiUmumController extends GetxController {
       agendaController.text = collection['agenda']?.toString() ?? '';
       destinationController.text =
           collection['site_place_name']?.toString() ?? '';
-      visitStartController.text = _formatUtcToLocal(
-        collection['visitor_period_start']?.toString(),
-      );
-      visitEndController.text = _formatUtcToLocal(
-        collection['visitor_period_end']?.toString(),
-      );
+      final rawStart = collection['visitor_period_start']?.toString();
+      final rawEnd = collection['visitor_period_end']?.toString();
+      if (rawStart != null && rawStart.isNotEmpty) {
+        try {
+          String s = rawStart;
+          if (!s.endsWith('Z') && !s.contains('+')) s = '${s}Z';
+          visitStartDateTime.value = DateTime.parse(s).toLocal();
+        } catch (_) {
+          try {
+            visitStartDateTime.value = DateTime.parse(rawStart);
+          } catch (_) {}
+        }
+      }
+      if (rawEnd != null && rawEnd.isNotEmpty) {
+        try {
+          String s = rawEnd;
+          if (!s.endsWith('Z') && !s.contains('+')) s = '${s}Z';
+          visitEndDateTime.value = DateTime.parse(s).toLocal();
+        } catch (_) {
+          try {
+            visitEndDateTime.value = DateTime.parse(rawEnd);
+          } catch (_) {}
+        }
+      }
+      visitStartController.text = _formatUtcToLocal(rawStart);
+      visitEndController.text = _formatUtcToLocal(rawEnd);
 
       // Step 3 (isDriving and vehicleType already set above)
       vehiclePlateController.text =
@@ -275,6 +298,78 @@ class InformasiUmumController extends GetxController {
       return DateFormat('EEEE, dd MMMM yyyy, HH:mm', 'en').format(utcDt);
     } catch (_) {
       return utcString; // fallback: tampilkan raw jika parse gagal
+    }
+  }
+
+  Future<void> pickDateTime(BuildContext context, {required bool isStart}) async {
+    final initialDt = (isStart
+            ? visitStartDateTime.value
+            : visitEndDateTime.value) ??
+        DateTime.now();
+
+    final DateTime? pickedDate = await showDatePicker(
+      context: context,
+      initialDate: initialDt,
+      firstDate: DateTime.now().subtract(const Duration(days: 365)),
+      lastDate: DateTime.now().add(const Duration(days: 365 * 2)),
+      builder: (context, child) => Theme(
+        data: Theme.of(context).copyWith(
+          colorScheme: const ColorScheme.light(primary: AppColors.primary500),
+        ),
+        child: child!,
+      ),
+    );
+
+    if (pickedDate == null || !context.mounted) return;
+
+    final TimeOfDay? pickedTime = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.fromDateTime(initialDt),
+      builder: (context, child) => Theme(
+        data: Theme.of(context).copyWith(
+          colorScheme: const ColorScheme.light(primary: AppColors.primary500),
+        ),
+        child: child!,
+      ),
+    );
+
+    if (pickedTime == null) return;
+
+    final finalDt = DateTime(
+      pickedDate.year,
+      pickedDate.month,
+      pickedDate.day,
+      pickedTime.hour,
+      pickedTime.minute,
+    );
+
+    if (isStart) {
+      visitStartDateTime.value = finalDt;
+      visitStartController.text =
+          DateFormat('EEEE, dd MMMM yyyy, HH:mm', 'en').format(finalDt);
+      // If visit end is before visit start, adjust end to start + 3 hours
+      if (visitEndDateTime.value != null &&
+          visitEndDateTime.value!.isBefore(finalDt)) {
+        final newEnd = finalDt.add(const Duration(hours: 3));
+        visitEndDateTime.value = newEnd;
+        visitEndController.text =
+            DateFormat('EEEE, dd MMMM yyyy, HH:mm', 'en').format(newEnd);
+      }
+    } else {
+      if (visitStartDateTime.value != null &&
+          finalDt.isBefore(visitStartDateTime.value!)) {
+        Get.snackbar(
+          'Waktu Tidak Valid',
+          'Visit End tidak boleh lebih awal dari Visit Start',
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+          snackPosition: SnackPosition.TOP,
+        );
+        return;
+      }
+      visitEndDateTime.value = finalDt;
+      visitEndController.text =
+          DateFormat('EEEE, dd MMMM yyyy, HH:mm', 'en').format(finalDt);
     }
   }
 
@@ -899,8 +994,22 @@ class InformasiUmumController extends GetxController {
 
       // ── Step 2 (Purpose of Visit) ──────────────────────────────────
       updateAnswer('Agenda', collection['agenda']);
-      updateAnswer('Visit Start', collection['visitor_period_start']);
-      updateAnswer('Visit End', collection['visitor_period_end']);
+
+      final String startIso = visitStartDateTime.value != null
+          ? visitStartDateTime.value!.toUtc().toIso8601String().substring(0, 19)
+          : (collection['visitor_period_start']?.toString() ?? '');
+      final String endIso = visitEndDateTime.value != null
+          ? visitEndDateTime.value!.toUtc().toIso8601String().substring(0, 19)
+          : (collection['visitor_period_end']?.toString() ?? '');
+
+      debugPrint('Visit Start (Local): ${visitStartDateTime.value} -> (GMT/UTC): $startIso');
+      debugPrint('Visit End (Local): ${visitEndDateTime.value} -> (GMT/UTC): $endIso');
+
+      collection['visitor_period_start'] = startIso;
+      collection['visitor_period_end'] = endIso;
+
+      updateAnswer('Visit Start', startIso);
+      updateAnswer('Visit End', endIso);
 
       // ── Step 3: Vehicle fields ───────────────────────────────────────
       updateAnswer('Is Driving/Riding', isDriving.value.toString());
@@ -985,6 +1094,8 @@ class InformasiUmumController extends GetxController {
 
       final String? hostId = collection['host']?.toString();
       updateAnswerByRemarks('host', hostId);
+      updateAnswerByRemarks('visitor_period_start', startIso);
+      updateAnswerByRemarks('visitor_period_end', endIso);
 
       // ── Build payload ─────────────────────────────────────────────────
       // Always use 'id' field for trx_visitor_id
@@ -1048,6 +1159,8 @@ class InformasiUmumController extends GetxController {
         "is_group": collection['is_group'] ?? false,
         "tz": collection['tz'] ?? "Asia/Jakarta",
         "registered_site": rootSiteId,
+        "visitor_period_start": startIso,
+        "visitor_period_end": endIso,
         "flow": "SubmitPraregister",
         "visitor_role": visitorRole,
         "is_driving": isDriving.value,
@@ -1059,6 +1172,8 @@ class InformasiUmumController extends GetxController {
         "vehicle_plate": isDriving.value ? vehiclePlateController.text : null,
         "data_visitor": [
           {
+            "visitor_period_start": startIso,
+            "visitor_period_end": endIso,
             // vehicle_type at data_visitor level also uses enum-safe value
             "vehicle_type": isDriving.value ? enumVehicleType : null,
             "vehicle_plate": isDriving.value
