@@ -1,11 +1,11 @@
 import 'dart:io';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/constants/colors.dart';
 import '../../../../core/helper/responsive_helper.dart';
+import '../../../../core/components/custom_date_time_picker.dart';
 import '../../../../data/datasources/api_service.dart';
 import '../../../../data/models/visitor_type_detail_model.dart';
 import 'controllers/pra_registration_controller.dart';
@@ -2337,48 +2337,23 @@ class _FormFieldWidget extends StatelessWidget {
     StateSetter setState,
     TextEditingController ctrl,
   ) async {
-    final now = DateTime.now();
     bool isStart = field.remarks == 'visitor_period_start';
     bool isEnd = field.remarks == 'visitor_period_end';
 
-    DateTime initialDate = now;
-    DateTime firstDate = DateTime(now.year - 1);
-    DateTime lastDate = DateTime(now.year + 5);
+    DateTime initialDate = isStart
+        ? (controller.visitStart.value ?? DateTime.now())
+        : (controller.visitEnd.value ?? (controller.visitStart.value ?? DateTime.now()));
 
-    if (isEnd && controller.visitStart.value != null) {
-      firstDate = DateTime(
-          controller.visitStart.value!.year,
-          controller.visitStart.value!.month,
-          controller.visitStart.value!.day);
-      if (initialDate.isBefore(firstDate)) {
-        initialDate = firstDate;
-      }
-    }
-
-    if (isStart && controller.visitEnd.value != null) {
-      lastDate = DateTime(
-          controller.visitEnd.value!.year,
-          controller.visitEnd.value!.month,
-          controller.visitEnd.value!.day);
-      if (initialDate.isAfter(lastDate)) {
-        initialDate = lastDate;
-      }
-    }
-
-    final picked = await showDatePicker(
-      context: ctx,
+    final picked = await showAppDateTimePicker(
+      ctx,
       initialDate: initialDate,
-      firstDate: firstDate,
-      lastDate: lastDate,
-      builder: (context, child) => Theme(
-        data: Theme.of(context).copyWith(
-          colorScheme: const ColorScheme.light(primary: AppColors.primary500),
-        ),
-        child: child!,
-      ),
+      minDateTime: isEnd ? controller.visitStart.value : null,
+      maxDateTime: isStart ? controller.visitEnd.value : null,
+      title: isStart ? 'Select Visit Start' : (isEnd ? 'Select Visit End' : 'Select Date'),
+      withTime: false,
     );
-    if (picked != null) {
 
+    if (picked != null) {
       final iso = picked.toIso8601String().replaceAll(RegExp(r'\.\d+'), '');
       field.answerDatetime = iso;
       field.answerText = iso;
@@ -2398,157 +2373,25 @@ class _FormFieldWidget extends StatelessWidget {
     StateSetter setState,
     TextEditingController ctrl,
   ) async {
-    final now = DateTime.now();
     bool isStart = field.remarks == 'visitor_period_start';
     bool isEnd = field.remarks == 'visitor_period_end';
 
-    DateTime initialDate = now;
-    DateTime firstDate = DateTime(now.year - 1);
-    DateTime lastDate = DateTime(now.year + 5);
+    DateTime initialDate = isStart
+        ? (controller.visitStart.value ?? DateTime.now())
+        : (controller.visitEnd.value ?? (controller.visitStart.value ?? DateTime.now()));
 
-    if (isEnd && controller.visitStart.value != null) {
-      firstDate = DateTime(
-          controller.visitStart.value!.year,
-          controller.visitStart.value!.month,
-          controller.visitStart.value!.day);
-      if (initialDate.isBefore(firstDate)) {
-        initialDate = firstDate;
-      }
-    }
-
-    if (isStart && controller.visitEnd.value != null) {
-      lastDate = DateTime(
-          controller.visitEnd.value!.year,
-          controller.visitEnd.value!.month,
-          controller.visitEnd.value!.day);
-      if (initialDate.isAfter(lastDate)) {
-        initialDate = lastDate;
-      }
-    }
-
-    final date = await showDatePicker(
-      context: ctx,
+    final dtRaw = await showAppDateTimePicker(
+      ctx,
       initialDate: initialDate,
-      firstDate: firstDate,
-      lastDate: lastDate,
-      builder: (context, child) => Theme(
-        data: Theme.of(context).copyWith(
-          colorScheme: const ColorScheme.light(primary: AppColors.primary500),
-        ),
-        child: child!,
-      ),
+      minDateTime: isEnd ? controller.visitStart.value : null,
+      maxDateTime: isStart ? controller.visitEnd.value : null,
+      title: isStart ? 'Select Visit Start' : (isEnd ? 'Select Visit End' : 'Select Date & Time'),
+      withTime: true,
     );
-    if (date == null) return;
+
+    if (dtRaw == null) return;
     if (!ctx.mounted) return;
 
-    TimeOfDay initialTime = TimeOfDay.now();
-    if (isEnd && controller.visitStart.value != null) {
-      if (date.year == controller.visitStart.value!.year &&
-          date.month == controller.visitStart.value!.month &&
-          date.day == controller.visitStart.value!.day) {
-        if (initialTime.hour < controller.visitStart.value!.hour ||
-            (initialTime.hour == controller.visitStart.value!.hour &&
-                initialTime.minute < controller.visitStart.value!.minute)) {
-          initialTime = TimeOfDay(
-              hour: controller.visitStart.value!.hour,
-              minute: controller.visitStart.value!.minute);
-        }
-      }
-    }
-
-    DateTime cupertinoInitialDate = DateTime(
-      date.year,
-      date.month,
-      date.day,
-      initialTime.hour,
-      initialTime.minute,
-    );
-
-    DateTime? cupertinoMinDate;
-    if (isEnd && controller.visitStart.value != null) {
-      if (date.year == controller.visitStart.value!.year &&
-          date.month == controller.visitStart.value!.month &&
-          date.day == controller.visitStart.value!.day) {
-        cupertinoMinDate = controller.visitStart.value!;
-        if (cupertinoInitialDate.isBefore(cupertinoMinDate)) {
-          cupertinoInitialDate = cupertinoMinDate;
-        }
-      }
-    }
-
-    DateTime? cupertinoMaxDate;
-    if (isStart && controller.visitEnd.value != null) {
-      if (date.year == controller.visitEnd.value!.year &&
-          date.month == controller.visitEnd.value!.month &&
-          date.day == controller.visitEnd.value!.day) {
-        cupertinoMaxDate = controller.visitEnd.value!;
-        if (cupertinoInitialDate.isAfter(cupertinoMaxDate)) {
-          cupertinoInitialDate = cupertinoMaxDate;
-        }
-      }
-    }
-
-    TimeOfDay? time;
-    await showModalBottomSheet(
-      context: ctx,
-      backgroundColor: Colors.white,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(rw(ctx, 16))),
-      ),
-      builder: (BuildContext builder) {
-        return SizedBox(
-          height: rh(ctx, 300),
-          child: Column(
-            children: [
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: rw(ctx, 16)),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    TextButton(
-                      child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
-                      onPressed: () => Navigator.of(builder).pop(),
-                    ),
-                    TextButton(
-                      child: const Text('OK', style: TextStyle(color: AppColors.primary500, fontWeight: FontWeight.bold)),
-                      onPressed: () {
-                        time ??= TimeOfDay.fromDateTime(cupertinoInitialDate);
-                        Navigator.of(builder).pop();
-                      },
-                    ),
-                  ],
-                ),
-              ),
-              const Divider(height: 1),
-              Expanded(
-                child: CupertinoDatePicker(
-                  mode: CupertinoDatePickerMode.time,
-                  use24hFormat: true,
-                  initialDateTime: cupertinoInitialDate,
-                  minimumDate: cupertinoMinDate,
-                  maximumDate: cupertinoMaxDate,
-                  onDateTimeChanged: (DateTime newDateTime) {
-                    time = TimeOfDay.fromDateTime(newDateTime);
-                  },
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-    if (time == null) return;
-    if (!ctx.mounted) return;
-
-    final dtRaw = DateTime(
-      date.year,
-      date.month,
-      date.day,
-      time!.hour,
-      time!.minute,
-    );
-
-    // Strict validator check fallback (snackbar) to ensure correctness
     if (isEnd && controller.visitStart.value != null && dtRaw.isBefore(controller.visitStart.value!)) {
       Get.snackbar('Waktu Tidak Valid', 'Visit End tidak boleh lebih awal dari Visit Start', backgroundColor: Colors.red, colorText: Colors.white, snackPosition: SnackPosition.TOP);
       return;

@@ -183,43 +183,22 @@ class _PurposeInformationPageState extends State<PurposeInformationPage> {
   }
 
   void _showDateTimePicker() async {
-    // Show Date Picker
-    final DateTime? selectedDate = await showDatePicker(
-      context: context,
+    final pickedStart = await showAppDateTimePicker(
+      context,
       initialDate: DateTime.now(),
-      firstDate: DateTime.now(),
-      lastDate: DateTime.now().add(const Duration(days: 365)),
+      title: 'Select Visit Date & Time',
+      withTime: true,
     );
 
-    if (selectedDate != null && mounted) {
-      // Show Time Picker for start time
-      final TimeOfDay? startTime = await showTimePicker(
-        context: context,
-        initialTime: TimeOfDay.now(),
-      );
+    if (pickedStart != null && mounted) {
+      final formattedDate = "${pickedStart.day}/${pickedStart.month}/${pickedStart.year}";
+      final startStr = "${pickedStart.hour.toString().padLeft(2, '0')}:${pickedStart.minute.toString().padLeft(2, '0')}";
+      final endDt = pickedStart.add(const Duration(hours: 1));
+      final endStr = "${endDt.hour.toString().padLeft(2, '0')}:${endDt.minute.toString().padLeft(2, '0')}";
 
-      if (startTime != null && mounted) {
-        // Show Time Picker for end time
-        final TimeOfDay? endTime = await showTimePicker(
-          context: context,
-          initialTime: TimeOfDay(
-            hour: startTime.hour + 1,
-            minute: startTime.minute,
-          ),
-        );
-
-        if (endTime != null && mounted) {
-          // Format the date and time
-          final String formattedDate =
-              "${selectedDate.day}/${selectedDate.month}/${selectedDate.year}";
-          final String formattedTime =
-              "${startTime.format(context)} - ${endTime.format(context)}";
-
-          setState(() {
-            visitTimeController.text = "$formattedDate, $formattedTime";
-          });
-        }
-      }
+      setState(() {
+        visitTimeController.text = "$formattedDate, $startStr - $endStr";
+      });
     }
   }
 }

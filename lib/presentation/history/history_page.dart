@@ -53,12 +53,12 @@ class _HistoryPageState extends State<HistoryPage> {
   // ── Date picker ───────────────────────────────────────────────────────────
 
   Future<void> _pickDate() async {
-    final picked = await showDatePicker(
-      context: context,
+    final picked = await showAppDateTimePicker(
+      context,
       initialDate: controller.selectedDate.value,
-      firstDate: DateTime(2020),
-      lastDate: DateTime.now(),
-      locale: const Locale('en', 'US'),
+      maxDateTime: DateTime.now(),
+      title: 'Select Date',
+      withTime: false,
     );
     if (picked != null) {
       final normalized = DateTime(picked.year, picked.month, picked.day);

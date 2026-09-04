@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
+import '../../../../core/components/custom_date_time_picker.dart';
 import '../../../../core/helper/responsive_helper.dart';
 import '../controller/invitation_controller.dart';
 
@@ -829,175 +829,51 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
   }
 
   Future<void> _pickDateTime(bool isStart) async {
-    DateTime initialDate = DateTime.now();
-    DateTime firstDate = DateTime.now().subtract(const Duration(days: 365));
-    DateTime lastDate = DateTime.now().add(const Duration(days: 365));
+    final initialDate = isStart
+        ? (visitStart ?? DateTime.now())
+        : (visitEnd ?? (visitStart ?? DateTime.now()));
 
-    if (!isStart && visitStart != null) {
-      firstDate = DateTime(visitStart!.year, visitStart!.month, visitStart!.day);
-      if (initialDate.isBefore(firstDate)) {
-        initialDate = firstDate;
-      }
-    }
-
-    if (isStart && visitEnd != null) {
-      lastDate = DateTime(visitEnd!.year, visitEnd!.month, visitEnd!.day);
-      if (initialDate.isAfter(lastDate)) {
-        initialDate = lastDate;
-      }
-    }
-
-    final DateTime? date = await showDatePicker(
-      context: context,
+    final dt = await showAppDateTimePicker(
+      context,
       initialDate: initialDate,
-      firstDate: firstDate,
-      lastDate: lastDate,
-      builder: (context, child) => Theme(
-        data: Theme.of(context).copyWith(
-          colorScheme: const ColorScheme.light(primary: Color(0xFF005596)),
-        ),
-        child: child!,
-      ),
+      minDateTime: !isStart ? visitStart : null,
+      maxDateTime: isStart ? visitEnd : null,
+      title: isStart ? 'Select Visit Start' : 'Select Visit End',
+      withTime: true,
     );
 
-    if (date != null && mounted) {
-      TimeOfDay initialTime = TimeOfDay.now();
-      if (!isStart && visitStart != null) {
-        if (date.year == visitStart!.year &&
-            date.month == visitStart!.month &&
-            date.day == visitStart!.day) {
-          if (initialTime.hour < visitStart!.hour ||
-              (initialTime.hour == visitStart!.hour &&
-                  initialTime.minute < visitStart!.minute)) {
-            initialTime = TimeOfDay(
-                hour: visitStart!.hour, minute: visitStart!.minute);
-          }
-        }
-      }
-
-      DateTime cupertinoInitialDate = DateTime(
-        date.year,
-        date.month,
-        date.day,
-        initialTime.hour,
-        initialTime.minute,
-      );
-
-      DateTime? cupertinoMinDate;
-      if (!isStart && visitStart != null) {
-        if (date.year == visitStart!.year &&
-            date.month == visitStart!.month &&
-            date.day == visitStart!.day) {
-          cupertinoMinDate = visitStart!;
-          if (cupertinoInitialDate.isBefore(cupertinoMinDate)) {
-            cupertinoInitialDate = cupertinoMinDate;
-          }
-        }
-      }
-
-      DateTime? cupertinoMaxDate;
-      if (isStart && visitEnd != null) {
-        if (date.year == visitEnd!.year &&
-            date.month == visitEnd!.month &&
-            date.day == visitEnd!.day) {
-          cupertinoMaxDate = visitEnd!;
-          if (cupertinoInitialDate.isAfter(cupertinoMaxDate)) {
-            cupertinoInitialDate = cupertinoMaxDate;
-          }
-        }
-      }
-
-      TimeOfDay? time;
-      await showModalBottomSheet(
-        context: context,
-        backgroundColor: Colors.white,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(rw(context, 16))),
-        ),
-        builder: (BuildContext builder) {
-          return SizedBox(
-            height: rh(context, 300),
-            child: Column(
-              children: [
-                Padding(
-                  padding: EdgeInsets.symmetric(horizontal: rw(context, 16)),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      TextButton(
-                        child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
-                        onPressed: () => Navigator.of(builder).pop(),
-                      ),
-                      TextButton(
-                        child: const Text('OK', style: TextStyle(color: Color(0xFF005596), fontWeight: FontWeight.bold)),
-                        onPressed: () {
-                          time ??= TimeOfDay.fromDateTime(cupertinoInitialDate);
-                          Navigator.of(builder).pop();
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-                const Divider(height: 1),
-                Expanded(
-                  child: CupertinoDatePicker(
-                    mode: CupertinoDatePickerMode.time,
-                    use24hFormat: true,
-                    initialDateTime: cupertinoInitialDate,
-                    minimumDate: cupertinoMinDate,
-                    maximumDate: cupertinoMaxDate,
-                    onDateTimeChanged: (DateTime newDateTime) {
-                      time = TimeOfDay.fromDateTime(newDateTime);
-                    },
-                  ),
-                ),
-              ],
-            ),
-          );
-        },
-      );
-
-      if (time != null && mounted) {
-        final dt = DateTime(
-          date.year,
-          date.month,
-          date.day,
-          time!.hour,
-          time!.minute,
+    if (dt != null && mounted) {
+      if (!isStart && visitStart != null && dt.isBefore(visitStart!)) {
+        Get.snackbar(
+          'Invalid Time',
+          'Visit End cannot be earlier than Visit Start',
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+          snackPosition: SnackPosition.TOP,
+          margin: EdgeInsets.all(rw(context, 12)),
         );
-
-        if (!isStart && visitStart != null && dt.isBefore(visitStart!)) {
-          Get.snackbar(
-            'Invalid Time',
-            'Visit End cannot be earlier than Visit Start',
-            backgroundColor: Colors.red,
-            colorText: Colors.white,
-            snackPosition: SnackPosition.TOP,
-            margin: EdgeInsets.all(rw(context, 12)),
-          );
-          return;
-        }
-
-        if (isStart && visitEnd != null && dt.isAfter(visitEnd!)) {
-          Get.snackbar(
-            'Invalid Time',
-            'Visit Start cannot be later than Visit End',
-            backgroundColor: Colors.red,
-            colorText: Colors.white,
-            snackPosition: SnackPosition.TOP,
-            margin: EdgeInsets.all(rw(context, 12)),
-          );
-          return;
-        }
-
-        setState(() {
-          if (isStart) {
-            visitStart = dt;
-          } else {
-            visitEnd = dt;
-          }
-        });
+        return;
       }
+
+      if (isStart && visitEnd != null && dt.isAfter(visitEnd!)) {
+        Get.snackbar(
+          'Invalid Time',
+          'Visit Start cannot be later than Visit End',
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+          snackPosition: SnackPosition.TOP,
+          margin: EdgeInsets.all(rw(context, 12)),
+        );
+        return;
+      }
+
+      setState(() {
+        if (isStart) {
+          visitStart = dt;
+        } else {
+          visitEnd = dt;
+        }
+      });
     }
   }
 

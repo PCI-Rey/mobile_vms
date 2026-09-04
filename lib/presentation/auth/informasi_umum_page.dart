@@ -342,7 +342,7 @@ class _Step1 extends StatelessWidget {
                 height: rh(context, 50),
                 padding: EdgeInsets.only(left: 0, right: rw(context, 12)),
                 decoration: BoxDecoration(
-                  color: AppColors.primary50,
+                  color: Colors.white,
                   borderRadius: BorderRadius.circular(rw(context, 8)),
                   border: Border.all(color: AppColors.grey300, width: 1.5),
                 ),
@@ -432,6 +432,27 @@ class _Step2 extends StatelessWidget {
       ),
     ),
   );
+
+  Widget _requiredLabel(BuildContext context, String text) => Padding(
+    padding: EdgeInsets.only(top: rh(context, 10), bottom: rh(context, 4)),
+    child: RichText(
+      text: TextSpan(
+        text: text,
+        style: TextStyle(
+          fontSize: rfs(context, 14),
+          fontWeight: FontWeight.w600,
+          color: Colors.black87,
+        ),
+        children: const [
+          TextSpan(
+            text: ' *',
+            style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+          ),
+        ],
+      ),
+    ),
+  );
+
   Widget _readOnlyField(TextEditingController controller) => CustomTextField(
     controller: controller,
     label: '',
@@ -441,60 +462,66 @@ class _Step2 extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      padding: EdgeInsets.symmetric(horizontal: rw(context, 20), vertical: rh(context, 8)),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Center(
-            child: Text(
-              'purpose_visit'.tr,
-              style: TextStyle(fontSize: rfs(context, 18), fontWeight: FontWeight.bold),
+    return Obx(
+      () => SingleChildScrollView(
+        padding: EdgeInsets.symmetric(horizontal: rw(context, 20), vertical: rh(context, 8)),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Text(
+                'purpose_visit'.tr,
+                style: TextStyle(fontSize: rfs(context, 18), fontWeight: FontWeight.bold),
+              ),
             ),
-          ),
-          vSpace(context, 16),
-          _label(context, 'pic_host'.tr),
-          _readOnlyField(ctrl.picHostController),
-          _label(context, 'agenda'.tr),
-          _readOnlyField(ctrl.agendaController),
-          _label(context, 'destination'.tr),
-          _readOnlyField(ctrl.destinationController),
-          _label(context, 'visit_start'.tr),
-          GestureDetector(
-            onTap: () => ctrl.pickDateTime(context, isStart: true),
-            child: AbsorbPointer(
-              child: CustomTextField(
-                controller: ctrl.visitStartController,
-                label: '',
-                showLabel: false,
-                readOnly: true,
-                suffixIcon: Icon(
-                  Icons.calendar_today_outlined,
-                  color: AppColors.primary500,
-                  size: rw(context, 18),
+            vSpace(context, 16),
+            _label(context, 'pic_host'.tr),
+            _readOnlyField(ctrl.picHostController),
+            _label(context, 'agenda'.tr),
+            _readOnlyField(ctrl.agendaController),
+            _label(context, 'destination'.tr),
+            _readOnlyField(ctrl.destinationController),
+            _requiredLabel(context, 'visit_start'.tr),
+            GestureDetector(
+              onTap: () => ctrl.pickDateTime(context, isStart: true),
+              child: AbsorbPointer(
+                child: CustomTextField(
+                  controller: ctrl.visitStartController,
+                  label: '',
+                  showLabel: false,
+                  readOnly: false,
+                  errorText: ctrl.fieldErrors['visitStart'],
+                  fillColor: Colors.white,
+                  suffixIcon: Icon(
+                    Icons.calendar_today_outlined,
+                    color: AppColors.primary500,
+                    size: rw(context, 18),
+                  ),
                 ),
               ),
             ),
-          ),
-          _label(context, 'visit_end'.tr),
-          GestureDetector(
-            onTap: () => ctrl.pickDateTime(context, isStart: false),
-            child: AbsorbPointer(
-              child: CustomTextField(
-                controller: ctrl.visitEndController,
-                label: '',
-                showLabel: false,
-                readOnly: true,
-                suffixIcon: Icon(
-                  Icons.calendar_today_outlined,
-                  color: AppColors.primary500,
-                  size: rw(context, 18),
+            _requiredLabel(context, 'visit_end'.tr),
+            GestureDetector(
+              onTap: () => ctrl.pickDateTime(context, isStart: false),
+              child: AbsorbPointer(
+                child: CustomTextField(
+                  controller: ctrl.visitEndController,
+                  label: '',
+                  showLabel: false,
+                  readOnly: false,
+                  errorText: ctrl.fieldErrors['visitEnd'],
+                  fillColor: Colors.white,
+                  suffixIcon: Icon(
+                    Icons.calendar_today_outlined,
+                    color: AppColors.primary500,
+                    size: rw(context, 18),
+                  ),
                 ),
               ),
             ),
-          ),
-          vSpace(context, 20),
-        ],
+            vSpace(context, 20),
+          ],
+        ),
       ),
     );
   }
@@ -633,7 +660,7 @@ class _Step3 extends StatelessWidget {
                     height: rh(context, 50),
                     padding: EdgeInsets.only(left: 0, right: rw(context, 12)),
                     decoration: BoxDecoration(
-                      color: AppColors.primary50,
+                      color: Colors.white,
                       borderRadius: BorderRadius.circular(rw(context, 8)),
                       border: Border.all(color: AppColors.grey300, width: 1.5),
                     ),
@@ -1242,7 +1269,7 @@ class _StepOther extends StatelessWidget {
                 height: rh(context, 50),
                 padding: EdgeInsets.only(left: 0, right: rw(context, 12)),
                 decoration: BoxDecoration(
-                  color: AppColors.primary50,
+                  color: Colors.white,
                   borderRadius: BorderRadius.circular(rw(context, 8)),
                   border: Border.all(color: AppColors.grey300, width: 1.5),
                 ),

@@ -101,6 +101,8 @@ class InformasiUmumController extends GetxController {
     phoneController.addListener(updateStepValidity);
     organizationController.addListener(updateStepValidity);
     identityIdController.addListener(updateStepValidity);
+    visitStartController.addListener(updateStepValidity);
+    visitEndController.addListener(updateStepValidity);
     vehiclePlateController.addListener(updateStepValidity);
     filledByNameController.addListener(updateStepValidity);
     filledByEmailController.addListener(updateStepValidity);
@@ -131,6 +133,10 @@ class InformasiUmumController extends GetxController {
             organizationController.text.trim().isNotEmpty &&
             identityIdController.text.trim().isNotEmpty;
       }
+      if (currentPage.value == 2) {
+        return visitStartController.text.trim().isNotEmpty &&
+            visitEndController.text.trim().isNotEmpty;
+      }
       if (currentPage.value == 3) {
         if (isDriving.value) {
           return vehiclePlateController.text.trim().isNotEmpty;
@@ -156,6 +162,10 @@ class InformasiUmumController extends GetxController {
             phoneController.text.trim().isNotEmpty &&
             organizationController.text.trim().isNotEmpty &&
             identityIdController.text.trim().isNotEmpty;
+      }
+      if (currentPage.value == 3) {
+        return visitStartController.text.trim().isNotEmpty &&
+            visitEndController.text.trim().isNotEmpty;
       }
       if (currentPage.value == 4) {
         if (isDriving.value) {
@@ -307,46 +317,21 @@ class InformasiUmumController extends GetxController {
             : visitEndDateTime.value) ??
         DateTime.now();
 
-    final DateTime? pickedDate = await showDatePicker(
-      context: context,
+    final DateTime? finalDt = await showAppDateTimePicker(
+      context,
       initialDate: initialDt,
-      firstDate: DateTime.now().subtract(const Duration(days: 365)),
-      lastDate: DateTime.now().add(const Duration(days: 365 * 2)),
-      builder: (context, child) => Theme(
-        data: Theme.of(context).copyWith(
-          colorScheme: const ColorScheme.light(primary: AppColors.primary500),
-        ),
-        child: child!,
-      ),
+      minDateTime: isStart ? null : visitStartDateTime.value,
+      title: isStart ? 'Select Visit Start' : 'Select Visit End',
+      withTime: true,
     );
 
-    if (pickedDate == null || !context.mounted) return;
-
-    final TimeOfDay? pickedTime = await showTimePicker(
-      context: context,
-      initialTime: TimeOfDay.fromDateTime(initialDt),
-      builder: (context, child) => Theme(
-        data: Theme.of(context).copyWith(
-          colorScheme: const ColorScheme.light(primary: AppColors.primary500),
-        ),
-        child: child!,
-      ),
-    );
-
-    if (pickedTime == null) return;
-
-    final finalDt = DateTime(
-      pickedDate.year,
-      pickedDate.month,
-      pickedDate.day,
-      pickedTime.hour,
-      pickedTime.minute,
-    );
+    if (finalDt == null || !context.mounted) return;
 
     if (isStart) {
       visitStartDateTime.value = finalDt;
       visitStartController.text =
           DateFormat('EEEE, dd MMMM yyyy, HH:mm', 'en').format(finalDt);
+      fieldErrors.remove('visitStart');
       // If visit end is before visit start, adjust end to start + 3 hours
       if (visitEndDateTime.value != null &&
           visitEndDateTime.value!.isBefore(finalDt)) {
@@ -354,7 +339,9 @@ class InformasiUmumController extends GetxController {
         visitEndDateTime.value = newEnd;
         visitEndController.text =
             DateFormat('EEEE, dd MMMM yyyy, HH:mm', 'en').format(newEnd);
+        fieldErrors.remove('visitEnd');
       }
+      updateStepValidity();
     } else {
       if (visitStartDateTime.value != null &&
           finalDt.isBefore(visitStartDateTime.value!)) {
@@ -370,6 +357,8 @@ class InformasiUmumController extends GetxController {
       visitEndDateTime.value = finalDt;
       visitEndController.text =
           DateFormat('EEEE, dd MMMM yyyy, HH:mm', 'en').format(finalDt);
+      fieldErrors.remove('visitEnd');
+      updateStepValidity();
     }
   }
 
@@ -448,6 +437,7 @@ class InformasiUmumController extends GetxController {
   void nextPage() {
     if (isSelfRegistered.value == true) {
       if (currentPage.value == 1 && !validateStep1()) return;
+      if (currentPage.value == 2 && !validateStep2()) return;
       if (currentPage.value == 3 && !validateStep3()) return;
 
       if (currentPage.value < 5) {
@@ -462,6 +452,7 @@ class InformasiUmumController extends GetxController {
     } else if (isSelfRegistered.value == false) {
       if (currentPage.value == 1 && !validateStepOther()) return;
       if (currentPage.value == 2 && !validateStep1()) return;
+      if (currentPage.value == 3 && !validateStep2()) return;
       if (currentPage.value == 4 && !validateStep3()) return;
 
       if (currentPage.value < 6) {
@@ -524,6 +515,27 @@ class InformasiUmumController extends GetxController {
     }
 
     // Set red borders on all empty fields
+    fieldErrors.assignAll(
+      errors.map(
+        (k, v) => MapEntry(k, 'error_required'.trParams({'field': v ?? ''})),
+      ),
+    );
+
+    if (errors.isNotEmpty) {
+      return false;
+    }
+    return true;
+  }
+
+  bool validateStep2() {
+    final errors = <String, String?>{};
+    if (visitStartController.text.trim().isEmpty) {
+      errors['visitStart'] = 'visit_start'.tr;
+    }
+    if (visitEndController.text.trim().isEmpty) {
+      errors['visitEnd'] = 'visit_end'.tr;
+    }
+
     fieldErrors.assignAll(
       errors.map(
         (k, v) => MapEntry(k, 'error_required'.trParams({'field': v ?? ''})),

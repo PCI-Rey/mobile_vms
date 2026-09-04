@@ -360,12 +360,12 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                       if (endDate != null && initial.isAfter(endDate!)) {
                         initial = endDate!;
                       }
-                      final picked = await showDatePicker(
-                        context: context,
+                      final picked = await showAppDateTimePicker(
+                        context,
                         initialDate: initial,
-                        firstDate: DateTime(2020),
-                        lastDate: endDate ?? DateTime(2030),
-                        locale: const Locale('en', 'US'),
+                        maxDateTime: endDate,
+                        title: 'Select Start Date',
+                        withTime: false,
                       );
                       if (picked != null) {
                         setState(() => startDate = picked);
@@ -394,12 +394,12 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                         if (startDate != null && initial.isBefore(startDate!)) {
                           initial = startDate!;
                         }
-                        final picked = await showDatePicker(
-                          context: context,
+                        final picked = await showAppDateTimePicker(
+                          context,
                           initialDate: initial,
-                          firstDate: startDate ?? DateTime(2020),
-                          lastDate: DateTime(2030),
-                          locale: const Locale('en', 'US'),
+                          minDateTime: startDate,
+                          title: 'Select End Date',
+                          withTime: false,
                         );
                         if (picked != null) {
                           setState(() => endDate = picked);

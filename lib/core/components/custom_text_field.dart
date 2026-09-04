@@ -21,6 +21,8 @@ class CustomTextField extends StatelessWidget {
   final IconData? suffixIconData;
   final String? errorText;
   final bool isRequired;
+  final Color? fillColor;
+  final TextStyle? style;
 
   const CustomTextField({
     super.key,
@@ -41,6 +43,8 @@ class CustomTextField extends StatelessWidget {
     this.suffixIconData,
     this.errorText,
     this.isRequired = false,
+    this.fillColor,
+    this.style,
   });
 
   @override
@@ -77,6 +81,12 @@ class CustomTextField extends StatelessWidget {
           readOnly: readOnly,
           maxLines: maxLines,
           maxLength: maxLength,
+          style: style ??
+              (readOnly
+                  ? const TextStyle(
+                      color: Color(0xFF64748B),
+                    )
+                  : null),
           decoration: InputDecoration(
             prefixIcon: prefixIcon,
             suffixIcon:
@@ -94,21 +104,26 @@ class CustomTextField extends StatelessWidget {
 
             hintText: hintText,
             filled: true,
-            fillColor: AppColors.primary50,
+            fillColor: fillColor ??
+                (readOnly ? const Color(0xFFF1F5F9) : Colors.white),
             contentPadding: EdgeInsets.all(rw(context, 12.0)),
 
             errorText: null,
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(rw(context, 8)),
               borderSide: BorderSide(
-                color: errorText != null ? Colors.red : AppColors.grey300,
+                color: errorText != null
+                    ? Colors.red
+                    : (readOnly ? const Color(0xFFE2E8F0) : AppColors.grey300),
                 width: 1.5,
               ),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(rw(context, 8)),
               borderSide: BorderSide(
-                color: errorText != null ? Colors.red : AppColors.primary500,
+                color: errorText != null
+                    ? Colors.red
+                    : (readOnly ? const Color(0xFFE2E8F0) : AppColors.primary500),
                 width: 2,
               ),
             ),
