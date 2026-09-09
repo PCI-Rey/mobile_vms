@@ -33,142 +33,6 @@ Future<bool?> showAddPraRegistrationDialog(
   );
 }
 
-// ─── Utility: Exit Confirmation ───────────────────────────────────────────
-
-Future<bool> _showExitConfirmation(BuildContext context) async {
-  final ctrl = Get.find<PraRegistrationController>();
-  // If the controller has an 'hasUnsavedChanges' getter, use it.
-  // Otherwise, default to showing the dialog to be safe.
-  try {
-    if (!(ctrl as dynamic).hasUnsavedChanges) return true;
-  } catch (_) {
-    // If hasUnsavedChanges doesn't exist, we'll just show the dialog
-  }
-
-  final result = await showDialog<bool>(
-    context: context,
-    builder: (context) => AlertDialog(
-      backgroundColor: Colors.white,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(rw(context, 16)),
-      ),
-      title: Text(
-        'Cancel Registration?',
-        style: TextStyle(fontWeight: FontWeight.bold),
-      ),
-      content: Text(
-        'The data you have entered will be lost. Are you sure you want to close this form?',
-        textAlign: TextAlign.justify,
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(false),
-          child: Text('No', style: TextStyle(color: Colors.grey)),
-        ),
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(true),
-          child: Text(
-            'Yes, Close',
-            style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
-          ),
-        ),
-      ],
-    ),
-  );
-  return result ?? false;
-}
-
-Future<bool> _showBackConfirmation(BuildContext context) async {
-  return await showDialog<bool>(
-        context: context,
-        builder: (context) => AlertDialog(
-          backgroundColor: Colors.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(rw(context, 16)),
-          ),
-          title: Row(
-            children: [
-              Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 28),
-              hSpace(context, 12),
-              Text('Warning', style: TextStyle(fontWeight: FontWeight.bold)),
-            ],
-          ),
-          content: Text(
-            'Are you sure you want to go back? Going back to Visitor Type selection will reset the information you have already entered in this step.',
-            textAlign: TextAlign.justify,
-            style: TextStyle(
-              fontSize: rfs(context, 14),
-              color: Color(0xFF616161),
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: Text(
-                'Cancel',
-                style: TextStyle(
-                  color: Colors.grey,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-            TextButton(
-              onPressed: () => Navigator.pop(context, true),
-              child: Text(
-                'Yes, Go Back',
-                style: TextStyle(
-                  color: Colors.orange,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ) ??
-      false;
-}
-
-Future<bool> _showDeleteVisitorConfirmation(BuildContext context) async {
-  return await showDialog<bool>(
-        context: context,
-        builder: (context) => AlertDialog(
-          backgroundColor: Colors.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(rw(context, 16)),
-          ),
-          title: Text(
-            'Delete Visitor?',
-            style: TextStyle(fontWeight: FontWeight.bold),
-          ),
-          content: Text(
-            'Are you sure you want to delete this visitor? This action cannot be undone.',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: Text(
-                'No',
-                style: TextStyle(
-                  color: Colors.grey,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-            TextButton(
-              onPressed: () => Navigator.pop(context, true),
-              child: Text(
-                'Yes, Delete',
-                style: TextStyle(
-                  color: Colors.red,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ) ??
-      false;
-}
 
 class _AddPraRegistrationDialog extends StatelessWidget {
   const _AddPraRegistrationDialog();
@@ -178,13 +42,10 @@ class _AddPraRegistrationDialog extends StatelessWidget {
     final ctrl = Get.find<PraRegistrationController>();
 
     return PopScope(
-      canPop: false,
-      onPopInvokedWithResult: (didPop, result) async {
-        if (didPop) return;
-        final shouldExit = await _showExitConfirmation(context);
-        if (shouldExit && context.mounted) {
+      canPop: true,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) {
           ctrl.resetFields(); // Ensure data is cleared
-          Navigator.of(context).pop();
         }
       },
       child: Dialog(
@@ -206,12 +67,9 @@ class _AddPraRegistrationDialog extends StatelessWidget {
                 // ── Header ────────────────────────────────────────────
                 _DialogHeader(
                   step: step,
-                  onClose: () async {
-                    final shouldExit = await _showExitConfirmation(context);
-                    if (shouldExit && context.mounted) {
-                      ctrl.resetFields(); // Ensure data is cleared
-                      Navigator.of(context).pop();
-                    }
+                  onClose: () {
+                    ctrl.resetFields(); // Ensure data is cleared
+                    Navigator.of(context).pop();
                   },
                   controller: ctrl,
                 ),
@@ -378,8 +236,39 @@ class _StepProgressBar extends StatelessWidget {
     required this.total,
   });
 
+  bool _isStepCompleted(int index) {
+    if (index == currentStep) return false;
+    if (index > controller.maxStepReached.value) return false;
+    if (index == 0) {
+      return controller.isStepValid(0) &&
+          (currentStep > 0 || controller.maxStepReached.value > 0);
+    }
+    if (index == 1) {
+      return controller.isStepValid(0) &&
+          controller.isStepValid(1) &&
+          (currentStep > 1 || controller.maxStepReached.value > 1);
+    }
+    if (index == 2) {
+      return controller.isStepValid(0) &&
+          controller.isStepValid(1) &&
+          controller.isStepValid(2);
+    }
+    return false;
+  }
+
+  bool _canJumpToStep(int index) {
+    if (currentStep == index) return false;
+    if (index == 0) return true;
+    if (index == 1) return controller.isStepValid(0);
+    if (index == 2) return controller.isStepValid(0) && controller.isStepValid(1);
+    return false;
+  }
+
   @override
   Widget build(BuildContext context) {
+    final _ = controller.formUpdateTrigger.value;
+    final maxReached = controller.maxStepReached.value;
+
     return Container(
       padding: EdgeInsets.symmetric(
         horizontal: rw(context, 32),
@@ -387,9 +276,10 @@ class _StepProgressBar extends StatelessWidget {
       ),
       child: Row(
         children: List.generate(total, (index) {
-          final isCompleted = index < currentStep;
+          final isCompleted = _isStepCompleted(index);
           final isCurrent = index == currentStep;
           final isActive = isCompleted || isCurrent;
+          final canJump = _canJumpToStep(index);
 
           return Expanded(
             flex: index == total - 1 ? 0 : 1,
@@ -397,19 +287,7 @@ class _StepProgressBar extends StatelessWidget {
               children: [
                 // ── Circle Number ──────────────────────────────────
                 GestureDetector(
-                  onTap: () async {
-                    // Jika user mencoba kembali ke Step 0 (Page 1) dari step manapun yang lebih tinggi
-                    if (currentStep > 0 && index == 0 && !controller.isDuplicateMode.value) {
-                      final shouldBack = await _showBackConfirmation(context);
-                      if (shouldBack) {
-                        controller
-                            .clearStep1Fields(); // Ini akan mereset Step 1 dan Step 2
-                        controller.goToStep(index);
-                      }
-                    } else {
-                      controller.goToStep(index);
-                    }
-                  },
+                  onTap: canJump ? () => controller.goToStep(index) : null,
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 300),
                     width: 32,
@@ -417,7 +295,9 @@ class _StepProgressBar extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: isActive
                           ? AppColors.primary500
-                          : const Color(0xFFCCCCCC),
+                          : (canJump
+                              ? const Color(0xFF94A3B8)
+                              : const Color(0xFFCCCCCC)),
                       shape: BoxShape.circle,
                       boxShadow: isCurrent
                           ? [
@@ -455,7 +335,7 @@ class _StepProgressBar extends StatelessWidget {
                     child: Container(
                       height: 2,
                       margin: EdgeInsets.symmetric(horizontal: rw(context, 8)),
-                      color: (index < currentStep)
+                      color: (index < currentStep || (index < maxReached && controller.isStepValid(index)))
                           ? AppColors.primary500
                           : const Color(0xFFE0E0E0),
                     ),
@@ -1033,12 +913,8 @@ class _Step1VisitorInfo extends StatelessWidget {
                   Align(
                     alignment: Alignment.centerRight,
                     child: TextButton.icon(
-                      onPressed: () async {
-                        final shouldDelete =
-                            await _showDeleteVisitorConfirmation(context);
-                        if (shouldDelete) {
-                          controller.removeGroupVisitor(i);
-                        }
+                      onPressed: () {
+                        controller.removeGroupVisitor(i);
                       },
                       icon: Icon(
                         Icons.delete_outline_rounded,
@@ -1167,6 +1043,12 @@ class _Step1VisitorInfo extends StatelessWidget {
                         }
 
                         if (roles.isEmpty) return const SizedBox.shrink();
+                        if (roles.length == 1 && v.selectedVisitorRole.value != roles.first.role) {
+                          WidgetsBinding.instance.addPostFrameCallback((_) {
+                            v.selectedVisitorRole.value = roles.first.role;
+                            controller.updateForm();
+                          });
+                        }
                         final selected = v.selectedVisitorRole.value;
                         return Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -2115,11 +1997,11 @@ class _FormFieldWidget extends StatelessWidget {
     final isEmployeeType = controller.selectedVisitorTypeName.value
         .toLowerCase()
         .contains('employee');
-    final bool isReadOnly = isEmployeeType && field.remarks == 'name';
+    final bool isReadOnly = isEmployeeType && field.remarks.toLowerCase() == 'name';
 
     void onChanged(String v) {
       field.answerText = v;
-      switch (field.remarks) {
+      switch (field.remarks.toLowerCase()) {
         case 'name':
           controller.name.value = v;
           break;
@@ -2130,8 +2012,10 @@ class _FormFieldWidget extends StatelessWidget {
           controller.phone.value = v;
           break;
         case 'organization':
+        case 'company':
           controller.organization.value = v;
           break;
+        case 'identity_id':
         case 'indentity_id':
           controller.identityId.value = v;
           break;
@@ -2731,53 +2615,35 @@ class _BottomNav extends StatelessWidget {
         ),
         child: Row(
           children: [
-            // Back button
-            OutlinedButton.icon(
-              onPressed: () async {
-                if (step == 0) {
-                  final shouldExit = await _showExitConfirmation(ctx);
-                  if (shouldExit && ctx.mounted) {
-                    controller.resetFields();
-                    Navigator.of(ctx).pop();
-                  }
-                } else if (step == 1) {
-                  if (controller.isDuplicateMode.value) {
-                    controller.prevStep();
-                  } else {
-                    // Kembali dari Page 2 ke Page 1 -> Muncul Warning
-                    final shouldBack = await _showBackConfirmation(ctx);
-                    if (shouldBack) {
-                      controller.clearStep1Fields();
-                      controller.prevStep();
-                    }
-                  }
-                } else {
-                  // Kembali dari Page 3 ke Page 2 -> Langsung Back (Data Aman)
-                  controller.prevStep();
-                }
-              },
-              style: OutlinedButton.styleFrom(
-                side: BorderSide(
-                  color: step == 0
-                      ? const Color(0xFFDDDDDD)
-                      : AppColors.primary500,
+            // Back button (Hanya muncul jika step > 0)
+            if (step > 0) ...[
+              OutlinedButton.icon(
+                onPressed: isSubmitting
+                    ? null
+                    : () {
+                        controller.prevStep();
+                      },
+                style: OutlinedButton.styleFrom(
+                  side: const BorderSide(
+                    color: AppColors.primary500,
+                  ),
+                  foregroundColor: AppColors.primary500,
+                  disabledForegroundColor: const Color(0xFFBDBDBD),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: rw(context, 18),
+                    vertical: rh(context, 12),
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(rw(context, 10)),
+                  ),
                 ),
-                foregroundColor: AppColors.primary500,
-                disabledForegroundColor: const Color(0xFFBDBDBD),
-                padding: EdgeInsets.symmetric(
-                  horizontal: rw(context, 18),
-                  vertical: rh(context, 12),
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(rw(context, 10)),
+                icon: const Icon(Icons.arrow_back_rounded, size: 16),
+                label: const Text(
+                  'Back',
+                  style: TextStyle(fontWeight: FontWeight.w600),
                 ),
               ),
-              icon: Icon(Icons.arrow_back_rounded, size: 16),
-              label: Text(
-                'Back',
-                style: TextStyle(fontWeight: FontWeight.w600),
-              ),
-            ),
+            ],
 
             const Spacer(),
 

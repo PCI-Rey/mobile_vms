@@ -43,11 +43,7 @@ class GroupVisitorRow {
 
   bool get isValid =>
       fullName.text.trim().isNotEmpty &&
-      email.text.trim().isNotEmpty &&
-      phone.text.trim().isNotEmpty &&
-      organization.text.trim().isNotEmpty &&
-      identityId.text.trim().isNotEmpty &&
-      selectedVisitorRole.value.trim().isNotEmpty;
+      email.text.trim().isNotEmpty;
 }
 
 // ─── Controller ───────────────────────────────────────────────────────────────
@@ -86,7 +82,7 @@ class PraRegistrationController extends GetxController {
   final identityIdCtrl = TextEditingController();
 
   TextEditingController? getFieldController(String remarks) {
-    switch (remarks) {
+    switch (remarks.toLowerCase()) {
       case 'name':
         return nameCtrl;
       case 'email':
@@ -94,7 +90,9 @@ class PraRegistrationController extends GetxController {
       case 'phone':
         return phoneCtrl;
       case 'organization':
+      case 'company':
         return organizationCtrl;
+      case 'identity_id':
       case 'indentity_id':
         return identityIdCtrl;
       default:
@@ -153,6 +151,7 @@ class PraRegistrationController extends GetxController {
   final RxBool isLoading = false.obs;
   final RxBool isSubmitting = false.obs;
   final RxInt currentStep = 0.obs;
+  final RxInt maxStepReached = 0.obs;
 
   final RxString groupCode = ''.obs;
   final RxString groupName = ''.obs;
@@ -240,6 +239,7 @@ class PraRegistrationController extends GetxController {
     visitEnd.value = null;
     agenda.value = '';
     currentStep.value = 0;
+    maxStepReached.value = 0;
   }
 
   Future<void> autofillFromAccessPass(
@@ -851,61 +851,188 @@ class PraRegistrationController extends GetxController {
     }
   }
 
+  bool _isFormFieldValid(VisitFormField field) {
+    final rem = field.remarks.toLowerCase();
+    switch (rem) {
+      case 'name':
+        return name.value.trim().isNotEmpty ||
+            nameCtrl.text.trim().isNotEmpty ||
+            field.answerText.trim().isNotEmpty;
+      case 'email':
+        return email.value.trim().isNotEmpty ||
+            emailCtrl.text.trim().isNotEmpty ||
+            field.answerText.trim().isNotEmpty;
+      case 'phone':
+        return phone.value.trim().isNotEmpty ||
+            phoneCtrl.text.trim().isNotEmpty ||
+            field.answerText.trim().isNotEmpty;
+      case 'organization':
+      case 'company':
+        return organization.value.trim().isNotEmpty ||
+            organizationCtrl.text.trim().isNotEmpty ||
+            field.answerText.trim().isNotEmpty;
+      case 'identity_id':
+      case 'indentity_id':
+        return identityId.value.trim().isNotEmpty ||
+            identityIdCtrl.text.trim().isNotEmpty ||
+            field.answerText.trim().isNotEmpty;
+      case 'visitor_role':
+        final roles = formStructure.value?.visitorRoles ?? [];
+        if (roles.isEmpty) return true;
+        return selectedVisitorRole.value.trim().isNotEmpty ||
+            field.answerText.trim().isNotEmpty;
+      case 'is_employee':
+        return true;
+      case 'employee_name':
+      case 'employee':
+        if (isEmployee.value) {
+          return selectedEmployeeId.value.trim().isNotEmpty ||
+              field.answerText.trim().isNotEmpty;
+        }
+        return true;
+      case 'host':
+        return selectedHostId.value.trim().isNotEmpty ||
+            field.answerText.trim().isNotEmpty;
+      case 'site_place':
+        return selectedSiteId.value.trim().isNotEmpty ||
+            field.answerText.trim().isNotEmpty;
+      case 'agenda':
+        return agenda.value.trim().isNotEmpty ||
+            field.answerText.trim().isNotEmpty;
+      case 'visitor_period_start':
+        return visitStart.value != null ||
+            field.answerDatetime.trim().isNotEmpty;
+      case 'visitor_period_end':
+        return visitEnd.value != null ||
+            field.answerDatetime.trim().isNotEmpty;
+      default:
+        if (field.fieldType == 4 || field.fieldType == 9) {
+          return field.answerDatetime.trim().isNotEmpty ||
+              field.answerText.trim().isNotEmpty;
+        }
+        return field.answerText.trim().isNotEmpty;
+    }
+  }
+
+  bool _isGroupVisitorValid(
+    GroupVisitorRow v,
+    SectionPageVisitorType? visitorSection,
+  ) {
+    if (visitorSection == null || visitorSection.praForm.isEmpty) {
+      return v.fullName.text.trim().isNotEmpty &&
+          v.email.text.trim().isNotEmpty;
+    }
+
+    final mandatoryFields =
+        visitorSection.praForm.where((f) => f.isEnable && f.mandatory);
+
+    for (final field in mandatoryFields) {
+      final rem = field.remarks.toLowerCase();
+      switch (rem) {
+        case 'name':
+          if (v.fullName.text.trim().isEmpty) return false;
+          break;
+        case 'email':
+          if (v.email.text.trim().isEmpty) return false;
+          break;
+        case 'phone':
+          if (v.phone.text.trim().isEmpty) return false;
+          break;
+        case 'organization':
+        case 'company':
+          if (v.organization.text.trim().isEmpty) return false;
+          break;
+        case 'identity_id':
+        case 'indentity_id':
+          if (v.identityId.text.trim().isEmpty) return false;
+          break;
+        case 'visitor_role':
+          final roles = formStructure.value?.visitorRoles ?? [];
+          if (roles.isNotEmpty && v.selectedVisitorRole.value.trim().isEmpty) {
+            return false;
+          }
+          break;
+        case 'is_employee':
+          break;
+        case 'employee_name':
+        case 'employee':
+          if (v.isEmployee.value && v.selectedEmployeeId.value.trim().isEmpty) {
+            return false;
+          }
+          break;
+        default:
+          break;
+      }
+    }
+    return true;
+  }
+
   bool isStepValid(int step) {
     if (step == 0) {
       bool basic =
           selectedVisitorTypeId.value.isNotEmpty && isGroup.value != null;
-      if (isGroup.value == true)
+      if (isGroup.value == true) {
         return basic && groupName.value.trim().isNotEmpty;
+      }
       return basic;
     } else if (step == 1) {
+      final detail = formStructure.value;
+      if (detail == null) return false;
+
+      final sections = detail.sectionPageVisitorTypes;
+      final visitorSection = sections.firstWhereOrNull(
+        (s) => s.name.toLowerCase().contains('visitor'),
+      ) ?? sections.firstOrNull;
+
       if (isGroup.value == true) {
         if (groupVisitors.isEmpty) return false;
-        return groupVisitors.every((v) => v.isValid);
+        return groupVisitors.every((v) => _isGroupVisitorValid(v, visitorSection));
       } else {
-        // Check hardcoded primary fields
-        final primaryFieldsValid =
-            name.value.trim().isNotEmpty &&
-            email.value.trim().isNotEmpty &&
-            phone.value.trim().isNotEmpty &&
-            organization.value.trim().isNotEmpty &&
-            identityId.value.trim().isNotEmpty &&
-            selectedVisitorRole.value.trim().isNotEmpty;
+        if (visitorSection == null) return true;
 
-        if (!primaryFieldsValid) return false;
+        final mandatoryFields =
+            visitorSection.praForm.where((f) => f.isEnable && f.mandatory);
 
-        // Also check any additional mandatory API form fields
-        // (fields not covered by the hardcoded checks above)
-        const handledRemarks = {
-          'name', 'email', 'phone', 'organization', 'company',
-          'identity_id', 'indentity_id', 'visitor_role',
-          'is_employee', 'employee_name', 'employee',
-          // Step 2 fields — skip them in step 1 validation
-          'host', 'site_place', 'agenda',
-          'visitor_period_start', 'visitor_period_end',
-        };
-
-        for (final section
-            in formStructure.value?.sectionPageVisitorTypes ??
-                <SectionPageVisitorType>[]) {
-          for (final field in section.praForm) {
-            if (!field.isEnable) continue;
-            if (!field.mandatory) continue;
-            final rem = field.remarks.toLowerCase();
-            if (handledRemarks.contains(rem)) continue;
-            // This is an extra mandatory field — ensure it has an answer
-            if (field.answerText.trim().isEmpty) return false;
-          }
+        for (final field in mandatoryFields) {
+          if (!_isFormFieldValid(field)) return false;
         }
 
         return true;
       }
     } else if (step == 2) {
-      return selectedHostId.value.isNotEmpty &&
-          agenda.value.trim().isNotEmpty &&
-          selectedSiteId.value.isNotEmpty &&
-          visitStart.value != null &&
-          visitEnd.value != null;
+      final detail = formStructure.value;
+      if (detail == null) return false;
+
+      final sections = detail.sectionPageVisitorTypes;
+      final purposeSection = sections.firstWhereOrNull(
+        (s) => s.name.toLowerCase().contains('purpose'),
+      ) ?? (sections.length > 1 ? sections[1] : null);
+
+      if (purposeSection == null) {
+        return selectedHostId.value.isNotEmpty &&
+            agenda.value.trim().isNotEmpty &&
+            selectedSiteId.value.isNotEmpty &&
+            visitStart.value != null &&
+            visitEnd.value != null;
+      }
+
+      final enabledFields = purposeSection.praForm.where((f) => f.isEnable);
+      for (final field in enabledFields) {
+        final rem = field.remarks.toLowerCase();
+        if (rem == 'visitor_period_start') {
+          if (visitStart.value == null && field.answerDatetime.trim().isEmpty) {
+            return false;
+          }
+        } else if (rem == 'visitor_period_end') {
+          if (visitEnd.value == null && field.answerDatetime.trim().isEmpty) {
+            return false;
+          }
+        } else if (field.mandatory) {
+          if (!_isFormFieldValid(field)) return false;
+        }
+      }
+
+      return true;
     }
     return true;
   }
@@ -926,6 +1053,9 @@ class PraRegistrationController extends GetxController {
       if (groupCode.value.isEmpty) groupCode.value = _generateGroupCode();
     }
     currentStep.value = targetStep;
+    if (currentStep.value > maxStepReached.value) {
+      maxStepReached.value = currentStep.value;
+    }
   }
 
   void nextStep() {
@@ -939,6 +1069,9 @@ class PraRegistrationController extends GetxController {
         if (groupCode.value.isEmpty) groupCode.value = _generateGroupCode();
       }
       currentStep.value++;
+      if (currentStep.value > maxStepReached.value) {
+        maxStepReached.value = currentStep.value;
+      }
     }
   }
 
@@ -953,12 +1086,7 @@ class PraRegistrationController extends GetxController {
 
   bool get isStep1Valid => isStepValid(0);
   bool get isStep2Valid => isStepValid(1);
-  bool get isStep3Valid =>
-      selectedHostId.value.isNotEmpty &&
-      agenda.value.trim().isNotEmpty &&
-      selectedSiteId.value.isNotEmpty &&
-      visitStart.value != null &&
-      visitEnd.value != null;
+  bool get isStep3Valid => isStepValid(2);
 
   void updateForm() => formUpdateTrigger.value++;
 
@@ -976,11 +1104,21 @@ class PraRegistrationController extends GetxController {
       v.dispose();
     }
     groupVisitors.clear();
-    groupVisitors.add(GroupVisitorRow());
+    final row = GroupVisitorRow();
+    if (formStructure.value?.visitorRoles.length == 1) {
+      row.selectedVisitorRole.value =
+          formStructure.value!.visitorRoles.first.role;
+    }
+    groupVisitors.add(row);
   }
 
   void addGroupVisitor() {
-    groupVisitors.add(GroupVisitorRow());
+    final row = GroupVisitorRow();
+    if (formStructure.value?.visitorRoles.length == 1) {
+      row.selectedVisitorRole.value =
+          formStructure.value!.visitorRoles.first.role;
+    }
+    groupVisitors.add(row);
     updateForm();
   }
 
@@ -1389,8 +1527,16 @@ class PraRegistrationController extends GetxController {
       case 'employee_name':
       case 'employee':
         return selectedEmployeeId.value;
+      case 'host':
+        return selectedHostId.value.isNotEmpty
+            ? selectedHostId.value
+            : field.answerText;
+      case 'site_place':
+        return selectedSiteId.value.isNotEmpty
+            ? selectedSiteId.value
+            : field.answerText;
       case 'agenda':
-        return agenda.value;
+        return agenda.value.isNotEmpty ? agenda.value : field.answerText;
       default:
         return field.answerText;
     }
@@ -1415,7 +1561,7 @@ class PraRegistrationController extends GetxController {
         return answers['organization'] ?? '';
       case 'identity_id':
       case 'indentity_id':
-        return answers['indentity_id'] ?? '';
+        return answers['indentity_id'] ?? answers['identity_id'] ?? '';
       case 'is_employee':
         final isEmp = answers['is_employee'] == 'true';
         final target = isEmp ? 'yes' : 'no';
@@ -1427,8 +1573,16 @@ class PraRegistrationController extends GetxController {
       case 'employee_name':
       case 'employee':
         return answers['employee'] ?? '';
+      case 'host':
+        return selectedHostId.value.isNotEmpty
+            ? selectedHostId.value
+            : field.answerText;
+      case 'site_place':
+        return selectedSiteId.value.isNotEmpty
+            ? selectedSiteId.value
+            : field.answerText;
       case 'agenda':
-        return agenda.value;
+        return agenda.value.isNotEmpty ? agenda.value : field.answerText;
       default:
         return field.answerText;
     }
