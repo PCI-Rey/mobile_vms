@@ -91,7 +91,12 @@ class UserModel {
       hostName: json['host_name']?.toString(),
       sitePlaceName: json['site_place_name']?.toString(),
       visitorStatus: json['visitor_status']?.toString(),
-      faceUrl: json['visitor_face']?.toString() ?? json['face_url']?.toString(),
+      faceUrl: json['visitor_face']?.toString() ??
+          json['selfie_image']?.toString() ??
+          json['face_image']?.toString() ??
+          json['faceimage']?.toString() ??
+          json['face_url']?.toString() ??
+          json['photo']?.toString(),
       extraData: json['extra_data']?.toString(),
     );
   }

@@ -68,8 +68,12 @@ class UserController extends GetxController {
 
   String? get faceUrl {
     final url = user.value?.faceUrl;
-    if (url == null || url.isEmpty) return null;
+    if (url == null || url.isEmpty || url == 'null' || url == '-') return null;
     if (url.startsWith('http')) return url;
-    return 'https://be-vms.app.bio-experience.com$url';
+    if (url.startsWith('/cdn/')) {
+      return 'https://be-vms.app.bio-experience.com$url';
+    }
+    final cleanPath = url.startsWith('/') ? url : '/$url';
+    return 'https://be-vms.app.bio-experience.com/cdn$cleanPath';
   }
 }

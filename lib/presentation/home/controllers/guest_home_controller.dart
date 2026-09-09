@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../data/datasources/api_service.dart';
@@ -23,8 +24,9 @@ class GuestHomeController extends GetxController {
   void onInit() {
     super.onInit();
     _loadFromHive();
-    fetchAccessPass(isSilent: true);
-    fetchActiveVisits(isSilent: true);
+    fetchActiveVisits(isSilent: true).then((_) {
+      fetchAccessPass(isSilent: true);
+    });
     _startPolling();
   }
 
@@ -56,9 +58,10 @@ class GuestHomeController extends GetxController {
 
   void _startPolling() {
     _refreshTimer?.cancel();
-    _refreshTimer = Timer.periodic(const Duration(seconds: 3), (timer) {
-      fetchAccessPass(isSilent: true);
-      fetchActiveVisits(isSilent: true);
+    _refreshTimer = Timer.periodic(const Duration(seconds: 5), (timer) {
+      fetchActiveVisits(isSilent: true).then((_) {
+        fetchAccessPass(isSilent: true);
+      });
     });
   }
 
@@ -97,6 +100,23 @@ class GuestHomeController extends GetxController {
               item.visitorStatus.toLowerCase() == 'rejected';
           return !isExpired && !isInactiveStatus;
         }).toList();
+
+        // If today's pass is empty, fallback to active/upcoming visits
+        if (filteredPasses.isEmpty) {
+          if (activeVisits.isNotEmpty) {
+            filteredPasses.addAll(activeVisits);
+          } else if (user?.extraData != null) {
+            try {
+              final extra = jsonDecode(user!.extraData!);
+              if (extra is Map<String, dynamic> && extra.isNotEmpty) {
+                final fallbackPass = AccessPassModel.fromJson(extra);
+                if (!fallbackPass.visitorPeriodEnd.isBefore(now)) {
+                  filteredPasses.add(fallbackPass);
+                }
+              }
+            } catch (_) {}
+          }
+        }
 
         // Update Hive and UI
         accessPasses.assignAll(filteredPasses);
@@ -153,32 +173,67 @@ class GuestHomeController extends GetxController {
 
     try {
       final response = await _api.getActiveVisits(token);
-      if (response.data['status'] == 'success') {
-        final collection = response.data['collection'] as List<dynamic>? ?? [];
-        final now = DateTime.now();
-        final newPasses = collection
-            .map((e) => AccessPassModel.fromJson(e as Map<String, dynamic>))
-            .toList();
+      final collection = (response.data is Map && response.data['status'] == 'success')
+          ? (response.data['collection'] as List<dynamic>? ?? [])
+          : <dynamic>[];
+      final now = DateTime.now();
+      final newPasses = collection
+          .map((e) => AccessPassModel.fromJson(e as Map<String, dynamic>))
+          .toList();
 
-        final filteredPasses = newPasses.where((item) {
-          final isExpired = item.visitorPeriodEnd.isBefore(now);
-          final isInactiveStatus =
-              item.visitorStatus.toLowerCase() == 'expired' ||
-              item.visitorStatus.toLowerCase() == 'completed' ||
-              item.visitorStatus.toLowerCase() == 'cancelled' ||
-              item.visitorStatus.toLowerCase() == 'rejected';
-          return !isExpired && !isInactiveStatus;
-        }).toList();
+      final filteredPasses = newPasses.where((item) {
+        final isExpired = item.visitorPeriodEnd.isBefore(now);
+        final isInactiveStatus =
+            item.visitorStatus.toLowerCase() == 'expired' ||
+            item.visitorStatus.toLowerCase() == 'completed' ||
+            item.visitorStatus.toLowerCase() == 'cancelled' ||
+            item.visitorStatus.toLowerCase() == 'rejected';
+        return !isExpired && !isInactiveStatus;
+      }).toList();
 
-        activeVisits.assignAll(filteredPasses);
-
-        if (filteredPasses.isNotEmpty) {
-          if (selectedVisitIndex.value >= filteredPasses.length) {
-            selectedVisitIndex.value = 0;
+      // If no active visit for today, check upcoming visits from history
+      if (filteredPasses.isEmpty) {
+        try {
+          final histRes = await _api.getInvitationHistory(token);
+          if (histRes.data is Map && histRes.data['status'] == 'success') {
+            final histCol = histRes.data['collection'] as List<dynamic>? ?? [];
+            final upcoming = histCol
+                .map((e) => AccessPassModel.fromJson(e as Map<String, dynamic>))
+                .where((item) {
+                  final isExpired = item.visitorPeriodEnd.isBefore(now);
+                  final isInactive =
+                      item.visitorStatus.toLowerCase() == 'expired' ||
+                      item.visitorStatus.toLowerCase() == 'completed' ||
+                      item.visitorStatus.toLowerCase() == 'cancelled' ||
+                      item.visitorStatus.toLowerCase() == 'rejected';
+                  return !isExpired && !isInactive;
+                }).toList();
+            filteredPasses.addAll(upcoming);
           }
-        } else {
+        } catch (_) {}
+
+        // Secondary fallback to current session invitation from extraData
+        if (filteredPasses.isEmpty && user?.extraData != null) {
+          try {
+            final extra = jsonDecode(user!.extraData!);
+            if (extra is Map<String, dynamic> && extra.isNotEmpty) {
+              final fallbackPass = AccessPassModel.fromJson(extra);
+              if (!fallbackPass.visitorPeriodEnd.isBefore(now)) {
+                filteredPasses.add(fallbackPass);
+              }
+            }
+          } catch (_) {}
+        }
+      }
+
+      activeVisits.assignAll(filteredPasses);
+
+      if (filteredPasses.isNotEmpty) {
+        if (selectedVisitIndex.value >= filteredPasses.length) {
           selectedVisitIndex.value = 0;
         }
+      } else {
+        selectedVisitIndex.value = 0;
       }
     } catch (e) {
       debugPrint('fetchActiveVisits error: $e');

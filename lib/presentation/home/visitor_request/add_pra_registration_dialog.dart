@@ -2224,9 +2224,9 @@ class _FormFieldWidget extends StatelessWidget {
     bool isStart = field.remarks == 'visitor_period_start';
     bool isEnd = field.remarks == 'visitor_period_end';
 
-    DateTime initialDate = isStart
-        ? (controller.visitStart.value ?? DateTime.now())
-        : (controller.visitEnd.value ?? (controller.visitStart.value ?? DateTime.now()));
+    DateTime? initialDate = isStart
+        ? controller.visitStart.value
+        : (controller.visitEnd.value ?? controller.visitStart.value);
 
     final picked = await showAppDateTimePicker(
       ctx,
@@ -2260,9 +2260,9 @@ class _FormFieldWidget extends StatelessWidget {
     bool isStart = field.remarks == 'visitor_period_start';
     bool isEnd = field.remarks == 'visitor_period_end';
 
-    DateTime initialDate = isStart
-        ? (controller.visitStart.value ?? DateTime.now())
-        : (controller.visitEnd.value ?? (controller.visitStart.value ?? DateTime.now()));
+    DateTime? initialDate = isStart
+        ? controller.visitStart.value
+        : (controller.visitEnd.value ?? controller.visitStart.value);
 
     final dtRaw = await showAppDateTimePicker(
       ctx,

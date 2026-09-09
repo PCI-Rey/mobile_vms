@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../../core/core.dart';
 import '../../presentation/auth/controller/language_controller.dart';
 import '../../presentation/auth/controller/user_controller.dart';
 import 'controllers/guest_home_controller.dart';
-import 'widgets/visit_summary_card.dart';
 import 'widgets/access_pass_section.dart';
 import 'widgets/access_pass_modal.dart';
 import 'widgets/guest_header.dart';
@@ -52,43 +50,34 @@ class _GuestHomePageState extends State<GuestHomePage> {
                 bottom: false,
                 child: Column(
                   children: [
-                    // --- TOP FIXED SECTION ---
+                    // --- TOP FIXED HEADER ---
                     const GuestHeader(),
 
                     // --- SCROLLABLE BODY ---
                     Expanded(
-                      child: LayoutBuilder(
-                        builder: (context, scrollConstraints) {
-                          return SingleChildScrollView(
-                            physics: const AlwaysScrollableScrollPhysics(
-                              parent: BouncingScrollPhysics(),
-                            ),
-                            child: ConstrainedBox(
-                              constraints: BoxConstraints(
-                                minHeight: scrollConstraints.maxHeight,
+                      child: SingleChildScrollView(
+                        physics: const AlwaysScrollableScrollPhysics(
+                          parent: BouncingScrollPhysics(),
+                        ),
+                        child: Padding(
+                          padding: EdgeInsets.only(
+                            bottom: rh(context, 32) +
+                                MediaQuery.of(context).padding.bottom,
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              vSpace(context, 16),
+                              const GuestMenuGrid(),
+                              vSpace(context, 28),
+                              AccessPassSection(
+                                onTap: (item) =>
+                                    AccessPassModal.show(context, item),
                               ),
-                              child: IntrinsicHeight(
-                                child: Column(
-                                  children: [
-                                    vSpace(context, 16),
-                                    const GuestMenuGrid(),
-                                    vSpace(context, 24),
-                                    AccessPassSection(
-                                      onTap: (item) =>
-                                          AccessPassModal.show(context, item),
-                                    ),
-                                    vSpace(context, 24),
-
-                                    // --- BOTTOM CONTENT ---
-                                    Expanded(
-                                      child: _buildBottomContent(context),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          );
-                        },
+                              vSpace(context, 32),
+                            ],
+                          ),
+                        ),
                       ),
                     ),
                   ],
@@ -97,168 +86,6 @@ class _GuestHomePageState extends State<GuestHomePage> {
             ],
           );
         },
-      ),
-    );
-  }
-
-  Widget _buildBottomContent(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      decoration: BoxDecoration(
-        color: _bgPage,
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(rw(context, 32)),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: rw(context, 12),
-            offset: Offset(0, rh(context, -4)),
-          ),
-        ],
-      ),
-      padding: EdgeInsets.fromLTRB(
-        rw(context, 20),
-        rh(context, 32),
-        rw(context, 20),
-        rh(context, 20) + MediaQuery.of(context).padding.bottom,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Premium drag handle pill indicator
-          Center(
-            child: Container(
-              width: rw(context, 48),
-              height: rh(context, 5),
-              decoration: BoxDecoration(
-                color: Colors.grey.withValues(alpha: 0.3),
-                borderRadius: BorderRadius.circular(rw(context, 3)),
-              ),
-            ),
-          ),
-          vSpace(context, 20),
-          Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'active_visit'.tr,
-                      style: TextStyle(
-                        fontSize: rfs(context, 20),
-                        fontWeight: FontWeight.w900,
-                        color: Colors.black87,
-                        letterSpacing: -0.5,
-                      ),
-                    ),
-                    Text(
-                      'active_visits_desc'.tr,
-                      style: TextStyle(
-                        fontSize: rfs(context, 16),
-                        color: Colors.grey,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Obx(
-                () => Container(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: rw(context, 12),
-                    vertical: rh(context, 6),
-                  ),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        AppColors.primary500.withValues(alpha: 0.1),
-                        AppColors.primary500.withValues(alpha: 0.05),
-                      ],
-                    ),
-                    borderRadius: BorderRadius.circular(rw(context, 12)),
-                    border: Border.all(
-                      color: AppColors.primary500.withValues(alpha: 0.1),
-                    ),
-                  ),
-                  child: Text(
-                    '${guestCtrl.activeVisits.length} ${'records'.tr}',
-                    style: TextStyle(
-                      color: AppColors.primary500,
-                      fontSize: rfs(context, 12),
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          vSpace(context, 16),
-          Obx(() {
-            if (guestCtrl.isLoading.value) {
-              return const Center(child: CircularProgressIndicator());
-            }
-            if (guestCtrl.activeVisits.isEmpty) {
-              return _buildEmptyVisits(context);
-            }
-            return Column(
-              children: [
-                for (int i = 0; i < guestCtrl.activeVisits.length; i++) ...[
-                  Obx(
-                    () => VisitSummaryCard(
-                      item: guestCtrl.activeVisits[i],
-                      isSelected: guestCtrl.selectedVisitIndex.value == i,
-                      onTap: () {
-                        guestCtrl.selectVisit(i);
-                        AccessPassModal.show(context, guestCtrl.activeVisits[i]);
-                      },
-                    ),
-                  ),
-                  if (i < guestCtrl.activeVisits.length - 1)
-                    vSpace(context, 10),
-                ],
-              ],
-            );
-          }),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildEmptyVisits(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.symmetric(vertical: rh(context, 40)),
-      child: Center(
-        child: Column(
-          children: [
-            Container(
-              padding: EdgeInsets.all(rw(context, 20)),
-              decoration: BoxDecoration(
-                color: Colors.grey[100],
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                Icons.event_busy_outlined,
-                size: rw(context, 40),
-                color: Colors.grey[400],
-              ),
-            ),
-            vSpace(context, 12),
-            Text(
-              'no_active_visits'.tr,
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: rfs(context, 15),
-              ),
-            ),
-            vSpace(context, 4),
-            Text(
-              'no_active_visits_desc'.tr,
-              style: TextStyle(color: Colors.grey, fontSize: rfs(context, 12)),
-            ),
-          ],
-        ),
       ),
     );
   }

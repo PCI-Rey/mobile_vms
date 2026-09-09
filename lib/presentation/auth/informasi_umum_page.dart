@@ -1,4 +1,5 @@
 // ignore_for_file: deprecated_member_use
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
@@ -156,16 +157,20 @@ class _InformasiUmumPageState extends State<InformasiUmumPage> {
                   controller: _ctrl.pageController,
                   physics: const NeverScrollableScrollPhysics(),
                   onPageChanged: (i) => _ctrl.currentPage.value = i,
-                  children: [
-                    _WhoFillStep(ctrl: _ctrl),
-                    if (_ctrl.isSelfRegistered.value == false)
-                      _StepOther(ctrl: _ctrl),
-                    _Step1(ctrl: _ctrl),
-                    _Step2(ctrl: _ctrl),
-                    _Step3(ctrl: _ctrl),
-                    _Step4(ctrl: _ctrl),
-                    _Step5(ctrl: _ctrl),
-                  ],
+                  children: _ctrl.activeSteps.map((stepType) {
+                    switch (stepType) {
+                      case InformasiUmumStepType.visitorInfo:
+                        return _Step1(ctrl: _ctrl);
+                      case InformasiUmumStepType.purposeVisit:
+                        return _Step2(ctrl: _ctrl);
+                      case InformasiUmumStepType.vehicleInfo:
+                        return _Step3(ctrl: _ctrl);
+                      case InformasiUmumStepType.selfieImage:
+                        return _Step4(ctrl: _ctrl);
+                      case InformasiUmumStepType.ktpImage:
+                        return _Step5(ctrl: _ctrl);
+                    }
+                  }).toList(),
                 ),
               ),
             ),
@@ -205,9 +210,7 @@ class _InformasiUmumPageState extends State<InformasiUmumPage> {
                   // Dots indicator (flexible center)
                   Expanded(
                     child: Obx(() {
-                      final totalDots = _ctrl.isSelfRegistered.value == false
-                          ? 7
-                          : 6;
+                      final totalDots = _ctrl.totalActiveSteps;
                       return Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: List.generate(
@@ -242,8 +245,7 @@ class _InformasiUmumPageState extends State<InformasiUmumPage> {
                         );
                       }
                       final isLast =
-                          _ctrl.currentPage.value ==
-                          (_ctrl.isSelfRegistered.value == false ? 6 : 5);
+                          _ctrl.currentPage.value == _ctrl.totalActiveSteps - 1;
                       final isValid = _ctrl.isCurrentStepValid.value;
                       return ElevatedButton(
                         onPressed: isValid
@@ -282,7 +284,7 @@ class _Step1 extends StatelessWidget {
   final InformasiUmumController ctrl;
   const _Step1({required this.ctrl});
 
-  Widget _requiredLabel(BuildContext context, String text) => Padding(
+  Widget _requiredLabel(BuildContext context, String text, {bool isRequired = true}) => Padding(
     padding: EdgeInsets.only(top: rh(context, 10), bottom: rh(context, 4)),
     child: RichText(
       text: TextSpan(
@@ -292,27 +294,120 @@ class _Step1 extends StatelessWidget {
           fontWeight: FontWeight.w600,
           color: Colors.black87,
         ),
-        children: const [
-          TextSpan(
-            text: ' *',
-            style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
-          ),
+        children: [
+          if (isRequired)
+            const TextSpan(
+              text: ' *',
+              style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+            ),
         ],
       ),
     ),
   );
 
+  Widget _buildField(
+    BuildContext context,
+    String key,
+    String label,
+    TextEditingController controller,
+    String hint, {
+    bool isRequired = false,
+    bool readOnly = false,
+    TextInputType keyboardType = TextInputType.text,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _requiredLabel(context, label, isRequired: isRequired),
+        CustomTextField(
+          controller: controller,
+          label: '',
+          showLabel: false,
+          hintText: hint,
+          readOnly: readOnly,
+          keyboardType: keyboardType,
+          errorText: ctrl.fieldErrors[key],
+          onChanged: (v) => ctrl.validateField(key, v, label),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDynamicField(BuildContext context, Map<String, dynamic> f) {
+    final remarks = (f['remarks'] ?? '').toString().toLowerCase().trim();
+
+    final label = (f['long_display_text'] ?? f['short_name'] ?? remarks).toString();
+    final isMandatory = f['mandatory'] == true;
+
+    if (remarks == 'visitor_role' || remarks == 'role') {
+      if (ctrl.visitorRolesList.isEmpty) return const SizedBox.shrink();
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _requiredLabel(context, label, isRequired: isMandatory),
+          DropdownButton2<String>(
+            isExpanded: true,
+            value: ctrl.selectedVisitorRole.value,
+            items: ctrl.visitorRolesList
+                .map(
+                  (role) => DropdownMenuItem<String>(
+                    value: role,
+                    child: Text(role),
+                  ),
+                )
+                .toList(),
+            onChanged: (v) {
+              if (v != null) ctrl.selectedVisitorRole.value = v;
+            },
+            buttonStyleData: ButtonStyleData(
+              height: rh(context, 50),
+              padding: EdgeInsets.only(left: 0, right: rw(context, 12)),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(rw(context, 8)),
+                border: Border.all(color: AppColors.grey300, width: 1.5),
+              ),
+            ),
+            menuItemStyleData: EdgeInsets.symmetric(horizontal: rw(context, 12)).toMapMenuItemStyleData(),
+            dropdownStyleData: DropdownStyleData(
+              maxHeight: rh(context, 250),
+              offset: Offset(0, rh(context, -10)),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(rw(context, 8)),
+              ),
+            ),
+            underline: const SizedBox.shrink(),
+          ),
+        ],
+      );
+    } else if (remarks == 'name') {
+      return _buildField(context, 'fullname', label, ctrl.fullNameController, 'nama_lengkap'.tr, isRequired: isMandatory);
+    } else if (remarks == 'email') {
+      return _buildField(context, 'email', label, ctrl.emailController, 'nama@email.com', isRequired: isMandatory, readOnly: true, keyboardType: TextInputType.emailAddress);
+    } else if (remarks == 'phone') {
+      return _buildField(context, 'phone', label, ctrl.phoneController, '08xx xxxx xxxx', isRequired: isMandatory, keyboardType: TextInputType.phone);
+    } else if (remarks == 'organization' || remarks == 'company') {
+      return _buildField(context, 'organization', label, ctrl.organizationController, 'instansi_hint'.tr, isRequired: isMandatory);
+    } else if (remarks == 'identity_id' || remarks == 'indentity_id') {
+      return _buildField(context, 'identityId', label, ctrl.identityIdController, '32012345...', isRequired: isMandatory, keyboardType: TextInputType.number);
+    } else {
+      final extraCtrl = ctrl.getExtraController(remarks);
+      return _buildField(context, remarks, label, extraCtrl, label, isRequired: isMandatory);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Obx(
-      () => SingleChildScrollView(
+    return Obx(() {
+      final fields = ctrl.visitorInfoFormFields;
+      return SingleChildScrollView(
         padding: EdgeInsets.symmetric(horizontal: rw(context, 20), vertical: rh(context, 8)),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Center(
               child: Text(
-                'visitor_information'.tr,
+                ctrl.visitorInfoPage?['name']?.toString() ?? 'visitor_information'.tr,
                 style: TextStyle(
                   fontSize: rfs(context, 18),
                   fontWeight: FontWeight.bold,
@@ -320,100 +415,20 @@ class _Step1 extends StatelessWidget {
               ),
             ),
             vSpace(context, 16),
-            _requiredLabel(
-              context,
-              _localTr('visitor_role', 'Peran Pengunjung', 'Visitor Role'),
-            ),
-            DropdownButton2<String>(
-              isExpanded: true,
-              value: ctrl.selectedVisitorRole.value,
-              items: ctrl.visitorRolesList
-                  .map(
-                    (role) => DropdownMenuItem<String>(
-                      value: role,
-                      child: Text(role),
-                    ),
-                  )
-                  .toList(),
-              onChanged: (v) {
-                if (v != null) ctrl.selectedVisitorRole.value = v;
-              },
-              buttonStyleData: ButtonStyleData(
-                height: rh(context, 50),
-                padding: EdgeInsets.only(left: 0, right: rw(context, 12)),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(rw(context, 8)),
-                  border: Border.all(color: AppColors.grey300, width: 1.5),
-                ),
-              ),
-              menuItemStyleData: EdgeInsets.symmetric(horizontal: rw(context, 12)).toMapMenuItemStyleData(),
-              dropdownStyleData: DropdownStyleData(
-                maxHeight: rh(context, 250),
-                offset: Offset(0, rh(context, -10)),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(rw(context, 8)),
-                ),
-              ),
-              underline: const SizedBox.shrink(),
-            ),
-            _requiredLabel(context, 'fullname'.tr),
-            CustomTextField(
-              controller: ctrl.fullNameController,
-              label: '',
-              showLabel: false,
-              hintText: 'nama_lengkap'.tr,
-              errorText: ctrl.fieldErrors['fullname'],
-              onChanged: (v) =>
-                  ctrl.validateField('fullname', v, 'fullname'.tr),
-            ),
-            _requiredLabel(context, 'email'.tr),
-            CustomTextField(
-              controller: ctrl.emailController,
-              label: '',
-              showLabel: false,
-              hintText: 'nama@email.com',
-              keyboardType: TextInputType.emailAddress,
-              readOnly: true,
-              errorText: ctrl.fieldErrors['email'],
-              onChanged: (v) => ctrl.validateField('email', v, 'email'.tr),
-            ),
-            _requiredLabel(context, 'phone'.tr),
-            CustomTextField(
-              controller: ctrl.phoneController,
-              label: '',
-              showLabel: false,
-              hintText: '08xx xxxx xxxx',
-              keyboardType: TextInputType.phone,
-              errorText: ctrl.fieldErrors['phone'],
-              onChanged: (v) => ctrl.validateField('phone', v, 'phone'.tr),
-            ),
-            _requiredLabel(context, 'organization'.tr),
-            CustomTextField(
-              controller: ctrl.organizationController,
-              label: '',
-              showLabel: false,
-              hintText: 'instansi_hint'.tr,
-              errorText: ctrl.fieldErrors['organization'],
-              onChanged: (v) =>
-                  ctrl.validateField('organization', v, 'organization'.tr),
-            ),
-            _requiredLabel(context, 'identity_id'.tr),
-            CustomTextField(
-              controller: ctrl.identityIdController,
-              label: '',
-              showLabel: false,
-              hintText: '32012345...',
-              keyboardType: TextInputType.number,
-              errorText: ctrl.fieldErrors['identityId'],
-              onChanged: (v) =>
-                  ctrl.validateField('identityId', v, 'identity_id'.tr),
-            ),
+            if (fields.isEmpty) ...[
+              _buildField(context, 'fullname', 'fullname'.tr, ctrl.fullNameController, 'nama_lengkap'.tr, isRequired: true),
+              _buildField(context, 'email', 'email'.tr, ctrl.emailController, 'nama@email.com', isRequired: true, readOnly: true, keyboardType: TextInputType.emailAddress),
+              _buildField(context, 'phone', 'phone'.tr, ctrl.phoneController, '08xx xxxx xxxx', isRequired: true, keyboardType: TextInputType.phone),
+              _buildField(context, 'organization', 'organization'.tr, ctrl.organizationController, 'instansi_hint'.tr, isRequired: true),
+            ] else ...[
+              for (final f in fields)
+                _buildDynamicField(context, f),
+            ],
             vSpace(context, 20),
           ],
         ),
-      ),
-    );
+      );
+    });
   }
 }
 
@@ -433,7 +448,7 @@ class _Step2 extends StatelessWidget {
     ),
   );
 
-  Widget _requiredLabel(BuildContext context, String text) => Padding(
+  Widget _requiredLabel(BuildContext context, String text, {bool isRequired = true}) => Padding(
     padding: EdgeInsets.only(top: rh(context, 10), bottom: rh(context, 4)),
     child: RichText(
       text: TextSpan(
@@ -443,11 +458,12 @@ class _Step2 extends StatelessWidget {
           fontWeight: FontWeight.w600,
           color: Colors.black87,
         ),
-        children: const [
-          TextSpan(
-            text: ' *',
-            style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
-          ),
+        children: [
+          if (isRequired)
+            const TextSpan(
+              text: ' *',
+              style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+            ),
         ],
       ),
     ),
@@ -460,70 +476,109 @@ class _Step2 extends StatelessWidget {
     readOnly: true,
   );
 
+  Widget _buildField(
+    BuildContext context,
+    Map<String, dynamic> f,
+  ) {
+    final remarks = (f['remarks'] ?? '').toString().toLowerCase().trim();
+    final label = (f['long_display_text'] ?? f['short_name'] ?? remarks).toString();
+    final isMandatory = f['mandatory'] == true;
+
+    if (remarks == 'site_place') {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _requiredLabel(context, label.isNotEmpty ? label : 'destination'.tr, isRequired: isMandatory),
+          _readOnlyField(ctrl.destinationController),
+        ],
+      );
+    } else if (remarks == 'host') {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _requiredLabel(context, label.isNotEmpty ? label : 'pic_host'.tr, isRequired: isMandatory),
+          _readOnlyField(ctrl.picHostController),
+        ],
+      );
+    } else if (remarks == 'agenda') {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _requiredLabel(context, label.isNotEmpty ? label : 'agenda'.tr, isRequired: isMandatory),
+          _readOnlyField(ctrl.agendaController),
+        ],
+      );
+    } else if (remarks == 'visitor_period_start') {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _requiredLabel(context, label.isNotEmpty ? label : 'visit_start'.tr, isRequired: isMandatory),
+          _readOnlyField(ctrl.visitStartController),
+        ],
+      );
+    } else if (remarks == 'visitor_period_end') {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _requiredLabel(context, label.isNotEmpty ? label : 'visit_end'.tr, isRequired: isMandatory),
+          _readOnlyField(ctrl.visitEndController),
+        ],
+      );
+    } else {
+      final extraCtrl = ctrl.getExtraController(remarks);
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _requiredLabel(context, label, isRequired: isMandatory),
+          CustomTextField(
+            controller: extraCtrl,
+            label: '',
+            showLabel: false,
+            hintText: label,
+            errorText: ctrl.fieldErrors[remarks],
+            onChanged: (v) => ctrl.validateField(remarks, v, label),
+          ),
+        ],
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Obx(
-      () => SingleChildScrollView(
+    return Obx(() {
+      final fields = ctrl.purposeVisitFormFields;
+      return SingleChildScrollView(
         padding: EdgeInsets.symmetric(horizontal: rw(context, 20), vertical: rh(context, 8)),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Center(
               child: Text(
-                'purpose_visit'.tr,
+                ctrl.purposeVisitPage?['name']?.toString() ?? 'purpose_visit'.tr,
                 style: TextStyle(fontSize: rfs(context, 18), fontWeight: FontWeight.bold),
               ),
             ),
             vSpace(context, 16),
-            _label(context, 'pic_host'.tr),
-            _readOnlyField(ctrl.picHostController),
-            _label(context, 'agenda'.tr),
-            _readOnlyField(ctrl.agendaController),
-            _label(context, 'destination'.tr),
-            _readOnlyField(ctrl.destinationController),
-            _requiredLabel(context, 'visit_start'.tr),
-            GestureDetector(
-              onTap: () => ctrl.pickDateTime(context, isStart: true),
-              child: AbsorbPointer(
-                child: CustomTextField(
-                  controller: ctrl.visitStartController,
-                  label: '',
-                  showLabel: false,
-                  readOnly: false,
-                  errorText: ctrl.fieldErrors['visitStart'],
-                  fillColor: Colors.white,
-                  suffixIcon: Icon(
-                    Icons.calendar_today_outlined,
-                    color: AppColors.primary500,
-                    size: rw(context, 18),
-                  ),
-                ),
-              ),
-            ),
-            _requiredLabel(context, 'visit_end'.tr),
-            GestureDetector(
-              onTap: () => ctrl.pickDateTime(context, isStart: false),
-              child: AbsorbPointer(
-                child: CustomTextField(
-                  controller: ctrl.visitEndController,
-                  label: '',
-                  showLabel: false,
-                  readOnly: false,
-                  errorText: ctrl.fieldErrors['visitEnd'],
-                  fillColor: Colors.white,
-                  suffixIcon: Icon(
-                    Icons.calendar_today_outlined,
-                    color: AppColors.primary500,
-                    size: rw(context, 18),
-                  ),
-                ),
-              ),
-            ),
+            if (fields.isEmpty) ...[
+              _label(context, 'pic_host'.tr),
+              _readOnlyField(ctrl.picHostController),
+              _label(context, 'agenda'.tr),
+              _readOnlyField(ctrl.agendaController),
+              _label(context, 'destination'.tr),
+              _readOnlyField(ctrl.destinationController),
+              _requiredLabel(context, 'visit_start'.tr),
+              _readOnlyField(ctrl.visitStartController),
+              _requiredLabel(context, 'visit_end'.tr),
+              _readOnlyField(ctrl.visitEndController),
+            ] else ...[
+              for (final f in fields)
+                _buildField(context, f),
+            ],
             vSpace(context, 20),
           ],
         ),
-      ),
-    );
+      );
+    });
   }
 }
 
@@ -561,7 +616,7 @@ class _Step3 extends StatelessWidget {
           children: [
             Center(
               child: Text(
-                'vehicle_information'.tr,
+                ctrl.vehiclePage?['name']?.toString() ?? 'vehicle_information'.tr,
                 style: TextStyle(
                   fontSize: rfs(context, 18),
                   fontWeight: FontWeight.bold,
@@ -572,7 +627,7 @@ class _Step3 extends StatelessWidget {
             // Are you driving?
             RichText(
               text: TextSpan(
-                text: 'are_you_driving'.tr,
+                text: ctrl.vehicleFormFields.firstWhereOrNull((f) => f['remarks'] == 'is_driving')?['long_display_text']?.toString() ?? 'are_you_driving'.tr,
                 style: TextStyle(
                   fontSize: rfs(context, 14),
                   fontWeight: FontWeight.w600,
@@ -602,7 +657,7 @@ class _Step3 extends StatelessWidget {
                       ctrl.validateField(
                         'vehiclePlate',
                         '',
-                        'vehicle_plate'.tr,
+                        ctrl.vehicleFormFields.firstWhereOrNull((f) => f['remarks'] == 'vehicle_plate')?['long_display_text']?.toString() ?? 'vehicle_plate'.tr,
                       );
                     }
                   },
@@ -623,38 +678,57 @@ class _Step3 extends StatelessWidget {
             ),
             // Conditionally show vehicle fields only if driving
             if (ctrl.isDriving.value) ...[
-              _requiredLabel(context, 'vehicle_type'.tr),
+              _requiredLabel(
+                context,
+                ctrl.vehicleFormFields.firstWhereOrNull((f) => f['remarks'] == 'vehicle_type')?['long_display_text']?.toString() ?? 'vehicle_type'.tr,
+              ),
               () {
-                const labelMap = {
-                  'vehicle_car': 'vehicle_car',
-                  'vehicle_bus': 'vehicle_bus',
-                  'vehicle_motor': 'vehicle_motor',
-                  // Legacy English keys from old API format
-                  'Car': 'vehicle_car',
-                  'Bus': 'vehicle_bus',
-                  'Motor': 'vehicle_motor',
-                };
-                const apiKeys = ['vehicle_car', 'vehicle_bus', 'vehicle_motor'];
-                final normalizedValue =
-                    labelMap.containsKey(ctrl.vehicleType.value)
-                    ? (apiKeys.contains(ctrl.vehicleType.value)
-                          ? ctrl.vehicleType.value
-                          : labelMap[ctrl.vehicleType.value]!)
-                    : 'vehicle_car';
+                final options = ctrl.vehicleTypeOptions;
+                final currentVal = ctrl.vehicleType.value;
+                final match = options.firstWhereOrNull(
+                  (o) =>
+                      o['value'] == currentVal ||
+                      o['label'] == currentVal ||
+                      (o['value'] == 'Car' &&
+                          (currentVal == 'vehicle_car' || currentVal == 'Car')) ||
+                      (o['value'] == 'Motorcycle' &&
+                          (currentVal == 'vehicle_motor' ||
+                              currentVal == 'Motor' ||
+                              currentVal == 'Motorcycle')) ||
+                      (o['value'] == 'Bus' &&
+                          (currentVal == 'vehicle_bus' || currentVal == 'Bus')) ||
+                      (o['value'] == 'Truck' &&
+                          (currentVal == 'vehicle_truck' ||
+                              currentVal == 'Truck' ||
+                              currentVal == 'Truk')) ||
+                      (o['value'] == 'Bicycle' &&
+                          (currentVal == 'vehicle_bicycle' ||
+                              currentVal == 'Bicycle' ||
+                              currentVal == 'Sepeda')),
+                );
+                final selectedValue =
+                    match?['value'] ?? (options.isNotEmpty ? options.first['value'] : 'Car');
 
                 return DropdownButton2<String>(
                   isExpanded: true,
-                  value: normalizedValue,
-                  items: apiKeys
+                  value: selectedValue,
+                  items: options
                       .map(
-                        (key) => DropdownMenuItem<String>(
-                          value: key,
-                          child: Text(key.tr),
+                        (item) => DropdownMenuItem<String>(
+                          value: item['value'],
+                          child: Text(item['label'] ?? item['value'] ?? ''),
                         ),
                       )
                       .toList(),
                   onChanged: (v) {
-                    if (v != null) ctrl.vehicleType.value = v;
+                    if (v != null) {
+                      ctrl.vehicleType.value = v;
+                      if (ctrl.isBicycle(v)) {
+                        ctrl.vehiclePlateController.clear();
+                        ctrl.fieldErrors.remove('vehiclePlate');
+                      }
+                      ctrl.updateStepValidity();
+                    }
                   },
                   buttonStyleData: ButtonStyleData(
                     height: rh(context, 50),
@@ -665,7 +739,9 @@ class _Step3 extends StatelessWidget {
                       border: Border.all(color: AppColors.grey300, width: 1.5),
                     ),
                   ),
-                  menuItemStyleData: EdgeInsets.symmetric(horizontal: rw(context, 12)).toMapMenuItemStyleData(),
+                  menuItemStyleData: EdgeInsets.symmetric(
+                    horizontal: rw(context, 12),
+                  ).toMapMenuItemStyleData(),
                   dropdownStyleData: DropdownStyleData(
                     maxHeight: rh(context, 250),
                     offset: Offset(0, rh(context, -10)),
@@ -676,16 +752,25 @@ class _Step3 extends StatelessWidget {
                   underline: const SizedBox.shrink(),
                 );
               }(),
-              _requiredLabel(context, 'vehicle_plate'.tr),
-              CustomTextField(
-                controller: ctrl.vehiclePlateController,
-                label: '',
-                showLabel: false,
-                hintText: 'B 1234 XX',
-                errorText: ctrl.fieldErrors['vehiclePlate'],
-                onChanged: (v) =>
-                    ctrl.validateField('vehiclePlate', v, 'vehicle_plate'.tr),
-              ),
+              if (!ctrl.isBicycle(ctrl.vehicleType.value)) ...[
+                _requiredLabel(
+                  context,
+                  ctrl.vehicleFormFields.firstWhereOrNull((f) => f['remarks'] == 'vehicle_plate')?['long_display_text']?.toString() ?? 'vehicle_plate'.tr,
+                ),
+                CustomTextField(
+                  controller: ctrl.vehiclePlateController,
+                  label: '',
+                  showLabel: false,
+                  hintText: 'B 1234 XX',
+                  errorText: ctrl.fieldErrors['vehiclePlate'],
+                  onChanged: (v) =>
+                      ctrl.validateField(
+                        'vehiclePlate',
+                        v,
+                        ctrl.vehicleFormFields.firstWhereOrNull((f) => f['remarks'] == 'vehicle_plate')?['long_display_text']?.toString() ?? 'vehicle_plate'.tr,
+                      ),
+                ),
+              ],
             ],
             vSpace(context, 20),
           ],
@@ -702,97 +787,49 @@ class _Step4 extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
-      padding: EdgeInsets.symmetric(horizontal: rw(context, 20), vertical: rh(context, 8)),
+      padding: EdgeInsets.symmetric(
+        horizontal: rw(context, 20),
+        vertical: rh(context, 8),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Center(
             child: Text(
-              'face_photo_title'.tr,
-              style: TextStyle(fontSize: rfs(context, 18), fontWeight: FontWeight.bold),
+              ctrl.selfiePage?['name']?.toString() ?? 'face_photo_title'.tr,
+              style: TextStyle(
+                fontSize: rfs(context, 18),
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ),
           vSpace(context, 16),
-          GestureDetector(
-            onTap: () {
-              Get.bottomSheet(
-                Container(
-                  color: Colors.white,
-                  child: Wrap(
-                    children: [
-                      ListTile(
-                        leading: const Icon(Icons.camera_alt),
-                        title: Text('source_camera'.tr),
-                        onTap: () {
-                          Get.back();
-                          ctrl.pickSelfie(ImageSource.camera);
-                        },
-                      ),
-                      ListTile(
-                        leading: const Icon(Icons.photo),
-                        title: Text('source_gallery'.tr),
-                        onTap: () {
-                          Get.back();
-                          ctrl.pickSelfie(ImageSource.gallery);
-                        },
-                      ),
-                    ],
-                  ),
+          Obx(() {
+            if (ctrl.selfieImage.value == null) {
+              return _UploadPlaceholderCard(
+                isUploading: ctrl.isUploadingSelfie.value,
+                icon: Icons.camera_alt,
+                onTap: () => _showPickerBottomSheet(
+                  context,
+                  isSelfie: true,
+                  ctrl: ctrl,
                 ),
               );
-            },
-            child: Container(
-              height: rh(context, 220),
-              width: double.infinity,
-              decoration: BoxDecoration(
-                color: AppColors.primary50,
-                border: Border.all(color: AppColors.grey300, width: 1.5),
-                borderRadius: BorderRadius.circular(rw(context, 8)),
+            }
+            return _ImagePreviewCard(
+              file: ctrl.selfieImage.value!,
+              fileName: ctrl.selfieFileName.value,
+              fileSize: ctrl.selfieFileSizeFormatted.value,
+              isUploading: ctrl.isUploadingSelfie.value,
+              uploadedUrl: ctrl.selfieUrl.value,
+              onReplace: () => _showPickerBottomSheet(
+                context,
+                isSelfie: true,
+                ctrl: ctrl,
               ),
-              child: Obx(() {
-                if (ctrl.isUploadingSelfie.value) {
-                  return const Center(
-                    child: CircularProgressIndicator(
-                      color: AppColors.primary500,
-                    ),
-                  );
-                }
-                if (ctrl.selfieImage.value != null) {
-                  return ClipRRect(
-                    borderRadius: BorderRadius.circular(rw(context, 8)),
-                    child: Image.file(
-                      ctrl.selfieImage.value!,
-                      fit: BoxFit.cover,
-                    ),
-                  );
-                }
-                return Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.camera_alt,
-                      size: rw(context, 50),
-                      color: AppColors.primary500,
-                    ),
-                    vSpace(context, 10),
-                    Text(
-                      'upload_file'.tr,
-                      style: TextStyle(
-                        color: AppColors.primary500,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    vSpace(context, 4),
-                    Text(
-                      'upload_file_support'.tr,
-                      textAlign: TextAlign.center,
-                      style: TextStyle(fontSize: rfs(context, 12), color: Colors.grey),
-                    ),
-                  ],
-                );
-              }),
-            ),
-          ),
+              onRemove: () => ctrl.removeImage(true),
+            );
+          }),
           vSpace(context, 20),
         ],
       ),
@@ -807,97 +844,49 @@ class _Step5 extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
-      padding: EdgeInsets.symmetric(horizontal: rw(context, 20), vertical: rh(context, 8)),
+      padding: EdgeInsets.symmetric(
+        horizontal: rw(context, 20),
+        vertical: rh(context, 8),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Center(
             child: Text(
-              'upload_ktp'.tr,
-              style: TextStyle(fontSize: rfs(context, 18), fontWeight: FontWeight.bold),
+              ctrl.ktpPage?['name']?.toString() ?? 'upload_ktp'.tr,
+              style: TextStyle(
+                fontSize: rfs(context, 18),
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ),
           vSpace(context, 16),
-          GestureDetector(
-            onTap: () {
-              Get.bottomSheet(
-                Container(
-                  color: Colors.white,
-                  child: Wrap(
-                    children: [
-                      ListTile(
-                        leading: const Icon(Icons.camera_alt),
-                        title: Text('source_camera'.tr),
-                        onTap: () {
-                          Get.back();
-                          ctrl.pickIdentity(ImageSource.camera);
-                        },
-                      ),
-                      ListTile(
-                        leading: const Icon(Icons.photo),
-                        title: Text('source_gallery'.tr),
-                        onTap: () {
-                          Get.back();
-                          ctrl.pickIdentity(ImageSource.gallery);
-                        },
-                      ),
-                    ],
-                  ),
+          Obx(() {
+            if (ctrl.identityImage.value == null) {
+              return _UploadPlaceholderCard(
+                isUploading: ctrl.isUploadingIdentity.value,
+                icon: Icons.cloud_upload,
+                onTap: () => _showPickerBottomSheet(
+                  context,
+                  isSelfie: false,
+                  ctrl: ctrl,
                 ),
               );
-            },
-            child: Container(
-              height: rh(context, 220),
-              width: double.infinity,
-              decoration: BoxDecoration(
-                color: AppColors.primary50,
-                border: Border.all(color: AppColors.grey300, width: 1.5),
-                borderRadius: BorderRadius.circular(rw(context, 8)),
+            }
+            return _ImagePreviewCard(
+              file: ctrl.identityImage.value!,
+              fileName: ctrl.identityFileName.value,
+              fileSize: ctrl.identityFileSizeFormatted.value,
+              isUploading: ctrl.isUploadingIdentity.value,
+              uploadedUrl: ctrl.identityUrl.value,
+              onReplace: () => _showPickerBottomSheet(
+                context,
+                isSelfie: false,
+                ctrl: ctrl,
               ),
-              child: Obx(() {
-                if (ctrl.isUploadingIdentity.value) {
-                  return const Center(
-                    child: CircularProgressIndicator(
-                      color: AppColors.primary500,
-                    ),
-                  );
-                }
-                if (ctrl.identityImage.value != null) {
-                  return ClipRRect(
-                    borderRadius: BorderRadius.circular(rw(context, 8)),
-                    child: Image.file(
-                      ctrl.identityImage.value!,
-                      fit: BoxFit.cover,
-                    ),
-                  );
-                }
-                return Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.cloud_upload,
-                      size: rw(context, 50),
-                      color: AppColors.primary500,
-                    ),
-                    vSpace(context, 10),
-                    Text(
-                      'upload_file'.tr,
-                      style: TextStyle(
-                        color: AppColors.primary500,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    vSpace(context, 4),
-                    Text(
-                      'upload_file_support'.tr,
-                      textAlign: TextAlign.center,
-                      style: TextStyle(fontSize: rfs(context, 12), color: Colors.grey),
-                    ),
-                  ],
-                );
-              }),
-            ),
-          ),
+              onRemove: () => ctrl.removeImage(false),
+            );
+          }),
           vSpace(context, 20),
         ],
       ),
@@ -905,417 +894,289 @@ class _Step5 extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────────
-// Step 0: Who Fills the Form Page
-// ─────────────────────────────────────────────────────────────
+class _UploadPlaceholderCard extends StatelessWidget {
+  final bool isUploading;
+  final IconData icon;
+  final VoidCallback onTap;
 
-class _WhoFillStep extends StatelessWidget {
-  final InformasiUmumController ctrl;
-  const _WhoFillStep({required this.ctrl});
+  const _UploadPlaceholderCard({
+    required this.isUploading,
+    required this.icon,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      padding: EdgeInsets.all(rw(context, 24)),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+    return GestureDetector(
+      onTap: isUploading ? null : onTap,
+      child: Container(
+        height: rh(context, 220),
+        width: double.infinity,
+        decoration: BoxDecoration(
+          color: AppColors.primary50,
+          border: Border.all(color: AppColors.grey300, width: 1.5),
+          borderRadius: BorderRadius.circular(rw(context, 8)),
+        ),
+        child: isUploading
+            ? const Center(
+                child: CircularProgressIndicator(color: AppColors.primary500),
+              )
+            : Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    icon,
+                    size: rw(context, 50),
+                    color: AppColors.primary500,
+                  ),
+                  vSpace(context, 10),
+                  Text(
+                    _localTr(
+                      'upload_file',
+                      'Unggah File',
+                      'Upload File',
+                    ),
+                    style: const TextStyle(
+                      color: AppColors.primary500,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  vSpace(context, 4),
+                  Text(
+                    _localTr(
+                      'upload_file_support',
+                      'Format: JPG, JPEG, PNG. Maks 5MB\nGunakan Kamera',
+                      'Supports: JPG, JPEG, PNG. Up to 5MB\nUse Camera',
+                    ).replaceAll('100KB', '5MB').replaceAll('100 KB', '5MB'),
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: rfs(context, 12),
+                      color: Colors.grey,
+                    ),
+                  ),
+                ],
+              ),
+      ),
+    );
+  }
+}
+
+class _ImagePreviewCard extends StatelessWidget {
+  final File file;
+  final String fileName;
+  final String fileSize;
+  final bool isUploading;
+  final String? uploadedUrl;
+  final VoidCallback onReplace;
+  final VoidCallback onRemove;
+
+  const _ImagePreviewCard({
+    required this.file,
+    required this.fileName,
+    required this.fileSize,
+    required this.isUploading,
+    required this.uploadedUrl,
+    required this.onReplace,
+    required this.onRemove,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final ext = fileName.contains('.')
+        ? fileName.split('.').last.toUpperCase()
+        : 'JPG';
+    final displayName = fileName.isNotEmpty
+        ? fileName
+        : file.path.split(Platform.pathSeparator).last;
+
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.all(rw(context, 14)),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(rw(context, 12)),
+        border: Border.all(
+          color: uploadedUrl != null
+              ? Colors.green
+              : AppColors.primary500,
+          width: 1.5,
+        ),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          vSpace(context, 20),
-          Center(
-            child: Text(
-              _localTr(
-                'who_fill_title',
-                'SIAPA YANG MENGISI FORMULIR INI?',
-                'WHO FILL THIS FORM?',
-              ),
-              style: TextStyle(
-                fontSize: rfs(context, 20),
-                fontWeight: FontWeight.bold,
-                color: AppColors.grey900,
-                letterSpacing: 0.5,
+          ClipRRect(
+            borderRadius: BorderRadius.circular(rw(context, 8)),
+            child: SizedBox(
+              width: rw(context, 75),
+              height: rh(context, 75),
+              child: Image.file(
+                file,
+                fit: BoxFit.cover,
               ),
             ),
           ),
-          vSpace(context, 8),
-          Center(
-            child: Text(
-              _localTr(
-                'who_fill_subtitle',
-                'Silakan pilih siapa yang mengisi formulir pendaftaran ini.',
-                'Please select who is completing this registration form.',
-              ),
-              style: TextStyle(fontSize: rfs(context, 14), color: Colors.grey.shade600),
-              textAlign: TextAlign.center,
-            ),
-          ),
-          vSpace(context, 40),
-          Obx(() {
-            final isSelf = ctrl.isSelfRegistered.value == true;
-            final isOther = ctrl.isSelfRegistered.value == false;
-            return Column(
+          hSpace(context, 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
-                // Yourself Option Card
-                GestureDetector(
-                  onTap: () {
-                    ctrl.isSelfRegistered.value = true;
-                  },
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 250),
-                    padding: EdgeInsets.all(rw(context, 20)),
-                    decoration: BoxDecoration(
-                      color: isSelf
-                          ? AppColors.primary50.withOpacity(0.5)
-                          : Colors.white,
-                      borderRadius: BorderRadius.circular(rw(context, 16)),
-                      border: Border.all(
-                        color: isSelf
-                            ? AppColors.primary500
-                            : Colors.grey.shade300,
-                        width: 2,
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: isSelf
-                              ? AppColors.primary500.withOpacity(0.08)
-                              : Colors.black.withOpacity(0.02),
-                          blurRadius: rw(context, 10),
-                          offset: Offset(0, rh(context, 4)),
-                        ),
-                      ],
-                    ),
-                    child: Row(
-                      children: [
-                        Container(
-                          padding: EdgeInsets.all(rw(context, 12)),
-                          decoration: BoxDecoration(
-                            color: isSelf
-                                ? AppColors.primary500
-                                : Colors.grey.shade100,
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(
-                            Icons.person,
-                            color: isSelf ? Colors.white : Colors.grey.shade600,
-                            size: rw(context, 28),
-                          ),
-                        ),
-                        hSpace(context, 16),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                _localTr(
-                                  'yourself_title',
-                                  'DIRI SENDIRI',
-                                  'YOURSELF',
-                                ),
-                                style: TextStyle(
-                                  fontSize: rfs(context, 16),
-                                  fontWeight: FontWeight.bold,
-                                  color: isSelf
-                                      ? AppColors.primary500
-                                      : AppColors.grey900,
-                                ),
-                              ),
-                              vSpace(context, 4),
-                              Text(
-                                _localTr(
-                                  'yourself_subtitle',
-                                  'Saya mendaftar untuk diri saya sendiri.',
-                                  'I am registering for myself.',
-                                ),
-                                style: TextStyle(
-                                  fontSize: rfs(context, 13),
-                                  color: Colors.grey.shade500,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        if (isSelf)
-                          Icon(
-                            Icons.check_circle,
-                            color: AppColors.primary500,
-                            size: rw(context, 26),
-                          ),
-                      ],
-                    ),
+                Text(
+                  displayName,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: rfs(context, 13),
+                    color: const Color(0xFF0F2B48),
                   ),
                 ),
-                vSpace(context, 20),
-                // Other Option Card
-                GestureDetector(
-                  onTap: () {
-                    ctrl.isSelfRegistered.value = false;
-                  },
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 250),
-                    padding: EdgeInsets.all(rw(context, 20)),
-                    decoration: BoxDecoration(
-                      color: isOther
-                          ? AppColors.primary50.withOpacity(0.5)
-                          : Colors.white,
-                      borderRadius: BorderRadius.circular(rw(context, 16)),
-                      border: Border.all(
-                        color: isOther
-                            ? AppColors.primary500
-                            : Colors.grey.shade300,
-                        width: 2,
+                vSpace(context, 4),
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 2,
                       ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: isOther
-                              ? AppColors.primary500.withOpacity(0.08)
-                              : Colors.black.withOpacity(0.02),
-                          blurRadius: rw(context, 10),
-                          offset: Offset(0, rh(context, 4)),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFE0F2FE),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        ext,
+                        style: TextStyle(
+                          fontSize: rfs(context, 10),
+                          fontWeight: FontWeight.bold,
+                          color: const Color(0xFF0284C7),
                         ),
-                      ],
+                      ),
                     ),
-                    child: Row(
-                      children: [
-                        Container(
-                          padding: EdgeInsets.all(rw(context, 12)),
-                          decoration: BoxDecoration(
-                            color: isOther
-                                ? AppColors.primary500
-                                : Colors.grey.shade100,
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(
-                            Icons.people,
-                            color: isOther
-                                ? Colors.white
-                                : Colors.grey.shade600,
-                            size: rw(context, 28),
-                          ),
+                    if (fileSize.isNotEmpty) ...[
+                      hSpace(context, 8),
+                      Text(
+                        fileSize,
+                        style: TextStyle(
+                          fontSize: rfs(context, 11),
+                          color: const Color(0xFF64748B),
                         ),
-                        hSpace(context, 16),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                _localTr('other_title', 'ORANG LAIN', 'OTHER'),
-                                style: TextStyle(
-                                  fontSize: rfs(context, 16),
-                                  fontWeight: FontWeight.bold,
-                                  color: isOther
-                                      ? AppColors.primary500
-                                      : AppColors.grey900,
-                                ),
-                              ),
-                              vSpace(context, 4),
-                              Text(
-                                _localTr(
-                                  'other_subtitle',
-                                  'Saya mendaftar atas nama orang lain.',
-                                  'I am registering on behalf of someone else.',
-                                ),
-                                style: TextStyle(
-                                  fontSize: rfs(context, 13),
-                                  color: Colors.grey.shade500,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        if (isOther)
-                          Icon(
-                            Icons.check_circle,
-                            color: AppColors.primary500,
-                            size: rw(context, 26),
-                          ),
-                      ],
-                    ),
-                  ),
+                      ),
+                    ],
+                  ],
                 ),
+                vSpace(context, 6),
+                if (isUploading)
+                  Row(
+                    children: [
+                      const SizedBox(
+                        width: 12,
+                        height: 12,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: AppColors.primary500,
+                        ),
+                      ),
+                      hSpace(context, 6),
+                      Text(
+                        _localTr(
+                          'uploading_status',
+                          'Mengunggah...',
+                          'Uploading...',
+                        ),
+                        style: TextStyle(
+                          fontSize: rfs(context, 11),
+                          color: AppColors.primary500,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  )
+                else if (uploadedUrl != null)
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.check_circle,
+                        size: 14,
+                        color: Colors.green,
+                      ),
+                      hSpace(context, 4),
+                      Text(
+                        _localTr(
+                          'uploaded_status',
+                          'Tersimpan',
+                          'Uploaded',
+                        ),
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: Colors.green,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
               ],
-            );
-          }),
+            ),
+          ),
+          hSpace(context, 4),
+          IconButton(
+            tooltip: _localTr('replace_photo', 'Ganti', 'Replace'),
+            onPressed: isUploading ? null : onReplace,
+            icon: const Icon(Icons.refresh, color: AppColors.primary500),
+          ),
+          IconButton(
+            tooltip: _localTr('remove_photo', 'Hapus', 'Delete'),
+            onPressed: isUploading ? null : onRemove,
+            icon: const Icon(Icons.delete_outline, color: Colors.red),
+          ),
         ],
       ),
     );
   }
 }
 
-// ─────────────────────────────────────────────────────────────
-// Step 0.5: Other Form Filler Information Page
-// ─────────────────────────────────────────────────────────────
-
-class _StepOther extends StatelessWidget {
-  final InformasiUmumController ctrl;
-  const _StepOther({required this.ctrl});
-
-  Widget _requiredLabel(BuildContext context, String text) => Padding(
-    padding: EdgeInsets.only(top: rh(context, 10), bottom: rh(context, 4)),
-    child: RichText(
-      text: TextSpan(
-        text: text,
-        style: TextStyle(
-          fontSize: rfs(context, 14),
-          fontWeight: FontWeight.w600,
-          color: Colors.black87,
-        ),
-        children: const [
-          TextSpan(
-            text: ' *',
-            style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+void _showPickerBottomSheet(
+  BuildContext context, {
+  required bool isSelfie,
+  required InformasiUmumController ctrl,
+}) {
+  Get.bottomSheet(
+    Container(
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Wrap(
+        children: [
+          ListTile(
+            leading: const Icon(Icons.camera_alt, color: AppColors.primary500),
+            title: Text('source_camera'.tr),
+            onTap: () {
+              Get.back();
+              if (isSelfie) {
+                ctrl.pickSelfie(ImageSource.camera);
+              } else {
+                ctrl.pickIdentity(ImageSource.camera);
+              }
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.photo, color: AppColors.primary500),
+            title: Text('source_gallery'.tr),
+            onTap: () {
+              Get.back();
+              if (isSelfie) {
+                ctrl.pickSelfie(ImageSource.gallery);
+              } else {
+                ctrl.pickIdentity(ImageSource.gallery);
+              }
+            },
           ),
         ],
       ),
     ),
   );
-
-  @override
-  Widget build(BuildContext context) {
-    return Obx(
-      () => SingleChildScrollView(
-        padding: EdgeInsets.symmetric(horizontal: rw(context, 20), vertical: rh(context, 8)),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Center(
-              child: Text(
-                _localTr(
-                  'filler_info_title',
-                  'INFORMASI PENGISI FORMULIR',
-                  'FORM FILLER INFORMATION',
-                ),
-                style: TextStyle(
-                  fontSize: rfs(context, 18),
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-            vSpace(context, 6),
-            Center(
-              child: Text(
-                _localTr(
-                  'filler_info_subtitle',
-                  'Silakan isi detail data orang yang mengisi formulir pendaftaran ini.',
-                  'Please fill in the details of the person completing this registration form.',
-                ),
-                style: TextStyle(fontSize: rfs(context, 13), color: Colors.grey.shade600),
-                textAlign: TextAlign.center,
-              ),
-            ),
-            vSpace(context, 16),
-            _requiredLabel(context, 'fullname'.tr),
-            CustomTextField(
-              controller: ctrl.filledByNameController,
-              label: '',
-              showLabel: false,
-              hintText: _localTr(
-                'filler_name_hint',
-                'Masukkan nama Anda',
-                'Enter your name',
-              ),
-              errorText: ctrl.fieldErrors['filledByName'],
-              onChanged: (v) =>
-                  ctrl.validateField('filledByName', v, 'fullname'.tr),
-            ),
-            _requiredLabel(context, 'email'.tr),
-            CustomTextField(
-              controller: ctrl.filledByEmailController,
-              label: '',
-              showLabel: false,
-              hintText: 'yourname@gmail.com',
-              keyboardType: TextInputType.emailAddress,
-              errorText: ctrl.fieldErrors['filledByEmail'],
-              onChanged: (v) =>
-                  ctrl.validateField('filledByEmail', v, 'email'.tr),
-            ),
-            _requiredLabel(context, 'phone'.tr),
-            CustomTextField(
-              controller: ctrl.filledByPhoneController,
-              label: '',
-              showLabel: false,
-              hintText: '08xx xxxx xxxx',
-              keyboardType: TextInputType.phone,
-              errorText: ctrl.fieldErrors['filledByPhone'],
-              onChanged: (v) =>
-                  ctrl.validateField('filledByPhone', v, 'phone'.tr),
-            ),
-            _requiredLabel(context, 'relationship'.tr),
-            DropdownButton2<String>(
-              isExpanded: true,
-              value: ctrl.filledByRelationship.value,
-              hint: Text(
-                _localTr(
-                  'select_relationship',
-                  'Pilih Hubungan',
-                  'Select Relationship',
-                ),
-                style: TextStyle(color: Colors.grey.shade600, fontSize: rfs(context, 14)),
-              ),
-              items: ctrl.relationshipOptions
-                  .map(
-                    (key) =>
-                        DropdownMenuItem<String>(value: key, child: Text(key)),
-                  )
-                  .toList(),
-              onChanged: (v) {
-                if (v != null) {
-                  ctrl.filledByRelationship.value = v;
-                  if (v != 'Other') {
-                    ctrl.filledByRelationshipOtherController.clear();
-                    ctrl.fieldErrors.remove('filledByRelationshipOther');
-                  }
-                }
-              },
-              buttonStyleData: ButtonStyleData(
-                height: rh(context, 50),
-                padding: EdgeInsets.only(left: 0, right: rw(context, 12)),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(rw(context, 8)),
-                  border: Border.all(color: AppColors.grey300, width: 1.5),
-                ),
-              ),
-              menuItemStyleData: EdgeInsets.symmetric(horizontal: rw(context, 12)).toMapMenuItemStyleData(),
-              dropdownStyleData: DropdownStyleData(
-                maxHeight: rh(context, 250),
-                offset: Offset(0, rh(context, -10)),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(rw(context, 8)),
-                ),
-              ),
-              underline: const SizedBox.shrink(),
-            ),
-            if (ctrl.filledByRelationship.value == 'Other') ...[
-              vSpace(context, 10),
-              CustomTextField(
-                controller: ctrl.filledByRelationshipOtherController,
-                label: _localTr(
-                  'relationship_details_title',
-                  'Detail Hubungan Lainnya',
-                  'Other Relationship Details',
-                ),
-                hintText: _localTr(
-                  'relationship_details_hint',
-                  'Masukkan jenis hubungan (misal: Kurir)',
-                  'Enter relationship type (e.g. Courier)',
-                ),
-                errorText: ctrl.fieldErrors['filledByRelationshipOther'],
-                onChanged: (v) => ctrl.validateField(
-                  'filledByRelationshipOther',
-                  v,
-                  _localTr(
-                    'relationship_details_title',
-                    'Detail Hubungan Lainnya',
-                    'Other Relationship Details',
-                  ),
-                ),
-              ),
-            ],
-            vSpace(context, 20),
-          ],
-        ),
-      ),
-    );
-  }
 }
 
 extension DropdownButton2Responsive on EdgeInsets {

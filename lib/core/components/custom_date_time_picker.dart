@@ -79,11 +79,13 @@ class _AppDateTimePickerDialogState extends State<AppDateTimePickerDialog> {
             : gmt7Now);
 
     if (widget.withTime) {
-      selectedHour = widget.initialDate?.hour ?? (widget.minDateTime != null && isSameDayAsMin(selectedDate) ? widget.minDateTime!.hour : gmt7Now.hour);
-      selectedMinute = widget.initialDate?.minute ?? (widget.minDateTime != null && isSameDayAsMin(selectedDate) ? widget.minDateTime!.minute : gmt7Now.minute);
+      selectedHour = widget.initialDate?.hour;
+      selectedMinute = widget.initialDate?.minute;
 
-      // Pastikan jam/menit tidak sebelum minDateTime
-      _validateHourAndMinute();
+      // Pastikan jam/menit tidak sebelum minDateTime jika sudah dipilih
+      if (selectedHour != null && selectedMinute != null) {
+        _validateHourAndMinute();
+      }
     }
 
     tickerTimer = Timer.periodic(const Duration(seconds: 1), (t) {
@@ -764,14 +766,31 @@ class _AppDateTimePickerDialogState extends State<AppDateTimePickerDialog> {
               ),
               onPressed: () {
                 final nowGmt7 = _getGmt7Now();
+                final todayDate = DateTime(nowGmt7.year, nowGmt7.month, nowGmt7.day);
+
+                DateTime targetDate = todayDate;
+                if (widget.minDateTime != null) {
+                  final minDateOnly = DateTime(
+                    widget.minDateTime!.year,
+                    widget.minDateTime!.month,
+                    widget.minDateTime!.day,
+                  );
+                  if (todayDate.isBefore(minDateOnly)) {
+                    targetDate = minDateOnly;
+                  }
+                }
+
                 setState(() {
-                  selectedDate = DateTime(nowGmt7.year, nowGmt7.month, nowGmt7.day);
+                  selectedDate = targetDate;
                   if (widget.withTime) {
                     selectedHour = nowGmt7.hour;
                     selectedMinute = nowGmt7.minute;
+                    _validateHourAndMinute();
                   }
                 });
-                _scrollToSelectedTime();
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  _scrollToSelectedTime();
+                });
               },
               child: Text(
                 'Today',

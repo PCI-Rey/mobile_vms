@@ -18,6 +18,14 @@ import 'user_controller.dart';
 import '../../home/controllers/guest_home_controller.dart';
 import '../../../core/services/notification_service.dart';
 
+enum InformasiUmumStepType {
+  visitorInfo,
+  purposeVisit,
+  vehicleInfo,
+  selfieImage,
+  ktpImage,
+}
+
 class InformasiUmumController extends GetxController {
   final AuthDatasource authDatasource = AuthDatasource();
   final ApiService apiService = ApiService();
@@ -30,6 +38,198 @@ class InformasiUmumController extends GetxController {
   // Page tracking
   late PageController pageController;
   final currentPage = 0.obs;
+
+  // Dynamic question pages & controllers
+  final questionPages = <Map<String, dynamic>>[].obs;
+  final Map<String, TextEditingController> extraControllers = {};
+
+  TextEditingController getExtraController(String remarks) {
+    return extraControllers.putIfAbsent(remarks.toLowerCase().trim(), () {
+      final ctrl = TextEditingController();
+      ctrl.addListener(updateStepValidity);
+      return ctrl;
+    });
+  }
+
+  // Dynamic Page & Form Getters
+  Map<String, dynamic>? get visitorInfoPage => questionPages.firstWhereOrNull(
+    (p) =>
+        (p['sort'] == 0) ||
+        (p['name'] ?? '').toString().toLowerCase().contains('visitor'),
+  );
+
+  List<Map<String, dynamic>> get visitorInfoFormFields {
+    final page = visitorInfoPage;
+    if (page == null) return [];
+    final forms = page['form'] as List<dynamic>? ?? [];
+    return forms
+        .where((f) => f is Map && f['is_enable'] != false)
+        .map((f) => Map<String, dynamic>.from(f as Map))
+        .toList();
+  }
+
+  Map<String, dynamic>? get purposeVisitPage => questionPages.firstWhereOrNull(
+    (p) =>
+        (p['sort'] == 1) ||
+        (p['name'] ?? '').toString().toLowerCase().contains('purpose'),
+  );
+
+  List<Map<String, dynamic>> get purposeVisitFormFields {
+    final page = purposeVisitPage;
+    if (page == null) return [];
+    final forms = page['form'] as List<dynamic>? ?? [];
+    return forms
+        .where((f) => f is Map && f['is_enable'] != false)
+        .map((f) => Map<String, dynamic>.from(f as Map))
+        .toList();
+  }
+
+  Map<String, dynamic>? get vehiclePage => questionPages.firstWhereOrNull(
+    (p) =>
+        (p['sort'] == 2) ||
+        (p['name'] ?? '').toString().toLowerCase().contains('vehicle') ||
+        (p['name'] ?? '').toString().toLowerCase().contains('parking'),
+  );
+
+  List<Map<String, dynamic>> get vehicleFormFields {
+    final page = vehiclePage;
+    if (page == null) return [];
+    final forms = page['form'] as List<dynamic>? ?? [];
+    return forms
+        .where((f) => f is Map && f['is_enable'] != false)
+        .map((f) => Map<String, dynamic>.from(f as Map))
+        .toList();
+  }
+
+  Map<String, dynamic>? get selfiePage => questionPages.firstWhereOrNull(
+    (p) =>
+        (p['name'] ?? '').toString().toLowerCase().contains('selfie') ||
+        ((p['form'] as List?)?.any(
+              (f) => (f['remarks'] ?? '').toString().toLowerCase().contains(
+                'selfie',
+              ),
+            ) ??
+            false),
+  );
+
+  List<Map<String, dynamic>> get selfieFormFields {
+    final page = selfiePage;
+    if (page == null) return [];
+    final forms = page['form'] as List<dynamic>? ?? [];
+    return forms
+        .where((f) => f is Map && f['is_enable'] != false)
+        .map((f) => Map<String, dynamic>.from(f as Map))
+        .toList();
+  }
+
+  Map<String, dynamic>? get ktpPage => questionPages.firstWhereOrNull(
+    (p) =>
+        (p['name'] ?? '').toString().toLowerCase().contains('identity') ||
+        (p['name'] ?? '').toString().toLowerCase().contains('ktp') ||
+        ((p['form'] as List?)?.any(
+              (f) => (f['remarks'] ?? '').toString().toLowerCase().contains(
+                'identity',
+              ),
+            ) ??
+            false),
+  );
+
+  List<Map<String, dynamic>> get ktpFormFields {
+    final page = ktpPage;
+    if (page == null) return [];
+    final forms = page['form'] as List<dynamic>? ?? [];
+    return forms
+        .where((f) => f is Map && f['is_enable'] != false)
+        .map((f) => Map<String, dynamic>.from(f as Map))
+        .toList();
+  }
+
+  List<InformasiUmumStepType> get activeSteps {
+    final list = <InformasiUmumStepType>[];
+    list.add(InformasiUmumStepType.visitorInfo);
+    list.add(InformasiUmumStepType.purposeVisit);
+
+    final hasVehiclePage = questionPages.any((p) {
+      final name = (p['name'] ?? '').toString().toLowerCase();
+      return name.contains('vehicle') || name.contains('parking');
+    });
+    final canParking =
+        rawData?['collection']?['can_parking'] == true ||
+        rawData?['collection']?['visitor_type_data']?['can_parking'] == true;
+    if (hasVehiclePage || canParking || questionPages.isEmpty) {
+      list.add(InformasiUmumStepType.vehicleInfo);
+    }
+
+    final hasSelfiePage = questionPages.any((p) {
+      final name = (p['name'] ?? '').toString().toLowerCase();
+      final hasSelfieField =
+          (p['form'] as List?)?.any(
+            (f) => (f['remarks'] ?? '').toString().toLowerCase().contains(
+              'selfie',
+            ),
+          ) ??
+          false;
+      return name.contains('selfie') || hasSelfieField;
+    });
+    final hasSelfieDoc =
+        ((rawData?['collection']?['visitor_type_data']?['visitor_type_documents']
+                    as List?) ??
+                [])
+            .any(
+              (doc) =>
+                  (doc['document_name'] ?? '')
+                      .toString()
+                      .toLowerCase()
+                      .contains('selfie') ||
+                  (doc['identity_type'] ?? '').toString().toLowerCase() ==
+                      'face',
+            );
+    if (hasSelfiePage || hasSelfieDoc || questionPages.isEmpty) {
+      list.add(InformasiUmumStepType.selfieImage);
+    }
+
+    final hasKtpPage = questionPages.any((p) {
+      final name = (p['name'] ?? '').toString().toLowerCase();
+      final hasKtpField =
+          (p['form'] as List?)?.any(
+            (f) =>
+                (f['remarks'] ?? '').toString().toLowerCase().contains(
+                  'identity',
+                ) ||
+                (f['remarks'] ?? '').toString().toLowerCase().contains('ktp'),
+          ) ??
+          false;
+      return name.contains('ktp') || name.contains('identity') || hasKtpField;
+    });
+    final hasKtpDoc =
+        ((rawData?['collection']?['visitor_type_data']?['visitor_type_documents']
+                    as List?) ??
+                [])
+            .any(
+              (doc) =>
+                  (doc['document_name'] ?? '')
+                      .toString()
+                      .toLowerCase()
+                      .contains('ktp') ||
+                  (doc['document_name'] ?? '')
+                      .toString()
+                      .toLowerCase()
+                      .contains('identity'),
+            );
+    if (hasKtpPage || hasKtpDoc) {
+      list.add(InformasiUmumStepType.ktpImage);
+    }
+
+    return list;
+  }
+
+  int get totalActiveSteps => activeSteps.length;
+
+  InformasiUmumStepType get currentStepType {
+    final steps = activeSteps;
+    if (steps.isEmpty) return InformasiUmumStepType.visitorInfo;
+    return steps[currentPage.value.clamp(0, steps.length - 1)];
+  }
 
   // Step 0: Who Fill This Form
   final isSelfRegistered = Rxn<bool>();
@@ -78,11 +278,64 @@ class InformasiUmumController extends GetxController {
   // Free-text input shown when user selects 'Other' as vehicle type
   final vehicleOtherController = TextEditingController();
 
+  bool isBicycle(String? type) {
+    if (type == null) return false;
+    final t = type.toLowerCase().trim();
+    return t == 'bicycle' ||
+        t == 'vehicle_bicycle' ||
+        t == 'sepeda' ||
+        t.contains('bicycle') ||
+        t.contains('sepeda') ||
+        t == 'bike';
+  }
+
+  /// List of vehicle type options, extracted dynamically from multiple_option_fields if available,
+  /// otherwise fallback to standard: Car, Motorcycle, Bus, Bicycle (same as Operator)
+  List<Map<String, String>> get vehicleTypeOptions {
+    final fields = vehicleFormFields;
+    final typeField = fields.firstWhereOrNull(
+      (f) =>
+          (f['remarks'] ?? '').toString().toLowerCase().trim() ==
+          'vehicle_type',
+    );
+    if (typeField != null && typeField['multiple_option_fields'] is List) {
+      final list = typeField['multiple_option_fields'] as List;
+      if (list.isNotEmpty) {
+        return list.map((opt) {
+          final optMap = Map<String, dynamic>.from(opt as Map);
+          final val = (optMap['value'] ?? optMap['name'] ?? '').toString();
+          final label = (optMap['name'] ?? optMap['value'] ?? '').toString();
+          return {'value': val, 'label': label};
+        }).toList();
+      }
+    }
+    return [
+      {'value': 'Car', 'label': 'vehicle_car'.tr},
+      {'value': 'Motorcycle', 'label': 'vehicle_motor'.tr},
+      {'value': 'Bus', 'label': 'vehicle_bus'.tr},
+      {'value': 'Truck', 'label': 'vehicle_truck'.tr},
+      {'value': 'Bicycle', 'label': 'vehicle_bicycle'.tr},
+    ];
+  }
+
   // Step 4: Selfie Image
   final selfieImage = Rxn<File>();
+  final selfieFileName = ''.obs;
+  final selfieFileSizeFormatted = ''.obs;
 
   // Step 5: Upload Identity (KTP)
   final identityImage = Rxn<File>();
+  final identityFileName = ''.obs;
+  final identityFileSizeFormatted = ''.obs;
+
+  static const int maxFileSizeBytes = 5 * 1024 * 1024; // 5 MB
+  static const List<String> allowedExtensions = ['jpg', 'jpeg', 'png'];
+
+  static String formatBytes(int bytes) {
+    if (bytes < 1024) return '$bytes B';
+    if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
+    return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
+  }
 
   final isLoading = false.obs;
   final isUploadingSelfie = false.obs;
@@ -112,7 +365,12 @@ class InformasiUmumController extends GetxController {
     ever(currentPage, (_) => updateStepValidity());
     ever(isSelfRegistered, (_) => updateStepValidity());
     ever(isDriving, (_) => updateStepValidity());
+    ever(vehicleType, (_) => updateStepValidity());
     ever(filledByRelationship, (_) => updateStepValidity());
+    ever(selfieImage, (_) => updateStepValidity());
+    ever(identityImage, (_) => updateStepValidity());
+    ever(isUploadingSelfie, (_) => updateStepValidity());
+    ever(isUploadingIdentity, (_) => updateStepValidity());
 
     updateStepValidity();
   }
@@ -122,59 +380,113 @@ class InformasiUmumController extends GetxController {
   }
 
   bool _checkStepValidity() {
-    if (currentPage.value == 0) {
-      return isSelfRegistered.value != null;
-    }
-    if (isSelfRegistered.value == true) {
-      if (currentPage.value == 1) {
-        return fullNameController.text.trim().isNotEmpty &&
-            emailController.text.trim().isNotEmpty &&
-            phoneController.text.trim().isNotEmpty &&
-            organizationController.text.trim().isNotEmpty &&
-            identityIdController.text.trim().isNotEmpty;
-      }
-      if (currentPage.value == 2) {
+    if (activeSteps.isEmpty) return true;
+    final step = currentStepType;
+    switch (step) {
+      case InformasiUmumStepType.visitorInfo:
+        final fields = visitorInfoFormFields;
+        if (fields.isEmpty) {
+          return fullNameController.text.trim().isNotEmpty &&
+              emailController.text.trim().isNotEmpty &&
+              phoneController.text.trim().isNotEmpty &&
+              organizationController.text.trim().isNotEmpty &&
+              identityIdController.text.trim().isNotEmpty;
+        }
+        for (final f in fields) {
+          if (f['is_enable'] == false) continue;
+          if (f['mandatory'] == true) {
+            final rem = (f['remarks'] ?? '').toString().toLowerCase().trim();
+            if (rem == 'name' && fullNameController.text.trim().isEmpty) {
+              return false;
+            }
+            if (rem == 'email' && emailController.text.trim().isEmpty) {
+              return false;
+            }
+            if (rem == 'phone' && phoneController.text.trim().isEmpty) {
+              return false;
+            }
+            if ((rem == 'organization' || rem == 'company') &&
+                organizationController.text.trim().isEmpty) {
+              return false;
+            }
+            if ((rem == 'identity_id' || rem == 'indentity_id') &&
+                identityIdController.text.trim().isEmpty) {
+              return false;
+            }
+            if (extraControllers.containsKey(rem) &&
+                extraControllers[rem]!.text.trim().isEmpty) {
+              return false;
+            }
+          }
+        }
+        return true;
+
+      case InformasiUmumStepType.purposeVisit:
+        final fields = purposeVisitFormFields;
+        for (final f in fields) {
+          if (f['is_enable'] == false) continue;
+          if (f['mandatory'] == true) {
+            final rem = (f['remarks'] ?? '').toString().toLowerCase().trim();
+            if (rem == 'visitor_period_start' &&
+                visitStartController.text.trim().isEmpty) {
+              return false;
+            }
+            if (rem == 'visitor_period_end' &&
+                visitEndController.text.trim().isEmpty) {
+              return false;
+            }
+            if (rem == 'agenda' && agendaController.text.trim().isEmpty) {
+              return false;
+            }
+            if (extraControllers.containsKey(rem) &&
+                extraControllers[rem]!.text.trim().isEmpty) {
+              return false;
+            }
+          }
+        }
         return visitStartController.text.trim().isNotEmpty &&
             visitEndController.text.trim().isNotEmpty;
-      }
-      if (currentPage.value == 3) {
+
+      case InformasiUmumStepType.vehicleInfo:
         if (isDriving.value) {
+          if (isBicycle(vehicleType.value)) {
+            return true; // Bicycle has no license plate
+          }
           return vehiclePlateController.text.trim().isNotEmpty;
         }
         return true;
-      }
-    } else if (isSelfRegistered.value == false) {
-      if (currentPage.value == 1) {
-        final isOtherValid =
-            filledByNameController.text.trim().isNotEmpty &&
-            filledByEmailController.text.trim().isNotEmpty &&
-            filledByPhoneController.text.trim().isNotEmpty;
-        if (!isOtherValid) return false;
-        if (filledByRelationship.value == null) return false;
-        if (filledByRelationship.value == 'Other') {
-          return filledByRelationshipOtherController.text.trim().isNotEmpty;
+
+      case InformasiUmumStepType.selfieImage:
+        if (isUploadingSelfie.value) return false;
+        final fields = selfieFormFields;
+        final selfieField = fields.firstWhereOrNull(
+          (f) =>
+              (f['remarks'] ?? '').toString().toLowerCase().contains(
+                'selfie',
+              ) ||
+              f['field_type'] == 10,
+        );
+        if (selfieField != null && selfieField['mandatory'] == true) {
+          return selfieImage.value != null || selfieUrl.value != null;
         }
         return true;
-      }
-      if (currentPage.value == 2) {
-        return fullNameController.text.trim().isNotEmpty &&
-            emailController.text.trim().isNotEmpty &&
-            phoneController.text.trim().isNotEmpty &&
-            organizationController.text.trim().isNotEmpty &&
-            identityIdController.text.trim().isNotEmpty;
-      }
-      if (currentPage.value == 3) {
-        return visitStartController.text.trim().isNotEmpty &&
-            visitEndController.text.trim().isNotEmpty;
-      }
-      if (currentPage.value == 4) {
-        if (isDriving.value) {
-          return vehiclePlateController.text.trim().isNotEmpty;
+
+      case InformasiUmumStepType.ktpImage:
+        if (isUploadingIdentity.value) return false;
+        final fields = ktpFormFields;
+        final ktpField = fields.firstWhereOrNull(
+          (f) =>
+              (f['remarks'] ?? '').toString().toLowerCase().contains(
+                'identity',
+              ) ||
+              (f['remarks'] ?? '').toString().toLowerCase().contains('ktp') ||
+              f['field_type'] == 12,
+        );
+        if (ktpField != null && ktpField['mandatory'] == true) {
+          return identityImage.value != null || identityUrl.value != null;
         }
         return true;
-      }
     }
-    return true;
   }
 
   void initializeData(UserModel user, String code, Map<String, dynamic>? data) {
@@ -197,8 +509,20 @@ class InformasiUmumController extends GetxController {
     identityUrl.value = null;
     isUploadingSelfie.value = false;
     isUploadingIdentity.value = false;
+
+    for (var c in extraControllers.values) {
+      c.dispose();
+    }
+    extraControllers.clear();
+
     final collection =
         rawData?['collection'] as Map<String, dynamic>? ?? rawData;
+
+    // Store question_page
+    final qPagesRaw = collection?['question_page'] as List<dynamic>? ?? [];
+    questionPages.assignAll(
+      qPagesRaw.map((e) => Map<String, dynamic>.from(e as Map)).toList(),
+    );
 
     // Prefill selectedVisitorRole and visitorRolesList
     selectedVisitorRole.value =
@@ -227,66 +551,178 @@ class InformasiUmumController extends GetxController {
       }
     }
 
-    isDriving.value = collection?['is_driving'] ?? false;
-    final rawType = collection?['vehicle_type']?.toString() ?? 'Car';
-    if (rawType == 'vehicle_other' || rawType == 'Other') {
-      vehicleType.value = 'Car';
-    } else {
-      vehicleType.value = rawType;
-    }
-
     // Recreate PageController so it's never disposed/stale
     try {
       pageController.dispose();
     } catch (_) {}
     pageController = PageController(initialPage: 0);
 
-    // Prefill Step 1
-    fullNameController.text = user.fullname ?? '';
-    emailController.text = user.email ?? '';
-
-    if (collection != null) {
-      phoneController.text = collection['visitor_phone']?.toString() ?? '';
+    // Prefill Step 1: Visitor Information
+    final vFields = visitorInfoFormFields;
+    for (var f in vFields) {
+      final rem = (f['remarks'] ?? '').toString().toLowerCase().trim();
+      final ans = (f['answer_text'] ?? '').toString().trim();
+      if (rem == 'name') {
+        fullNameController.text = ans.isNotEmpty
+            ? ans
+            : (user.fullname ?? collection?['visitor_name']?.toString() ?? '');
+      } else if (rem == 'email') {
+        emailController.text = ans.isNotEmpty
+            ? ans
+            : (user.email ?? collection?['visitor_email']?.toString() ?? '');
+      } else if (rem == 'phone') {
+        phoneController.text = ans.isNotEmpty
+            ? ans
+            : (collection?['visitor_phone']?.toString() ?? '');
+      } else if (rem == 'organization' || rem == 'company') {
+        organizationController.text = ans.isNotEmpty
+            ? ans
+            : (collection?['visitor_organization_name']?.toString() ?? '');
+      } else if (rem == 'identity_id' || rem == 'indentity_id') {
+        identityIdController.text = ans.isNotEmpty
+            ? ans
+            : (collection?['visitor_identity_id']?.toString() ?? '');
+      } else if (rem != 'visitor_role') {
+        getExtraController(rem).text = ans;
+      }
+    }
+    if (vFields.isEmpty) {
+      fullNameController.text =
+          user.fullname ?? collection?['visitor_name']?.toString() ?? '';
+      emailController.text =
+          user.email ?? collection?['visitor_email']?.toString() ?? '';
+      phoneController.text = collection?['visitor_phone']?.toString() ?? '';
       organizationController.text =
-          collection['visitor_organization_name']?.toString() ?? '';
+          collection?['visitor_organization_name']?.toString() ?? '';
       identityIdController.text =
-          collection['visitor_identity_id']?.toString() ?? '';
+          collection?['visitor_identity_id']?.toString() ?? '';
+    }
 
-      // Step 2
-      picHostController.text = collection['host_name']?.toString() ?? '';
-      agendaController.text = collection['agenda']?.toString() ?? '';
-      destinationController.text =
-          collection['site_place_name']?.toString() ?? '';
-      final rawStart = collection['visitor_period_start']?.toString();
-      final rawEnd = collection['visitor_period_end']?.toString();
-      if (rawStart != null && rawStart.isNotEmpty) {
+    // Prefill Step 2: Purpose Visit
+    final pFields = purposeVisitFormFields;
+    picHostController.text =
+        collection?['host_name']?.toString() ??
+        collection?['host_data']?['name']?.toString() ??
+        '';
+    agendaController.text = collection?['agenda']?.toString() ?? '';
+    destinationController.text =
+        collection?['site_place_name']?.toString() ?? '';
+
+    String? rawStart;
+    String? rawEnd;
+    for (var f in pFields) {
+      final rem = (f['remarks'] ?? '').toString().toLowerCase().trim();
+      final ans = (f['answer_text'] ?? '').toString().trim();
+      if (rem == 'agenda' && ans.isNotEmpty) {
+        agendaController.text = ans;
+      } else if (rem == 'visitor_period_start') {
+        rawStart =
+            f['answer_datetime']?.toString() ?? f['answer_text']?.toString();
+      } else if (rem == 'visitor_period_end') {
+        rawEnd =
+            f['answer_datetime']?.toString() ?? f['answer_text']?.toString();
+      } else if (rem != 'site_place' && rem != 'host') {
+        getExtraController(rem).text = ans;
+      }
+    }
+    rawStart ??= collection?['visitor_period_start']?.toString();
+    rawEnd ??= collection?['visitor_period_end']?.toString();
+
+    if (rawStart != null && rawStart.isNotEmpty) {
+      try {
+        String s = rawStart;
+        if (!s.endsWith('Z') && !s.contains('+')) s = '${s}Z';
+        visitStartDateTime.value = DateTime.parse(s).toLocal();
+      } catch (_) {
         try {
-          String s = rawStart;
-          if (!s.endsWith('Z') && !s.contains('+')) s = '${s}Z';
-          visitStartDateTime.value = DateTime.parse(s).toLocal();
-        } catch (_) {
-          try {
-            visitStartDateTime.value = DateTime.parse(rawStart);
-          } catch (_) {}
+          visitStartDateTime.value = DateTime.parse(rawStart);
+        } catch (_) {}
+      }
+    }
+    if (rawEnd != null && rawEnd.isNotEmpty) {
+      try {
+        String s = rawEnd;
+        if (!s.endsWith('Z') && !s.contains('+')) s = '${s}Z';
+        visitEndDateTime.value = DateTime.parse(s).toLocal();
+      } catch (_) {
+        try {
+          visitEndDateTime.value = DateTime.parse(rawEnd);
+        } catch (_) {}
+      }
+    }
+    visitStartController.text = _formatUtcToLocal(rawStart);
+    visitEndController.text = _formatUtcToLocal(rawEnd);
+
+    // Prefill Step 3: Vehicle
+    isDriving.value = collection?['is_driving'] ?? false;
+    final vehFields = vehicleFormFields;
+    for (var f in vehFields) {
+      final rem = (f['remarks'] ?? '').toString().toLowerCase().trim();
+      final ans = (f['answer_text'] ?? '').toString().trim();
+      if (rem == 'is_driving') {
+        final lower = ans.toLowerCase();
+        if (lower == 'true' || lower == 'yes' || lower == '1') {
+          isDriving.value = true;
+        } else if (lower == 'false' || lower == 'no' || lower == '0') {
+          isDriving.value = false;
+        }
+      } else if (rem == 'vehicle_type' && ans.isNotEmpty && ans != 'null') {
+        final lower = ans.toLowerCase();
+        if (lower == 'car' || lower == 'vehicle_car') {
+          vehicleType.value = 'Car';
+        } else if (lower == 'motor' ||
+            lower == 'motorcycle' ||
+            lower == 'vehicle_motor') {
+          vehicleType.value = 'Motorcycle';
+        } else if (lower == 'bus' || lower == 'vehicle_bus') {
+          vehicleType.value = 'Bus';
+        } else if (lower == 'truck' ||
+            lower == 'vehicle_truck' ||
+            lower == 'truk') {
+          vehicleType.value = 'Truck';
+        } else if (lower == 'bicycle' ||
+            lower == 'vehicle_bicycle' ||
+            lower == 'sepeda') {
+          vehicleType.value = 'Bicycle';
+        } else {
+          vehicleType.value = ans;
+        }
+      } else if (rem == 'vehicle_plate' && ans.isNotEmpty && ans != 'null') {
+        vehiclePlateController.text = ans;
+      }
+    }
+    final rawType = collection?['vehicle_type']?.toString();
+    if (rawType != null && rawType.isNotEmpty && rawType != 'null') {
+      if (rawType == 'vehicle_other' || rawType == 'Other') {
+        vehicleType.value = 'Car';
+      } else {
+        final lower = rawType.toLowerCase();
+        if (lower == 'car' || lower == 'vehicle_car') {
+          vehicleType.value = 'Car';
+        } else if (lower == 'motor' ||
+            lower == 'motorcycle' ||
+            lower == 'vehicle_motor') {
+          vehicleType.value = 'Motorcycle';
+        } else if (lower == 'bus' || lower == 'vehicle_bus') {
+          vehicleType.value = 'Bus';
+        } else if (lower == 'truck' ||
+            lower == 'vehicle_truck' ||
+            lower == 'truk') {
+          vehicleType.value = 'Truck';
+        } else if (lower == 'bicycle' ||
+            lower == 'vehicle_bicycle' ||
+            lower == 'sepeda') {
+          vehicleType.value = 'Bicycle';
+        } else {
+          vehicleType.value = rawType;
         }
       }
-      if (rawEnd != null && rawEnd.isNotEmpty) {
-        try {
-          String s = rawEnd;
-          if (!s.endsWith('Z') && !s.contains('+')) s = '${s}Z';
-          visitEndDateTime.value = DateTime.parse(s).toLocal();
-        } catch (_) {
-          try {
-            visitEndDateTime.value = DateTime.parse(rawEnd);
-          } catch (_) {}
-        }
-      }
-      visitStartController.text = _formatUtcToLocal(rawStart);
-      visitEndController.text = _formatUtcToLocal(rawEnd);
-
-      // Step 3 (isDriving and vehicleType already set above)
+    }
+    if (vehiclePlateController.text.isEmpty) {
       vehiclePlateController.text =
-          collection['vehicle_plate_number']?.toString() ?? '';
+          collection?['vehicle_plate_number']?.toString() ??
+          collection?['vehicle_plate']?.toString() ??
+          '';
     }
 
     // Eagerly mark empty required fields so red borders show on page open
@@ -311,10 +747,12 @@ class InformasiUmumController extends GetxController {
     }
   }
 
-  Future<void> pickDateTime(BuildContext context, {required bool isStart}) async {
-    final initialDt = (isStart
-            ? visitStartDateTime.value
-            : visitEndDateTime.value) ??
+  Future<void> pickDateTime(
+    BuildContext context, {
+    required bool isStart,
+  }) async {
+    final initialDt =
+        (isStart ? visitStartDateTime.value : visitEndDateTime.value) ??
         DateTime.now();
 
     final DateTime? finalDt = await showAppDateTimePicker(
@@ -329,16 +767,20 @@ class InformasiUmumController extends GetxController {
 
     if (isStart) {
       visitStartDateTime.value = finalDt;
-      visitStartController.text =
-          DateFormat('EEEE, dd MMMM yyyy, HH:mm', 'en').format(finalDt);
+      visitStartController.text = DateFormat(
+        'EEEE, dd MMMM yyyy, HH:mm',
+        'en',
+      ).format(finalDt);
       fieldErrors.remove('visitStart');
       // If visit end is before visit start, adjust end to start + 3 hours
       if (visitEndDateTime.value != null &&
           visitEndDateTime.value!.isBefore(finalDt)) {
         final newEnd = finalDt.add(const Duration(hours: 3));
         visitEndDateTime.value = newEnd;
-        visitEndController.text =
-            DateFormat('EEEE, dd MMMM yyyy, HH:mm', 'en').format(newEnd);
+        visitEndController.text = DateFormat(
+          'EEEE, dd MMMM yyyy, HH:mm',
+          'en',
+        ).format(newEnd);
         fieldErrors.remove('visitEnd');
       }
       updateStepValidity();
@@ -355,8 +797,10 @@ class InformasiUmumController extends GetxController {
         return;
       }
       visitEndDateTime.value = finalDt;
-      visitEndController.text =
-          DateFormat('EEEE, dd MMMM yyyy, HH:mm', 'en').format(finalDt);
+      visitEndController.text = DateFormat(
+        'EEEE, dd MMMM yyyy, HH:mm',
+        'en',
+      ).format(finalDt);
       fieldErrors.remove('visitEnd');
       updateStepValidity();
     }
@@ -365,24 +809,51 @@ class InformasiUmumController extends GetxController {
   /// Silently marks fieldErrors for empty required fields in Step 1
   void _markStep1Errors() {
     final errors = <String, String?>{};
-    if (fullNameController.text.trim().isEmpty) {
-      errors['fullname'] = 'error_required'.trParams({'field': 'fullname'.tr});
-    }
-    if (emailController.text.trim().isEmpty) {
-      errors['email'] = 'error_required'.trParams({'field': 'email'.tr});
-    }
-    if (phoneController.text.trim().isEmpty) {
-      errors['phone'] = 'error_required'.trParams({'field': 'phone'.tr});
-    }
-    if (organizationController.text.trim().isEmpty) {
-      errors['organization'] = 'error_required'.trParams({
-        'field': 'organization'.tr,
-      });
-    }
-    if (identityIdController.text.trim().isEmpty) {
-      errors['identityId'] = 'error_required'.trParams({
-        'field': 'identity_id'.tr,
-      });
+    final fields = visitorInfoFormFields;
+    if (fields.isEmpty) {
+      if (fullNameController.text.trim().isEmpty) {
+        errors['fullname'] = 'error_required'.trParams({
+          'field': 'fullname'.tr,
+        });
+      }
+      if (emailController.text.trim().isEmpty) {
+        errors['email'] = 'error_required'.trParams({'field': 'email'.tr});
+      }
+      if (phoneController.text.trim().isEmpty) {
+        errors['phone'] = 'error_required'.trParams({'field': 'phone'.tr});
+      }
+      if (organizationController.text.trim().isEmpty) {
+        errors['organization'] = 'error_required'.trParams({
+          'field': 'organization'.tr,
+        });
+      }
+    } else {
+      for (final f in fields) {
+        if (f['is_enable'] == false) continue;
+        if (f['mandatory'] == true) {
+          final rem = (f['remarks'] ?? '').toString().toLowerCase().trim();
+          final label = (f['long_display_text'] ?? f['short_name'] ?? rem)
+              .toString();
+          if (rem == 'name' && fullNameController.text.trim().isEmpty) {
+            errors['fullname'] = 'error_required'.trParams({'field': label});
+          } else if (rem == 'email' && emailController.text.trim().isEmpty) {
+            errors['email'] = 'error_required'.trParams({'field': label});
+          } else if (rem == 'phone' && phoneController.text.trim().isEmpty) {
+            errors['phone'] = 'error_required'.trParams({'field': label});
+          } else if ((rem == 'organization' || rem == 'company') &&
+              organizationController.text.trim().isEmpty) {
+            errors['organization'] = 'error_required'.trParams({
+              'field': label,
+            });
+          } else if ((rem == 'identity_id' || rem == 'indentity_id') &&
+              identityIdController.text.trim().isEmpty) {
+            errors['identityId'] = 'error_required'.trParams({'field': label});
+          } else if (extraControllers.containsKey(rem) &&
+              extraControllers[rem]!.text.trim().isEmpty) {
+            errors[rem] = 'error_required'.trParams({'field': label});
+          }
+        }
+      }
     }
     fieldErrors.assignAll(errors);
   }
@@ -399,28 +870,51 @@ class InformasiUmumController extends GetxController {
   /// Called after first frame — marks errors AND shows snackbar if any required field is empty
   void showStep1WarningIfNeeded() {
     final emptyFields = <String>[];
-    if (fullNameController.text.trim().isEmpty) {
-      emptyFields.add('fullname'.tr);
-    }
-    if (emailController.text.trim().isEmpty) {
-      emptyFields.add('email'.tr);
-    }
-    if (phoneController.text.trim().isEmpty) {
-      emptyFields.add('phone'.tr);
-    }
-    if (organizationController.text.trim().isEmpty) {
-      emptyFields.add('organization'.tr);
-    }
-    if (identityIdController.text.trim().isEmpty) {
-      emptyFields.add('identity_id'.tr);
+    final fields = visitorInfoFormFields;
+    if (fields.isEmpty) {
+      if (fullNameController.text.trim().isEmpty) {
+        emptyFields.add('fullname'.tr);
+      }
+      if (emailController.text.trim().isEmpty) {
+        emptyFields.add('email'.tr);
+      }
+      if (phoneController.text.trim().isEmpty) {
+        emptyFields.add('phone'.tr);
+      }
+      if (organizationController.text.trim().isEmpty) {
+        emptyFields.add('organization'.tr);
+      }
+    } else {
+      for (final f in fields) {
+        if (f['is_enable'] == false) continue;
+        if (f['mandatory'] == true) {
+          final rem = (f['remarks'] ?? '').toString().toLowerCase().trim();
+          final label = (f['long_display_text'] ?? f['short_name'] ?? rem)
+              .toString();
+          if (rem == 'name' && fullNameController.text.trim().isEmpty) {
+            emptyFields.add(label);
+          } else if (rem == 'email' && emailController.text.trim().isEmpty) {
+            emptyFields.add(label);
+          } else if (rem == 'phone' && phoneController.text.trim().isEmpty) {
+            emptyFields.add(label);
+          } else if ((rem == 'organization' || rem == 'company') &&
+              organizationController.text.trim().isEmpty) {
+            emptyFields.add(label);
+          } else if ((rem == 'identity_id' || rem == 'indentity_id') &&
+              identityIdController.text.trim().isEmpty) {
+            emptyFields.add(label);
+          } else if (extraControllers.containsKey(rem) &&
+              extraControllers[rem]!.text.trim().isEmpty) {
+            emptyFields.add(label);
+          }
+        }
+      }
     }
 
     if (emptyFields.isEmpty) return;
 
-    // Update red borders
     _markStep1Errors();
 
-    // Show snackbar listing all empty fields
     if (Get.isSnackbarOpen) Get.closeAllSnackbars();
     Get.snackbar(
       'Mohon Lengkapi Data'.tr,
@@ -435,35 +929,23 @@ class InformasiUmumController extends GetxController {
   }
 
   void nextPage() {
-    if (isSelfRegistered.value == true) {
-      if (currentPage.value == 1 && !validateStep1()) return;
-      if (currentPage.value == 2 && !validateStep2()) return;
-      if (currentPage.value == 3 && !validateStep3()) return;
+    final step = currentStepType;
+    if (step == InformasiUmumStepType.visitorInfo) {
+      if (!validateStep1()) return;
+    } else if (step == InformasiUmumStepType.purposeVisit) {
+      if (!validateStep2()) return;
+    } else if (step == InformasiUmumStepType.vehicleInfo) {
+      if (!validateStep3()) return;
+    }
 
-      if (currentPage.value < 5) {
-        final targetPage = currentPage.value + 1;
-        currentPage.value = targetPage;
-        pageController.animateToPage(
-          targetPage,
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeInOut,
-        );
-      }
-    } else if (isSelfRegistered.value == false) {
-      if (currentPage.value == 1 && !validateStepOther()) return;
-      if (currentPage.value == 2 && !validateStep1()) return;
-      if (currentPage.value == 3 && !validateStep2()) return;
-      if (currentPage.value == 4 && !validateStep3()) return;
-
-      if (currentPage.value < 6) {
-        final targetPage = currentPage.value + 1;
-        currentPage.value = targetPage;
-        pageController.animateToPage(
-          targetPage,
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeInOut,
-        );
-      }
+    if (currentPage.value < totalActiveSteps - 1) {
+      final targetPage = currentPage.value + 1;
+      currentPage.value = targetPage;
+      pageController.animateToPage(
+        targetPage,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+      );
     }
   }
 
@@ -483,48 +965,65 @@ class InformasiUmumController extends GetxController {
       errors['filledByRelationshipOther'] = 'relationship'.tr;
     }
 
-    // Set red borders on all empty fields
     fieldErrors.assignAll(
       errors.map(
         (k, v) => MapEntry(k, 'error_required'.trParams({'field': v ?? ''})),
       ),
     );
 
-    if (errors.isNotEmpty) {
-      return false;
-    }
-    return true;
+    return errors.isEmpty;
   }
 
   bool validateStep1() {
     final errors = <String, String?>{};
-    if (fullNameController.text.trim().isEmpty) {
-      errors['fullname'] = 'fullname'.tr;
-    }
-    if (emailController.text.trim().isEmpty) {
-      errors['email'] = 'email'.tr;
-    }
-    if (phoneController.text.trim().isEmpty) {
-      errors['phone'] = 'phone'.tr;
-    }
-    if (organizationController.text.trim().isEmpty) {
-      errors['organization'] = 'organization'.tr;
-    }
-    if (identityIdController.text.trim().isEmpty) {
-      errors['identityId'] = 'identity_id'.tr;
+    final fields = visitorInfoFormFields;
+    if (fields.isEmpty) {
+      if (fullNameController.text.trim().isEmpty) {
+        errors['fullname'] = 'fullname'.tr;
+      }
+      if (emailController.text.trim().isEmpty) {
+        errors['email'] = 'email'.tr;
+      }
+      if (phoneController.text.trim().isEmpty) {
+        errors['phone'] = 'phone'.tr;
+      }
+      if (organizationController.text.trim().isEmpty) {
+        errors['organization'] = 'organization'.tr;
+      }
+    } else {
+      for (final f in fields) {
+        if (f['is_enable'] == false) continue;
+        if (f['mandatory'] == true) {
+          final rem = (f['remarks'] ?? '').toString().toLowerCase().trim();
+          final label = (f['long_display_text'] ?? f['short_name'] ?? rem)
+              .toString();
+          if (rem == 'name' && fullNameController.text.trim().isEmpty) {
+            errors['fullname'] = label;
+          } else if (rem == 'email' && emailController.text.trim().isEmpty) {
+            errors['email'] = label;
+          } else if (rem == 'phone' && phoneController.text.trim().isEmpty) {
+            errors['phone'] = label;
+          } else if ((rem == 'organization' || rem == 'company') &&
+              organizationController.text.trim().isEmpty) {
+            errors['organization'] = label;
+          } else if ((rem == 'identity_id' || rem == 'indentity_id') &&
+              identityIdController.text.trim().isEmpty) {
+            errors['identityId'] = label;
+          } else if (extraControllers.containsKey(rem) &&
+              extraControllers[rem]!.text.trim().isEmpty) {
+            errors[rem] = label;
+          }
+        }
+      }
     }
 
-    // Set red borders on all empty fields
     fieldErrors.assignAll(
       errors.map(
         (k, v) => MapEntry(k, 'error_required'.trParams({'field': v ?? ''})),
       ),
     );
 
-    if (errors.isNotEmpty) {
-      return false;
-    }
-    return true;
+    return errors.isEmpty;
   }
 
   bool validateStep2() {
@@ -542,26 +1041,29 @@ class InformasiUmumController extends GetxController {
       ),
     );
 
-    if (errors.isNotEmpty) {
-      return false;
-    }
-    return true;
+    return errors.isEmpty;
   }
 
   bool validateStep3() {
     final errors = <String, String?>{};
-    if (isDriving.value && vehiclePlateController.text.trim().isEmpty) {
-      errors['vehiclePlate'] = 'error_required'.trParams({
-        'field': 'vehicle_plate'.tr,
-      });
+    if (isDriving.value && !isBicycle(vehicleType.value)) {
+      if (vehiclePlateController.text.trim().isEmpty) {
+        final plateLabel =
+            vehicleFormFields
+                .firstWhereOrNull(
+                  (f) => (f['remarks'] ?? '') == 'vehicle_plate',
+                )?['long_display_text']
+                ?.toString() ??
+            'vehicle_plate'.tr;
+        errors['vehiclePlate'] = 'error_required'.trParams({
+          'field': plateLabel,
+        });
+      }
     }
 
     fieldErrors.assignAll(errors);
 
-    if (errors.isNotEmpty) {
-      return false;
-    }
-    return true;
+    return errors.isEmpty;
   }
 
   void previousPage() {
@@ -576,22 +1078,182 @@ class InformasiUmumController extends GetxController {
     }
   }
 
+  String _tr(String key, String fallbackIndo, String fallbackEn) {
+    final val = key.tr;
+    final isEn = Get.locale?.languageCode == 'en';
+    if (val == key || val.isEmpty) {
+      return isEn ? fallbackEn : fallbackIndo;
+    }
+    return val;
+  }
+
   Future<void> pickSelfie(ImageSource source) async {
-    final picked = await _picker.pickImage(source: source);
-    if (picked != null) {
-      final file = File(picked.path);
-      selfieImage.value = file;
-      await uploadImage(file, true);
+    try {
+      final picked = await _picker.pickImage(
+        source: source,
+        preferredCameraDevice: CameraDevice.front,
+      );
+      if (picked != null) {
+        final file = File(picked.path);
+        final sizeBytes = await file.length();
+        final fileName = picked.name.isNotEmpty
+            ? picked.name
+            : file.path.split(Platform.pathSeparator).last;
+        final ext = fileName.contains('.')
+            ? fileName.split('.').last.toLowerCase()
+            : 'jpg';
+
+        if (sizeBytes > maxFileSizeBytes) {
+          Get.snackbar(
+            _tr('file_too_large', 'File Terlalu Besar', 'File Too Large'),
+            _tr(
+              'file_too_large_desc',
+              'Ukuran foto melebihi batas 5MB. Silakan pilih file yang lebih kecil.',
+              'Image size exceeds 5MB limit. Please choose a smaller file.',
+            ),
+            backgroundColor: Colors.red,
+            colorText: Colors.white,
+            snackPosition: SnackPosition.TOP,
+          );
+          return;
+        }
+
+        if (!allowedExtensions.contains(ext)) {
+          Get.snackbar(
+            _tr('invalid_format', 'Format Tidak Valid', 'Invalid Format'),
+            _tr(
+              'invalid_format_desc',
+              'Hanya format JPG, JPEG, dan PNG yang didukung.',
+              'Only JPG, JPEG, and PNG images are supported.',
+            ),
+            backgroundColor: Colors.red,
+            colorText: Colors.white,
+            snackPosition: SnackPosition.TOP,
+          );
+          return;
+        }
+
+        selfieImage.value = file;
+        selfieFileName.value = fileName;
+        selfieFileSizeFormatted.value = formatBytes(sizeBytes);
+        updateStepValidity();
+
+        await uploadImage(file, true);
+      }
+    } catch (e) {
+      debugPrint('Error pickSelfie: $e');
+      Get.snackbar(
+        'Error',
+        e.toString(),
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+        snackPosition: SnackPosition.TOP,
+      );
     }
   }
 
   Future<void> pickIdentity(ImageSource source) async {
-    final picked = await _picker.pickImage(source: source);
-    if (picked != null) {
-      final file = File(picked.path);
-      identityImage.value = file;
-      await uploadImage(file, false);
+    try {
+      final picked = await _picker.pickImage(
+        source: source,
+        preferredCameraDevice: CameraDevice.rear,
+      );
+      if (picked != null) {
+        final file = File(picked.path);
+        final sizeBytes = await file.length();
+        final fileName = picked.name.isNotEmpty
+            ? picked.name
+            : file.path.split(Platform.pathSeparator).last;
+        final ext = fileName.contains('.')
+            ? fileName.split('.').last.toLowerCase()
+            : 'jpg';
+
+        if (sizeBytes > maxFileSizeBytes) {
+          Get.snackbar(
+            _tr('file_too_large', 'File Terlalu Besar', 'File Too Large'),
+            _tr(
+              'file_too_large_desc',
+              'Ukuran foto melebihi batas 5MB. Silakan pilih file yang lebih kecil.',
+              'Image size exceeds 5MB limit. Please choose a smaller file.',
+            ),
+            backgroundColor: Colors.red,
+            colorText: Colors.white,
+            snackPosition: SnackPosition.TOP,
+          );
+          return;
+        }
+
+        if (!allowedExtensions.contains(ext)) {
+          Get.snackbar(
+            _tr('invalid_format', 'Format Tidak Valid', 'Invalid Format'),
+            _tr(
+              'invalid_format_desc',
+              'Hanya format JPG, JPEG, dan PNG yang didukung.',
+              'Only JPG, JPEG, and PNG images are supported.',
+            ),
+            backgroundColor: Colors.red,
+            colorText: Colors.white,
+            snackPosition: SnackPosition.TOP,
+          );
+          return;
+        }
+
+        identityImage.value = file;
+        identityFileName.value = fileName;
+        identityFileSizeFormatted.value = formatBytes(sizeBytes);
+        updateStepValidity();
+
+        await uploadImage(file, false);
+      }
+    } catch (e) {
+      debugPrint('Error pickIdentity: $e');
+      Get.snackbar(
+        'Error',
+        e.toString(),
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+        snackPosition: SnackPosition.TOP,
+      );
     }
+  }
+
+  void removeImage(bool isSelfie) {
+    if (isSelfie) {
+      selfieImage.value = null;
+      selfieUrl.value = null;
+      selfieFileName.value = '';
+      selfieFileSizeFormatted.value = '';
+      Get.snackbar(
+        _tr('image_removed', 'Foto Dihapus', 'Image Removed'),
+        _tr(
+          'selfie_removed_desc',
+          'Foto selfie telah dihapus.',
+          'Selfie image has been removed.',
+        ),
+        backgroundColor: Colors.orange.shade800,
+        colorText: Colors.white,
+        snackPosition: SnackPosition.TOP,
+        duration: const Duration(seconds: 2),
+      );
+    } else {
+      identityImage.value = null;
+      identityUrl.value = null;
+      identityFileName.value = '';
+      identityFileSizeFormatted.value = '';
+      Get.snackbar(
+        _tr('image_removed', 'Foto Dihapus', 'Image Removed'),
+        _tr(
+          'ktp_removed_desc',
+          'Foto identitas (KTP) telah dihapus.',
+          'Identity (KTP) photo has been removed.',
+        ),
+        backgroundColor: Colors.orange.shade800,
+        colorText: Colors.white,
+        snackPosition: SnackPosition.TOP,
+        duration: const Duration(seconds: 2),
+      );
+    }
+    updateStepValidity();
   }
 
   Future<void> uploadImage(File file, bool isSelfie) async {
@@ -642,6 +1304,25 @@ class InformasiUmumController extends GetxController {
             identityUrl.value = url;
           }
           debugPrint('Upload Success: $url');
+          Get.snackbar(
+            _tr('image_uploaded', 'Upload Berhasil', 'Upload Successful'),
+            isSelfie
+                ? _tr(
+                    'selfie_upload_success',
+                    'Foto selfie berhasil diunggah.',
+                    'Selfie image uploaded successfully.',
+                  )
+                : _tr(
+                    'ktp_upload_success',
+                    'Foto identitas (KTP) berhasil diunggah.',
+                    'Identity (KTP) photo uploaded successfully.',
+                  ),
+            backgroundColor: Colors.green,
+            colorText: Colors.white,
+            snackPosition: SnackPosition.TOP,
+            duration: const Duration(seconds: 3),
+            icon: const Icon(Icons.check_circle_outline, color: Colors.white),
+          );
         } else {
           throw Exception('URL file tidak ditemukan dalam respon');
         }
@@ -677,6 +1358,7 @@ class InformasiUmumController extends GetxController {
       } else {
         isUploadingIdentity.value = false;
       }
+      updateStepValidity();
     }
   }
 
@@ -725,7 +1407,9 @@ class InformasiUmumController extends GetxController {
       const vehicleDisplayNames = {
         'vehicle_car': 'Car',
         'vehicle_bus': 'Bus',
-        'vehicle_motor': 'Motor',
+        'vehicle_motor': 'Motorcycle',
+        'vehicle_truck': 'Truck',
+        'vehicle_bicycle': 'Bicycle',
         'vehicle_other': 'Other',
       };
       final String formattedVehicleType;
@@ -737,12 +1421,20 @@ class InformasiUmumController extends GetxController {
             vehicleDisplayNames[vehicleType.value] ?? vehicleType.value;
       }
 
-      // enumVehicleType: 3 valid enum values backend database accepts at data_visitor[0].vehicle_type.
-      // 'Other' maps to 'Car' since backend has no 'Other' enum.
+      // enumVehicleType: valid enum values backend database accepts at data_visitor[0].vehicle_type.
       final String enumVehicleType;
-      if (vehicleType.value == 'vehicle_bus') {
+      if (isBicycle(vehicleType.value)) {
+        enumVehicleType = 'Bicycle';
+      } else if (vehicleType.value == 'vehicle_bus' ||
+          vehicleType.value == 'Bus') {
         enumVehicleType = 'Bus';
-      } else if (vehicleType.value == 'vehicle_motor') {
+      } else if (vehicleType.value == 'vehicle_truck' ||
+          vehicleType.value == 'Truck' ||
+          vehicleType.value == 'Truk') {
+        enumVehicleType = 'Truck';
+      } else if (vehicleType.value == 'vehicle_motor' ||
+          vehicleType.value == 'Motor' ||
+          vehicleType.value == 'Motorcycle') {
         enumVehicleType = 'Motor';
       } else {
         // vehicle_car, vehicle_other, or any unknown → Car
@@ -829,7 +1521,8 @@ class InformasiUmumController extends GetxController {
                         ? formattedVehicleType
                         : '';
                   } else if (field['remarks'] == 'vehicle_plate') {
-                    field['answer_text'] = isDriving.value
+                    field['answer_text'] =
+                        (isDriving.value && !isBicycle(vehicleType.value))
                         ? vehiclePlateController.text
                         : '';
                   }
@@ -940,7 +1633,17 @@ class InformasiUmumController extends GetxController {
                         remarks == 'vehicle_plate_number')) ||
                 (remarks == 'vehicle_plate' && searchKey.contains('plate')) ||
                 (remarks == 'vehicle_plate_number' &&
-                    searchKey.contains('plate'))) {
+                    searchKey.contains('plate')) ||
+                (searchKey.contains('selfie') &&
+                    (remarks.contains('selfie') ||
+                        formField['field_type'] == 10 ||
+                        shortName.contains('selfie'))) ||
+                (searchKey.contains('identity') &&
+                    (remarks.contains('identity') ||
+                        remarks.contains('ktp') ||
+                        formField['field_type'] == 12 ||
+                        shortName.contains('identity') ||
+                        shortName.contains('ktp')))) {
               final fieldType = formField['field_type'];
 
               // 1. field_type 10, 11, 12 -> answer_file
@@ -1014,8 +1717,12 @@ class InformasiUmumController extends GetxController {
           ? visitEndDateTime.value!.toUtc().toIso8601String().substring(0, 19)
           : (collection['visitor_period_end']?.toString() ?? '');
 
-      debugPrint('Visit Start (Local): ${visitStartDateTime.value} -> (GMT/UTC): $startIso');
-      debugPrint('Visit End (Local): ${visitEndDateTime.value} -> (GMT/UTC): $endIso');
+      debugPrint(
+        'Visit Start (Local): ${visitStartDateTime.value} -> (GMT/UTC): $startIso',
+      );
+      debugPrint(
+        'Visit End (Local): ${visitEndDateTime.value} -> (GMT/UTC): $endIso',
+      );
 
       collection['visitor_period_start'] = startIso;
       collection['visitor_period_end'] = endIso;
@@ -1028,7 +1735,9 @@ class InformasiUmumController extends GetxController {
       updateAnswer('Vehicle Type', isDriving.value ? formattedVehicleType : "");
       updateAnswer(
         'Vehicle Plate',
-        isDriving.value ? vehiclePlateController.text : "",
+        (isDriving.value && !isBicycle(vehicleType.value))
+            ? vehiclePlateController.text
+            : "",
       );
 
       // ── Step 4 & 5: Photos ──────────────────────────────────────────
@@ -1045,6 +1754,11 @@ class InformasiUmumController extends GetxController {
         identityValue = "data:image/jpeg;base64,${base64Encode(bytes)}";
       }
       updateAnswer('Identity Image', identityValue, isFile: true);
+
+      // ── Extra fields from dynamic question_page ───────────────────────
+      extraControllers.forEach((remark, ctrl) {
+        updateAnswer(remark, ctrl.text.trim());
+      });
 
       // ── Dynamic Site Detection ───────────────────────────────────────
       String? sitePlaceId;
@@ -1153,16 +1867,12 @@ class InformasiUmumController extends GetxController {
       }
 
       final payload = {
-        "is_self_registered": isSelfRegistered.value ?? true,
-        "filled_by_name": isSelfRegistered.value == true
-            ? null
-            : filledByNameController.text.trim(),
-        "filled_by_email": isSelfRegistered.value == true
-            ? null
-            : filledByEmailController.text.trim(),
-        "filled_by_phone": isSelfRegistered.value == true
-            ? null
-            : filledByPhoneController.text.trim(),
+        "is_self_registered": true,
+        "filled_by_name": null,
+        "filled_by_email": null,
+        "filled_by_phone": null,
+        "filled_by_relationship": "Self",
+        "filled_by_relationship_name": "Self",
         "trx_visitor_id": trxVisitorId,
         "visitor_id": visitorId,
         "application_id": applicationId,
@@ -1178,19 +1888,28 @@ class InformasiUmumController extends GetxController {
         "is_driving": isDriving.value,
         // Use enumVehicleType (Car/Bus/Motor) at root level — backend validates against its enum
         "vehicle_type": isDriving.value ? enumVehicleType : null,
-        "vehicle_plate_number": isDriving.value
+        "vehicle_plate_number":
+            (isDriving.value && !isBicycle(vehicleType.value))
             ? vehiclePlateController.text
             : null,
-        "vehicle_plate": isDriving.value ? vehiclePlateController.text : null,
+        "vehicle_plate": (isDriving.value && !isBicycle(vehicleType.value))
+            ? vehiclePlateController.text
+            : null,
+        "selfie_image": selfieValue,
+        "visitor_face": selfieValue,
+        "identity_image": identityValue,
         "data_visitor": [
           {
             "visitor_period_start": startIso,
             "visitor_period_end": endIso,
             // vehicle_type at data_visitor level also uses enum-safe value
             "vehicle_type": isDriving.value ? enumVehicleType : null,
-            "vehicle_plate": isDriving.value
+            "vehicle_plate": (isDriving.value && !isBicycle(vehicleType.value))
                 ? vehiclePlateController.text
                 : null,
+            "selfie_image": selfieValue,
+            "visitor_face": selfieValue,
+            "identity_image": identityValue,
             "question_page": questionPage,
           },
         ],
@@ -1268,7 +1987,8 @@ class InformasiUmumController extends GetxController {
 
       if (newUser != null && isPraregisterDone && newUser.token != null) {
         // Fallback to locally uploaded selfie if the API check didn't return a faceUrl immediately
-        final String? finalFaceUrl = (newUser.faceUrl != null && newUser.faceUrl!.isNotEmpty)
+        final String? finalFaceUrl =
+            (newUser.faceUrl != null && newUser.faceUrl!.isNotEmpty)
             ? newUser.faceUrl
             : selfieUrl.value;
 
@@ -1364,6 +2084,10 @@ class InformasiUmumController extends GetxController {
     visitEndController.dispose();
     vehiclePlateController.dispose();
     vehicleOtherController.dispose();
+    for (var c in extraControllers.values) {
+      c.dispose();
+    }
+    extraControllers.clear();
     super.onClose();
   }
 }

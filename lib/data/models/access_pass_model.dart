@@ -149,8 +149,19 @@ class AccessPassModel {
       visitorStatus: (json['transaction_status'] ?? json['visitor_status'])?.toString() ?? '',
       sitePlaceName: (json['site_place_name'] ?? json['host_organization_name'])?.toString() ?? '',
       hostName: json['host_name']?.toString() ?? '',
-      parkingSlot: json['parking_slot']?.toString() ?? '',
-      parkingArea: json['parking_area']?.toString() ?? '',
+      parkingSlot: (json['parking_slot'] ??
+              json['parking_slot_name'] ??
+              json['slot_name'] ??
+              json['slot'] ??
+              json['parking_space'])
+          ?.toString() ??
+          '',
+      parkingArea: (json['parking_area'] ??
+              json['parking_area_name'] ??
+              json['area_name'] ??
+              json['parking_name'])
+          ?.toString() ??
+          '',
       vehiclePlateNumber: json['vehicle_plate_number']?.toString() ?? '',
       vehicleType: json['vehicle_type']?.toString() ?? '',
       isDriving: json['is_driving'] == true,
