@@ -207,13 +207,49 @@ class ApiService {
     }
   }
 
+  Future<String?> uploadCdnFile(
+    List<int> bytes,
+    String filename, {
+    String path = 'face',
+  }) async {
+    try {
+      final formData = FormData.fromMap({
+        'file': MultipartFile.fromBytes(bytes, filename: filename),
+        'file_name': filename,
+        'path': path,
+      });
+
+      final response = await _dio.post('/cdn/upload', data: formData);
+      final dynamic data = response.data;
+      if (data is String && data.isNotEmpty) return data;
+      if (data is Map) {
+        final p = data['collection']?['file_url'] ??
+            data['collection']?['path'] ??
+            data['collection']?['file_path'] ??
+            data['collection']?['url'] ??
+            data['collection'] ??
+            data['file_url'] ??
+            data['path'] ??
+            data['url'] ??
+            data['file_path'] ??
+            data['data']?['file_url'];
+        if (p != null) return p.toString();
+      }
+      return null;
+    } catch (e) {
+      debugPrint('Dio Error uploadCdnFile: $e');
+      return null;
+    }
+  }
+
   // ─── Pra Registration ────────────────────────────────────────────────────
 
   Future<Response> getVisitorTypes(String token) async {
     try {
+      final authHeader = token.startsWith('Bearer ') ? token : 'Bearer $token';
       final response = await _dio.get(
         '/$pathApi/invitation-visitor-type',
-        options: Options(headers: {'Authorization': 'Bearer $token'}),
+        options: Options(headers: {'Authorization': authHeader}),
       );
       return response;
     } on DioException catch (e) {
@@ -354,6 +390,24 @@ class ApiService {
       return response;
     } on DioException catch (e) {
       debugPrint('Dio Error submitNewVisit: ${e.message}');
+      if (e.response != null) return e.response!;
+      rethrow;
+    }
+  }
+
+  Future<Response> submitNewVisitGroup(
+    String token,
+    Map<String, dynamic> body,
+  ) async {
+    try {
+      final response = await _dio.post(
+        '/$pathApi/operator-invitation/new-visit-group',
+        data: body,
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+      return response;
+    } on DioException catch (e) {
+      debugPrint('Dio Error submitNewVisitGroup: ${e.message}');
       if (e.response != null) return e.response!;
       rethrow;
     }

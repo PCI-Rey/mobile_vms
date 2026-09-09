@@ -1,15 +1,19 @@
 // ignore_for_file: unused_import, unused_local_variable, unused_element, use_build_context_synchronously, sized_box_for_whitespace, unnecessary_underscores, unnecessary_import, unnecessary_null_comparison, curly_braces_in_flow_control_structures, unused_element_parameter, deprecated_member_use
 import 'dart:convert';
 import 'dart:developer' as dev;
+import 'dart:io';
 import 'dart:math';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../../../data/datasources/api_service.dart';
 import '../../../../data/datasources/hive_service.dart';
 import '../../../../data/models/visitor_type_model.dart';
 import '../../../../data/models/visitor_type_detail_model.dart';
 import '../../../../data/models/access_pass_model.dart';
 import '../../invitation/controller/invitation_controller.dart';
+import '../../../auth/controller/user_controller.dart';
 
 // ─── Simple model for dropdown items (Employee, Host, Site) ──────────────────
 
@@ -19,31 +23,76 @@ class DropdownItem {
   DropdownItem({required this.id, required this.name});
 }
 
-// ─── Group Visitor Row Model ──────────────────────────────────────────────────
+/// Uploaded file model for Selfie and KTP
+class UploadedFileData {
+  final String name;
+  final int sizeBytes;
+  final String extension;
+  final String? localPath;
+  final Uint8List? bytes;
 
-class GroupVisitorRow {
-  final TextEditingController fullName = TextEditingController();
-  final TextEditingController email = TextEditingController();
-  final TextEditingController phone = TextEditingController();
-  final TextEditingController organization = TextEditingController();
-  final TextEditingController identityId = TextEditingController();
+  UploadedFileData({
+    required this.name,
+    required this.sizeBytes,
+    required this.extension,
+    this.localPath,
+    this.bytes,
+  });
 
+  String get sizeFormatted {
+    if (sizeBytes < 1024) return '$sizeBytes B';
+    if (sizeBytes < 1024 * 1024) {
+      return '${(sizeBytes / 1024).toStringAsFixed(1)} KB';
+    }
+    return '${(sizeBytes / (1024 * 1024)).toStringAsFixed(1)} MB';
+  }
+}
+
+/// Group mode visitor entry model matching dekstop_tablet_vms Walk In
+class GroupWalkInVisitorEntry {
+  final String id = UniqueKey().toString();
+  final TextEditingController searchCtrl = TextEditingController();
+  final TextEditingController fullNameCtrl = TextEditingController();
+  final TextEditingController emailCtrl = TextEditingController();
+  final TextEditingController phoneCtrl = TextEditingController();
+  final TextEditingController orgCtrl = TextEditingController();
+  final TextEditingController identityCtrl = TextEditingController();
+  final Map<String, TextEditingController> extraControllers = {};
+
+  final RxBool isSearchOpen = false.obs;
+  Map<String, dynamic>? selectedData;
+  final RxString role = ''.obs;
   final RxBool isEmployee = false.obs;
-  final RxString selectedEmployeeId = ''.obs;
-  final RxString selectedEmployeeName = ''.obs;
-  final RxString selectedVisitorRole = ''.obs;
+
+  // Vehicle data
+  final RxBool isDriving = false.obs;
+  final RxString vehicleType = ''.obs;
+  final TextEditingController vehiclePlateCtrl = TextEditingController();
+
+  // Documents (Selfie & KTP)
+  final Rx<UploadedFileData?> selfieImage = Rx<UploadedFileData?>(null);
+  final Rx<UploadedFileData?> ktpImage = Rx<UploadedFileData?>(null);
 
   void dispose() {
-    fullName.dispose();
-    email.dispose();
-    phone.dispose();
-    organization.dispose();
-    identityId.dispose();
+    searchCtrl.dispose();
+    fullNameCtrl.dispose();
+    emailCtrl.dispose();
+    phoneCtrl.dispose();
+    orgCtrl.dispose();
+    identityCtrl.dispose();
+    vehiclePlateCtrl.dispose();
+    for (final c in extraControllers.values) {
+      c.dispose();
+    }
   }
 
   bool get isValid =>
-      fullName.text.trim().isNotEmpty &&
-      email.text.trim().isNotEmpty;
+      fullNameCtrl.text.trim().isNotEmpty &&
+      emailCtrl.text.trim().isNotEmpty &&
+      emailCtrl.text.contains('@') &&
+      phoneCtrl.text.trim().isNotEmpty &&
+      orgCtrl.text.trim().isNotEmpty &&
+      identityCtrl.text.trim().isNotEmpty;
 }
 
 // ─── Controller ───────────────────────────────────────────────────────────────
@@ -52,113 +101,99 @@ class PraRegistrationController extends GetxController {
   final _api = ApiService();
   final _hive = HiveService();
 
+  // ── Step Navigation ────────────────────────────────────────────────────────
+  // 1: User Type (Visitor Type & Status Single/Group)
+  // 2: Visitor Information
+  // 3: Purpose Visit
+  // 4: Vehicle/Parking Information (Dynamic)
+  // 5: Selfie Image (Dynamic)
+  // 6: Upload Identity (KTP) (Dynamic)
+  final RxInt currentStep = 1.obs;
+  final RxInt maxStepReached = 1.obs;
+  final RxBool isSubmitting = false.obs;
+  final RxInt formUpdateTrigger = 0.obs;
+
+  // ── Step 1: User Type ─────────────────────────────────────────────────────
   final RxList<VisitorTypeModel> visitorTypes = <VisitorTypeModel>[].obs;
   final RxBool isLoadingTypes = false.obs;
-
   final RxString selectedVisitorTypeId = ''.obs;
   final RxString selectedVisitorTypeName = ''.obs;
-  final Rx<VisitorTypeDetailModel?> formStructure = Rx<VisitorTypeDetailModel?>(
-    null,
-  );
+  final Rx<VisitorTypeDetailModel?> formStructure = Rx<VisitorTypeDetailModel?>(null);
+  final Rx<Map<String, dynamic>?> visitorTypeRawDetail = Rx<Map<String, dynamic>?>(null);
   final RxBool isLoadingDetail = false.obs;
 
-  final Rx<bool?> isGroup = Rx<bool?>(null);
-  final RxBool isDuplicateMode = false.obs;
+  final Rx<bool?> isGroup = Rx<bool?>(null); // false = Single, true = Group
+  final RxString groupCode = ''.obs;
+  final RxString groupName = ''.obs;
+  final groupNameCtrl = TextEditingController();
 
-  // ── Visitor Role ──────────────────────────────────────────────────────────
+  // ── Step 2: Single Mode ───────────────────────────────────────────────────
+  final singleSearchCtrl = TextEditingController();
+  final RxBool singleIsSearchOpen = false.obs;
+  final Rx<Map<String, dynamic>?> singleSelectedData = Rx<Map<String, dynamic>?>(null);
+
+  final Rx<bool?> isEmployee = Rx<bool?>(false);
+  final RxString selectedEmployeeId = ''.obs;
+  final RxString selectedEmployeeName = ''.obs;
   final RxString selectedVisitorRole = ''.obs;
-
-  final RxString name = ''.obs;
-  final RxString email = ''.obs;
-  final RxString phone = ''.obs;
-  final RxString organization = ''.obs;
-  final RxString identityId = ''.obs;
-  final RxBool isEmployee = false.obs;
 
   final nameCtrl = TextEditingController();
   final emailCtrl = TextEditingController();
   final phoneCtrl = TextEditingController();
   final organizationCtrl = TextEditingController();
   final identityIdCtrl = TextEditingController();
+  final Map<String, TextEditingController> singleExtraControllers = {};
 
-  TextEditingController? getFieldController(String remarks) {
-    switch (remarks.toLowerCase()) {
-      case 'name':
-        return nameCtrl;
-      case 'email':
-        return emailCtrl;
-      case 'phone':
-        return phoneCtrl;
-      case 'organization':
-      case 'company':
-        return organizationCtrl;
-      case 'identity_id':
-      case 'indentity_id':
-        return identityIdCtrl;
-      default:
-        return null;
-    }
-  }
+  // ── Step 2: Group Mode ────────────────────────────────────────────────────
+  final RxList<GroupWalkInVisitorEntry> groupVisitors = <GroupWalkInVisitorEntry>[].obs;
+  final RxInt selectedGroupMemberIndex = 0.obs;
 
-  final RxList<DropdownItem> employees = <DropdownItem>[].obs;
-  final List<Map<String, dynamic>> _rawEmployees = <Map<String, dynamic>>[];
-  final RxString selectedEmployeeId = ''.obs;
-  final RxString selectedEmployeeName = ''.obs;
-  final RxBool isLoadingEmployees = false.obs;
-  final RxString employeeSearchQuery = ''.obs;
-
-  List<Map<String, dynamic>> get filteredEmployees {
-    final q = employeeSearchQuery.value.toLowerCase().trim();
-    if (q.isEmpty) return _rawEmployees.toList();
-    return _rawEmployees
-        .where(
-          (e) =>
-              (e['name']?.toString() ?? '').toLowerCase().contains(q) &&
-              (e['name']?.toString() ?? '').isNotEmpty,
-        )
-        .toList();
-  }
-
-  // ── Visitor Search ────────────────────────────────────────────────────────
-  final RxList<Map<String, dynamic>> allVisitors = <Map<String, dynamic>>[].obs;
-  final RxBool isLoadingVisitors = false.obs;
-  final RxString visitorSearchQuery = ''.obs;
-
-  List<Map<String, dynamic>> get filteredVisitors {
-    final q = visitorSearchQuery.value.toLowerCase().trim();
-    if (q.isEmpty) return allVisitors.toList();
-    return allVisitors
-        .where(
-          (v) =>
-              (v['name']?.toString() ?? '').toLowerCase().contains(q) &&
-              (v['name']?.toString() ?? '').isNotEmpty,
-        )
-        .toList();
-  }
-
-  final RxList<DropdownItem> hosts = <DropdownItem>[].obs;
-  final RxString selectedHostId = ''.obs;
-  final RxBool isLoadingHosts = false.obs;
-  final RxString agenda = ''.obs;
-  final FocusNode agendaFocusNode = FocusNode();
+  // ── Step 3: Purpose Visit ─────────────────────────────────────────────────
   final RxList<DropdownItem> sites = <DropdownItem>[].obs;
   final RxString selectedSiteId = ''.obs;
   final RxString selectedSiteName = ''.obs;
   final RxBool isLoadingSites = false.obs;
+
+  final RxList<DropdownItem> hosts = <DropdownItem>[].obs;
+  final RxString selectedHostId = ''.obs;
+  final RxString selectedHostName = ''.obs;
+  final RxBool isLoadingHosts = false.obs;
+
+  final List<String> agendaOptions = [
+    'Meeting',
+    'Presentation',
+    'Visit',
+    'Training',
+    'Report',
+    'Others',
+  ];
+  final RxString selectedAgenda = 'Meeting'.obs;
+  final otherAgendaCtrl = TextEditingController();
+  final Map<String, TextEditingController> purposeExtraControllers = {};
+
   final Rx<DateTime?> visitStart = Rx<DateTime?>(null);
   final Rx<DateTime?> visitEnd = Rx<DateTime?>(null);
 
-  final RxBool isLoading = false.obs;
-  final RxBool isSubmitting = false.obs;
-  final RxInt currentStep = 0.obs;
-  final RxInt maxStepReached = 0.obs;
+  // ── Step 4: Vehicle Information (Dynamic) ─────────────────────────────────
+  final RxBool isDriving = false.obs;
+  final RxString vehicleType = ''.obs;
+  final vehiclePlateCtrl = TextEditingController();
 
-  final RxString groupCode = ''.obs;
-  final RxString groupName = ''.obs;
-  final groupNameCtrl = TextEditingController();
-  final RxList<GroupVisitorRow> groupVisitors = <GroupVisitorRow>[].obs;
+  // ── Step 5 & 6: Documents (Dynamic) ───────────────────────────────────────
+  final Rx<UploadedFileData?> selfieImage = Rx<UploadedFileData?>(null);
+  final Rx<UploadedFileData?> ktpImage = Rx<UploadedFileData?>(null);
 
-  final RxInt formUpdateTrigger = 0.obs;
+  // ── Dependencies Data ─────────────────────────────────────────────────────
+  final List<Map<String, dynamic>> _rawEmployees = <Map<String, dynamic>>[];
+  final RxList<DropdownItem> employees = <DropdownItem>[].obs;
+  final RxBool isLoadingEmployees = false.obs;
+  final RxString employeeSearchQuery = ''.obs;
+
+  final RxList<Map<String, dynamic>> allVisitors = <Map<String, dynamic>>[].obs;
+  final RxBool isLoadingVisitors = false.obs;
+  final RxString visitorSearchQuery = ''.obs;
+
+  final RxBool isDuplicateMode = false.obs;
 
   @override
   void onInit() {
@@ -169,264 +204,561 @@ class PraRegistrationController extends GetxController {
     fetchEmployees();
     fetchHosts();
     fetchSites();
-
-    // Listen to hosts change to resolve name to UUID
-    ever(hosts, (_) => _resolveHostNameFromList());
-  }
-
-  void _resolveHostNameFromList() {
-    final uuidRegex = RegExp(
-        r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$');
-    if (selectedHostId.value.isNotEmpty && !uuidRegex.hasMatch(selectedHostId.value)) {
-      final matched = hosts.firstWhereOrNull(
-        (h) => h.name.toLowerCase().trim() == selectedHostId.value.toLowerCase().trim(),
-      );
-      if (matched != null) {
-        selectedHostId.value = matched.id;
-        
-        // Also update form field answerText
-        for (var section in formStructure.value?.sectionPageVisitorTypes ?? <SectionPageVisitorType>[]) {
-          for (var field in section.praForm) {
-            if (field.remarks.toLowerCase() == 'host') {
-              field.answerText = matched.id;
-            }
-          }
-        }
-      }
-    }
   }
 
   @override
   void onClose() {
-    resetFields();
+    groupNameCtrl.dispose();
+    singleSearchCtrl.dispose();
     nameCtrl.dispose();
     emailCtrl.dispose();
     phoneCtrl.dispose();
     organizationCtrl.dispose();
     identityIdCtrl.dispose();
-    groupNameCtrl.dispose();
-    agendaFocusNode.dispose();
+    for (final c in singleExtraControllers.values) {
+      c.dispose();
+    }
+    for (final v in groupVisitors) {
+      v.dispose();
+    }
+    otherAgendaCtrl.dispose();
+    for (final c in purposeExtraControllers.values) {
+      c.dispose();
+    }
+    vehiclePlateCtrl.dispose();
     super.onClose();
   }
 
+  String? get _token {
+    final hiveToken = _hive.getUser()?.token;
+    if (hiveToken != null && hiveToken.isNotEmpty) return hiveToken;
+    if (Get.isRegistered<UserController>()) {
+      final userCtrlToken = UserController.to.user.value?.token;
+      if (userCtrlToken != null && userCtrlToken.isNotEmpty) return userCtrlToken;
+    }
+    return null;
+  }
+
+  String _generateGroupCode() {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    final rand = Random();
+    return List.generate(6, (_) => chars[rand.nextInt(chars.length)]).join();
+  }
+
   void resetFields() {
-    isDuplicateMode.value = false;
+    currentStep.value = 1;
+    maxStepReached.value = 1;
+
     selectedVisitorTypeId.value = '';
     selectedVisitorTypeName.value = '';
+    visitorTypeRawDetail.value = null;
     formStructure.value = null;
+
     isGroup.value = null;
-    name.value = '';
-    email.value = '';
-    phone.value = '';
-    organization.value = '';
-    identityId.value = '';
+    groupCode.value = _generateGroupCode();
+    groupName.value = '';
+    groupNameCtrl.clear();
+
+    singleSearchCtrl.clear();
+    singleIsSearchOpen.value = false;
+    singleSelectedData.value = null;
+
     isEmployee.value = false;
     selectedEmployeeId.value = '';
     selectedEmployeeName.value = '';
     selectedVisitorRole.value = '';
+
     nameCtrl.clear();
     emailCtrl.clear();
     phoneCtrl.clear();
     organizationCtrl.clear();
     identityIdCtrl.clear();
-    groupName.value = '';
-    groupNameCtrl.clear();
+    for (final c in singleExtraControllers.values) {
+      c.clear();
+    }
+
+    for (final v in groupVisitors) {
+      v.dispose();
+    }
     groupVisitors.clear();
-    selectedHostId.value = '';
+    final firstEntry = GroupWalkInVisitorEntry();
+    groupVisitors.add(firstEntry);
+    selectedGroupMemberIndex.value = 0;
+
     selectedSiteId.value = '';
     selectedSiteName.value = '';
+    selectedHostId.value = '';
+    selectedHostName.value = '';
+    selectedAgenda.value = 'Meeting';
+    otherAgendaCtrl.clear();
+    for (final c in purposeExtraControllers.values) {
+      c.clear();
+    }
     visitStart.value = null;
     visitEnd.value = null;
-    agenda.value = '';
-    currentStep.value = 0;
-    maxStepReached.value = 0;
+
+    isDriving.value = false;
+    vehicleType.value = '';
+    vehiclePlateCtrl.clear();
+
+    selfieImage.value = null;
+    ktpImage.value = null;
+    isDuplicateMode.value = false;
   }
 
-  Future<void> autofillFromAccessPass(
-    AccessPassModel model, {
-    List<Map<String, dynamic>>? subVisitors,
-  }) async {
-    // 1. Reset
-    resetFields();
-    isDuplicateMode.value = true;
+  void updateForm() {
+    formUpdateTrigger.value++;
+  }
 
-    // 2. Set Visitor Type
-    selectedVisitorTypeId.value = model.visitorTypeId;
-    selectedVisitorTypeName.value = model.visitorTypeName;
-    await fetchFormStructure(model.visitorTypeId);
+  bool get hasUserTypeAndStatusSelected =>
+      selectedVisitorTypeId.value.isNotEmpty && isGroup.value != null;
 
-    // 3. Set Group status
-    final hasGroupFlag = model.isGroup ||
-        model.groupName.isNotEmpty ||
-        (subVisitors != null && subVisitors.length > 1);
-    isGroup.value = hasGroupFlag;
-    if (hasGroupFlag) {
-      groupName.value = '';
-      groupNameCtrl.clear();
-      groupCode.value = _generateGroupCode(); // Generate new group code for duplicate
-      groupVisitors.clear();
-      if (subVisitors != null && subVisitors.isNotEmpty) {
-        for (final sub in subVisitors) {
-          final row = GroupVisitorRow();
-          row.fullName.text = sub['visitor_name']?.toString() ?? sub['name']?.toString() ?? '';
-          row.email.text = sub['visitor_email']?.toString() ?? sub['email']?.toString() ?? '';
-          row.phone.text = sub['visitor_phone']?.toString() ?? sub['phone']?.toString() ?? '';
-          row.organization.text = sub['visitor_organization_name']?.toString() ?? sub['organization']?.toString() ?? '';
-          row.identityId.text = sub['visitor_identity_id']?.toString() ?? sub['identity_id']?.toString() ?? '';
-          row.selectedVisitorRole.value =
-              sub['visitor_role']?.toString() ?? model.visitorRole;
-          groupVisitors.add(row);
+  // ── Dynamic Step List Generation (Exact match to dekstop_tablet_vms) ──────
+  List<String> get dynamicStepTitles {
+    // If on Step 1 and Visitor Type / Status is not selected yet, only show Step 1
+    if (currentStep.value == 1 && !hasUserTypeAndStatusSelected) {
+      return ['User Type'];
+    }
+
+    final titles = ['User Type', 'Visitor Information', 'Purpose Visit'];
+    final sections = visitorTypeRawDetail.value?['section_page_visitor_types'] as List<dynamic>?;
+
+    if (sections != null && sections.isNotEmpty) {
+      bool hasVehicle = false;
+      bool hasSelfie = false;
+      bool hasKtp = false;
+
+      for (var s in sections) {
+        if (s is! Map) continue;
+        final sec = Map<String, dynamic>.from(s);
+        final name = (sec['name'] ?? '').toString().toLowerCase();
+        final isDoc = sec['is_document'] == true;
+
+        if (name.contains('vehicle') ||
+            name.contains('parking') ||
+            sec['sort'] == 2) {
+          hasVehicle = true;
+        } else if (isDoc && (name.contains('selfie') || sec['sort'] == 3)) {
+          hasSelfie = true;
+        } else if (isDoc &&
+            (name.contains('ktp') ||
+                name.contains('identity') ||
+                sec['sort'] == 4)) {
+          hasKtp = true;
         }
-      } else {
-        // Fallback: add parent visitor info
-        final row = GroupVisitorRow();
-        row.fullName.text = model.visitorName;
-        row.email.text = model.visitorEmail;
-        row.phone.text = model.visitorPhone;
-        row.organization.text = model.visitorOrganizationName;
-        row.identityId.text = model.visitorIdentityId;
-        row.selectedVisitorRole.value = model.visitorRole;
-        groupVisitors.add(row);
-      }
-    } else {
-      // 4. Set Single Visitor Info
-      if (subVisitors != null && subVisitors.isNotEmpty) {
-        final sub = subVisitors.first;
-        nameCtrl.text = sub['visitor_name']?.toString() ?? model.visitorName;
-        emailCtrl.text = sub['visitor_email']?.toString() ?? model.visitorEmail;
-        phoneCtrl.text = sub['visitor_phone']?.toString() ?? model.visitorPhone;
-        organizationCtrl.text = sub['visitor_organization_name']?.toString() ?? model.visitorOrganizationName;
-        identityIdCtrl.text = sub['visitor_identity_id']?.toString() ?? model.visitorIdentityId;
-        selectedVisitorRole.value = sub['visitor_role']?.toString() ?? model.visitorRole;
-      } else {
-        nameCtrl.text = model.visitorName;
-        emailCtrl.text = model.visitorEmail;
-        phoneCtrl.text = model.visitorPhone;
-        organizationCtrl.text = model.visitorOrganizationName;
-        identityIdCtrl.text = model.visitorIdentityId;
-        selectedVisitorRole.value = model.visitorRole;
       }
 
-      name.value = nameCtrl.text;
-      email.value = emailCtrl.text;
-      phone.value = phoneCtrl.text;
-      organization.value = organizationCtrl.text;
-      identityId.value = identityIdCtrl.text;
+      if (hasVehicle) titles.add('Vehicle/Parking Information');
+      if (hasSelfie) titles.add('Selfie Image');
+      if (hasKtp) titles.add('Upload Identity (KTP)');
     }
 
-    // 5. Set Purpose & Details (Step 2)
-    agenda.value = model.agenda;
+    return titles;
+  }
 
-    final uuidRegex = RegExp(
-        r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$');
+  int get maxSteps => dynamicStepTitles.length;
 
-    final String siteIdVal = model.sitePlaceId ?? model.siteId;
-    selectedSiteId.value = siteIdVal;
+  bool get hasVehicleStep => dynamicStepTitles.contains('Vehicle/Parking Information');
+  bool get hasSelfieStep => dynamicStepTitles.contains('Selfie Image');
+  bool get hasKtpStep => dynamicStepTitles.contains('Upload Identity (KTP)');
 
-    String siteNameVal = model.sitePlaceName;
-    if (siteNameVal.isEmpty && siteIdVal.isNotEmpty) {
-      final matchedSite = sites.firstWhereOrNull(
-        (s) => s.id.toLowerCase() == siteIdVal.toLowerCase(),
-      );
-      if (matchedSite != null) {
-        siteNameVal = matchedSite.name;
-      }
+  int get vehicleStepIndex => dynamicStepTitles.indexOf('Vehicle/Parking Information') + 1;
+  int get selfieStepIndex => dynamicStepTitles.indexOf('Selfie Image') + 1;
+  int get ktpStepIndex => dynamicStepTitles.indexOf('Upload Identity (KTP)') + 1;
+
+  // ── Roles & Options Helpers ───────────────────────────────────────────────
+  List<String> getRolesForSelectedType() {
+    final rolesRaw = (visitorTypeRawDetail.value?['visitor_roles']) as List<dynamic>?;
+    if (rolesRaw != null && rolesRaw.isNotEmpty) {
+      final roles = rolesRaw
+          .map((r) => (r['role'] ?? '').toString())
+          .where((r) => r.isNotEmpty)
+          .toSet()
+          .toList();
+      if (roles.isNotEmpty) return roles;
     }
-    selectedSiteName.value = siteNameVal;
+    return [];
+  }
 
-    // Resolve host UUID/Name
-    String hostIdVal = model.host;
-    if (!uuidRegex.hasMatch(hostIdVal) && hostIdVal.isNotEmpty) {
-      final matched = hosts.firstWhereOrNull(
-        (h) => h.name.toLowerCase().trim() == hostIdVal.toLowerCase().trim(),
-      );
-      if (matched != null) {
-        hostIdVal = matched.id;
-      } else {
-        // Match using name from sub-visitor details if model.host is empty or a different name
-        final hostNameVal = model.hostName;
-        if (hostNameVal.isNotEmpty) {
-          final matchedByName = hosts.firstWhereOrNull(
-            (h) => h.name.toLowerCase().trim() == hostNameVal.toLowerCase().trim(),
-          );
-          if (matchedByName != null) {
-            hostIdVal = matchedByName.id;
-          } else {
-            hostIdVal = hostNameVal;
+  String getDefaultVisitorRole() {
+    final roles = getRolesForSelectedType();
+    if (roles.isNotEmpty) return roles.first;
+    return 'Visitor';
+  }
+
+  List<String> getVehicleTypeOptions() {
+    final sectionsRaw = visitorTypeRawDetail.value?['section_page_visitor_types'] as List<dynamic>?;
+    if (sectionsRaw != null && sectionsRaw.isNotEmpty) {
+      for (final s in sectionsRaw) {
+        if (s is! Map) continue;
+        final sec = Map<String, dynamic>.from(s);
+        final forms = [
+          ...((sec['visit_form'] as List<dynamic>?) ?? []),
+          ...((sec['pra_form'] as List<dynamic>?) ?? []),
+        ];
+        for (final f in forms) {
+          if (f is! Map) continue;
+          final field = Map<String, dynamic>.from(f);
+          final remarks = (field['remarks'] ?? '').toString().toLowerCase().trim();
+          if (remarks == 'vehicle_type') {
+            final multipleOptions = field['multiple_option_fields'] as List<dynamic>?;
+            if (multipleOptions != null && multipleOptions.isNotEmpty) {
+              return multipleOptions
+                  .map((opt) => (opt['value'] ?? opt['name'] ?? '').toString())
+                  .where((v) => v.isNotEmpty)
+                  .toList();
+            }
           }
         }
       }
     }
-    selectedHostId.value = hostIdVal;
+    return ['Car', 'Motorcycle', 'Bicycle', 'Truck', 'Bus'];
+  }
 
-    // Set Dates too
-    visitStart.value = model.visitorPeriodStart;
-    visitEnd.value = model.visitorPeriodEnd;
+  bool isBicycle(String? type) {
+    if (type == null) return false;
+    final t = type.toLowerCase().trim();
+    return t == 'bicycle' || t == 'sepeda' || t.contains('bicycle') || t.contains('sepeda') || t == 'bike';
+  }
 
-    // Set formStructure answers
-    for (var section in formStructure.value?.sectionPageVisitorTypes ??
-        <SectionPageVisitorType>[]) {
-      for (var field in section.praForm) {
-        final rem = field.remarks.toLowerCase();
-        if (rem == 'name') field.answerText = name.value;
-        if (rem == 'email') field.answerText = email.value;
-        if (rem == 'phone') field.answerText = phone.value;
-        if (rem == 'organization' || rem == 'company') {
-          field.answerText = organization.value;
-        }
-        if (rem == 'identity_id' || rem == 'indentity_id') {
-          field.answerText = identityId.value;
-        }
-        if (rem == 'visitor_role') field.answerText = selectedVisitorRole.value;
-        if (rem == 'host') field.answerText = selectedHostId.value;
-        if (rem == 'site_place') field.answerText = selectedSiteId.value;
-        if (rem == 'agenda') field.answerText = agenda.value;
-        if (rem == 'visitor_period_start') {
-          final iso = model.visitorPeriodStart
-              .toIso8601String()
-              .replaceAll(RegExp(r'\.\d+'), '');
-          field.answerText = iso;
-          field.answerDatetime = iso;
-        }
-        if (rem == 'visitor_period_end') {
-          final iso = model.visitorPeriodEnd
-              .toIso8601String()
-              .replaceAll(RegExp(r'\.\d+'), '');
-          field.answerText = iso;
-          field.answerDatetime = iso;
-        }
+  // ── Autofill helpers for Search Visitor / Employee ────────────────────────
+  String _extractOrganizationName(dynamic rawOrg, [dynamic rawCompany]) {
+    if (rawOrg is Map) {
+      final name = rawOrg['name'] ?? rawOrg['code'];
+      if (name != null && name.toString().trim().isNotEmpty) {
+        return name.toString().trim();
       }
+    } else if (rawOrg is String && rawOrg.trim().isNotEmpty) {
+      if (rawOrg.startsWith('{') && rawOrg.contains('name:')) {
+        final match = RegExp(r'name:\s*([^,}]+)').firstMatch(rawOrg);
+        if (match != null) return match.group(1)?.trim() ?? rawOrg.trim();
+      }
+      return rawOrg.trim();
     }
 
+    if (rawCompany is Map) {
+      final name = rawCompany['name'] ?? rawCompany['code'];
+      if (name != null && name.toString().trim().isNotEmpty) {
+        return name.toString().trim();
+      }
+    } else if (rawCompany is String && rawCompany.trim().isNotEmpty) {
+      return rawCompany.trim();
+    }
+
+    return '';
+  }
+
+  void onSingleSelect(Map<String, dynamic> item) {
+    singleSelectedData.value = item;
+    singleIsSearchOpen.value = false;
+    final fullName = (item['name'] ?? item['visitor_name'] ?? '').toString();
+    singleSearchCtrl.text = fullName;
+    nameCtrl.text = fullName;
+    emailCtrl.text = (item['email'] ?? '').toString();
+    phoneCtrl.text = (item['phone'] ?? '').toString();
+    organizationCtrl.text = _extractOrganizationName(
+      item['Organization'] ?? item['organization'],
+      item['company'],
+    );
+    identityIdCtrl.text = (item['identity_id'] ?? item['indentity_id'] ?? '').toString();
     updateForm();
   }
 
-  String? get _token => _hive.getUser()?.token;
+  void clearSingle() {
+    singleSelectedData.value = null;
+    singleSearchCtrl.clear();
+    nameCtrl.clear();
+    emailCtrl.clear();
+    phoneCtrl.clear();
+    organizationCtrl.clear();
+    identityIdCtrl.clear();
+    for (final c in singleExtraControllers.values) {
+      c.clear();
+    }
+    updateForm();
+  }
 
+  void onGroupSelect(int index, Map<String, dynamic> item) {
+    if (index >= groupVisitors.length) return;
+    final v = groupVisitors[index];
+    v.selectedData = item;
+    v.isSearchOpen.value = false;
+    final fullName = (item['name'] ?? item['visitor_name'] ?? '').toString();
+    v.searchCtrl.text = fullName;
+    v.fullNameCtrl.text = fullName;
+    v.emailCtrl.text = (item['email'] ?? '').toString();
+    v.phoneCtrl.text = (item['phone'] ?? '').toString();
+    v.orgCtrl.text = _extractOrganizationName(
+      item['Organization'] ?? item['organization'],
+      item['company'],
+    );
+    v.identityCtrl.text = (item['identity_id'] ?? item['indentity_id'] ?? '').toString();
+    updateForm();
+  }
+
+  void clearGroup(int index) {
+    if (index >= groupVisitors.length) return;
+    final v = groupVisitors[index];
+    v.selectedData = null;
+    v.searchCtrl.clear();
+    v.fullNameCtrl.clear();
+    v.emailCtrl.clear();
+    v.phoneCtrl.clear();
+    v.orgCtrl.clear();
+    v.identityCtrl.clear();
+    for (final c in v.extraControllers.values) {
+      c.clear();
+    }
+    updateForm();
+  }
+
+  void addGroupVisitor() {
+    final entry = GroupWalkInVisitorEntry();
+    final defaultRole = getDefaultVisitorRole();
+    entry.role.value = defaultRole;
+    groupVisitors.add(entry);
+    selectedGroupMemberIndex.value = groupVisitors.length - 1;
+    updateForm();
+  }
+
+  void removeGroupVisitor(int index) {
+    if (groupVisitors.length <= 1) return;
+    final entry = groupVisitors.removeAt(index);
+    entry.dispose();
+    if (selectedGroupMemberIndex.value >= groupVisitors.length) {
+      selectedGroupMemberIndex.value = groupVisitors.length - 1;
+    }
+    updateForm();
+  }
+
+  // ── Image Picking (Selfie & KTP) ──────────────────────────────────────────
+  Future<void> pickImage({
+    required bool isKtp,
+    required bool fromCamera,
+    int? groupIndex,
+  }) async {
+    try {
+      final picker = ImagePicker();
+      final XFile? file = await picker.pickImage(
+        source: fromCamera ? ImageSource.camera : ImageSource.gallery,
+        maxWidth: 1920,
+        maxHeight: 1080,
+        imageQuality: 85,
+      );
+      if (file == null) return;
+
+      final bytes = await file.readAsBytes();
+      final size = bytes.length;
+      if (size > 5 * 1024 * 1024) {
+        _showError('Ukuran file melebihi 5 MB');
+        return;
+      }
+      final ext = file.name.split('.').last.toLowerCase();
+      final uploadData = UploadedFileData(
+        name: file.name,
+        sizeBytes: size,
+        extension: ext,
+        localPath: file.path,
+        bytes: bytes,
+      );
+
+      if (groupIndex != null && groupIndex < groupVisitors.length) {
+        if (isKtp) {
+          groupVisitors[groupIndex].ktpImage.value = uploadData;
+        } else {
+          groupVisitors[groupIndex].selfieImage.value = uploadData;
+        }
+      } else {
+        if (isKtp) {
+          ktpImage.value = uploadData;
+        } else {
+          selfieImage.value = uploadData;
+        }
+      }
+      updateForm();
+    } catch (e) {
+      debugPrint('pickImage error: $e');
+      _showError('Gagal memilih gambar.');
+    }
+  }
+
+  void removeImage({required bool isKtp, int? groupIndex}) {
+    if (groupIndex != null && groupIndex < groupVisitors.length) {
+      if (isKtp) {
+        groupVisitors[groupIndex].ktpImage.value = null;
+      } else {
+        groupVisitors[groupIndex].selfieImage.value = null;
+      }
+    } else {
+      if (isKtp) {
+        ktpImage.value = null;
+      } else {
+        selfieImage.value = null;
+      }
+    }
+    updateForm();
+  }
+
+  // ── Step Validation Checkers ──────────────────────────────────────────────
+  bool get isStep1Valid {
+    if (selectedVisitorTypeId.value.isEmpty || isGroup.value == null) return false;
+    if (isGroup.value == true) {
+      return groupName.value.trim().isNotEmpty && groupVisitors.isNotEmpty;
+    }
+    return true;
+  }
+
+  bool get isStep2Valid {
+    if (isGroup.value == true) {
+      if (groupVisitors.isEmpty) return false;
+      for (final v in groupVisitors) {
+        if (!v.isValid) return false;
+      }
+      return true;
+    } else {
+      if (isEmployee.value == null) return false;
+      if (nameCtrl.text.trim().isEmpty) return false;
+      if (emailCtrl.text.trim().isEmpty || !emailCtrl.text.contains('@')) return false;
+      if (phoneCtrl.text.trim().isEmpty) return false;
+      if (organizationCtrl.text.trim().isEmpty) return false;
+      if (identityIdCtrl.text.trim().isEmpty) return false;
+      return true;
+    }
+  }
+
+  bool get isStep3Valid {
+    if (selectedSiteId.value.isEmpty) return false;
+    if (selectedHostId.value.isEmpty) return false;
+    if (selectedAgenda.value.isEmpty) return false;
+    if (selectedAgenda.value == 'Others' && otherAgendaCtrl.text.trim().isEmpty) {
+      return false;
+    }
+    if (visitStart.value == null || visitEnd.value == null) return false;
+    if (visitEnd.value!.isBefore(visitStart.value!) ||
+        visitEnd.value!.isAtSameMomentAs(visitStart.value!)) {
+      return false;
+    }
+    return true;
+  }
+
+  bool get isStep4Valid {
+    if (isGroup.value == true) {
+      for (final v in groupVisitors) {
+        if (v.isDriving.value) {
+          if (v.vehicleType.value.isEmpty) return false;
+          if (!isBicycle(v.vehicleType.value) && v.vehiclePlateCtrl.text.trim().isEmpty) {
+            return false;
+          }
+        }
+      }
+      return true;
+    } else {
+      if (isDriving.value) {
+        if (vehicleType.value.isEmpty) return false;
+        if (!isBicycle(vehicleType.value) && vehiclePlateCtrl.text.trim().isEmpty) {
+          return false;
+        }
+      }
+      return true;
+    }
+  }
+
+  bool get isStep5Valid => true;
+  bool get isStep6Valid => true;
+
+  bool isStepValid(int step) {
+    if (step == 1) return isStep1Valid;
+    if (step == 2) return isStep2Valid;
+    if (step == 3) return isStep3Valid;
+    if (step == 4) return isStep4Valid;
+    if (step == 5) return isStep5Valid;
+    if (step == 6) return isStep6Valid;
+    return true;
+  }
+
+  bool get isCurrentStepValid => isStepValid(currentStep.value);
+
+  bool canJumpToStep(int step) {
+    if (currentStep.value == step) return false;
+    if (step > maxSteps) return false;
+    if (step == 1) return true;
+    if (step == 2) return isStep1Valid;
+    if (step == 3) return isStep1Valid && isStep2Valid;
+    if (step == 4) return isStep1Valid && isStep2Valid && isStep3Valid;
+    if (step == 5) return isStep1Valid && isStep2Valid && isStep3Valid && isStep4Valid;
+    if (step == 6) return isStep1Valid && isStep2Valid && isStep3Valid && isStep4Valid && isStep5Valid;
+    return false;
+  }
+
+  void goToStep(int step) {
+    if (canJumpToStep(step)) {
+      if (step > maxStepReached.value) {
+        maxStepReached.value = step;
+      }
+      currentStep.value = step;
+    }
+  }
+
+  void nextStep() {
+    if (!isCurrentStepValid) return;
+    final next = currentStep.value + 1;
+    if (next <= maxSteps) {
+      if (next > maxStepReached.value) {
+        maxStepReached.value = next;
+      }
+      currentStep.value = next;
+    }
+  }
+
+  void prevStep() {
+    if (currentStep.value > 1) {
+      currentStep.value--;
+    }
+  }
+
+  // ── Data Fetching ─────────────────────────────────────────────────────────
   Future<void> fetchVisitorTypes() async {
     final token = _token;
-    if (token == null) return;
+    if (token == null) {
+      debugPrint('fetchVisitorTypes: Bearer token is null');
+      isLoadingTypes.value = false;
+      updateForm();
+      return;
+    }
     isLoadingTypes.value = true;
     try {
       final response = await _api.getVisitorTypes(token);
-      if (response.data['status'] == 'success') {
-        final collection = response.data['collection'] as List<dynamic>? ?? [];
-        visitorTypes.value = collection
-            .map((e) => VisitorTypeModel.fromJson(e as Map<String, dynamic>))
+      final resData = response.data;
+      if (resData is Map) {
+        final rawList = resData['collection'] ?? resData['data'];
+        if (rawList is List) {
+          visitorTypes.value = rawList
+              .whereType<Map>()
+              .map((e) => VisitorTypeModel.fromJson(Map<String, dynamic>.from(e)))
+              .toList();
+        }
+      } else if (resData is List) {
+        visitorTypes.value = resData
+            .whereType<Map>()
+            .map((e) => VisitorTypeModel.fromJson(Map<String, dynamic>.from(e)))
             .toList();
       }
     } catch (e) {
       debugPrint('fetchVisitorTypes error: $e');
     } finally {
       isLoadingTypes.value = false;
+      updateForm();
     }
   }
 
   Future<void> onSelectVisitorType(String id, String typeName) async {
     selectedVisitorTypeId.value = id;
     selectedVisitorTypeName.value = typeName;
+    visitorTypeRawDetail.value = null;
     formStructure.value = null;
+    updateForm();
     await fetchFormStructure(id);
+    updateForm();
   }
 
   Future<void> fetchFormStructure(String id) async {
@@ -436,47 +768,23 @@ class PraRegistrationController extends GetxController {
     try {
       final response = await _api.getVisitorTypeById(token, id);
       if (response.data['status'] == 'success') {
-        final collection =
-            response.data['collection'] as Map<String, dynamic>? ?? {};
+        final collection = response.data['collection'] as Map<String, dynamic>? ?? {};
+        visitorTypeRawDetail.value = collection;
         final structure = VisitorTypeDetailModel.fromJson(collection);
-        for (var section in structure.sectionPageVisitorTypes) {
-          for (var field in section.praForm) {
-            if (field.remarks.toLowerCase() == 'is_employee') {
-              final noOption = field.multipleOptionFields.firstWhereOrNull(
-                (opt) =>
-                    opt.name.toLowerCase() == 'no' ||
-                    opt.value.toLowerCase() == 'no' ||
-                    opt.value == '0' ||
-                    opt.value == 'false',
-              );
-              if (noOption != null) {
-                field.answerText = noOption.value;
-              } else {
-                field.answerText = 'No';
-              }
-              isEmployee.value = false;
-            }
-          }
-        }
         formStructure.value = structure;
-        // Auto-select the visitor role if there is only one available
-        if (structure.visitorRoles.length == 1 &&
-            selectedVisitorRole.value.isEmpty) {
-          selectedVisitorRole.value = structure.visitorRoles.first.role;
-          // Also set the answerText on the visitor_role field if present
-          for (var section in structure.sectionPageVisitorTypes) {
-            for (var field in section.praForm) {
-              if (field.remarks.toLowerCase() == 'visitor_role') {
-                field.answerText = structure.visitorRoles.first.role;
-              }
-            }
-          }
+
+        // Reset single / group sub-states according to new type detail
+        final defaultRole = getDefaultVisitorRole();
+        selectedVisitorRole.value = defaultRole;
+        for (final v in groupVisitors) {
+          v.role.value = defaultRole;
         }
       }
     } catch (e) {
       debugPrint('fetchFormStructure error: $e');
     } finally {
       isLoadingDetail.value = false;
+      updateForm();
     }
   }
 
@@ -488,65 +796,14 @@ class PraRegistrationController extends GetxController {
       final response = await _api.getVisitors(token);
       if (response.data['status'] == 'success') {
         final collection = response.data['collection'] as List<dynamic>? ?? [];
-        allVisitors.value = collection
-            .where((e) => e is Map && (e['name']?.toString() ?? '').isNotEmpty)
-            .map((e) => Map<String, dynamic>.from(e as Map))
-            .toList();
+        allVisitors.value = collection.map((e) => Map<String, dynamic>.from(e as Map)).toList();
       }
     } catch (e) {
       debugPrint('fetchVisitors error: $e');
     } finally {
       isLoadingVisitors.value = false;
+      updateForm();
     }
-  }
-
-  /// Auto-fill single visitor fields from a selected visitor map.
-  void autofillSingleFromVisitor(Map<String, dynamic> v) {
-    final n = v['name']?.toString() ?? '';
-    final e = v['email']?.toString() ?? '';
-    final p = v['phone']?.toString() ?? '';
-    final o = v['organization']?.toString() ?? '';
-    final id = v['identity_id']?.toString() ?? '';
-
-    nameCtrl.text = n;
-    emailCtrl.text = e;
-    phoneCtrl.text = p;
-    organizationCtrl.text = o;
-    identityIdCtrl.text = id;
-
-    name.value = n;
-    email.value = e;
-    phone.value = p;
-    organization.value = o;
-    identityId.value = id;
-
-    for (var section
-        in formStructure.value?.sectionPageVisitorTypes ??
-            <SectionPageVisitorType>[]) {
-      for (var field in section.praForm) {
-        final rem = field.remarks.toLowerCase();
-        if (rem == 'name') field.answerText = n;
-        if (rem == 'email') field.answerText = e;
-        if (rem == 'phone') field.answerText = p;
-        if (rem == 'organization' || rem == 'company') field.answerText = o;
-        if (rem == 'identity_id' || rem == 'indentity_id')
-          field.answerText = id;
-      }
-    }
-    updateForm();
-  }
-
-  /// Auto-fill a group visitor row from a selected visitor map.
-  void autofillGroupVisitorFromVisitor(
-    GroupVisitorRow row,
-    Map<String, dynamic> v,
-  ) {
-    row.fullName.text = v['name']?.toString() ?? '';
-    row.email.text = v['email']?.toString() ?? '';
-    row.phone.text = v['phone']?.toString() ?? '';
-    row.organization.text = v['organization']?.toString() ?? '';
-    row.identityId.text = v['identity_id']?.toString() ?? '';
-    updateForm();
   }
 
   Future<void> fetchEmployees() async {
@@ -558,214 +815,16 @@ class PraRegistrationController extends GetxController {
       if (response.data['status'] == 'success') {
         final collection = response.data['collection'] as List<dynamic>? ?? [];
         _rawEmployees.clear();
-        _rawEmployees.addAll(
-          collection.map(
-            (e) => Map<String, dynamic>.from(jsonDecode(jsonEncode(e)) as Map),
-          ),
-        );
+        _rawEmployees.addAll(collection.map((e) => Map<String, dynamic>.from(e as Map)));
         employees.value = collection
-            .map(
-              (e) => DropdownItem(
-                id: e['id']?.toString() ?? '',
-                name: e['name']?.toString() ?? '',
-              ),
-            )
+            .map((e) => DropdownItem(id: e['id']?.toString() ?? '', name: e['name']?.toString() ?? ''))
+            .where((item) => item.name.isNotEmpty)
             .toList();
       }
     } catch (e) {
       debugPrint('fetchEmployees error: $e');
     } finally {
       isLoadingEmployees.value = false;
-    }
-  }
-
-  void toggleEmployeeMode(bool value) {
-    isEmployee.value = value;
-    clearStep1Fields();
-  }
-
-  void clearStep1Fields() {
-    selectedVisitorTypeId.value = '';
-    selectedVisitorTypeName.value = '';
-    isGroup.value = null;
-    name.value = '';
-    email.value = '';
-    phone.value = '';
-    organization.value = '';
-    identityId.value = '';
-    isEmployee.value = false;
-    selectedEmployeeId.value = '';
-    selectedEmployeeName.value = '';
-    selectedVisitorRole.value = '';
-    nameCtrl.clear();
-    emailCtrl.clear();
-    phoneCtrl.clear();
-    organizationCtrl.clear();
-    identityIdCtrl.clear();
-    groupVisitors.clear();
-    groupName.value = '';
-    groupNameCtrl.clear();
-    groupCode.value = '';
-    for (var section
-        in formStructure.value?.sectionPageVisitorTypes ??
-            <SectionPageVisitorType>[]) {
-      for (var field in section.praForm) {
-        field.answerText = '';
-        field.answerDatetime = '';
-        if (field.remarks.toLowerCase() == 'is_employee')
-          field.answerText = 'No';
-      }
-    }
-    clearStep2Fields();
-    updateForm();
-  }
-
-  void clearVisitorFormInputs() {
-    name.value = '';
-    email.value = '';
-    phone.value = '';
-    organization.value = '';
-    identityId.value = '';
-    isEmployee.value = false;
-    selectedEmployeeId.value = '';
-    selectedEmployeeName.value = '';
-    selectedVisitorRole.value = '';
-    nameCtrl.clear();
-    emailCtrl.clear();
-    phoneCtrl.clear();
-    organizationCtrl.clear();
-    identityIdCtrl.clear();
-
-    // Clear answerText of form fields in single mode
-    for (var section
-        in formStructure.value?.sectionPageVisitorTypes ??
-            <SectionPageVisitorType>[]) {
-      for (var field in section.praForm) {
-        final rem = field.remarks.toLowerCase();
-        if (rem == 'name' ||
-            rem == 'email' ||
-            rem == 'phone' ||
-            rem == 'organization' ||
-            rem == 'indentity_id' ||
-            rem == 'identity_id' ||
-            rem == 'visitor_role') {
-          field.answerText = '';
-        }
-      }
-    }
-    updateForm();
-  }
-
-  void clearStep2Fields() {
-    selectedHostId.value = '';
-    selectedSiteId.value = '';
-    visitStart.value = null;
-    visitEnd.value = null;
-    agenda.value = '';
-    for (var section
-        in formStructure.value?.sectionPageVisitorTypes ??
-            <SectionPageVisitorType>[]) {
-      for (var field in section.praForm) {
-        final rem = field.remarks.toLowerCase();
-        if (rem != 'name' &&
-            rem != 'email' &&
-            rem != 'phone' &&
-            rem != 'organization' &&
-            rem != 'identity_id' &&
-            rem != 'is_employee') {
-          field.answerText = '';
-          field.answerDatetime = '';
-        }
-      }
-    }
-    updateForm();
-  }
-
-  void onEmployeeSelected(String employeeId) {
-    selectedEmployeeId.value = employeeId;
-    isEmployee.value = true;
-    final emp = _rawEmployees.firstWhereOrNull(
-      (e) => e['id'].toString() == employeeId,
-    );
-    if (emp != null) {
-      selectedEmployeeName.value = emp['name']?.toString() ?? '';
-
-      String empOrg = '';
-      final orgData =
-          emp['organization'] ??
-          emp['Organization'] ??
-          emp['organization_name'] ??
-          emp['company'] ??
-          emp['department'] ??
-          emp['office'];
-      if (orgData != null) {
-        if (orgData is Map) {
-          empOrg =
-              orgData['name']?.toString() ?? orgData['code']?.toString() ?? '';
-        } else {
-          empOrg = orgData.toString();
-        }
-      }
-
-      nameCtrl.text = emp['name']?.toString() ?? '';
-      emailCtrl.text = emp['email']?.toString() ?? '';
-      phoneCtrl.text = emp['phone']?.toString() ?? '';
-      organizationCtrl.text = empOrg;
-      identityIdCtrl.text = emp['identity_id']?.toString() ?? '';
-      name.value = nameCtrl.text;
-      email.value = emailCtrl.text;
-      phone.value = phoneCtrl.text;
-      organization.value = organizationCtrl.text;
-      identityId.value = identityIdCtrl.text;
-      for (var section
-          in formStructure.value?.sectionPageVisitorTypes ??
-              <SectionPageVisitorType>[]) {
-        for (var field in section.praForm) {
-          final rem = field.remarks.toLowerCase();
-          if (rem == 'name') field.answerText = name.value;
-          if (rem == 'email') field.answerText = email.value;
-          if (rem == 'phone') field.answerText = phone.value;
-          if (rem == 'organization' || rem == 'company')
-            field.answerText = organization.value;
-          if (rem == 'identity_id' || rem == 'indentity_id')
-            field.answerText = identityId.value;
-        }
-      }
-      updateForm();
-    }
-  }
-
-  void onGroupEmployeeSelected(GroupVisitorRow row, String employeeId) {
-    row.selectedEmployeeId.value = employeeId;
-    row.isEmployee.value = true;
-    final emp = _rawEmployees.firstWhereOrNull(
-      (e) => e['id'].toString() == employeeId,
-    );
-    if (emp != null) {
-      row.selectedEmployeeName.value = emp['name']?.toString() ?? '';
-
-      String empOrg = '';
-      final orgData =
-          emp['organization'] ??
-          emp['Organization'] ??
-          emp['organization_name'] ??
-          emp['company'] ??
-          emp['department'] ??
-          emp['office'];
-      if (orgData != null) {
-        if (orgData is Map) {
-          empOrg =
-              orgData['name']?.toString() ?? orgData['code']?.toString() ?? '';
-        } else {
-          empOrg = orgData.toString();
-        }
-      }
-
-      row.fullName.text = emp['name']?.toString() ?? '';
-      row.email.text = emp['email']?.toString() ?? '';
-      row.phone.text = emp['phone']?.toString() ?? '';
-      row.organization.text = empOrg;
-      row.identityId.text = emp['identity_id']?.toString() ?? '';
       updateForm();
     }
   }
@@ -779,39 +838,15 @@ class PraRegistrationController extends GetxController {
       if (response.data['status'] == 'success') {
         final collection = response.data['collection'] as List<dynamic>? ?? [];
         hosts.value = collection
-            .map(
-              (e) => DropdownItem(
-                id: e['id']?.toString() ?? '',
-                name: e['name']?.toString() ?? '',
-              ),
-            )
+            .map((e) => DropdownItem(id: e['id']?.toString() ?? '', name: e['name']?.toString() ?? ''))
+            .where((item) => item.name.isNotEmpty)
             .toList();
-
-        // If selectedHostId is set to a name instead of UUID, match by name!
-        if (selectedHostId.value.isNotEmpty &&
-            !selectedHostId.value.contains('-')) {
-          final matched = hosts.firstWhereOrNull(
-            (h) => h.name.toLowerCase().trim() ==
-                selectedHostId.value.toLowerCase().trim(),
-          );
-          if (matched != null) {
-            selectedHostId.value = matched.id;
-            
-            // Also update the answerText on the host field if formStructure is loaded
-            for (var section in formStructure.value?.sectionPageVisitorTypes ?? <SectionPageVisitorType>[]) {
-              for (var field in section.praForm) {
-                if (field.remarks.toLowerCase() == 'host') {
-                  field.answerText = matched.id;
-                }
-              }
-            }
-          }
-        }
       }
     } catch (e) {
       debugPrint('fetchHosts error: $e');
     } finally {
       isLoadingHosts.value = false;
+      updateForm();
     }
   }
 
@@ -823,671 +858,430 @@ class PraRegistrationController extends GetxController {
       final response = await _api.getSitesWithToken(token);
       if (response.data['status'] == 'success') {
         final collection = response.data['collection'] as List<dynamic>? ?? [];
-        final filteredCollection = collection.where((e) {
-          if (e is Map) {
-            final isDropPoint = e['is_drop_point'];
-            final name = e['name']?.toString().toLowerCase() ?? '';
-            if (isDropPoint == true ||
-                isDropPoint.toString() == 'true' ||
-                name == 'drop point') {
-              return false;
-            }
-          }
-          return true;
-        }).toList();
-        sites.value = filteredCollection
-            .map(
-              (e) => DropdownItem(
-                id: e['id']?.toString() ?? '',
-                name: e['name']?.toString() ?? '',
-              ),
-            )
+        sites.value = collection
+            .map((e) => DropdownItem(id: e['id']?.toString() ?? '', name: e['name']?.toString() ?? ''))
+            .where((item) => item.name.isNotEmpty)
             .toList();
       }
     } catch (e) {
       debugPrint('fetchSites error: $e');
     } finally {
       isLoadingSites.value = false;
+      updateForm();
     }
   }
 
-  bool _isFormFieldValid(VisitFormField field) {
-    final rem = field.remarks.toLowerCase();
-    switch (rem) {
-      case 'name':
-        return name.value.trim().isNotEmpty ||
-            nameCtrl.text.trim().isNotEmpty ||
-            field.answerText.trim().isNotEmpty;
-      case 'email':
-        return email.value.trim().isNotEmpty ||
-            emailCtrl.text.trim().isNotEmpty ||
-            field.answerText.trim().isNotEmpty;
-      case 'phone':
-        return phone.value.trim().isNotEmpty ||
-            phoneCtrl.text.trim().isNotEmpty ||
-            field.answerText.trim().isNotEmpty;
-      case 'organization':
-      case 'company':
-        return organization.value.trim().isNotEmpty ||
-            organizationCtrl.text.trim().isNotEmpty ||
-            field.answerText.trim().isNotEmpty;
-      case 'identity_id':
-      case 'indentity_id':
-        return identityId.value.trim().isNotEmpty ||
-            identityIdCtrl.text.trim().isNotEmpty ||
-            field.answerText.trim().isNotEmpty;
-      case 'visitor_role':
-        final roles = formStructure.value?.visitorRoles ?? [];
-        if (roles.isEmpty) return true;
-        return selectedVisitorRole.value.trim().isNotEmpty ||
-            field.answerText.trim().isNotEmpty;
-      case 'is_employee':
-        return true;
-      case 'employee_name':
-      case 'employee':
-        if (isEmployee.value) {
-          return selectedEmployeeId.value.trim().isNotEmpty ||
-              field.answerText.trim().isNotEmpty;
-        }
-        return true;
-      case 'host':
-        return selectedHostId.value.trim().isNotEmpty ||
-            field.answerText.trim().isNotEmpty;
-      case 'site_place':
-        return selectedSiteId.value.trim().isNotEmpty ||
-            field.answerText.trim().isNotEmpty;
-      case 'agenda':
-        return agenda.value.trim().isNotEmpty ||
-            field.answerText.trim().isNotEmpty;
-      case 'visitor_period_start':
-        return visitStart.value != null ||
-            field.answerDatetime.trim().isNotEmpty;
-      case 'visitor_period_end':
-        return visitEnd.value != null ||
-            field.answerDatetime.trim().isNotEmpty;
-      default:
-        if (field.fieldType == 4 || field.fieldType == 9) {
-          return field.answerDatetime.trim().isNotEmpty ||
-              field.answerText.trim().isNotEmpty;
-        }
-        return field.answerText.trim().isNotEmpty;
-    }
+  List<Map<String, dynamic>> get filteredEmployees {
+    final q = singleSearchCtrl.text.toLowerCase().trim();
+    if (q.isEmpty) return _rawEmployees.toList();
+    return _rawEmployees
+        .where((e) => (e['name']?.toString() ?? '').toLowerCase().contains(q))
+        .toList();
   }
 
-  bool _isGroupVisitorValid(
-    GroupVisitorRow v,
-    SectionPageVisitorType? visitorSection,
-  ) {
-    if (visitorSection == null || visitorSection.praForm.isEmpty) {
-      return v.fullName.text.trim().isNotEmpty &&
-          v.email.text.trim().isNotEmpty;
+  List<Map<String, dynamic>> get filteredVisitors {
+    final q = singleSearchCtrl.text.toLowerCase().trim();
+    if (q.isEmpty) return allVisitors.toList();
+    return allVisitors
+        .where((v) => (v['name']?.toString() ?? '').toLowerCase().contains(q))
+        .toList();
+  }
+
+  // ── Dynamic Question Page Builder (Exact match to dekstop_tablet_vms) ─────
+  Future<List<Map<String, dynamic>>> _buildDynamicQuestionPage({
+    required String name,
+    required String email,
+    required String phone,
+    required String org,
+    required String identity,
+    required bool isEmployee,
+    required String? role,
+    required String employeeId,
+    required Map<String, TextEditingController> extraCtrls,
+    required String hostId,
+    required String agenda,
+    required String siteId,
+    required DateTime? start,
+    required DateTime? end,
+    required bool isDriving,
+    required String? vehicleType,
+    required String vehiclePlate,
+    required UploadedFileData? selfieImage,
+    required UploadedFileData? ktpImage,
+  }) async {
+    final startIso = start?.toUtc().toIso8601String().substring(0, 19);
+    final endIso = end?.toUtc().toIso8601String().substring(0, 19);
+
+    // Upload Selfie Image to CDN if present
+    String? uploadedSelfiePath;
+    if (selfieImage != null && selfieImage.bytes != null) {
+      uploadedSelfiePath = await _api.uploadCdnFile(
+        selfieImage.bytes!,
+        selfieImage.name,
+        path: 'face',
+      );
     }
 
-    final mandatoryFields =
-        visitorSection.praForm.where((f) => f.isEnable && f.mandatory);
+    // Upload KTP Image to CDN if present
+    String? uploadedKtpPath;
+    if (ktpImage != null && ktpImage.bytes != null) {
+      uploadedKtpPath = await _api.uploadCdnFile(
+        ktpImage.bytes!,
+        ktpImage.name,
+        path: 'face',
+      );
+    }
 
-    for (final field in mandatoryFields) {
-      final rem = field.remarks.toLowerCase();
-      switch (rem) {
-        case 'name':
-          if (v.fullName.text.trim().isEmpty) return false;
-          break;
-        case 'email':
-          if (v.email.text.trim().isEmpty) return false;
-          break;
-        case 'phone':
-          if (v.phone.text.trim().isEmpty) return false;
-          break;
-        case 'organization':
-        case 'company':
-          if (v.organization.text.trim().isEmpty) return false;
-          break;
-        case 'identity_id':
-        case 'indentity_id':
-          if (v.identityId.text.trim().isEmpty) return false;
-          break;
-        case 'visitor_role':
-          final roles = formStructure.value?.visitorRoles ?? [];
-          if (roles.isNotEmpty && v.selectedVisitorRole.value.trim().isEmpty) {
-            return false;
+    final sectionsRaw = visitorTypeRawDetail.value?['section_page_visitor_types'] as List<dynamic>?;
+
+    if (sectionsRaw != null && sectionsRaw.isNotEmpty) {
+      final List<Map<String, dynamic>> questionPages = [];
+
+      for (var s in sectionsRaw) {
+        if (s is! Map) continue;
+        final sec = Map<String, dynamic>.from(s);
+        final secId = sec['id']?.toString() ?? '';
+        final secSort = sec['sort'] ?? 0;
+        final secName = sec['name']?.toString() ?? '';
+        final secStatus = sec['status'] ?? 0;
+        final isDoc = sec['is_document'] == true;
+        final canMulti = sec['can_multiple_used'] ?? false;
+        final selfOnly = sec['self_only'] ?? false;
+        final foreignId = sec['foreign_id']?.toString() ?? '';
+
+        final formListRaw = (sec['visit_form'] as List<dynamic>?) ??
+            (sec['pra_form'] as List<dynamic>?) ??
+            (sec['form'] as List<dynamic>?) ??
+            [];
+
+        final List<Map<String, dynamic>> builtFormList = [];
+
+        for (var f in formListRaw) {
+          if (f is! Map) continue;
+          final field = Map<String, dynamic>.from(f);
+          final remarks = (field['remarks'] ?? '').toString().toLowerCase().trim();
+          final fieldType = field['field_type'] ?? 0;
+          final customFieldId = field['custom_field_id']?.toString() ?? '';
+          final shortName = field['short_name']?.toString() ?? '';
+          final longText = field['long_display_text']?.toString() ?? '';
+          final isPrimary = field['is_primary'] ?? false;
+          final isEnable = field['is_enable'] ?? true;
+          final mandatory = field['mandatory'] ?? false;
+          final multiOpts = field['multiple_option_fields'] ?? [];
+          final vFormType = field['visitor_form_type'] ?? 1;
+
+          Map<String, dynamic> formItem = {
+            'sort': field['sort'] ?? builtFormList.length,
+            'short_name': shortName,
+            'long_display_text': longText,
+            'field_type': fieldType,
+            'is_primary': isPrimary,
+            'is_enable': isEnable,
+            'mandatory': mandatory,
+            'remarks': remarks,
+            if (customFieldId.isNotEmpty) 'custom_field_id': customFieldId,
+            'multiple_option_fields': multiOpts,
+            'visitor_form_type': vFormType,
+          };
+
+          if (isDoc || fieldType == 10 || fieldType == 12 || fieldType == 11) {
+            // Document section (Selfie / KTP)
+            if (remarks.contains('selfie') || fieldType == 10) {
+              formItem['answer_file'] = uploadedSelfiePath;
+            } else if (remarks.contains('identity') || remarks.contains('ktp') || fieldType == 12) {
+              formItem['answer_file'] = uploadedKtpPath;
+            } else {
+              formItem['answer_file'] = null;
+            }
+          } else if (fieldType == 9 || fieldType == 4) {
+            // Date Time fields
+            if (remarks == 'visitor_period_start') {
+              formItem['answer_datetime'] = startIso;
+            } else if (remarks == 'visitor_period_end') {
+              formItem['answer_datetime'] = endIso;
+            } else {
+              formItem['answer_datetime'] = null;
+            }
+          } else {
+            // Text / Dropdown / Radio fields
+            if (remarks == 'name') {
+              formItem['answer_text'] = name;
+            } else if (remarks == 'email') {
+              formItem['answer_text'] = email;
+            } else if (remarks == 'phone') {
+              formItem['answer_text'] = phone;
+            } else if (remarks == 'organization' || remarks == 'company') {
+              formItem['answer_text'] = org;
+            } else if (remarks == 'identity_id' || remarks == 'indentity_id') {
+              formItem['answer_text'] = identity;
+            } else if (remarks == 'is_employee') {
+              formItem['answer_text'] = isEmployee ? 'true' : 'false';
+            } else if (remarks == 'employee') {
+              formItem['answer_text'] = employeeId;
+            } else if (remarks == 'visitor_role' || remarks == 'role') {
+              formItem['answer_text'] = role ?? '';
+            } else if (remarks == 'site_place' || remarks == 'destination') {
+              formItem['answer_text'] = siteId;
+            } else if (remarks == 'host' || remarks == 'pic_host') {
+              formItem['answer_text'] = hostId;
+            } else if (remarks == 'agenda') {
+              formItem['answer_text'] = agenda;
+            } else if (remarks == 'is_driving') {
+              formItem['answer_text'] = isDriving ? 'true' : 'false';
+            } else if (remarks == 'vehicle_type') {
+              formItem['answer_text'] = isDriving ? (vehicleType?.isNotEmpty == true ? vehicleType : null) : null;
+            } else if (remarks == 'vehicle_plate') {
+              formItem['answer_text'] = (!isDriving || isBicycle(vehicleType))
+                  ? null
+                  : (vehiclePlate.trim().isNotEmpty ? vehiclePlate.trim() : null);
+            } else {
+              formItem['answer_text'] = extraCtrls[remarks]?.text.trim() ?? '';
+            }
           }
-          break;
-        case 'is_employee':
-          break;
-        case 'employee_name':
-        case 'employee':
-          if (v.isEmployee.value && v.selectedEmployeeId.value.trim().isEmpty) {
-            return false;
-          }
-          break;
-        default:
-          break;
-      }
-    }
-    return true;
-  }
 
-  bool isStepValid(int step) {
-    if (step == 0) {
-      bool basic =
-          selectedVisitorTypeId.value.isNotEmpty && isGroup.value != null;
-      if (isGroup.value == true) {
-        return basic && groupName.value.trim().isNotEmpty;
-      }
-      return basic;
-    } else if (step == 1) {
-      final detail = formStructure.value;
-      if (detail == null) return false;
-
-      final sections = detail.sectionPageVisitorTypes;
-      final visitorSection = sections.firstWhereOrNull(
-        (s) => s.name.toLowerCase().contains('visitor'),
-      ) ?? sections.firstOrNull;
-
-      if (isGroup.value == true) {
-        if (groupVisitors.isEmpty) return false;
-        return groupVisitors.every((v) => _isGroupVisitorValid(v, visitorSection));
-      } else {
-        if (visitorSection == null) return true;
-
-        final mandatoryFields =
-            visitorSection.praForm.where((f) => f.isEnable && f.mandatory);
-
-        for (final field in mandatoryFields) {
-          if (!_isFormFieldValid(field)) return false;
+          builtFormList.add(formItem);
         }
 
-        return true;
-      }
-    } else if (step == 2) {
-      final detail = formStructure.value;
-      if (detail == null) return false;
-
-      final sections = detail.sectionPageVisitorTypes;
-      final purposeSection = sections.firstWhereOrNull(
-        (s) => s.name.toLowerCase().contains('purpose'),
-      ) ?? (sections.length > 1 ? sections[1] : null);
-
-      if (purposeSection == null) {
-        return selectedHostId.value.isNotEmpty &&
-            agenda.value.trim().isNotEmpty &&
-            selectedSiteId.value.isNotEmpty &&
-            visitStart.value != null &&
-            visitEnd.value != null;
+        questionPages.add({
+          if (secId.isNotEmpty) 'id': secId,
+          'sort': secSort,
+          'name': secName,
+          'status': secStatus,
+          'is_document': isDoc,
+          'can_multiple_used': canMulti,
+          'self_only': selfOnly,
+          'foreign_id': foreignId,
+          'form': builtFormList,
+        });
       }
 
-      final enabledFields = purposeSection.praForm.where((f) => f.isEnable);
-      for (final field in enabledFields) {
-        final rem = field.remarks.toLowerCase();
-        if (rem == 'visitor_period_start') {
-          if (visitStart.value == null && field.answerDatetime.trim().isEmpty) {
-            return false;
-          }
-        } else if (rem == 'visitor_period_end') {
-          if (visitEnd.value == null && field.answerDatetime.trim().isEmpty) {
-            return false;
-          }
-        } else if (field.mandatory) {
-          if (!_isFormFieldValid(field)) return false;
-        }
-      }
-
-      return true;
+      return questionPages;
     }
-    return true;
+
+    return [];
   }
 
-  void goToStep(int targetStep) {
-    if (isGroup.value == true && groupName.value.trim().isEmpty && targetStep > 0) {
-      return;
-    }
-    if (!isDuplicateMode.value) {
-      if (targetStep > currentStep.value) {
-        for (int i = currentStep.value; i < targetStep; i++) {
-          if (!isStepValid(i)) return;
-        }
-      }
-    }
-    if (currentStep.value == 0 && targetStep >= 1 && isGroup.value == true) {
-      if (groupVisitors.isEmpty) addGroupVisitor();
-      if (groupCode.value.isEmpty) groupCode.value = _generateGroupCode();
-    }
-    currentStep.value = targetStep;
-    if (currentStep.value > maxStepReached.value) {
-      maxStepReached.value = currentStep.value;
-    }
-  }
-
-  void nextStep() {
-    if (currentStep.value < 2) {
-      if (currentStep.value == 0 && isGroup.value == true && groupName.value.trim().isEmpty) {
-        return;
-      }
-      if (!isDuplicateMode.value && !isStepValid(currentStep.value)) return;
-      if (currentStep.value == 0 && isGroup.value == true) {
-        if (groupVisitors.isEmpty) addGroupVisitor();
-        if (groupCode.value.isEmpty) groupCode.value = _generateGroupCode();
-      }
-      currentStep.value++;
-      if (currentStep.value > maxStepReached.value) {
-        maxStepReached.value = currentStep.value;
-      }
-    }
-  }
-
-  void prevStep() {
-    if (currentStep.value > 0) currentStep.value--;
-  }
-
-  bool validateCurrentStep() {
-    final _ = formUpdateTrigger.value;
-    return isStepValid(currentStep.value);
-  }
-
-  bool get isStep1Valid => isStepValid(0);
-  bool get isStep2Valid => isStepValid(1);
-  bool get isStep3Valid => isStepValid(2);
-
-  void updateForm() => formUpdateTrigger.value++;
-
-  String _generateGroupCode() {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    final rand = Random();
-    return List.generate(6, (_) => chars[rand.nextInt(chars.length)]).join();
-  }
-
-  void initGroupMode() {
-    groupCode.value = _generateGroupCode();
-    groupName.value = '';
-    groupNameCtrl.clear();
-    for (final v in groupVisitors) {
-      v.dispose();
-    }
-    groupVisitors.clear();
-    final row = GroupVisitorRow();
-    if (formStructure.value?.visitorRoles.length == 1) {
-      row.selectedVisitorRole.value =
-          formStructure.value!.visitorRoles.first.role;
-    }
-    groupVisitors.add(row);
-  }
-
-  void addGroupVisitor() {
-    final row = GroupVisitorRow();
-    if (formStructure.value?.visitorRoles.length == 1) {
-      row.selectedVisitorRole.value =
-          formStructure.value!.visitorRoles.first.role;
-    }
-    groupVisitors.add(row);
-    updateForm();
-  }
-
-  void removeGroupVisitor(int index) {
-    if (groupVisitors.length <= 1) return;
-    groupVisitors[index].dispose();
-    groupVisitors.removeAt(index);
-    updateForm();
-  }
-
+  // ── SUBMIT FORM ───────────────────────────────────────────────────────────
   Future<bool> submitForm() async {
     final token = _token;
     if (token == null) {
-      _showError('Sesi berakhir. Silakan login kembali.');
+      _showError('Autentikasi gagal. Silakan login kembali.');
       return false;
     }
-    final detail = formStructure.value;
-    if (detail == null) {
-      _showError('Struktur form belum dimuat sempurna.');
-      return false;
-    }
+
     isSubmitting.value = true;
     try {
-      String deviceTz = 'Asia/Jakarta';
-      try {
-        // Use UTC offset to derive timezone string (no external package needed)
-        final offset = DateTime.now().timeZoneOffset;
-        final hours = offset.inHours;
-        if (hours == 7) {
-          deviceTz = 'Asia/Jakarta';
-        } else if (hours == 8) {
-          deviceTz = 'Asia/Makassar';
-        } else if (hours == 9) {
-          deviceTz = 'Asia/Jayapura';
-        }
-      } catch (e) {
-        debugPrint('Timezone error: $e');
-      }
-
-      dev.log('[SUBMIT] Starting submission flow...', name: 'PraReg');
-
-      Map<String, dynamic> body;
+      final visitorTypeId = selectedVisitorTypeId.value;
+      final siteId = selectedSiteId.value;
+      final hostId = selectedHostId.value;
+      final resolvedAgenda = selectedAgenda.value == 'Others'
+          ? otherAgendaCtrl.text.trim()
+          : selectedAgenda.value;
       final resolvedRole = selectedVisitorRole.value.isNotEmpty
           ? selectedVisitorRole.value
-          : 'Visitor';
+          : getDefaultVisitorRole();
 
-      // ── Build question_page for Single (used in data_visitor) ──────────
-      final questionPage = detail.sectionPageVisitorTypes.map((section) {
-        final form = section.praForm.where((f) => f.isEnable).map((f) {
-          String answerText = '';
-          String answerDatetime = '';
-          final isDateTimeField =
-              f.fieldType == 4 ||
-              f.fieldType == 9 ||
-              f.remarks == 'visitor_period_start' ||
-              f.remarks == 'visitor_period_end';
-
-          if (f.remarks == 'visitor_period_start' && visitStart.value != null) {
-            answerDatetime = visitStart.value!
-                .toUtc()
-                .toIso8601String()
-                .substring(0, 19);
-          } else if (f.remarks == 'visitor_period_end' &&
-              visitEnd.value != null) {
-            answerDatetime = visitEnd.value!
-                .toUtc()
-                .toIso8601String()
-                .substring(0, 19);
-          } else if (isDateTimeField) {
-            answerDatetime = f.answerDatetime;
-          } else {
-            answerText = _answerTextForRemarks(f.remarks, f);
-          }
-
-          final Map<String, dynamic> json = {
-            'sort': f.sort,
-            'short_name': f.shortName,
-            'long_display_text': f.longDisplayText,
-            'field_type': f.fieldType,
-            'is_primary': f.isPrimary,
-            'is_enable': f.isEnable,
-            'mandatory': f.mandatory,
-            'remarks': f.remarks,
-            'custom_field_id': f.customFieldId,
-            'multiple_option_fields': f.multipleOptionFields
-                .map((o) => o.toJson())
-                .toList(),
-            'visitor_form_type': f.visitorFormType,
-          };
-
-          if (answerDatetime.isNotEmpty) {
-            json['answer_datetime'] = answerDatetime;
-            json['answer_text'] = '';
-          } else {
-            json['answer_text'] = answerText;
-          }
-
-          if ([10, 11, 12].contains(f.fieldType)) {
-            json['answer_file'] = f.answerText;
-            json.remove('answer_text');
-            json.remove('answer_datetime');
-          }
-          return json;
-        }).toList();
-
-        return {
-          'id': section.id,
-          'sort': section.sort,
-          'name': section.name,
-          'status': 0,
-          'is_document': section.isDocument,
-          'can_multiple_used': section.canMultipleUsed,
-          'self_only': false,
-          'foreign_id': section.foreignId,
-          'form': form,
-        };
-      }).toList();
+      Map<String, dynamic> body;
 
       if (isGroup.value == true) {
-        // ── GROUP MODE ─────────────────────────────────────────────────────
-        // The first visitor is the parent transaction payload in list_group
-        final parentVisitor = groupVisitors.first;
-        final parentRole = parentVisitor.selectedVisitorRole.value.isNotEmpty
-            ? parentVisitor.selectedVisitorRole.value
-            : 'Visitor';
-        
-        final parentAnswers = {
-          'name': parentVisitor.fullName.text.trim(),
-          'email': parentVisitor.email.text.trim(),
-          'phone': parentVisitor.phone.text.trim(),
-          'organization': parentVisitor.organization.text.trim(),
-          'indentity_id': parentVisitor.identityId.text.trim(),
-          'is_employee': parentVisitor.isEmployee.value.toString(),
-          'employee_name': parentVisitor.isEmployee.value ? parentVisitor.selectedEmployeeId.value : '',
-          'employee': parentVisitor.isEmployee.value ? parentVisitor.selectedEmployeeId.value : '',
-          'visitor_role': parentRole,
-        };
+        // Group Mode -> POST /api/operator-invitation/new-visit-group
+        final List<Map<String, dynamic>> dataVisitors = [];
 
-        final parentQp = detail.sectionPageVisitorTypes.map((section) {
-          final form = section.praForm.where((f) => f.isEnable).map((f) {
-            String answerText = '';
-            String answerDatetime = '';
-            final isDateTimeField = f.fieldType == 4 ||
-                f.fieldType == 9 ||
-                f.remarks == 'visitor_period_start' ||
-                f.remarks == 'visitor_period_end';
+        final primaryVisitor = groupVisitors.isNotEmpty ? groupVisitors.first : null;
+        final primaryName = primaryVisitor?.fullNameCtrl.text.trim() ?? '';
+        final primaryEmail = primaryVisitor?.emailCtrl.text.trim() ?? '';
+        final primaryPhone = primaryVisitor?.phoneCtrl.text.trim() ?? '';
 
-            if (f.remarks == 'visitor_period_start' && visitStart.value != null) {
-              answerDatetime = visitStart.value!.toUtc().toIso8601String().substring(0, 19);
-            } else if (f.remarks == 'visitor_period_end' && visitEnd.value != null) {
-              answerDatetime = visitEnd.value!.toUtc().toIso8601String().substring(0, 19);
-            } else if (isDateTimeField) {
-              answerDatetime = f.answerDatetime;
-            } else {
-              answerText = _answerTextForRemarksInGroup(f.remarks, f, parentAnswers);
-            }
+        for (final v in groupVisitors) {
+          final memberEmployeeId = (v.isEmployee.value == true)
+              ? (v.selectedData?['id'] ?? v.selectedData?['employee_id'] ?? '').toString()
+              : '';
 
-            final Map<String, dynamic> json = {
-              'sort': f.sort,
-              'short_name': f.shortName,
-              'long_display_text': f.longDisplayText,
-              'field_type': f.fieldType,
-              'is_primary': f.isPrimary,
-              'is_enable': f.isEnable,
-              'mandatory': f.mandatory,
-              'remarks': f.remarks,
-              'custom_field_id': f.customFieldId,
-              'multiple_option_fields': f.multipleOptionFields.map((o) => o.toJson()).toList(),
-              'visitor_form_type': f.visitorFormType,
-            };
+          final memberQuestionPages = await _buildDynamicQuestionPage(
+            name: v.fullNameCtrl.text.trim(),
+            email: v.emailCtrl.text.trim(),
+            phone: v.phoneCtrl.text.trim(),
+            org: v.orgCtrl.text.trim(),
+            identity: v.identityCtrl.text.trim(),
+            isEmployee: v.isEmployee.value == true,
+            role: v.role.value.isNotEmpty ? v.role.value : resolvedRole,
+            employeeId: memberEmployeeId,
+            extraCtrls: v.extraControllers,
+            hostId: hostId,
+            agenda: resolvedAgenda,
+            siteId: siteId,
+            start: visitStart.value,
+            end: visitEnd.value,
+            isDriving: v.isDriving.value,
+            vehicleType: v.vehicleType.value,
+            vehiclePlate: v.vehiclePlateCtrl.text.trim(),
+            selfieImage: v.selfieImage.value,
+            ktpImage: v.ktpImage.value,
+          );
 
-            if (answerDatetime.isNotEmpty) {
-              json['answer_datetime'] = answerDatetime;
-              json['answer_text'] = '';
-            } else {
-              json['answer_text'] = answerText;
-            }
-
-            if ([10, 11, 12].contains(f.fieldType)) {
-              json['answer_file'] = f.answerText;
-              json.remove('answer_text');
-              json.remove('answer_datetime');
-            }
-            return json;
-          }).toList();
-
-          return {
-            'id': section.id,
-            'sort': section.sort,
-            'name': section.name,
-            'status': 0,
-            'is_document': section.isDocument,
-            'can_multiple_used': section.canMultipleUsed,
-            'self_only': false,
-            'foreign_id': section.foreignId,
-            'form': form,
-          };
-        }).toList();
-
-        final List<dynamic> dataVisitorList = [
-          {'question_page': parentQp}
-        ];
-
-        // Append remaining visitors nested inside the parent's data_visitor array
-        for (int i = 1; i < groupVisitors.length; i++) {
-          final visitor = groupVisitors[i];
-          final visitorRole = visitor.selectedVisitorRole.value.isNotEmpty
-              ? visitor.selectedVisitorRole.value
-              : 'Visitor';
-          final visitorAnswers = {
-            'name': visitor.fullName.text.trim(),
-            'email': visitor.email.text.trim(),
-            'phone': visitor.phone.text.trim(),
-            'organization': visitor.organization.text.trim(),
-            'indentity_id': visitor.identityId.text.trim(),
-            'is_employee': visitor.isEmployee.value.toString(),
-            'employee_name': visitor.isEmployee.value ? visitor.selectedEmployeeId.value : '',
-            'employee': visitor.isEmployee.value ? visitor.selectedEmployeeId.value : '',
-            'visitor_role': visitorRole,
-          };
-
-          final memberQp = detail.sectionPageVisitorTypes.map((section) {
-            final form = section.praForm.where((f) => f.isEnable).map((f) {
-              String answerText = '';
-              String answerDatetime = '';
-              final isDateTimeField = f.fieldType == 4 ||
-                  f.fieldType == 9 ||
-                  f.remarks == 'visitor_period_start' ||
-                  f.remarks == 'visitor_period_end';
-
-              if (f.remarks == 'visitor_period_start' && visitStart.value != null) {
-                answerDatetime = visitStart.value!.toUtc().toIso8601String().substring(0, 19);
-              } else if (f.remarks == 'visitor_period_end' && visitEnd.value != null) {
-                answerDatetime = visitEnd.value!.toUtc().toIso8601String().substring(0, 19);
-              } else if (isDateTimeField) {
-                answerDatetime = f.answerDatetime;
-              } else {
-                answerText = _answerTextForRemarksInGroup(f.remarks, f, visitorAnswers);
-              }
-
-              final Map<String, dynamic> json = {
-                'sort': f.sort,
-                'short_name': f.shortName,
-                'long_display_text': f.longDisplayText,
-                'field_type': f.fieldType,
-                'is_primary': f.isPrimary,
-                'is_enable': f.isEnable,
-                'mandatory': f.mandatory,
-                'remarks': f.remarks,
-                'custom_field_id': f.customFieldId,
-                'multiple_option_fields': f.multipleOptionFields.map((o) => o.toJson()).toList(),
-                'visitor_form_type': f.visitorFormType,
-              };
-
-              if (answerDatetime.isNotEmpty) {
-                json['answer_datetime'] = answerDatetime;
-                json['answer_text'] = '';
-              } else {
-                json['answer_text'] = answerText;
-              }
-
-              if ([10, 11, 12].contains(f.fieldType)) {
-                json['answer_file'] = f.answerText;
-                json.remove('answer_text');
-                json.remove('answer_datetime');
-              }
-              return json;
-            }).toList();
-
-            return {
-              'id': section.id,
-              'sort': section.sort,
-              'name': section.name,
-              'status': 0,
-              'is_document': section.isDocument,
-              'can_multiple_used': section.canMultipleUsed,
-              'self_only': false,
-              'foreign_id': section.foreignId,
-              'form': form,
-            };
-          }).toList();
-
-          dataVisitorList.add({
-            'question_page': memberQp
-          });
+          dataVisitors.add({'question_page': memberQuestionPages});
         }
 
-        final Map<String, dynamic> parentObject = {
-          'visitor_type': selectedVisitorTypeId.value,
+        final groupObject = {
+          'visitor_type': visitorTypeId,
           'is_group': true,
           'type_registered': 1,
-          'tz': deviceTz,
-          'flow': 'Praregister',
-          'visitor_role': parentRole,
-          if (selectedSiteId.value.isNotEmpty) 'registered_site': selectedSiteId.value,
+          'tz': 'Asia/Jakarta',
+          if (siteId.isNotEmpty) 'registered_site': siteId,
           'group_code': groupCode.value,
           'group_name': groupName.value.trim(),
-          'data_visitor': dataVisitorList,
+          'is_self_registered': false,
+          'filled_by_name': primaryName,
+          'filled_by_email': primaryEmail,
+          'filled_by_phone': primaryPhone,
+          'filled_by_relationship': 'Other',
+          'filled_by_relationship_name': 'Other',
+          'flow': 'Invitation',
+          'visitor_role': groupVisitors.first.role.value.isNotEmpty ? groupVisitors.first.role.value : resolvedRole,
+          'data_visitor': dataVisitors,
         };
 
         body = {
-          'list_group': [parentObject]
+          'list_group': [groupObject],
         };
-        debugPrint("test: $body");
       } else {
-        // ── SINGLE MODE ────────────────────────────────────────────────────
+        // Single Mode -> POST /api/operator-invitation/new-visit
+        final singleEmployeeId = (isEmployee.value == true)
+            ? (singleSelectedData.value?['id'] ?? singleSelectedData.value?['employee_id'] ?? '').toString()
+            : '';
+
+        final singleQuestionPages = await _buildDynamicQuestionPage(
+          name: nameCtrl.text.trim(),
+          email: emailCtrl.text.trim(),
+          phone: phoneCtrl.text.trim(),
+          org: organizationCtrl.text.trim(),
+          identity: identityIdCtrl.text.trim(),
+          isEmployee: isEmployee.value == true,
+          role: resolvedRole,
+          employeeId: singleEmployeeId,
+          extraCtrls: singleExtraControllers,
+          hostId: hostId,
+          agenda: resolvedAgenda,
+          siteId: siteId,
+          start: visitStart.value,
+          end: visitEnd.value,
+          isDriving: isDriving.value,
+          vehicleType: vehicleType.value,
+          vehiclePlate: vehiclePlateCtrl.text.trim(),
+          selfieImage: selfieImage.value,
+          ktpImage: ktpImage.value,
+        );
+
         body = {
-          'visitor_type': selectedVisitorTypeId.value,
-          'type_registered': 0,
+          'visitor_type': visitorTypeId,
+          'type_registered': 1,
           'is_group': false,
-          'tz': deviceTz,
-          'flow': 'Praregister',
+          'tz': 'Asia/Jakarta',
+          if (siteId.isNotEmpty) 'registered_site': siteId,
+          'flow': 'Invitation',
           'visitor_role': resolvedRole,
-          if (selectedSiteId.value.isNotEmpty)
-            'registered_site': selectedSiteId.value,
           'data_visitor': [
-            {'question_page': questionPage},
+            {'question_page': singleQuestionPages},
           ],
         };
       }
 
-      dev.log('=== SUBMIT PAYLOAD ===\n${jsonEncode(body)}', name: 'PraReg');
+      dev.log('=== SUBMIT PAYLOAD ===\n${jsonEncode(body)}', name: 'Invitation');
 
       final response = (isGroup.value == true)
-          ? await _api.submitNewPraInviteGroup(token, body)
-          : await _api.submitNewPraInvite(token, body);
+          ? await _api.submitNewVisitGroup(token, body)
+          : await _api.submitNewVisit(token, body);
 
       debugPrint('=== SUBMIT RESPONSE ===');
       debugPrint(jsonEncode(response.data));
 
-      // Guard: server may return a raw String on internal errors instead of JSON
       final rawData = response.data;
       if (rawData is! Map) {
-        debugPrint('Unexpected response type: ${rawData.runtimeType}');
-        _showError('Server error. Silakan coba beberapa saat lagi.');
+        _showError(Get.locale?.languageCode == 'id'
+            ? 'Format respon server tidak sesuai.'
+            : 'Server error: Invalid response format.');
         return false;
       }
 
       final data = rawData;
-      final status = data['status']?.toString() ?? '';
-      final collectionMap = data['collection'] is Map
-          ? data['collection'] as Map
-          : null;
-      final transactionStatus =
-          collectionMap?['transaction_status']?.toString() ?? '';
+      final status = data['status']?.toString().toLowerCase() ?? '';
+      final statusCode = data['status_code'] ?? response.statusCode;
+      final collectionMap = data['collection'] is Map ? data['collection'] as Map : null;
+      final transactionStatus = collectionMap?['transaction_status']?.toString() ?? '';
 
-      if (status == 'success' || transactionStatus == 'UnderCreated') {
-        final msg = data['msg']?.toString() ?? 'Registrasi berhasil!';
+      // Determine success:
+      // Must not be explicitly 'error' or 'failed', and matches standard success criteria
+      final isNotExplicitError = status != 'error' && status != 'failed';
+      final isSuccess = isNotExplicitError &&
+          (status == 'success' ||
+              statusCode == 200 ||
+              statusCode == 201 ||
+              transactionStatus == 'UnderCreated');
+
+      if (isSuccess) {
+        final successMsg = data['msg']?.toString() ??
+            data['message']?.toString() ??
+            (Get.locale?.languageCode == 'id'
+                ? 'Undangan berhasil dibuat!'
+                : 'Invitation created successfully!');
         if (!isDuplicateMode.value) {
           Get.snackbar(
             Get.locale?.languageCode == 'id' ? 'Sukses' : 'Success',
-            msg,
+            successMsg,
             backgroundColor: Colors.green,
             colorText: Colors.white,
             snackPosition: SnackPosition.TOP,
           );
         }
 
-        // Auto Refresh Invitation List if available
+        // Auto Refresh Invitation List & activity counts if available
         if (Get.isRegistered<InvitationController>()) {
           final invCtrl = Get.find<InvitationController>();
           invCtrl.fetchOngoingInvitations(isSilent: true);
+          invCtrl.fetchVisitorTodayCount();
           invCtrl.triggerActivityRefresh();
         }
 
         return true;
       } else {
-        final msg = data['msg']?.toString() ?? 'Terjadi kesalahan.';
-        _showError(msg);
+        // Extract error message safely from various backend conventions
+        String? errorMsg;
+        if (data['msg'] != null && data['msg'].toString().trim().isNotEmpty) {
+          errorMsg = data['msg'].toString();
+        } else if (data['message'] != null && data['message'].toString().trim().isNotEmpty) {
+          errorMsg = data['message'].toString();
+        } else if (data['error'] != null && data['error'].toString().trim().isNotEmpty) {
+          errorMsg = data['error'].toString();
+        } else if (data['errors'] != null) {
+          if (data['errors'] is Map) {
+            final errMap = data['errors'] as Map;
+            final firstKey = errMap.keys.firstOrNull;
+            if (firstKey != null) {
+              final val = errMap[firstKey];
+              if (val is List && val.isNotEmpty) {
+                errorMsg = val.first.toString();
+              } else {
+                errorMsg = val.toString();
+              }
+            }
+          } else if (data['errors'] is List && (data['errors'] as List).isNotEmpty) {
+            errorMsg = (data['errors'] as List).first.toString();
+          }
+        }
+
+        final lowerMsg = (errorMsg ?? '').toLowerCase();
+        final isBlocked = lowerMsg.contains('block') || lowerMsg.contains('blacklist');
+
+        if (isBlocked) {
+          _showError(Get.locale?.languageCode == 'id'
+              ? 'Pengunjung tidak dapat didaftarkan: Satu atau lebih pengunjung sedang diblokir atau masuk daftar hitam (blacklist) di sistem.'
+              : 'Cannot submit invitation: One or more visitors are currently blocked or blacklisted in the system.');
+        } else {
+          _showError(errorMsg ??
+              (Get.locale?.languageCode == 'id'
+                  ? 'Terjadi kesalahan saat memproses undangan.'
+                  : 'An error occurred while processing the invitation.'));
+        }
         return false;
       }
     } catch (e) {
@@ -1499,102 +1293,67 @@ class PraRegistrationController extends GetxController {
     }
   }
 
-  String _answerTextForRemarks(String remarks, VisitFormField field) {
-    switch (remarks.toLowerCase()) {
-      case 'visitor_role':
-        return selectedVisitorRole.value.isNotEmpty
-            ? selectedVisitorRole.value
-            : field.answerText;
-      case 'name':
-        return name.value;
-      case 'email':
-        return email.value;
-      case 'phone':
-        return phone.value;
-      case 'organization':
-      case 'company':
-        return organization.value;
-      case 'identity_id':
-      case 'indentity_id':
-        return identityId.value;
-      case 'is_employee':
-        final target = isEmployee.value ? 'yes' : 'no';
-        final opt = field.multipleOptionFields.firstWhereOrNull(
-          (o) =>
-              o.name.toLowerCase() == target || o.value.toLowerCase() == target,
-        );
-        return opt?.value ?? (isEmployee.value ? 'Yes' : 'No');
-      case 'employee_name':
-      case 'employee':
-        return selectedEmployeeId.value;
-      case 'host':
-        return selectedHostId.value.isNotEmpty
-            ? selectedHostId.value
-            : field.answerText;
-      case 'site_place':
-        return selectedSiteId.value.isNotEmpty
-            ? selectedSiteId.value
-            : field.answerText;
-      case 'agenda':
-        return agenda.value.isNotEmpty ? agenda.value : field.answerText;
-      default:
-        return field.answerText;
+  // ── Autofill for Duplicate ────────────────────────────────────────────────
+  Future<void> autofillFromAccessPass(
+    AccessPassModel model, {
+    List<Map<String, dynamic>>? subVisitors,
+  }) async {
+    resetFields();
+    isDuplicateMode.value = true;
+
+    selectedVisitorTypeId.value = model.visitorTypeId;
+    selectedVisitorTypeName.value = model.visitorTypeName;
+    await fetchFormStructure(model.visitorTypeId);
+
+    final hasGroupFlag = model.isGroup || model.groupName.isNotEmpty || (subVisitors != null && subVisitors.length > 1);
+    isGroup.value = hasGroupFlag;
+
+    if (hasGroupFlag) {
+      groupName.value = '';
+      groupNameCtrl.clear();
+      groupCode.value = _generateGroupCode();
+      groupVisitors.clear();
+      if (subVisitors != null && subVisitors.isNotEmpty) {
+        for (final sub in subVisitors) {
+          final row = GroupWalkInVisitorEntry();
+          row.fullNameCtrl.text = sub['visitor_name']?.toString() ?? sub['name']?.toString() ?? '';
+          row.emailCtrl.text = sub['visitor_email']?.toString() ?? sub['email']?.toString() ?? '';
+          row.phoneCtrl.text = sub['visitor_phone']?.toString() ?? sub['phone']?.toString() ?? '';
+          row.orgCtrl.text = sub['visitor_organization_name']?.toString() ?? sub['organization']?.toString() ?? '';
+          row.identityCtrl.text = sub['visitor_identity_id']?.toString() ?? sub['identity_id']?.toString() ?? '';
+          row.role.value = sub['visitor_role']?.toString() ?? model.visitorRole;
+          groupVisitors.add(row);
+        }
+      }
+    } else {
+      nameCtrl.text = model.visitorName;
+      emailCtrl.text = model.visitorEmail;
+      phoneCtrl.text = model.visitorPhone;
+      organizationCtrl.text = model.visitorOrganizationName;
+      identityIdCtrl.text = model.visitorIdentityId;
+      selectedVisitorRole.value = model.visitorRole;
     }
+
+    selectedAgenda.value = model.agenda.isNotEmpty ? model.agenda : 'Meeting';
+    selectedSiteId.value = model.sitePlaceId ?? model.siteId;
+    selectedSiteName.value = model.sitePlaceName;
+    selectedHostId.value = model.host;
+    visitStart.value = model.visitorPeriodStart;
+    visitEnd.value = model.visitorPeriodEnd;
+
+    currentStep.value = 1;
+    maxStepReached.value = 1;
+    updateForm();
   }
 
-  String _answerTextForRemarksInGroup(
-    String remarks,
-    VisitFormField field,
-    Map<String, String> answers,
-  ) {
-    switch (remarks.toLowerCase()) {
-      case 'visitor_role':
-        return answers['visitor_role'] ?? '';
-      case 'name':
-        return answers['name'] ?? '';
-      case 'email':
-        return answers['email'] ?? '';
-      case 'phone':
-        return answers['phone'] ?? '';
-      case 'organization':
-      case 'company':
-        return answers['organization'] ?? '';
-      case 'identity_id':
-      case 'indentity_id':
-        return answers['indentity_id'] ?? answers['identity_id'] ?? '';
-      case 'is_employee':
-        final isEmp = answers['is_employee'] == 'true';
-        final target = isEmp ? 'yes' : 'no';
-        final opt = field.multipleOptionFields.firstWhereOrNull(
-          (o) =>
-              o.name.toLowerCase() == target || o.value.toLowerCase() == target,
-        );
-        return opt?.value ?? (isEmp ? 'Yes' : 'No');
-      case 'employee_name':
-      case 'employee':
-        return answers['employee'] ?? '';
-      case 'host':
-        return selectedHostId.value.isNotEmpty
-            ? selectedHostId.value
-            : field.answerText;
-      case 'site_place':
-        return selectedSiteId.value.isNotEmpty
-            ? selectedSiteId.value
-            : field.answerText;
-      case 'agenda':
-        return agenda.value.isNotEmpty ? agenda.value : field.answerText;
-      default:
-        return field.answerText;
-    }
-  }
-
-  void _showError(String msg) {
+  void _showError(String message) {
     Get.snackbar(
-      'Error',
-      msg,
-      backgroundColor: Colors.red,
+      Get.locale?.languageCode == 'id' ? 'Peringatan' : 'Warning',
+      message,
+      backgroundColor: Colors.red.shade700,
       colorText: Colors.white,
       snackPosition: SnackPosition.TOP,
+      duration: const Duration(seconds: 4),
     );
   }
 }
