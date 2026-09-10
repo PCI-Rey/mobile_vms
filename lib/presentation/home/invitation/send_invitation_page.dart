@@ -1627,6 +1627,8 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
   void initState() {
     super.initState();
     _currentItem = widget.item;
+    _sitePlaceName = widget.item.sitePlaceName;
+    _loadingSite = _sitePlaceName.isEmpty;
     _currentUserId = _resolveLocalUserId();
     _fetchCurrentUserProfile();
     _fetchSiteDetail();
@@ -1764,8 +1766,18 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
       if (mounted) {
         setState(() {
           _groupVisitorModels = models;
-          if (models.isNotEmpty) {
-            _selectedGroupVisitor = models.first;
+          if (models.isNotEmpty && _selectedGroupVisitor == null) {
+            final matched = models.firstWhere(
+              (m) =>
+                  (m.id.isNotEmpty && m.id == widget.item.id) ||
+                  (m.visitorNumber.isNotEmpty &&
+                      m.visitorNumber == widget.item.visitorNumber) ||
+                  (m.visitorName.isNotEmpty &&
+                      m.visitorName.toLowerCase() ==
+                          widget.item.visitorName.toLowerCase()),
+              orElse: () => models.first,
+            );
+            _selectedGroupVisitor = matched;
           }
           _loadingGroupVisitors = false;
         });
@@ -1932,11 +1944,18 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
               response.data['status_code'] == 200)) {
         final col = response.data['collection'];
         if (col != null) {
-          setState(() {
-            _sitePlaceName = col['site_place_name']?.toString() ?? '';
-            _loadingSite = false;
-          });
-          return;
+          final fetched = col['site_place_name']?.toString() ?? '';
+          if (mounted) {
+            if (fetched.isNotEmpty && fetched != _sitePlaceName) {
+              setState(() {
+                _sitePlaceName = fetched;
+                _loadingSite = false;
+              });
+            } else if (_loadingSite) {
+              setState(() => _loadingSite = false);
+            }
+            return;
+          }
         }
       }
     } on DioException catch (e) {
@@ -1947,7 +1966,7 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
     } catch (e) {
       debugPrint('fetchSiteDetail error: $e');
     }
-    if (mounted) setState(() => _loadingSite = false);
+    if (mounted && _loadingSite) setState(() => _loadingSite = false);
   }
 
   String _resolveLocalUserId() {
@@ -2739,73 +2758,73 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
                         ),
                       ),
                     ),
-                    hSpace(context, 8),
-                    if (_loadingGroupVisitors) ...[
-                      Container(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: rw(context, 12),
-                          vertical: rh(context, 5),
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.grey.shade100,
-                          borderRadius: BorderRadius.circular(rw(context, 20)),
-                          border: Border.all(color: Colors.grey.shade300),
-                        ),
-                        child: SizedBox(
-                          width: rw(context, 12),
-                          height: rw(context, 12),
-                          child: CircularProgressIndicator(
-                            strokeWidth: 1.5,
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              Colors.grey.shade600,
-                            ),
-                          ),
-                        ),
-                      ),
-                      hSpace(context, 8),
-                    ] else if (selectedItem.visitorStatus.isNotEmpty &&
-                        selectedItem.visitorStatus.toLowerCase().trim() !=
-                            'quickaccess') ...[
-                      Container(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: rw(context, 10),
-                          vertical: rh(context, 5),
-                        ),
-                        decoration: BoxDecoration(
-                          color: statusColor,
-                          borderRadius: BorderRadius.circular(rw(context, 20)),
-                        ),
-                        child: Text(
-                          _displayStatus(selectedItem.visitorStatus),
-                          style: TextStyle(
-                            fontSize: rfs(context, 12),
-                            fontWeight: FontWeight.w700,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
-                      hSpace(context, 8),
-                    ],
-                    Container(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: rw(context, 10),
-                        vertical: rh(context, 5),
-                      ),
-                      decoration: BoxDecoration(
-                        color: isExpired
-                            ? const Color(0xFFE53935)
-                            : const Color(0xFF43A047),
-                        borderRadius: BorderRadius.circular(rw(context, 20)),
-                      ),
-                      child: Text(
-                        isExpired ? 'Expired' : 'Active',
-                        style: TextStyle(
-                          fontSize: rfs(context, 12),
-                          fontWeight: FontWeight.w700,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
+                    // hSpace(context, 8),
+                    // if (_loadingGroupVisitors) ...[
+                    //   Container(
+                    //     padding: EdgeInsets.symmetric(
+                    //       horizontal: rw(context, 12),
+                    //       vertical: rh(context, 5),
+                    //     ),
+                    //     decoration: BoxDecoration(
+                    //       color: Colors.grey.shade100,
+                    //       borderRadius: BorderRadius.circular(rw(context, 20)),
+                    //       border: Border.all(color: Colors.grey.shade300),
+                    //     ),
+                    //     child: SizedBox(
+                    //       width: rw(context, 12),
+                    //       height: rw(context, 12),
+                    //       child: CircularProgressIndicator(
+                    //         strokeWidth: 1.5,
+                    //         valueColor: AlwaysStoppedAnimation<Color>(
+                    //           Colors.grey.shade600,
+                    //         ),
+                    //       ),
+                    //     ),
+                    //   ),
+                    //   hSpace(context, 8),
+                    // ] else if (selectedItem.visitorStatus.isNotEmpty &&
+                    //     selectedItem.visitorStatus.toLowerCase().trim() !=
+                    //         'quickaccess') ...[
+                    //   Container(
+                    //     padding: EdgeInsets.symmetric(
+                    //       horizontal: rw(context, 10),
+                    //       vertical: rh(context, 5),
+                    //     ),
+                    //     decoration: BoxDecoration(
+                    //       color: statusColor,
+                    //       borderRadius: BorderRadius.circular(rw(context, 20)),
+                    //     ),
+                    //     child: Text(
+                    //       _displayStatus(selectedItem.visitorStatus),
+                    //       style: TextStyle(
+                    //         fontSize: rfs(context, 12),
+                    //         fontWeight: FontWeight.w700,
+                    //         color: Colors.white,
+                    //       ),
+                    //     ),
+                    //   ),
+                    //   hSpace(context, 8),
+                    // ],
+                    // Container(
+                    //   padding: EdgeInsets.symmetric(
+                    //     horizontal: rw(context, 10),
+                    //     vertical: rh(context, 5),
+                    //   ),
+                    //   decoration: BoxDecoration(
+                    //     color: isExpired
+                    //         ? const Color(0xFFE53935)
+                    //         : const Color(0xFF43A047),
+                    //     borderRadius: BorderRadius.circular(rw(context, 20)),
+                    //   ),
+                    //   child: Text(
+                    //     isExpired ? 'Expired' : 'Active',
+                    //     style: TextStyle(
+                    //       fontSize: rfs(context, 12),
+                    //       fontWeight: FontWeight.w700,
+                    //       color: Colors.white,
+                    //     ),
+                    //   ),
+                    // ),
                   ],
                 ),
               ),
@@ -2948,13 +2967,11 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
                                         ),
                                       _SheetField(
                                         'Location',
-                                        _loadingSite
-                                            ? '...'
-                                            : (visitor.sitePlaceName.isNotEmpty
-                                                  ? visitor.sitePlaceName
-                                                  : (_sitePlaceName.isEmpty
-                                                        ? '-'
-                                                        : _sitePlaceName)),
+                                        visitor.sitePlaceName.isNotEmpty
+                                            ? visitor.sitePlaceName
+                                            : (_sitePlaceName.isNotEmpty
+                                                  ? _sitePlaceName
+                                                  : (_loadingSite ? '...' : '-')),
                                         Icons.location_on_outlined,
                                       ),
                                       _SheetField(
@@ -3049,13 +3066,11 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
 
                                       _SheetField(
                                         'Location',
-                                        _loadingSite
-                                            ? '...'
-                                            : (visitor.sitePlaceName.isNotEmpty
-                                                  ? visitor.sitePlaceName
-                                                  : (_sitePlaceName.isEmpty
-                                                        ? '-'
-                                                        : _sitePlaceName)),
+                                        visitor.sitePlaceName.isNotEmpty
+                                            ? visitor.sitePlaceName
+                                            : (_sitePlaceName.isNotEmpty
+                                                  ? _sitePlaceName
+                                                  : (_loadingSite ? '...' : '-')),
                                         Icons.location_on_outlined,
                                       ),
                                       _SheetField(
@@ -3254,6 +3269,54 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
                               .where((v) => v.id != selectedItem.id)
                               .toList();
 
+                          if (_loadingGroupVisitors) {
+                            if (!widget.item.isGroup) {
+                              return const SizedBox.shrink();
+                            }
+                            return Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                _section(context, 'Others Visitor'),
+                                SizedBox(
+                                  height: rh(context, 88),
+                                  child: Row(
+                                    children: List.generate(
+                                      2,
+                                      (i) => Padding(
+                                        padding: EdgeInsets.only(
+                                          right: rw(context, 12),
+                                        ),
+                                        child: Column(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            CircleAvatar(
+                                              radius: rw(context, 28),
+                                              backgroundColor:
+                                                  Colors.grey.shade100,
+                                            ),
+                                            vSpace(context, 4),
+                                            Container(
+                                              width: rw(context, 48),
+                                              height: rh(context, 10),
+                                              decoration: BoxDecoration(
+                                                color: Colors.grey.shade100,
+                                                borderRadius:
+                                                    BorderRadius.circular(
+                                                  rw(context, 4),
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                vSpace(context, 16),
+                              ],
+                            );
+                          }
+
                           if (others.isEmpty) return const SizedBox.shrink();
 
                           // Max 6 avatars shown inline; if more, show 5 + "More" button at slot 6
@@ -3382,15 +3445,7 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               _section(context, 'Others Visitor'),
-                              if (_loadingGroupVisitors)
-                                const Center(
-                                  child: Padding(
-                                    padding: EdgeInsets.all(8.0),
-                                    child: CircularProgressIndicator(),
-                                  ),
-                                )
-                              else
-                                SizedBox(
+                              SizedBox(
                                   height: rh(context, 88),
                                   child: Row(
                                     children: [
