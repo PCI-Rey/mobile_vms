@@ -9,6 +9,8 @@ Future<DateTime?> showAppDateTimePicker(
   DateTime? initialDate,
   DateTime? minDateTime,
   DateTime? maxDateTime,
+  DateTime? referenceStartDateTime,
+  List<int>? quickHourPresets,
   String? title,
   bool withTime = true,
   bool showNowButton = true,
@@ -20,6 +22,8 @@ Future<DateTime?> showAppDateTimePicker(
       initialDate: initialDate,
       minDateTime: minDateTime,
       maxDateTime: maxDateTime,
+      referenceStartDateTime: referenceStartDateTime,
+      quickHourPresets: quickHourPresets,
       title: title ?? (withTime ? 'Select Date & Time' : 'Select Date'),
       withTime: withTime,
       showNowButton: showNowButton,
@@ -31,6 +35,8 @@ class AppDateTimePickerDialog extends StatefulWidget {
   final DateTime? initialDate;
   final DateTime? minDateTime;
   final DateTime? maxDateTime;
+  final DateTime? referenceStartDateTime;
+  final List<int>? quickHourPresets;
   final String title;
   final bool withTime;
   final bool showNowButton;
@@ -40,6 +46,8 @@ class AppDateTimePickerDialog extends StatefulWidget {
     this.initialDate,
     this.minDateTime,
     this.maxDateTime,
+    this.referenceStartDateTime,
+    this.quickHourPresets,
     required this.title,
     this.withTime = true,
     this.showNowButton = true,
@@ -53,6 +61,7 @@ class _AppDateTimePickerDialogState extends State<AppDateTimePickerDialog> {
   late DateTime liveTime;
   Timer? tickerTimer;
 
+  bool hasSelectedDate = false;
   late DateTime selectedDate;
   int? selectedHour;
   int? selectedMinute;
@@ -72,6 +81,8 @@ class _AppDateTimePickerDialogState extends State<AppDateTimePickerDialog> {
     super.initState();
     final gmt7Now = _getGmt7Now();
     liveTime = gmt7Now;
+
+    hasSelectedDate = widget.initialDate != null;
 
     selectedDate = widget.initialDate ??
         (widget.minDateTime != null && widget.minDateTime!.isAfter(gmt7Now)
@@ -132,29 +143,65 @@ class _AppDateTimePickerDialogState extends State<AppDateTimePickerDialog> {
 
   void _scrollToSelectedTime({bool animated = true}) {
     if (!widget.withTime) return;
-    final h = selectedHour;
-    final m = selectedMinute;
 
-    if (h != null && hourScrollController.hasClients) {
-      final targetH = ((h * 38.0) - 92.0).clamp(0.0, hourScrollController.position.maxScrollExtent);
-      if (animated) {
-        hourScrollController.animateTo(targetH, duration: const Duration(milliseconds: 250), curve: Curves.easeOutCubic);
-      } else {
-        hourScrollController.jumpTo(targetH);
+    void performScroll() {
+      int? h = selectedHour;
+      int? m = selectedMinute;
+
+      final bool isTargetHFromMin = h == null;
+      if (h == null && isSameDayAsMin(selectedDate) && widget.minDateTime != null) {
+        h = widget.minDateTime!.hour;
+      }
+
+      final bool isTargetMFromMin = m == null;
+      if (m == null && isSameDayAsMin(selectedDate) && widget.minDateTime != null) {
+        if (h == widget.minDateTime!.hour) {
+          m = widget.minDateTime!.minute;
+        }
+      }
+
+      if (h != null && hourScrollController.hasClients) {
+        final double targetH = isTargetHFromMin
+            ? (h * 38.0).clamp(0.0, hourScrollController.position.maxScrollExtent)
+            : ((h * 38.0) - 92.0).clamp(0.0, hourScrollController.position.maxScrollExtent);
+        if (animated) {
+          hourScrollController.animateTo(
+            targetH,
+            duration: const Duration(milliseconds: 250),
+            curve: Curves.easeOutCubic,
+          );
+        } else {
+          hourScrollController.jumpTo(targetH);
+        }
+      }
+
+      if (m != null && minuteScrollController.hasClients) {
+        final double targetM = isTargetMFromMin
+            ? (m * 38.0).clamp(0.0, minuteScrollController.position.maxScrollExtent)
+            : ((m * 38.0) - 92.0).clamp(0.0, minuteScrollController.position.maxScrollExtent);
+        if (animated) {
+          minuteScrollController.animateTo(
+            targetM,
+            duration: const Duration(milliseconds: 250),
+            curve: Curves.easeOutCubic,
+          );
+        } else {
+          minuteScrollController.jumpTo(targetM);
+        }
       }
     }
 
-    if (m != null && minuteScrollController.hasClients) {
-      final targetM = ((m * 38.0) - 92.0).clamp(0.0, minuteScrollController.position.maxScrollExtent);
-      if (animated) {
-        minuteScrollController.animateTo(targetM, duration: const Duration(milliseconds: 250), curve: Curves.easeOutCubic);
-      } else {
-        minuteScrollController.jumpTo(targetM);
-      }
+    if (hourScrollController.hasClients) {
+      performScroll();
+    } else {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) performScroll();
+      });
     }
   }
 
   DateTime? get _currentResult {
+    if (!hasSelectedDate) return null;
     if (!widget.withTime) {
       return DateTime(selectedDate.year, selectedDate.month, selectedDate.day);
     }
@@ -173,14 +220,33 @@ class _AppDateTimePickerDialogState extends State<AppDateTimePickerDialog> {
     if (res == null) return false;
     if (widget.minDateTime != null) {
       if (widget.withTime) {
-        if (res.isBefore(widget.minDateTime!)) return false;
+        final minTruncated = DateTime(
+          widget.minDateTime!.year,
+          widget.minDateTime!.month,
+          widget.minDateTime!.day,
+          widget.minDateTime!.hour,
+          widget.minDateTime!.minute,
+        );
+        if (res.isBefore(minTruncated)) return false;
       } else {
         final minDateOnly = DateTime(widget.minDateTime!.year, widget.minDateTime!.month, widget.minDateTime!.day);
         if (res.isBefore(minDateOnly)) return false;
       }
     }
     if (widget.maxDateTime != null) {
-      if (res.isAfter(widget.maxDateTime!)) return false;
+      if (widget.withTime) {
+        final maxTruncated = DateTime(
+          widget.maxDateTime!.year,
+          widget.maxDateTime!.month,
+          widget.maxDateTime!.day,
+          widget.maxDateTime!.hour,
+          widget.maxDateTime!.minute,
+        );
+        if (res.isAfter(maxTruncated)) return false;
+      } else {
+        final maxDateOnly = DateTime(widget.maxDateTime!.year, widget.maxDateTime!.month, widget.maxDateTime!.day, 23, 59, 59);
+        if (res.isAfter(maxDateOnly)) return false;
+      }
     }
     return true;
   }
@@ -376,7 +442,7 @@ class _AppDateTimePickerDialogState extends State<AppDateTimePickerDialog> {
                     const SizedBox(width: 5),
                     Flexible(
                       child: Text(
-                        _formatSelectedDateShort(),
+                        hasSelectedDate ? _formatSelectedDateShort() : 'Select Date',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: GoogleFonts.inter(
@@ -494,19 +560,20 @@ class _AppDateTimePickerDialogState extends State<AppDateTimePickerDialog> {
 
     return Theme(
       data: Theme.of(context).copyWith(
-        colorScheme: const ColorScheme.light(
-          primary: Color(0xFF004385),
-          onPrimary: Colors.white,
-          onSurface: Color(0xFF1E293B),
+        colorScheme: ColorScheme.light(
+          primary: hasSelectedDate ? const Color(0xFF004385) : Colors.transparent,
+          onPrimary: hasSelectedDate ? Colors.white : const Color(0xFF1E293B),
+          onSurface: const Color(0xFF1E293B),
         ),
       ),
       child: CalendarDatePicker(
-        key: ValueKey('${validSelected.year}-${validSelected.month}-${validSelected.day}'),
+        key: ValueKey('${hasSelectedDate ? 1 : 0}-${validSelected.year}-${validSelected.month}-${validSelected.day}'),
         initialDate: validSelected,
         firstDate: firstDt,
         lastDate: lastDt,
         onDateChanged: (newDate) {
           setState(() {
+            hasSelectedDate = true;
             selectedDate = newDate;
             _validateHourAndMinute();
           });
@@ -619,6 +686,7 @@ class _AppDateTimePickerDialogState extends State<AppDateTimePickerDialog> {
                                   ? null
                                   : () {
                                       setState(() {
+                                        hasSelectedDate = true;
                                         selectedHour = h;
                                         selectedMinute ??= 0;
                                         if (isSameDay && widget.minDateTime != null && h == widget.minDateTime!.hour) {
@@ -702,6 +770,7 @@ class _AppDateTimePickerDialogState extends State<AppDateTimePickerDialog> {
                                   ? null
                                   : () {
                                       setState(() {
+                                        hasSelectedDate = true;
                                         selectedMinute = m;
                                         selectedHour ??= isSameDay && widget.minDateTime != null ? widget.minDateTime!.hour : 9;
                                       });
@@ -749,124 +818,258 @@ class _AppDateTimePickerDialogState extends State<AppDateTimePickerDialog> {
     );
   }
 
+  void _onTodayPressedForDate() {
+    final nowGmt7 = _getGmt7Now();
+    final todayDate = DateTime(nowGmt7.year, nowGmt7.month, nowGmt7.day);
+
+    DateTime targetDate = todayDate;
+    if (widget.minDateTime != null) {
+      final minDateOnly = DateTime(
+        widget.minDateTime!.year,
+        widget.minDateTime!.month,
+        widget.minDateTime!.day,
+      );
+      if (todayDate.isBefore(minDateOnly)) {
+        targetDate = minDateOnly;
+      }
+    }
+
+    setState(() {
+      hasSelectedDate = true;
+      selectedDate = targetDate;
+      // Do NOT set selectedHour or selectedMinute here
+    });
+  }
+
+  void _onTodayPressedForTime() {
+    final nowGmt7 = _getGmt7Now();
+    setState(() {
+      selectedHour = nowGmt7.hour;
+      selectedMinute = nowGmt7.minute;
+      _validateHourAndMinute();
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _scrollToSelectedTime();
+    });
+  }
+
+  void _applyHourPreset(int hours) {
+    final base = widget.referenceStartDateTime ?? widget.minDateTime ?? _getGmt7Now();
+    final target = base.add(Duration(hours: hours));
+
+    setState(() {
+      hasSelectedDate = true;
+      selectedDate = DateTime(target.year, target.month, target.day);
+      selectedHour = target.hour;
+      selectedMinute = target.minute;
+      _validateHourAndMinute();
+      if (widget.withTime && _activeTab == 0) {
+        _activeTab = 1;
+      }
+    });
+
+    _scrollToSelectedTime(animated: true);
+  }
+
+  Widget _buildPresetButton(int hours) {
+    final base = widget.referenceStartDateTime ?? widget.minDateTime ?? _getGmt7Now();
+    final target = base.add(Duration(hours: hours));
+    final isCurrentPreset = hasSelectedDate &&
+        selectedDate.year == target.year &&
+        selectedDate.month == target.month &&
+        selectedDate.day == target.day &&
+        selectedHour == target.hour &&
+        selectedMinute == target.minute;
+
+    return TextButton(
+      style: TextButton.styleFrom(
+        backgroundColor: isCurrentPreset ? const Color(0xFF004385) : const Color(0xFFEFF6FF),
+        foregroundColor: isCurrentPreset ? Colors.white : const Color(0xFF004385),
+        padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 8),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+          side: BorderSide(
+            color: isCurrentPreset ? const Color(0xFF004385) : const Color(0xFFBFDBFE),
+          ),
+        ),
+      ),
+      onPressed: () => _applyHourPreset(hours),
+      child: Text(
+        '+$hours Hour',
+        style: GoogleFonts.inter(
+          fontSize: 12,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+    );
+  }
+
   Widget _buildFooter(bool isWide) {
-    final isMobileDateTimeStep0 = !isWide && widget.withTime && _activeTab == 0;
+    // 1. Wide screen or date-only mode
+    if (isWide || !widget.withTime) {
+      final isDateOnly = !widget.withTime;
+      final isValid = isDateOnly ? hasSelectedDate : _isSelectionValid;
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      child: Row(
-        children: [
-          if (widget.showNowButton)
-            TextButton(
-              style: TextButton.styleFrom(
-                backgroundColor: const Color(0xFFEFF6FF),
-                foregroundColor: const Color(0xFF004385),
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
-              ),
-              onPressed: () {
-                final nowGmt7 = _getGmt7Now();
-                final todayDate = DateTime(nowGmt7.year, nowGmt7.month, nowGmt7.day);
-
-                DateTime targetDate = todayDate;
-                if (widget.minDateTime != null) {
-                  final minDateOnly = DateTime(
-                    widget.minDateTime!.year,
-                    widget.minDateTime!.month,
-                    widget.minDateTime!.day,
-                  );
-                  if (todayDate.isBefore(minDateOnly)) {
-                    targetDate = minDateOnly;
-                  }
-                }
-
-                setState(() {
-                  selectedDate = targetDate;
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Row(
+          children: [
+            if (widget.showNowButton)
+              TextButton(
+                style: TextButton.styleFrom(
+                  backgroundColor: const Color(0xFFEFF6FF),
+                  foregroundColor: const Color(0xFF004385),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                ),
+                onPressed: () {
+                  _onTodayPressedForDate();
                   if (widget.withTime) {
-                    selectedHour = nowGmt7.hour;
-                    selectedMinute = nowGmt7.minute;
-                    _validateHourAndMinute();
+                    _onTodayPressedForTime();
                   }
-                });
-                WidgetsBinding.instance.addPostFrameCallback((_) {
-                  _scrollToSelectedTime();
-                });
-              },
-              child: Text(
-                'Today',
-                style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w700),
+                },
+                child: Text(
+                  'Today',
+                  style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700),
+                ),
               ),
-            ),
-          const Spacer(),
-          if (!isWide && widget.withTime && _activeTab == 1)
-            TextButton(
-              style: TextButton.styleFrom(
-                foregroundColor: const Color(0xFF64748B),
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              ),
-              onPressed: () => setState(() => _activeTab = 0),
-              child: Text(
-                'Back',
-                style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600),
-              ),
-            )
-          else
-            TextButton(
-              style: TextButton.styleFrom(
-                foregroundColor: const Color(0xFF64748B),
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              ),
-              onPressed: () => Navigator.of(context).pop(null),
-              child: Text(
-                'Cancel',
-                style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600),
-              ),
-            ),
-          const SizedBox(width: 8),
-          if (isMobileDateTimeStep0)
+            if (widget.quickHourPresets != null && widget.quickHourPresets!.isNotEmpty) ...[
+              for (int i = 0; i < widget.quickHourPresets!.length; i++) ...[
+                const SizedBox(width: 8),
+                _buildPresetButton(widget.quickHourPresets![i]),
+              ],
+            ],
+            const Spacer(),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF004385),
-                foregroundColor: Colors.white,
+                backgroundColor: isValid ? const Color(0xFF004385) : const Color(0xFFE2E8F0),
+                foregroundColor: isValid ? Colors.white : const Color(0xFF94A3B8),
                 elevation: 0,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
               ),
-              onPressed: () {
-                setState(() => _activeTab = 1);
-                WidgetsBinding.instance.addPostFrameCallback((_) {
-                  _scrollToSelectedTime();
-                });
-              },
+              onPressed: isValid
+                  ? () => Navigator.of(context).pop(_currentResult)
+                  : null,
+              child: Text(
+                'OK',
+                style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // 2. Mobile Portrait with Time:
+    // Tab 0: Date Section -> Today + Next
+    if (_activeTab == 0) {
+      final canGoNext = hasSelectedDate;
+
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Row(
+          children: [
+            if (widget.showNowButton)
+              TextButton(
+                style: TextButton.styleFrom(
+                  backgroundColor: const Color(0xFFEFF6FF),
+                  foregroundColor: const Color(0xFF004385),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                ),
+                onPressed: _onTodayPressedForDate,
+                child: Text(
+                  'Today',
+                  style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700),
+                ),
+              ),
+            const Spacer(),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: canGoNext ? const Color(0xFF004385) : const Color(0xFFE2E8F0),
+                foregroundColor: canGoNext ? Colors.white : const Color(0xFF94A3B8),
+                elevation: 0,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+              ),
+              onPressed: canGoNext
+                  ? () {
+                      setState(() => _activeTab = 1);
+                      _scrollToSelectedTime(animated: true);
+                    }
+                  : null,
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
                     'Next',
-                    style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w700),
+                    style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700),
                   ),
                   const SizedBox(width: 4),
                   const Icon(Icons.arrow_forward_rounded, size: 14),
                 ],
               ),
-            )
-          else
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: _isSelectionValid ? const Color(0xFF004385) : const Color(0xFFE2E8F0),
-                foregroundColor: _isSelectionValid ? Colors.white : const Color(0xFF94A3B8),
-                elevation: 0,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
-                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 6),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // Tab 1: Time Section -> Presets / Today + Back + OK
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      child: Row(
+        children: [
+          if (widget.quickHourPresets != null && widget.quickHourPresets!.isNotEmpty) ...[
+            for (int i = 0; i < widget.quickHourPresets!.length; i++) ...[
+              if (i > 0) const SizedBox(width: 6),
+              _buildPresetButton(widget.quickHourPresets![i]),
+            ],
+          ] else if (widget.showNowButton) ...[
+            TextButton(
+              style: TextButton.styleFrom(
+                backgroundColor: const Color(0xFFEFF6FF),
+                foregroundColor: const Color(0xFF004385),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
               ),
-              onPressed: _isSelectionValid
-                  ? () => Navigator.of(context).pop(_currentResult)
-                  : null,
+              onPressed: _onTodayPressedForTime,
               child: Text(
-                'OK',
-                style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w700),
+                'Today',
+                style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700),
               ),
             ),
+          ],
+          const Spacer(),
+          TextButton(
+            style: TextButton.styleFrom(
+              foregroundColor: const Color(0xFF64748B),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            ),
+            onPressed: () => setState(() => _activeTab = 0),
+            child: Text(
+              'Back',
+              style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600),
+            ),
+          ),
+          const SizedBox(width: 8),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: _isSelectionValid ? const Color(0xFF004385) : const Color(0xFFE2E8F0),
+              foregroundColor: _isSelectionValid ? Colors.white : const Color(0xFF94A3B8),
+              elevation: 0,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+            ),
+            onPressed: _isSelectionValid
+                ? () => Navigator.of(context).pop(_currentResult)
+                : null,
+            child: Text(
+              'OK',
+              style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700),
+            ),
+          ),
         ],
       ),
     );

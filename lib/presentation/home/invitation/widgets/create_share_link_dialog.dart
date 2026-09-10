@@ -829,15 +829,15 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
   }
 
   Future<void> _pickDateTime(bool isStart) async {
-    final initialDate = isStart
-        ? (visitStart ?? DateTime.now())
-        : (visitEnd ?? (visitStart ?? DateTime.now()));
+    final initialDate = isStart ? visitStart : visitEnd;
 
     final dt = await showAppDateTimePicker(
       context,
       initialDate: initialDate,
       minDateTime: !isStart ? visitStart : null,
       maxDateTime: isStart ? visitEnd : null,
+      referenceStartDateTime: !isStart ? visitStart : null,
+      quickHourPresets: !isStart ? const [2, 5] : null,
       title: isStart ? 'Select Visit Start' : 'Select Visit End',
       withTime: true,
     );

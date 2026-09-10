@@ -47,6 +47,7 @@ class AccessPassModel {
   final DateTime? invitationCreatedAt;
   final String? sitePlaceId;
   final bool isReceiverSelf;
+  final String? selfieImage;
 
   AccessPassModel({
     required this.id,
@@ -94,6 +95,7 @@ class AccessPassModel {
     this.invitationCreatedAt,
     this.sitePlaceId,
     this.isReceiverSelf = false,
+    this.selfieImage,
   });
 
   factory AccessPassModel.fromRawJson(String str) =>
@@ -204,6 +206,21 @@ class AccessPassModel {
       isReceiverSelf: json['is_receiver_self'] == true ||
           json['is_receiver_self'] == 1 ||
           json['is_receiver_self']?.toString() == 'true',
+      selfieImage: () {
+        final visitorObj = json['visitor'] is Map ? json['visitor'] as Map : null;
+        final raw = json['selfie_image'] ??
+            json['visitor_face'] ??
+            json['face_url'] ??
+            json['face_image'] ??
+            json['photo'] ??
+            json['photo_url'] ??
+            json['image'] ??
+            visitorObj?['selfie_image'] ??
+            visitorObj?['visitor_face'] ??
+            visitorObj?['face_url'] ??
+            visitorObj?['photo'];
+        return raw?.toString();
+      }(),
     );
   }
 
@@ -253,6 +270,7 @@ class AccessPassModel {
     'invitation_created_at': invitationCreatedAt?.toIso8601String(),
     'site_place_id': sitePlaceId,
     'is_receiver_self': isReceiverSelf,
+    'selfie_image': selfieImage,
   };
 
   AccessPassModel copyWith({
@@ -301,6 +319,7 @@ class AccessPassModel {
     DateTime? invitationCreatedAt,
     String? sitePlaceId,
     bool? isReceiverSelf,
+    String? selfieImage,
   }) {
     return AccessPassModel(
       id: id ?? this.id,
@@ -349,7 +368,20 @@ class AccessPassModel {
       invitationCreatedAt: invitationCreatedAt ?? this.invitationCreatedAt,
       sitePlaceId: sitePlaceId ?? this.sitePlaceId,
       isReceiverSelf: isReceiverSelf ?? this.isReceiverSelf,
+      selfieImage: selfieImage ?? this.selfieImage,
     );
+  }
+
+  /// Formats the selfieImage URL to a full CDN URL
+  String? get formattedSelfieUrl {
+    final url = selfieImage;
+    if (url == null || url.isEmpty || url == 'null' || url == '-') return null;
+    if (url.startsWith('http')) return url;
+    if (url.startsWith('/cdn/')) {
+      return 'https://be-vms.app.bio-experience.com$url';
+    }
+    final cleanPath = url.startsWith('/') ? url : '/$url';
+    return 'https://be-vms.app.bio-experience.com/cdn$cleanPath';
   }
 
   /// Parse a datetime string from the API as UTC and convert to device local time.

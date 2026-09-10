@@ -383,7 +383,7 @@ class ApiService {
   ) async {
     try {
       final response = await _dio.post(
-        '/$pathApi/operator-invitation/new-visit',
+        '/$pathApi/visitor/new-visit',
         data: body,
         options: Options(headers: {'Authorization': 'Bearer $token'}),
       );
@@ -401,7 +401,7 @@ class ApiService {
   ) async {
     try {
       final response = await _dio.post(
-        '/$pathApi/operator-invitation/new-visit-group',
+        '/$pathApi/visitor/new-visit-group',
         data: body,
         options: Options(headers: {'Authorization': 'Bearer $token'}),
       );

@@ -752,13 +752,14 @@ class InformasiUmumController extends GetxController {
     required bool isStart,
   }) async {
     final initialDt =
-        (isStart ? visitStartDateTime.value : visitEndDateTime.value) ??
-        DateTime.now();
+        isStart ? visitStartDateTime.value : visitEndDateTime.value;
 
     final DateTime? finalDt = await showAppDateTimePicker(
       context,
       initialDate: initialDt,
       minDateTime: isStart ? null : visitStartDateTime.value,
+      referenceStartDateTime: isStart ? null : visitStartDateTime.value,
+      quickHourPresets: isStart ? null : const [2, 5],
       title: isStart ? 'Select Visit Start' : 'Select Visit End',
       withTime: true,
     );

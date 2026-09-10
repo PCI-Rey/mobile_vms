@@ -5,7 +5,7 @@ import '../../../core/helper/responsive_helper.dart';
 import '../../auth/controller/language_controller.dart';
 import '../../auth/controller/user_controller.dart';
 import '../../notification/notification_page.dart';
-
+import '../controllers/guest_home_controller.dart';
 import '../../profile/profile_page.dart';
 
 class GuestHeader extends StatelessWidget {
@@ -15,6 +15,9 @@ class GuestHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final langCtrl = LanguageController.to;
     final userCtrl = UserController.to;
+    final guestCtrl = Get.isRegistered<GuestHomeController>()
+        ? GuestHomeController.to
+        : Get.put(GuestHomeController());
 
     return Padding(
       padding: EdgeInsets.fromLTRB(
@@ -27,12 +30,24 @@ class GuestHeader extends StatelessWidget {
         children: [
           GestureDetector(
             onTap: () => Get.to(() => const ProfilePage()),
-            child: CustomCircleImage(
-              image: userCtrl.faceUrl != null && userCtrl.faceUrl!.isNotEmpty
-                  ? Image.network(
-                      userCtrl.faceUrl!,
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, _, _) => Container(
+            child: Obx(() {
+              final activeImageUrl = guestCtrl.currentSelfieUrl;
+              return CustomCircleImage(
+                image: activeImageUrl != null && activeImageUrl.isNotEmpty
+                    ? Image.network(
+                        activeImageUrl,
+                        key: ValueKey(activeImageUrl),
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, _, _) => Container(
+                          color: const Color(0xFFE2E8F0),
+                          child: Icon(
+                            Icons.person,
+                            color: const Color(0xFF94A3B8),
+                            size: rw(context, 26),
+                          ),
+                        ),
+                      )
+                    : Container(
                         color: const Color(0xFFE2E8F0),
                         child: Icon(
                           Icons.person,
@@ -40,17 +55,9 @@ class GuestHeader extends StatelessWidget {
                           size: rw(context, 26),
                         ),
                       ),
-                    )
-                  : Container(
-                      color: const Color(0xFFE2E8F0),
-                      child: Icon(
-                        Icons.person,
-                        color: const Color(0xFF94A3B8),
-                        size: rw(context, 26),
-                      ),
-                    ),
-              size: rw(context, 48),
-            ),
+                size: rw(context, 48),
+              );
+            }),
           ),
           hSpace(context, 12),
           Expanded(

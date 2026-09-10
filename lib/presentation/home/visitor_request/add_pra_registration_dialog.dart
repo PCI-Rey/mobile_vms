@@ -4,9 +4,13 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:dropdown_button2/dropdown_button2.dart';
 import '../../../../core/constants/colors.dart';
 import '../../../../core/helper/responsive_helper.dart';
 import '../../../../core/components/custom_date_time_picker.dart';
+import '../../../../core/components/buttons.dart';
+import '../../../../core/gen/assets.gen.dart';
 import '../../../../data/datasources/api_service.dart';
 import '../../../../data/models/access_pass_model.dart';
 import '../../../../data/models/visitor_type_model.dart';
@@ -200,10 +204,32 @@ class _DialogHeader extends StatelessWidget {
                     children: List.generate(titles.length * 2 - 1, (index) {
                       if (index.isOdd) {
                         final stepBefore = (index ~/ 2) + 1;
-                        final isConnectorCompleted =
-                            stepBefore < step ||
-                            (stepBefore < controller.maxStepReached.value &&
-                                controller.isStepValid(stepBefore));
+                        final stepAfter = stepBefore + 1;
+                        final isGroup = controller.isGroup.value == true;
+
+                        final isSelfieStepAfter =
+                            controller.hasSelfieStep && stepAfter == controller.selfieStepIndex;
+                        final isKtpStepAfter =
+                            controller.hasKtpStep && stepAfter == controller.ktpStepIndex;
+
+                        final bool isAfterPhotoCompleted;
+                        if (isSelfieStepAfter) {
+                          isAfterPhotoCompleted = isGroup
+                              ? (controller.groupVisitors.isNotEmpty &&
+                                  controller.groupVisitors.every((v) => v.selfieImage.value != null))
+                              : (controller.selfieImage.value != null);
+                        } else if (isKtpStepAfter) {
+                          isAfterPhotoCompleted = isGroup
+                              ? (controller.groupVisitors.isNotEmpty &&
+                                  controller.groupVisitors.every((v) => v.ktpImage.value != null))
+                              : (controller.ktpImage.value != null);
+                        } else {
+                          isAfterPhotoCompleted = false;
+                        }
+
+                        final isConnectorCompleted = stepBefore < step ||
+                            (isAfterPhotoCompleted &&
+                                stepAfter <= controller.maxStepReached.value);
                         return Container(
                           width: rw(context, 28),
                           height: 2,
@@ -216,11 +242,37 @@ class _DialogHeader extends StatelessWidget {
 
                       final stepNum = (index ~/ 2) + 1;
                       final isCurrent = step == stepNum;
-                      final isCompleted =
-                          stepNum < step ||
-                          (stepNum <= controller.maxStepReached.value &&
-                              controller.isStepValid(stepNum) &&
-                              !isCurrent);
+
+                      // Check if photo is uploaded (Selfie & KTP, Single & Group)
+                      final isGroup = controller.isGroup.value == true;
+                      final isSelfieStep =
+                          controller.hasSelfieStep && stepNum == controller.selfieStepIndex;
+                      final isKtpStep =
+                          controller.hasKtpStep && stepNum == controller.ktpStepIndex;
+
+                      // Single: photo must be uploaded.
+                      // Group: ALL visitors in group must have uploaded photo.
+                      final bool hasSelfieCompleted = isGroup
+                          ? (controller.groupVisitors.isNotEmpty &&
+                              controller.groupVisitors.every((v) => v.selfieImage.value != null))
+                          : (controller.selfieImage.value != null);
+
+                      final bool hasKtpCompleted = isGroup
+                          ? (controller.groupVisitors.isNotEmpty &&
+                              controller.groupVisitors.every((v) => v.ktpImage.value != null))
+                          : (controller.ktpImage.value != null);
+
+                      final bool isCompleted;
+                      if (isSelfieStep) {
+                        isCompleted = hasSelfieCompleted;
+                      } else if (isKtpStep) {
+                        isCompleted = hasKtpCompleted;
+                      } else {
+                        isCompleted = stepNum < step ||
+                            (stepNum <= controller.maxStepReached.value &&
+                                controller.isStepValid(stepNum) &&
+                                !isCurrent);
+                      }
                       final canJump = controller.canJumpToStep(stepNum);
 
                       return GestureDetector(
@@ -311,43 +363,7 @@ class _Step1UserType extends StatelessWidget {
           _buildSectionHeader(context, 'Visitor Type', isRequired: true),
           vSpace(context, 8),
 
-          if (controller.isLoadingTypes.value)
-            const Center(
-              child: Padding(
-                padding: EdgeInsets.all(24),
-                child: CircularProgressIndicator(strokeWidth: 2.5),
-              ),
-            )
-          else if (controller.visitorTypes.isEmpty)
-            Padding(
-              padding: EdgeInsets.symmetric(vertical: rh(context, 8)),
-              child: Row(
-                children: [
-                  Text(
-                    'No visitor types available.',
-                    style: TextStyle(
-                      fontSize: rfs(context, 12),
-                      color: const Color(0xFF64748B),
-                    ),
-                  ),
-                  hSpace(context, 8),
-                  TextButton.icon(
-                    style: TextButton.styleFrom(
-                      padding: EdgeInsets.zero,
-                      minimumSize: Size.zero,
-                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    ),
-                    onPressed: () => controller.fetchVisitorTypes(),
-                    icon: const Icon(Icons.refresh, size: 14),
-                    label: Text(
-                      'Retry',
-                      style: TextStyle(fontSize: rfs(context, 12)),
-                    ),
-                  ),
-                ],
-              ),
-            )
-          else
+          if (controller.visitorTypes.isNotEmpty)
             Wrap(
               spacing: 8,
               runSpacing: 8,
@@ -391,6 +407,52 @@ class _Step1UserType extends StatelessWidget {
                   ),
                 );
               }).toList(),
+            )
+          else if (controller.isLoadingTypes.value)
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: List.generate(
+                2,
+                (index) => Container(
+                  width: rw(context, index == 0 ? 120 : 100),
+                  height: rh(context, 38),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF1F5F9),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: const Color(0xFFE2E8F0)),
+                  ),
+                ),
+              ),
+            )
+          else
+            Padding(
+              padding: EdgeInsets.symmetric(vertical: rh(context, 8)),
+              child: Row(
+                children: [
+                  Text(
+                    'No visitor types available.',
+                    style: TextStyle(
+                      fontSize: rfs(context, 12),
+                      color: const Color(0xFF64748B),
+                    ),
+                  ),
+                  hSpace(context, 8),
+                  TextButton.icon(
+                    style: TextButton.styleFrom(
+                      padding: EdgeInsets.zero,
+                      minimumSize: Size.zero,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                    onPressed: () => controller.fetchVisitorTypes(),
+                    icon: const Icon(Icons.refresh, size: 14),
+                    label: Text(
+                      'Retry',
+                      style: TextStyle(fontSize: rfs(context, 12)),
+                    ),
+                  ),
+                ],
+              ),
             ),
 
           vSpace(context, 20),
@@ -557,18 +619,25 @@ class _Step2VisitorInfo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (controller.isGroup.value == true) {
-      return _buildGroupVisitorInfo(context);
-    }
-    return _buildSingleVisitorInfo(context);
+    return Obx(() {
+      final _ = controller.formUpdateTrigger.value;
+      if (controller.isGroup.value == true) {
+        return _buildGroupVisitorInfo(context);
+      }
+      return _buildSingleVisitorInfo(context);
+    });
   }
 
   // ── Single Mode ───────────────────────────────────────────────────────────
   Widget _buildSingleVisitorInfo(BuildContext context) {
-    final searchList = controller.isEmployee.value == true
+    final hasEmployeeField = controller.hasVisitorInfoField('is_employee');
+    final hasRoleField = controller.hasVisitorInfoField('visitor_role') || controller.hasVisitorInfoField('role');
+    final isEmployeeMode = hasEmployeeField && controller.isEmployee.value == true;
+    final searchList = isEmployeeMode
         ? controller.filteredEmployees
         : controller.filteredVisitors;
     final roles = controller.getRolesForSelectedType();
+    final fields = controller.getVisitorInfoFormFields();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -576,15 +645,17 @@ class _Step2VisitorInfo extends StatelessWidget {
         // Quick Search with instant autofill
         _buildSearchBox(
           context,
-          hint: controller.isEmployee.value == true ? 'Search Employee' : 'Search Visitor',
+          hint: isEmployeeMode ? 'Search Employee' : 'Search Visitor',
           controller: controller.singleSearchCtrl,
           isOpen: controller.singleIsSearchOpen.value,
           items: searchList,
           onToggleOpen: () {
             controller.singleIsSearchOpen.value = !controller.singleIsSearchOpen.value;
+            controller.updateForm();
           },
           onChanged: (val) {
             controller.singleIsSearchOpen.value = true;
+            controller.updateForm();
           },
           onSelect: (item) {
             controller.onSingleSelect(item);
@@ -596,41 +667,61 @@ class _Step2VisitorInfo extends StatelessWidget {
 
         vSpace(context, 16),
 
-        // Are you Employee? Radio
-        _buildFieldLabel(context, 'Are you Employee?', isRequired: true),
-        vSpace(context, 6),
-        Row(
-          children: [
-            _buildRadioOption(
-              context,
-              label: 'Yes',
-              isSelected: controller.isEmployee.value == true,
-              onTap: () {
-                controller.isEmployee.value = true;
-                controller.clearSingle();
-              },
+        // Are you Employee? Radio (Only if in API schema)
+        if (hasEmployeeField) ...[
+          _buildFieldLabel(
+            context,
+            controller.getFieldLabel(
+              fields.firstWhere((f) => (f['remarks'] ?? '').toString().toLowerCase().trim() == 'is_employee', orElse: () => {}),
+              'Are you Employee?',
             ),
-            hSpace(context, 20),
-            _buildRadioOption(
-              context,
-              label: 'No',
-              isSelected: controller.isEmployee.value == false,
-              onTap: () {
-                controller.isEmployee.value = false;
-                controller.clearSingle();
-              },
+            isRequired: controller.isVisitorInfoFieldMandatory('is_employee'),
+          ),
+          vSpace(context, 6),
+          Row(
+            children: [
+              _buildRadioOption(
+                context,
+                label: 'Yes',
+                isSelected: controller.isEmployee.value == true,
+                onTap: () {
+                  controller.isEmployee.value = true;
+                  controller.clearSingle();
+                },
+              ),
+              hSpace(context, 20),
+              _buildRadioOption(
+                context,
+                label: 'No',
+                isSelected: controller.isEmployee.value == false,
+                onTap: () {
+                  controller.isEmployee.value = false;
+                  controller.clearSingle();
+                },
+              ),
+            ],
+          ),
+          vSpace(context, 14),
+        ],
+
+        // Visitor Role Selector (Only if in API schema and roles exist)
+        if (hasRoleField && roles.isNotEmpty) ...[
+          _buildFieldLabel(
+            context,
+            controller.getFieldLabel(
+              fields.firstWhere(
+                (f) => (f['remarks'] ?? '').toString().toLowerCase().trim() == 'visitor_role' ||
+                       (f['remarks'] ?? '').toString().toLowerCase().trim() == 'role',
+                orElse: () => {},
+              ),
+              'Visitor Role',
             ),
-          ],
-        ),
-
-        vSpace(context, 14),
-
-        // Visitor Role Selector (if multiple roles exist)
-        if (roles.isNotEmpty) ...[
-          _buildFieldLabel(context, 'Visitor Role', isRequired: false),
+            isRequired: controller.isVisitorInfoFieldMandatory('visitor_role') || controller.isVisitorInfoFieldMandatory('role'),
+          ),
           vSpace(context, 6),
           _buildDropdownField<String>(
             context,
+            hintText: 'Select Visitor Role',
             value: controller.selectedVisitorRole.value.isNotEmpty
                 ? controller.selectedVisitorRole.value
                 : roles.first,
@@ -647,66 +738,153 @@ class _Step2VisitorInfo extends StatelessWidget {
           vSpace(context, 14),
         ],
 
-        // Full Name
-        _buildFieldLabel(context, 'Full Name', isRequired: true),
-        vSpace(context, 6),
-        _buildTextInputField(
-          context,
-          controller: controller.nameCtrl,
-          hintText: 'Enter full name',
-          onChanged: (_) => controller.updateForm(),
-        ),
+        // Full Name (Only if in API schema)
+        if (controller.hasVisitorInfoField('name')) ...[
+          _buildFieldLabel(
+            context,
+            controller.getFieldLabel(
+              fields.firstWhere((f) => (f['remarks'] ?? '').toString().toLowerCase().trim() == 'name', orElse: () => {}),
+              'Full Name',
+            ),
+            isRequired: controller.isVisitorInfoFieldMandatory('name'),
+          ),
+          vSpace(context, 6),
+          _buildTextInputField(
+            context,
+            controller: controller.nameCtrl,
+            hintText: 'Enter full name',
+            onChanged: (_) => controller.updateForm(),
+          ),
+          vSpace(context, 14),
+        ],
 
-        vSpace(context, 14),
+        // Email (Only if in API schema)
+        if (controller.hasVisitorInfoField('email')) ...[
+          _buildFieldLabel(
+            context,
+            controller.getFieldLabel(
+              fields.firstWhere((f) => (f['remarks'] ?? '').toString().toLowerCase().trim() == 'email', orElse: () => {}),
+              'Email',
+            ),
+            isRequired: controller.isVisitorInfoFieldMandatory('email'),
+          ),
+          vSpace(context, 6),
+          _buildTextInputField(
+            context,
+            controller: controller.emailCtrl,
+            hintText: 'Enter email address',
+            keyboardType: TextInputType.emailAddress,
+            onChanged: (_) => controller.updateForm(),
+          ),
+          vSpace(context, 14),
+        ],
 
-        // Email
-        _buildFieldLabel(context, 'Email', isRequired: true),
-        vSpace(context, 6),
-        _buildTextInputField(
-          context,
-          controller: controller.emailCtrl,
-          hintText: 'Enter email address',
-          keyboardType: TextInputType.emailAddress,
-          onChanged: (_) => controller.updateForm(),
-        ),
+        // Phone (Only if in API schema)
+        if (controller.hasVisitorInfoField('phone')) ...[
+          _buildFieldLabel(
+            context,
+            controller.getFieldLabel(
+              fields.firstWhere((f) => (f['remarks'] ?? '').toString().toLowerCase().trim() == 'phone', orElse: () => {}),
+              'Phone',
+            ),
+            isRequired: controller.isVisitorInfoFieldMandatory('phone'),
+          ),
+          vSpace(context, 6),
+          _buildTextInputField(
+            context,
+            controller: controller.phoneCtrl,
+            hintText: 'Enter phone number',
+            keyboardType: TextInputType.phone,
+            onChanged: (_) => controller.updateForm(),
+          ),
+          vSpace(context, 14),
+        ],
 
-        vSpace(context, 14),
+        // Department / Organization / Company (Only if in API schema)
+        if (controller.hasVisitorInfoField('organization') || controller.hasVisitorInfoField('company')) ...[
+          _buildFieldLabel(
+            context,
+            controller.getFieldLabel(
+              fields.firstWhere((f) {
+                final r = (f['remarks'] ?? '').toString().toLowerCase().trim();
+                return r == 'organization' || r == 'company';
+              }, orElse: () => {}),
+              'Department / Organization / Company',
+            ),
+            isRequired: controller.isVisitorInfoFieldMandatory('organization') || controller.isVisitorInfoFieldMandatory('company'),
+          ),
+          vSpace(context, 6),
+          _buildTextInputField(
+            context,
+            controller: controller.organizationCtrl,
+            hintText: 'Enter department / organization / company',
+            onChanged: (_) => controller.updateForm(),
+          ),
+          vSpace(context, 14),
+        ],
 
-        // Phone
-        _buildFieldLabel(context, 'Phone', isRequired: true),
-        vSpace(context, 6),
-        _buildTextInputField(
-          context,
-          controller: controller.phoneCtrl,
-          hintText: 'Enter phone number',
-          keyboardType: TextInputType.phone,
-          onChanged: (_) => controller.updateForm(),
-        ),
+        // Identity (KTP) (Only if in API schema)
+        if (controller.hasVisitorInfoField('identity_id') || controller.hasVisitorInfoField('indentity_id')) ...[
+          _buildFieldLabel(
+            context,
+            controller.getFieldLabel(
+              fields.firstWhere((f) {
+                final r = (f['remarks'] ?? '').toString().toLowerCase().trim();
+                return r == 'identity_id' || r == 'indentity_id';
+              }, orElse: () => {}),
+              'Identity (KTP)',
+            ),
+            isRequired: controller.isVisitorInfoFieldMandatory('identity_id') || controller.isVisitorInfoFieldMandatory('indentity_id'),
+          ),
+          vSpace(context, 6),
+          _buildTextInputField(
+            context,
+            controller: controller.identityIdCtrl,
+            hintText: 'Enter identity / KTP number',
+            keyboardType: TextInputType.number,
+            onChanged: (_) => controller.updateForm(),
+          ),
+          vSpace(context, 14),
+        ],
 
-        vSpace(context, 14),
-
-        // Department / Organization / Company
-        _buildFieldLabel(context, 'Department / Organization / Company', isRequired: true),
-        vSpace(context, 6),
-        _buildTextInputField(
-          context,
-          controller: controller.organizationCtrl,
-          hintText: 'Enter department / organization / company',
-          onChanged: (_) => controller.updateForm(),
-        ),
-
-        vSpace(context, 14),
-
-        // Identity (KTP)
-        _buildFieldLabel(context, 'Identity (KTP)', isRequired: true),
-        vSpace(context, 6),
-        _buildTextInputField(
-          context,
-          controller: controller.identityIdCtrl,
-          hintText: 'Enter identity / KTP number',
-          keyboardType: TextInputType.number,
-          onChanged: (_) => controller.updateForm(),
-        ),
+        // Dynamic Extra Fields from API
+        ...fields.where((f) {
+          final r = (f['remarks'] ?? '').toString().toLowerCase().trim();
+          return r != 'is_employee' &&
+                 r != 'name' &&
+                 r != 'email' &&
+                 r != 'phone' &&
+                 r != 'organization' &&
+                 r != 'company' &&
+                 r != 'identity_id' &&
+                 r != 'indentity_id' &&
+                 r != 'visitor_role' &&
+                 r != 'role';
+        }).map((f) {
+          final remarks = (f['remarks'] ?? '').toString().trim();
+          final label = controller.getFieldLabel(f, remarks);
+          final isMandatory = f['mandatory'] == true;
+          final ctrl = controller.singleExtraControllers.putIfAbsent(
+            remarks,
+            () => TextEditingController(),
+          );
+          return Padding(
+            padding: EdgeInsets.only(bottom: rh(context, 14)),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildFieldLabel(context, label, isRequired: isMandatory),
+                vSpace(context, 6),
+                _buildTextInputField(
+                  context,
+                  controller: ctrl,
+                  hintText: 'Enter $label',
+                  onChanged: (_) => controller.updateForm(),
+                ),
+              ],
+            ),
+          );
+        }),
       ],
     );
   }
@@ -717,6 +895,13 @@ class _Step2VisitorInfo extends StatelessWidget {
     final safeIndex = activeIndex < controller.groupVisitors.length ? activeIndex : 0;
     final v = controller.groupVisitors[safeIndex];
     final roles = controller.getRolesForSelectedType();
+    final fields = controller.getVisitorInfoFormFields();
+    final hasEmployeeField = controller.hasVisitorInfoField('is_employee');
+    final hasRoleField = controller.hasVisitorInfoField('visitor_role') || controller.hasVisitorInfoField('role');
+    final isEmployeeMode = hasEmployeeField && v.isEmployee.value == true;
+    final searchList = isEmployeeMode
+        ? controller.getFilteredEmployees(v.searchCtrl.text)
+        : controller.getFilteredVisitors(v.searchCtrl.text);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -731,6 +916,7 @@ class _Step2VisitorInfo extends StatelessWidget {
                 return Padding(
                   padding: const EdgeInsets.only(right: 8),
                   child: ChoiceChip(
+                    showCheckmark: false,
                     label: Text('Visitor ${i + 1}'),
                     selected: isSelected,
                     selectedColor: AppColors.primary500,
@@ -742,6 +928,9 @@ class _Step2VisitorInfo extends StatelessWidget {
                     backgroundColor: Colors.white,
                     side: BorderSide(
                       color: isSelected ? AppColors.primary500 : const Color(0xFFCBD5E1),
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
                     ),
                     onSelected: (_) {
                       controller.selectedGroupMemberIndex.value = i;
@@ -760,22 +949,44 @@ class _Step2VisitorInfo extends StatelessWidget {
                 ),
                 backgroundColor: const Color(0xFFEFF6FF),
                 side: const BorderSide(color: Color(0xFF93C5FD)),
-                onPressed: () => controller.addGroupVisitor(),
+                onPressed: () {
+                  controller.addGroupVisitor();
+                },
               ),
             ],
           ),
         ),
 
-        vSpace(context, 12),
+        vSpace(context, 8),
 
         // Delete button if more than 1 member
         if (controller.groupVisitors.length > 1)
           Align(
             alignment: Alignment.centerRight,
             child: TextButton.icon(
-              style: TextButton.styleFrom(foregroundColor: Colors.red.shade600),
-              icon: const Icon(Icons.delete_outline, size: 16),
-              label: const Text('Remove this Visitor'),
+              style: TextButton.styleFrom(
+                foregroundColor: AppColors.error500,
+                padding: EdgeInsets.symmetric(
+                  horizontal: rw(context, 6),
+                  vertical: rh(context, 2),
+                ),
+                minimumSize: Size.zero,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                visualDensity: VisualDensity.compact,
+              ),
+              icon: Icon(
+                Icons.delete_outline_rounded,
+                size: rw(context, 14),
+                color: AppColors.error500,
+              ),
+              label: Text(
+                'Remove this Visitor',
+                style: GoogleFonts.inter(
+                  fontSize: rfs(context, 11.5),
+                  fontWeight: FontWeight.w500,
+                  color: AppColors.error500,
+                ),
+              ),
               onPressed: () => controller.removeGroupVisitor(safeIndex),
             ),
           ),
@@ -785,17 +996,19 @@ class _Step2VisitorInfo extends StatelessWidget {
         // Quick Search for current member
         _buildSearchBox(
           context,
-          hint: v.isEmployee.value == true ? 'Search Employee' : 'Search Visitor',
+          hint: isEmployeeMode
+              ? 'Search Employee (Visitor ${safeIndex + 1})'
+              : 'Search Visitor (Visitor ${safeIndex + 1})',
           controller: v.searchCtrl,
           isOpen: v.isSearchOpen.value,
-          items: v.isEmployee.value == true
-              ? controller.filteredEmployees
-              : controller.filteredVisitors,
+          items: searchList,
           onToggleOpen: () {
             v.isSearchOpen.value = !v.isSearchOpen.value;
+            controller.updateForm();
           },
-          onChanged: (_) {
+          onChanged: (val) {
             v.isSearchOpen.value = true;
+            controller.updateForm();
           },
           onSelect: (item) {
             controller.onGroupSelect(safeIndex, item);
@@ -807,41 +1020,61 @@ class _Step2VisitorInfo extends StatelessWidget {
 
         vSpace(context, 14),
 
-        // Are you Employee? Radio
-        _buildFieldLabel(context, 'Are you Employee?', isRequired: true),
-        vSpace(context, 6),
-        Row(
-          children: [
-            _buildRadioOption(
-              context,
-              label: 'Yes',
-              isSelected: v.isEmployee.value == true,
-              onTap: () {
-                v.isEmployee.value = true;
-                controller.clearGroup(safeIndex);
-              },
+        // Are you Employee? Radio (Only if in API schema)
+        if (hasEmployeeField) ...[
+          _buildFieldLabel(
+            context,
+            controller.getFieldLabel(
+              fields.firstWhere((f) => (f['remarks'] ?? '').toString().toLowerCase().trim() == 'is_employee', orElse: () => {}),
+              'Are you Employee?',
             ),
-            hSpace(context, 20),
-            _buildRadioOption(
-              context,
-              label: 'No',
-              isSelected: v.isEmployee.value == false,
-              onTap: () {
-                v.isEmployee.value = false;
-                controller.clearGroup(safeIndex);
-              },
+            isRequired: controller.isVisitorInfoFieldMandatory('is_employee'),
+          ),
+          vSpace(context, 6),
+          Row(
+            children: [
+              _buildRadioOption(
+                context,
+                label: 'Yes',
+                isSelected: v.isEmployee.value == true,
+                onTap: () {
+                  v.isEmployee.value = true;
+                  controller.clearGroup(safeIndex);
+                },
+              ),
+              hSpace(context, 20),
+              _buildRadioOption(
+                context,
+                label: 'No',
+                isSelected: v.isEmployee.value == false,
+                onTap: () {
+                  v.isEmployee.value = false;
+                  controller.clearGroup(safeIndex);
+                },
+              ),
+            ],
+          ),
+          vSpace(context, 14),
+        ],
+
+        // Visitor Role Selector (Only if in API schema and roles exist)
+        if (hasRoleField && roles.isNotEmpty) ...[
+          _buildFieldLabel(
+            context,
+            controller.getFieldLabel(
+              fields.firstWhere(
+                (f) => (f['remarks'] ?? '').toString().toLowerCase().trim() == 'visitor_role' ||
+                       (f['remarks'] ?? '').toString().toLowerCase().trim() == 'role',
+                orElse: () => {},
+              ),
+              'Visitor Role',
             ),
-          ],
-        ),
-
-        vSpace(context, 14),
-
-        // Visitor Role Selector
-        if (roles.isNotEmpty) ...[
-          _buildFieldLabel(context, 'Visitor Role', isRequired: false),
+            isRequired: controller.isVisitorInfoFieldMandatory('visitor_role') || controller.isVisitorInfoFieldMandatory('role'),
+          ),
           vSpace(context, 6),
           _buildDropdownField<String>(
             context,
+            hintText: 'Select Visitor Role',
             value: v.role.value.isNotEmpty ? v.role.value : roles.first,
             items: roles.map((r) => DropdownMenuItem(value: r, child: Text(r))).toList(),
             onChanged: (val) {
@@ -854,66 +1087,153 @@ class _Step2VisitorInfo extends StatelessWidget {
           vSpace(context, 14),
         ],
 
-        // Member Full Name
-        _buildFieldLabel(context, 'Full Name', isRequired: true),
-        vSpace(context, 6),
-        _buildTextInputField(
-          context,
-          controller: v.fullNameCtrl,
-          hintText: 'Enter full name',
-          onChanged: (_) => controller.updateForm(),
-        ),
+        // Member Full Name (Only if in API schema)
+        if (controller.hasVisitorInfoField('name')) ...[
+          _buildFieldLabel(
+            context,
+            controller.getFieldLabel(
+              fields.firstWhere((f) => (f['remarks'] ?? '').toString().toLowerCase().trim() == 'name', orElse: () => {}),
+              'Full Name',
+            ),
+            isRequired: controller.isVisitorInfoFieldMandatory('name'),
+          ),
+          vSpace(context, 6),
+          _buildTextInputField(
+            context,
+            controller: v.fullNameCtrl,
+            hintText: 'Enter full name',
+            onChanged: (_) => controller.updateForm(),
+          ),
+          vSpace(context, 14),
+        ],
 
-        vSpace(context, 14),
+        // Member Email (Only if in API schema)
+        if (controller.hasVisitorInfoField('email')) ...[
+          _buildFieldLabel(
+            context,
+            controller.getFieldLabel(
+              fields.firstWhere((f) => (f['remarks'] ?? '').toString().toLowerCase().trim() == 'email', orElse: () => {}),
+              'Email',
+            ),
+            isRequired: controller.isVisitorInfoFieldMandatory('email'),
+          ),
+          vSpace(context, 6),
+          _buildTextInputField(
+            context,
+            controller: v.emailCtrl,
+            hintText: 'Enter email address',
+            keyboardType: TextInputType.emailAddress,
+            onChanged: (_) => controller.updateForm(),
+          ),
+          vSpace(context, 14),
+        ],
 
-        // Member Email
-        _buildFieldLabel(context, 'Email', isRequired: true),
-        vSpace(context, 6),
-        _buildTextInputField(
-          context,
-          controller: v.emailCtrl,
-          hintText: 'Enter email address',
-          keyboardType: TextInputType.emailAddress,
-          onChanged: (_) => controller.updateForm(),
-        ),
+        // Member Phone (Only if in API schema)
+        if (controller.hasVisitorInfoField('phone')) ...[
+          _buildFieldLabel(
+            context,
+            controller.getFieldLabel(
+              fields.firstWhere((f) => (f['remarks'] ?? '').toString().toLowerCase().trim() == 'phone', orElse: () => {}),
+              'Phone',
+            ),
+            isRequired: controller.isVisitorInfoFieldMandatory('phone'),
+          ),
+          vSpace(context, 6),
+          _buildTextInputField(
+            context,
+            controller: v.phoneCtrl,
+            hintText: 'Enter phone number',
+            keyboardType: TextInputType.phone,
+            onChanged: (_) => controller.updateForm(),
+          ),
+          vSpace(context, 14),
+        ],
 
-        vSpace(context, 14),
+        // Member Organization (Only if in API schema)
+        if (controller.hasVisitorInfoField('organization') || controller.hasVisitorInfoField('company')) ...[
+          _buildFieldLabel(
+            context,
+            controller.getFieldLabel(
+              fields.firstWhere((f) {
+                final r = (f['remarks'] ?? '').toString().toLowerCase().trim();
+                return r == 'organization' || r == 'company';
+              }, orElse: () => {}),
+              'Department / Organization / Company',
+            ),
+            isRequired: controller.isVisitorInfoFieldMandatory('organization') || controller.isVisitorInfoFieldMandatory('company'),
+          ),
+          vSpace(context, 6),
+          _buildTextInputField(
+            context,
+            controller: v.orgCtrl,
+            hintText: 'Enter department / organization / company',
+            onChanged: (_) => controller.updateForm(),
+          ),
+          vSpace(context, 14),
+        ],
 
-        // Member Phone
-        _buildFieldLabel(context, 'Phone', isRequired: true),
-        vSpace(context, 6),
-        _buildTextInputField(
-          context,
-          controller: v.phoneCtrl,
-          hintText: 'Enter phone number',
-          keyboardType: TextInputType.phone,
-          onChanged: (_) => controller.updateForm(),
-        ),
+        // Member Identity (Only if in API schema)
+        if (controller.hasVisitorInfoField('identity_id') || controller.hasVisitorInfoField('indentity_id')) ...[
+          _buildFieldLabel(
+            context,
+            controller.getFieldLabel(
+              fields.firstWhere((f) {
+                final r = (f['remarks'] ?? '').toString().toLowerCase().trim();
+                return r == 'identity_id' || r == 'indentity_id';
+              }, orElse: () => {}),
+              'Identity (KTP)',
+            ),
+            isRequired: controller.isVisitorInfoFieldMandatory('identity_id') || controller.isVisitorInfoFieldMandatory('indentity_id'),
+          ),
+          vSpace(context, 6),
+          _buildTextInputField(
+            context,
+            controller: v.identityCtrl,
+            hintText: 'Enter identity / KTP number',
+            keyboardType: TextInputType.number,
+            onChanged: (_) => controller.updateForm(),
+          ),
+          vSpace(context, 14),
+        ],
 
-        vSpace(context, 14),
-
-        // Member Organization
-        _buildFieldLabel(context, 'Department / Organization / Company', isRequired: true),
-        vSpace(context, 6),
-        _buildTextInputField(
-          context,
-          controller: v.orgCtrl,
-          hintText: 'Enter department / organization / company',
-          onChanged: (_) => controller.updateForm(),
-        ),
-
-        vSpace(context, 14),
-
-        // Member Identity
-        _buildFieldLabel(context, 'Identity (KTP)', isRequired: true),
-        vSpace(context, 6),
-        _buildTextInputField(
-          context,
-          controller: v.identityCtrl,
-          hintText: 'Enter identity / KTP number',
-          keyboardType: TextInputType.number,
-          onChanged: (_) => controller.updateForm(),
-        ),
+        // Member Extra Custom Fields
+        ...fields.where((f) {
+          final r = (f['remarks'] ?? '').toString().toLowerCase().trim();
+          return r != 'is_employee' &&
+                 r != 'name' &&
+                 r != 'email' &&
+                 r != 'phone' &&
+                 r != 'organization' &&
+                 r != 'company' &&
+                 r != 'identity_id' &&
+                 r != 'indentity_id' &&
+                 r != 'visitor_role' &&
+                 r != 'role';
+        }).map((f) {
+          final remarks = (f['remarks'] ?? '').toString().trim();
+          final label = controller.getFieldLabel(f, remarks);
+          final isMandatory = f['mandatory'] == true;
+          final ctrl = v.extraControllers.putIfAbsent(
+            remarks,
+            () => TextEditingController(),
+          );
+          return Padding(
+            padding: EdgeInsets.only(bottom: rh(context, 14)),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildFieldLabel(context, label, isRequired: isMandatory),
+                vSpace(context, 6),
+                _buildTextInputField(
+                  context,
+                  controller: ctrl,
+                  hintText: 'Enter $label',
+                  onChanged: (_) => controller.updateForm(),
+                ),
+              ],
+            ),
+          );
+        }),
       ],
     );
   }
@@ -942,30 +1262,54 @@ class _Step2VisitorInfo extends StatelessWidget {
             controller: controller,
             onChanged: onChanged,
             onTap: onToggleOpen,
-            style: TextStyle(fontSize: rfs(context, 13)),
+            style: TextStyle(
+              fontSize: rfs(context, 13),
+              color: const Color(0xFF0F172A),
+            ),
             decoration: InputDecoration(
+              isDense: true,
               hintText: hint,
               hintStyle: TextStyle(
                 color: const Color(0xFF94A3B8),
                 fontSize: rfs(context, 13),
               ),
-              prefixIcon: const Icon(Icons.search, size: 18, color: Color(0xFF64748B)),
-              suffixIcon: controller.text.isNotEmpty
-                  ? IconButton(
-                      icon: const Icon(Icons.close, size: 16, color: Color(0xFF64748B)),
-                      onPressed: onClear,
-                    )
-                  : IconButton(
-                      icon: Icon(
-                        isOpen ? Icons.arrow_drop_up : Icons.arrow_drop_down,
-                        size: 20,
-                        color: const Color(0xFF64748B),
+              prefixIconConstraints: BoxConstraints(
+                minWidth: rw(context, 38),
+                minHeight: rh(context, 44),
+              ),
+              prefixIcon: Padding(
+                padding: EdgeInsets.only(
+                  left: rw(context, 12),
+                  right: rw(context, 8),
+                ),
+                child: const Icon(Icons.search, size: 18, color: Color(0xFF64748B)),
+              ),
+              suffixIconConstraints: BoxConstraints(
+                minWidth: rw(context, 36),
+                minHeight: rh(context, 44),
+              ),
+              suffixIcon: Padding(
+                padding: EdgeInsets.only(right: rw(context, 8)),
+                child: controller.text.isNotEmpty
+                    ? IconButton(
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                        icon: const Icon(Icons.close, size: 16, color: Color(0xFF64748B)),
+                        onPressed: onClear,
+                      )
+                    : IconButton(
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                        icon: Icon(
+                          isOpen ? Icons.arrow_drop_up : Icons.arrow_drop_down,
+                          size: 20,
+                          color: const Color(0xFF64748B),
+                        ),
+                        onPressed: onToggleOpen,
                       ),
-                      onPressed: onToggleOpen,
-                    ),
+              ),
               contentPadding: EdgeInsets.symmetric(
-                horizontal: rw(context, 12),
-                vertical: rh(context, 10),
+                vertical: rh(context, 12),
               ),
               border: InputBorder.none,
             ),
@@ -973,53 +1317,65 @@ class _Step2VisitorInfo extends StatelessWidget {
         ),
 
         // Search results dropdown overlay box
-        if (isOpen && items.isNotEmpty)
-          Container(
-            constraints: const BoxConstraints(maxHeight: 180),
-            margin: const EdgeInsets.only(top: 4),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: const Color(0xFFCBD5E1)),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.08),
-                  blurRadius: 8,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: ListView.separated(
-              shrinkWrap: true,
-              padding: EdgeInsets.zero,
-              itemCount: items.take(15).length,
-              separatorBuilder: (_, __) => const Divider(height: 1, color: Color(0xFFF1F5F9)),
-              itemBuilder: (ctx, i) {
-                final it = items[i];
-                final name = (it['name'] ?? it['visitor_name'] ?? '').toString();
-                final email = (it['email'] ?? '').toString();
-                final phone = (it['phone'] ?? '').toString();
+        if (isOpen)
+          Material(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(8),
+            elevation: 3,
+            shadowColor: Colors.black.withValues(alpha: 0.12),
+            child: Container(
+              constraints: const BoxConstraints(maxHeight: 200),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: const Color(0xFFCBD5E1)),
+              ),
+              child: items.isEmpty
+                  ? Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+                      child: Center(
+                        child: Text(
+                          controller.text.trim().isEmpty
+                              ? 'No visitors registered yet'
+                              : 'No visitors found matching "${controller.text.trim()}"',
+                          style: TextStyle(
+                            fontSize: rfs(context, 12),
+                            color: const Color(0xFF94A3B8),
+                          ),
+                        ),
+                      ),
+                    )
+                  : ListView.separated(
+                      shrinkWrap: true,
+                      padding: EdgeInsets.zero,
+                      itemCount: items.take(15).length,
+                      separatorBuilder: (_, __) => const Divider(height: 1, color: Color(0xFFF1F5F9)),
+                      itemBuilder: (ctx, i) {
+                        final it = items[i];
+                        final name = (it['name'] ?? it['visitor_name'] ?? '').toString();
+                        final email = (it['email'] ?? '').toString();
+                        final phone = (it['phone'] ?? '').toString();
 
-                return ListTile(
-                  dense: true,
-                  title: Text(
-                    name,
-                    style: TextStyle(
-                      fontSize: rfs(ctx, 13),
-                      fontWeight: FontWeight.w600,
-                      color: const Color(0xFF0F172A),
+                        return ListTile(
+                          dense: true,
+                          title: Text(
+                            name,
+                            style: TextStyle(
+                              fontSize: rfs(ctx, 13),
+                              fontWeight: FontWeight.w600,
+                              color: const Color(0xFF0F172A),
+                            ),
+                          ),
+                          subtitle: Text(
+                            email.isNotEmpty ? email : phone,
+                            style: TextStyle(
+                              fontSize: rfs(ctx, 11),
+                              color: const Color(0xFF64748B),
+                            ),
+                          ),
+                          onTap: () => onSelect(it),
+                        );
+                      },
                     ),
-                  ),
-                  subtitle: Text(
-                    email.isNotEmpty ? email : phone,
-                    style: TextStyle(
-                      fontSize: rfs(ctx, 11),
-                      color: const Color(0xFF64748B),
-                    ),
-                  ),
-                  onTap: () => onSelect(it),
-                );
-              },
             ),
           ),
       ],
@@ -1037,144 +1393,156 @@ class _Step3PurposeVisit extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final dateFormat = DateFormat('EEEE, dd MMM yyyy, HH:mm', 'id');
+    return Obx(() {
+      final dateFormat = DateFormat('EEEE, dd MMM yyyy, HH:mm', 'id');
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        // Select Destination
-        _buildFieldLabel(context, 'Destination (Site)', isRequired: true),
-        vSpace(context, 6),
-        _buildDropdownField<String>(
-          context,
-          value: controller.selectedSiteId.value.isNotEmpty
-              ? controller.selectedSiteId.value
-              : (controller.sites.isNotEmpty ? controller.sites.first.id : null),
-          items: controller.sites
-              .map((s) => DropdownMenuItem(value: s.id, child: Text(s.name)))
-              .toList(),
-          onChanged: (val) {
-            if (val != null) {
-              controller.selectedSiteId.value = val;
-              final found = controller.sites.firstWhereOrNull((s) => s.id == val);
-              if (found != null) controller.selectedSiteName.value = found.name;
-              controller.updateForm();
-            }
-          },
-        ),
-
-        vSpace(context, 14),
-
-        // Select PIC Host
-        _buildFieldLabel(context, 'PIC Host', isRequired: true),
-        vSpace(context, 6),
-        _buildDropdownField<String>(
-          context,
-          value: controller.selectedHostId.value.isNotEmpty
-              ? controller.selectedHostId.value
-              : (controller.hosts.isNotEmpty ? controller.hosts.first.id : null),
-          items: controller.hosts
-              .map((h) => DropdownMenuItem(value: h.id, child: Text(h.name)))
-              .toList(),
-          onChanged: (val) {
-            if (val != null) {
-              controller.selectedHostId.value = val;
-              final found = controller.hosts.firstWhereOrNull((h) => h.id == val);
-              if (found != null) controller.selectedHostName.value = found.name;
-              controller.updateForm();
-            }
-          },
-        ),
-
-        vSpace(context, 14),
-
-        // Select Agenda
-        _buildFieldLabel(context, 'Agenda', isRequired: true),
-        vSpace(context, 6),
-        _buildDropdownField<String>(
-          context,
-          value: controller.selectedAgenda.value,
-          items: controller.agendaOptions
-              .map((a) => DropdownMenuItem(value: a, child: Text(a)))
-              .toList(),
-          onChanged: (val) {
-            if (val != null) {
-              controller.selectedAgenda.value = val;
-              controller.updateForm();
-            }
-          },
-        ),
-
-        // If Agenda is 'Others', show custom agenda input
-        if (controller.selectedAgenda.value == 'Others') ...[
-          vSpace(context, 10),
-          _buildTextInputField(
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Select Destination
+          _buildFieldLabel(context, 'Destination (Site)', isRequired: true),
+          vSpace(context, 6),
+          _buildDropdownField<String>(
             context,
-            controller: controller.otherAgendaCtrl,
-            hintText: 'Specify your agenda',
-            onChanged: (_) => controller.updateForm(),
+            hintText: 'Select Destination',
+            value: controller.selectedSiteId.value.isNotEmpty
+                ? controller.selectedSiteId.value
+                : null,
+            items: controller.sites
+                .map((s) => DropdownMenuItem(value: s.id, child: Text(s.name)))
+                .toList(),
+            onChanged: (val) {
+              if (val != null) {
+                controller.selectedSiteId.value = val;
+                final found = controller.sites.firstWhereOrNull((s) => s.id == val);
+                if (found != null) controller.selectedSiteName.value = found.name;
+                controller.updateForm();
+              }
+            },
+          ),
+
+          vSpace(context, 14),
+
+          // Select PIC Host
+          _buildFieldLabel(context, 'PIC Host', isRequired: true),
+          vSpace(context, 6),
+          _buildDropdownField<String>(
+            context,
+            hintText: 'Select PIC Host',
+            value: controller.selectedHostId.value.isNotEmpty
+                ? controller.selectedHostId.value
+                : null,
+            items: controller.hosts
+                .map((h) => DropdownMenuItem(value: h.id, child: Text(h.name)))
+                .toList(),
+            onChanged: (val) {
+              if (val != null) {
+                controller.selectedHostId.value = val;
+                final found = controller.hosts.firstWhereOrNull((h) => h.id == val);
+                if (found != null) controller.selectedHostName.value = found.name;
+                controller.updateForm();
+              }
+            },
+          ),
+
+          vSpace(context, 14),
+
+          // Select Agenda
+          _buildFieldLabel(context, 'Agenda', isRequired: true),
+          vSpace(context, 6),
+          _buildDropdownField<String>(
+            context,
+            hintText: 'Select Agenda',
+            value: controller.selectedAgenda.value.isNotEmpty
+                ? controller.selectedAgenda.value
+                : null,
+            items: controller.agendaOptions
+                .map((a) => DropdownMenuItem(value: a, child: Text(a)))
+                .toList(),
+            onChanged: (val) {
+              if (val != null) {
+                controller.selectedAgenda.value = val;
+                controller.updateForm();
+              }
+            },
+          ),
+
+          // If Agenda is 'Others', show custom agenda input
+          if (controller.selectedAgenda.value == 'Others') ...[
+            vSpace(context, 10),
+            _buildTextInputField(
+              context,
+              controller: controller.otherAgendaCtrl,
+              hintText: 'Specify your agenda',
+              onChanged: (_) => controller.updateForm(),
+            ),
+          ],
+
+          vSpace(context, 14),
+
+          // Visit Start
+          _buildFieldLabel(context, 'Visit Start', isRequired: true),
+          vSpace(context, 6),
+          _buildDateTimeTile(
+            context,
+            value: controller.visitStart.value != null
+                ? dateFormat.format(controller.visitStart.value!)
+                : 'Select visit start date & time',
+            isSelected: controller.visitStart.value != null,
+            onTap: () async {
+              final now = DateTime.now();
+              final todayStart = DateTime(now.year, now.month, now.day);
+              final picked = await showAppDateTimePicker(
+                context,
+                initialDate: controller.visitStart.value,
+                minDateTime: todayStart,
+                withTime: true,
+                title: 'Select Visit Start',
+              );
+              if (picked != null) {
+                controller.visitStart.value = picked;
+                // If visitEnd was already set and is before or equal to new visitStart, reset it
+                if (controller.visitEnd.value != null &&
+                    (controller.visitEnd.value!.isBefore(picked) ||
+                     controller.visitEnd.value!.isAtSameMomentAs(picked))) {
+                  controller.visitEnd.value = null;
+                }
+                controller.updateForm();
+              }
+            },
+          ),
+
+          vSpace(context, 14),
+
+          // Visit End
+          _buildFieldLabel(context, 'Visit End', isRequired: true),
+          vSpace(context, 6),
+          _buildDateTimeTile(
+            context,
+            value: controller.visitEnd.value != null
+                ? dateFormat.format(controller.visitEnd.value!)
+                : 'Select visit end date & time',
+            isSelected: controller.visitEnd.value != null,
+            onTap: () async {
+              final minEnd = controller.visitStart.value ?? DateTime.now();
+              final picked = await showAppDateTimePicker(
+                context,
+                initialDate: controller.visitEnd.value,
+                minDateTime: minEnd,
+                referenceStartDateTime: controller.visitStart.value,
+                quickHourPresets: const [2, 5],
+                withTime: true,
+                title: 'Select Visit End',
+              );
+              if (picked != null) {
+                controller.visitEnd.value = picked;
+                controller.updateForm();
+              }
+            },
           ),
         ],
-
-        vSpace(context, 14),
-
-        // Visit Start
-        _buildFieldLabel(context, 'Visit Start', isRequired: true),
-        vSpace(context, 6),
-        _buildDateTimeTile(
-          context,
-          value: controller.visitStart.value != null
-              ? dateFormat.format(controller.visitStart.value!)
-              : 'Select visit start date & time',
-          isSelected: controller.visitStart.value != null,
-          onTap: () async {
-            final picked = await showAppDateTimePicker(
-              context,
-              initialDate: controller.visitStart.value ?? DateTime.now(),
-              minDateTime: DateTime.now(),
-              withTime: true,
-              title: 'Select Visit Start',
-            );
-            if (picked != null) {
-              controller.visitStart.value = picked;
-              // Auto adjust visitEnd if before visitStart
-              if (controller.visitEnd.value == null ||
-                  controller.visitEnd.value!.isBefore(picked)) {
-                controller.visitEnd.value = picked.add(const Duration(hours: 2));
-              }
-              controller.updateForm();
-            }
-          },
-        ),
-
-        vSpace(context, 14),
-
-        // Visit End
-        _buildFieldLabel(context, 'Visit End', isRequired: true),
-        vSpace(context, 6),
-        _buildDateTimeTile(
-          context,
-          value: controller.visitEnd.value != null
-              ? dateFormat.format(controller.visitEnd.value!)
-              : 'Select visit end date & time',
-          isSelected: controller.visitEnd.value != null,
-          onTap: () async {
-            final picked = await showAppDateTimePicker(
-              context,
-              initialDate: controller.visitEnd.value ??
-                  (controller.visitStart.value?.add(const Duration(hours: 2)) ?? DateTime.now()),
-              minDateTime: controller.visitStart.value ?? DateTime.now(),
-              withTime: true,
-              title: 'Select Visit End',
-            );
-            if (picked != null) {
-              controller.visitEnd.value = picked;
-              controller.updateForm();
-            }
-          },
-        ),
-      ],
-    );
+      );
+    });
   }
 
   Widget _buildDateTimeTile(
@@ -1187,41 +1555,109 @@ class _Step3PurposeVisit extends StatelessWidget {
       borderRadius: BorderRadius.circular(8),
       onTap: onTap,
       child: Container(
+        height: rh(context, 48),
         padding: EdgeInsets.symmetric(
           horizontal: rw(context, 12),
-          vertical: rh(context, 11),
         ),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
-            color: isSelected ? AppColors.primary500 : const Color(0xFFCBD5E1),
+            color: isSelected ? const Color(0xFF94A3B8) : const Color(0xFFCBD5E1),
+            width: 1.2,
           ),
         ),
         child: Row(
           children: [
             Icon(
               Icons.calendar_today_outlined,
-              size: 16,
-              color: isSelected ? AppColors.primary500 : const Color(0xFF64748B),
+              size: 18,
+              color: isSelected ? AppColors.primary500 : const Color(0xFF94A3B8),
             ),
-            hSpace(context, 10),
+            hSpace(context, 8),
             Expanded(
               child: Text(
                 value,
-                style: TextStyle(
-                  fontSize: rfs(context, 12.5),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: GoogleFonts.inter(
+                  fontSize: rfs(context, 13),
                   color: isSelected ? const Color(0xFF0F172A) : const Color(0xFF94A3B8),
                   fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
                 ),
               ),
             ),
-            const Icon(Icons.arrow_drop_down, color: Color(0xFF64748B)),
+            const Icon(
+              Icons.keyboard_arrow_down_rounded,
+              color: Color(0xFF64748B),
+              size: 20,
+            ),
           ],
         ),
       ),
     );
   }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// REUSABLE GROUP MEMBER SELECTOR TABS (Steps 4, 5, 6)
+// ─────────────────────────────────────────────────────────────────────────────
+
+Widget _buildGroupMemberTabs(
+  BuildContext context, {
+  required PraRegistrationController controller,
+  required int activeIndex,
+  bool Function(int index)? isCompleted,
+}) {
+  if (controller.isGroup.value != true || controller.groupVisitors.length <= 1) {
+    return const SizedBox.shrink();
+  }
+
+  return Padding(
+    padding: EdgeInsets.only(bottom: rh(context, 12)),
+    child: SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: List.generate(controller.groupVisitors.length, (i) {
+          final isSelected = activeIndex == i;
+          final completed = isCompleted != null ? isCompleted(i) : false;
+
+          return Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: ChoiceChip(
+              showCheckmark: false,
+              avatar: completed
+                  ? Icon(
+                      Icons.check_circle_rounded,
+                      size: 16,
+                      color: isSelected ? Colors.white : AppColors.primary500,
+                    )
+                  : null,
+              label: Text('Visitor ${i + 1}'),
+              selected: isSelected,
+              selectedColor: AppColors.primary500,
+              labelStyle: TextStyle(
+                color: isSelected ? Colors.white : const Color(0xFF334155),
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                fontSize: rfs(context, 12),
+              ),
+              backgroundColor: Colors.white,
+              side: BorderSide(
+                color: isSelected ? AppColors.primary500 : const Color(0xFFCBD5E1),
+              ),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+              onSelected: (_) {
+                controller.selectedGroupMemberIndex.value = i;
+                controller.updateForm();
+              },
+            ),
+          );
+        }),
+      ),
+    ),
+  );
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1232,6 +1668,14 @@ class _Step4VehicleInfo extends StatelessWidget {
   final PraRegistrationController controller;
   const _Step4VehicleInfo({required this.controller});
 
+  String _formatOption(String text) {
+    if (text.isEmpty) return text;
+    return text.split(' ').map((word) {
+      if (word.isEmpty) return word;
+      return '${word[0].toUpperCase()}${word.substring(1)}';
+    }).join(' ');
+  }
+
   @override
   Widget build(BuildContext context) {
     final vehicleOptions = controller.getVehicleTypeOptions();
@@ -1240,12 +1684,20 @@ class _Step4VehicleInfo extends StatelessWidget {
       final activeIndex = controller.selectedGroupMemberIndex.value;
       final safeIndex = activeIndex < controller.groupVisitors.length ? activeIndex : 0;
       final v = controller.groupVisitors[safeIndex];
+      final memberName = v.fullNameCtrl.text.trim();
 
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          _buildGroupMemberTabs(
+            context,
+            controller: controller,
+            activeIndex: safeIndex,
+          ),
           Text(
-            'Vehicle Information for Visitor ${safeIndex + 1}',
+            memberName.isNotEmpty
+                ? 'Vehicle Information for $memberName (Visitor ${safeIndex + 1})'
+                : 'Vehicle Information for Visitor ${safeIndex + 1}',
             style: TextStyle(
               fontSize: rfs(context, 14),
               fontWeight: FontWeight.w700,
@@ -1290,9 +1742,10 @@ class _Step4VehicleInfo extends StatelessWidget {
             vSpace(context, 6),
             _buildDropdownField<String>(
               context,
+              hintText: 'Select Vehicle Type',
               value: v.vehicleType.value.isNotEmpty ? v.vehicleType.value : vehicleOptions.first,
               items: vehicleOptions
-                  .map((opt) => DropdownMenuItem(value: opt, child: Text(opt)))
+                  .map((opt) => DropdownMenuItem(value: opt, child: Text(_formatOption(opt))))
                   .toList(),
               onChanged: (val) {
                 if (val != null) {
@@ -1356,11 +1809,12 @@ class _Step4VehicleInfo extends StatelessWidget {
           vSpace(context, 6),
           _buildDropdownField<String>(
             context,
+            hintText: 'Select Vehicle Type',
             value: controller.vehicleType.value.isNotEmpty
                 ? controller.vehicleType.value
                 : vehicleOptions.first,
             items: vehicleOptions
-                .map((opt) => DropdownMenuItem(value: opt, child: Text(opt)))
+                .map((opt) => DropdownMenuItem(value: opt, child: Text(_formatOption(opt))))
                 .toList(),
             onChanged: (val) {
               if (val != null) {
@@ -1388,6 +1842,151 @@ class _Step4VehicleInfo extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// UPLOAD FEEDBACK POPUP DIALOG (Upload, Retry, Remove)
+// ─────────────────────────────────────────────────────────────────────────────
+
+enum UploadFeedbackType {
+  upload,
+  remove,
+  retry,
+}
+
+void showUploadSnackbar({
+  required UploadFeedbackType type,
+  required bool isKtp,
+}) {
+  String message;
+  switch (type) {
+    case UploadFeedbackType.upload:
+      message = isKtp ? 'KTP photo uploaded successfully' : 'Selfie photo uploaded successfully';
+      break;
+    case UploadFeedbackType.remove:
+      message = isKtp ? 'KTP photo removed successfully' : 'Selfie photo removed successfully';
+      break;
+    case UploadFeedbackType.retry:
+      message = isKtp ? 'KTP photo updated successfully' : 'Selfie photo updated successfully';
+      break;
+  }
+
+  Get.snackbar(
+    'Success',
+    message,
+    backgroundColor: Colors.green,
+    colorText: Colors.white,
+    snackPosition: SnackPosition.TOP,
+    duration: const Duration(seconds: 3),
+  );
+}
+
+Future<void> _handlePhotoRetake(
+  BuildContext context, {
+  required PraRegistrationController controller,
+  required bool isKtp,
+  int? groupIndex,
+}) async {
+  final source = await showModalBottomSheet<ImageSource>(
+    context: context,
+    backgroundColor: Colors.white,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+    ),
+    builder: (ctx) => SafeArea(
+      child: Padding(
+        padding: EdgeInsets.symmetric(
+          horizontal: rw(ctx, 20),
+          vertical: rh(ctx, 16),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Center(
+              child: Container(
+                width: 36,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            vSpace(ctx, 16),
+            Text(
+              isKtp ? 'Retake KTP Photo' : 'Retake Selfie Photo',
+              style: GoogleFonts.inter(
+                fontSize: rfs(ctx, 15),
+                fontWeight: FontWeight.w700,
+                color: const Color(0xFF0F2B48),
+              ),
+              textAlign: TextAlign.center,
+            ),
+            vSpace(ctx, 4),
+            Text(
+              'Select photo source',
+              style: GoogleFonts.inter(
+                fontSize: rfs(ctx, 12),
+                color: const Color(0xFF64748B),
+              ),
+              textAlign: TextAlign.center,
+            ),
+            vSpace(ctx, 16),
+            ListTile(
+              leading: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEFF6FF),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(Icons.camera_alt, color: AppColors.primary500, size: 20),
+              ),
+              title: Text(
+                'Camera',
+                style: GoogleFonts.inter(
+                  fontSize: rfs(ctx, 13.5),
+                  fontWeight: FontWeight.w600,
+                  color: const Color(0xFF1E293B),
+                ),
+              ),
+              onTap: () => Navigator.pop(ctx, ImageSource.camera),
+            ),
+            ListTile(
+              leading: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEFF6FF),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(Icons.photo_library, color: AppColors.primary500, size: 20),
+              ),
+              title: Text(
+                'Gallery',
+                style: GoogleFonts.inter(
+                  fontSize: rfs(ctx, 13.5),
+                  fontWeight: FontWeight.w600,
+                  color: const Color(0xFF1E293B),
+                ),
+              ),
+              onTap: () => Navigator.pop(ctx, ImageSource.gallery),
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
+
+  if (source != null) {
+    final ok = await controller.pickImage(
+      isKtp: isKtp,
+      fromCamera: source == ImageSource.camera,
+      groupIndex: groupIndex,
+    );
+    if (ok) {
+      showUploadSnackbar(type: UploadFeedbackType.retry, isKtp: isKtp);
+    }
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // STEP 5: SELFIE IMAGE (Dynamic)
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -1403,18 +2002,30 @@ class _Step5SelfieImage extends StatelessWidget {
     final currentImage = isGroup
         ? controller.groupVisitors[safeIndex].selfieImage.value
         : controller.selfieImage.value;
+    final memberName = isGroup ? controller.groupVisitors[safeIndex].fullNameCtrl.text.trim() : '';
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        if (isGroup)
+          _buildGroupMemberTabs(
+            context,
+            controller: controller,
+            activeIndex: safeIndex,
+            isCompleted: (i) => controller.groupVisitors[i].selfieImage.value != null,
+          ),
         _buildSectionHeader(
           context,
-          isGroup ? 'Selfie Image for Visitor ${safeIndex + 1}' : 'Selfie Image',
+          isGroup
+              ? (memberName.isNotEmpty
+                  ? 'Selfie Image for $memberName (Visitor ${safeIndex + 1})'
+                  : 'Selfie Image for Visitor ${safeIndex + 1}')
+              : 'Selfie Image',
           isRequired: false,
         ),
         vSpace(context, 4),
         Text(
-          'Take a clear selfie photo or select from gallery (max 5 MB).',
+          'Take a clear selfie photo or select from gallery (Supports JPG, JPEG, and PNG only, max 5 MB).',
           style: TextStyle(
             fontSize: rfs(context, 12),
             color: const Color(0xFF64748B),
@@ -1426,15 +2037,33 @@ class _Step5SelfieImage extends StatelessWidget {
           _buildImagePreview(
             context,
             fileData: currentImage,
-            onRemove: () => controller.removeImage(isKtp: false, groupIndex: isGroup ? safeIndex : null),
-            onRetake: () => controller.pickImage(isKtp: false, fromCamera: true, groupIndex: isGroup ? safeIndex : null),
+            onRemove: () {
+              controller.removeImage(isKtp: false, groupIndex: isGroup ? safeIndex : null);
+              showUploadSnackbar(type: UploadFeedbackType.remove, isKtp: false);
+            },
+            onRetake: () => _handlePhotoRetake(
+              context,
+              controller: controller,
+              isKtp: false,
+              groupIndex: isGroup ? safeIndex : null,
+            ),
           )
         else
           _buildUploadPlaceholder(
             context,
             title: 'Take Selfie or Choose File',
-            onCamera: () => controller.pickImage(isKtp: false, fromCamera: true, groupIndex: isGroup ? safeIndex : null),
-            onGallery: () => controller.pickImage(isKtp: false, fromCamera: false, groupIndex: isGroup ? safeIndex : null),
+            onCamera: () async {
+              final ok = await controller.pickImage(isKtp: false, fromCamera: true, groupIndex: isGroup ? safeIndex : null);
+              if (ok) {
+                showUploadSnackbar(type: UploadFeedbackType.upload, isKtp: false);
+              }
+            },
+            onGallery: () async {
+              final ok = await controller.pickImage(isKtp: false, fromCamera: false, groupIndex: isGroup ? safeIndex : null);
+              if (ok) {
+                showUploadSnackbar(type: UploadFeedbackType.upload, isKtp: false);
+              }
+            },
           ),
       ],
     );
@@ -1457,18 +2086,30 @@ class _Step6KtpImage extends StatelessWidget {
     final currentImage = isGroup
         ? controller.groupVisitors[safeIndex].ktpImage.value
         : controller.ktpImage.value;
+    final memberName = isGroup ? controller.groupVisitors[safeIndex].fullNameCtrl.text.trim() : '';
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        if (isGroup)
+          _buildGroupMemberTabs(
+            context,
+            controller: controller,
+            activeIndex: safeIndex,
+            isCompleted: (i) => controller.groupVisitors[i].ktpImage.value != null,
+          ),
         _buildSectionHeader(
           context,
-          isGroup ? 'Upload Identity (KTP) for Visitor ${safeIndex + 1}' : 'Upload Identity (KTP)',
+          isGroup
+              ? (memberName.isNotEmpty
+                  ? 'Upload Identity (KTP) for $memberName (Visitor ${safeIndex + 1})'
+                  : 'Upload Identity (KTP) for Visitor ${safeIndex + 1}')
+              : 'Upload Identity (KTP)',
           isRequired: false,
         ),
         vSpace(context, 4),
         Text(
-          'Take a clear photo of your Identity Card (KTP) or select from gallery (max 5 MB).',
+          'Take a clear photo of your Identity Card (KTP) or select from gallery (Supports JPG, JPEG, and PNG only, max 5 MB).',
           style: TextStyle(
             fontSize: rfs(context, 12),
             color: const Color(0xFF64748B),
@@ -1480,15 +2121,33 @@ class _Step6KtpImage extends StatelessWidget {
           _buildImagePreview(
             context,
             fileData: currentImage,
-            onRemove: () => controller.removeImage(isKtp: true, groupIndex: isGroup ? safeIndex : null),
-            onRetake: () => controller.pickImage(isKtp: true, fromCamera: true, groupIndex: isGroup ? safeIndex : null),
+            onRemove: () {
+              controller.removeImage(isKtp: true, groupIndex: isGroup ? safeIndex : null);
+              showUploadSnackbar(type: UploadFeedbackType.remove, isKtp: true);
+            },
+            onRetake: () => _handlePhotoRetake(
+              context,
+              controller: controller,
+              isKtp: true,
+              groupIndex: isGroup ? safeIndex : null,
+            ),
           )
         else
           _buildUploadPlaceholder(
             context,
             title: 'Take KTP Photo or Choose File',
-            onCamera: () => controller.pickImage(isKtp: true, fromCamera: true, groupIndex: isGroup ? safeIndex : null),
-            onGallery: () => controller.pickImage(isKtp: true, fromCamera: false, groupIndex: isGroup ? safeIndex : null),
+            onCamera: () async {
+              final ok = await controller.pickImage(isKtp: true, fromCamera: true, groupIndex: isGroup ? safeIndex : null);
+              if (ok) {
+                showUploadSnackbar(type: UploadFeedbackType.upload, isKtp: true);
+              }
+            },
+            onGallery: () async {
+              final ok = await controller.pickImage(isKtp: true, fromCamera: false, groupIndex: isGroup ? safeIndex : null);
+              if (ok) {
+                showUploadSnackbar(type: UploadFeedbackType.upload, isKtp: true);
+              }
+            },
           ),
       ],
     );
@@ -1716,26 +2375,150 @@ Widget _buildDropdownField<T>(
   required T? value,
   required List<DropdownMenuItem<T>> items,
   required ValueChanged<T?> onChanged,
+  String? hintText,
+  IconData? prefixIcon,
 }) {
+  final hasMatchingItem = items.any((i) => i.value == value);
+  final resolvedValue = hasMatchingItem ? value : null;
+  final isSelected = resolvedValue != null && (resolvedValue is! String || (resolvedValue as String).isNotEmpty);
+
   return Container(
-    padding: EdgeInsets.symmetric(horizontal: rw(context, 12)),
+    height: rh(context, 48),
     decoration: BoxDecoration(
       color: Colors.white,
       borderRadius: BorderRadius.circular(8),
-      border: Border.all(color: const Color(0xFFCBD5E1)),
+      border: Border.all(
+        color: isSelected ? const Color(0xFF94A3B8) : const Color(0xFFCBD5E1),
+        width: 1.2,
+      ),
     ),
     child: DropdownButtonHideUnderline(
-      child: DropdownButton<T>(
-        value: value,
+      child: DropdownButton2<T>(
         isExpanded: true,
-        items: items,
-        onChanged: onChanged,
-        style: TextStyle(
-          fontSize: rfs(context, 13),
-          color: const Color(0xFF0F172A),
-          fontWeight: FontWeight.w500,
+        value: resolvedValue,
+        hint: Row(
+          children: [
+            if (prefixIcon != null) ...[
+              Icon(prefixIcon, size: 18, color: const Color(0xFF94A3B8)),
+              hSpace(context, 8),
+            ],
+            Expanded(
+              child: Text(
+                hintText ?? 'Select an option',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: GoogleFonts.inter(
+                  fontSize: rfs(context, 13),
+                  color: const Color(0xFF94A3B8),
+                  fontWeight: FontWeight.w400,
+                ),
+              ),
+            ),
+          ],
         ),
-        icon: const Icon(Icons.arrow_drop_down, color: Color(0xFF64748B)),
+        selectedItemBuilder: (BuildContext context) {
+          return items.map((item) {
+            return Row(
+              children: [
+                if (prefixIcon != null) ...[
+                  Icon(prefixIcon, size: 18, color: AppColors.primary500),
+                  hSpace(context, 8),
+                ],
+                Expanded(
+                  child: DefaultTextStyle(
+                    style: GoogleFonts.inter(
+                      fontSize: rfs(context, 13),
+                      color: const Color(0xFF0F172A),
+                      fontWeight: FontWeight.w600,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    child: item.child,
+                  ),
+                ),
+              ],
+            );
+          }).toList();
+        },
+        items: items.map((item) {
+          final isItemActive = item.value == resolvedValue;
+          return DropdownMenuItem<T>(
+            value: item.value,
+            enabled: item.enabled,
+            child: Row(
+              children: [
+                if (prefixIcon != null) ...[
+                  Icon(
+                    prefixIcon,
+                    size: 18,
+                    color: isItemActive ? AppColors.primary500 : const Color(0xFF64748B),
+                  ),
+                  hSpace(context, 8),
+                ],
+                Expanded(
+                  child: DefaultTextStyle(
+                    style: GoogleFonts.inter(
+                      fontSize: rfs(context, 13),
+                      color: isItemActive ? AppColors.primary500 : const Color(0xFF0F172A),
+                      fontWeight: isItemActive ? FontWeight.w600 : FontWeight.w500,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    child: item.child,
+                  ),
+                ),
+                if (isItemActive) ...[
+                  const Icon(Icons.check, size: 16, color: AppColors.primary500),
+                ],
+              ],
+            ),
+          );
+        }).toList(),
+        onChanged: onChanged,
+        buttonStyleData: ButtonStyleData(
+          height: rh(context, 48),
+          padding: EdgeInsets.only(
+            left: 0,
+            right: rw(context, 12),
+          ),
+        ),
+        iconStyleData: const IconStyleData(
+          icon: Icon(
+            Icons.keyboard_arrow_down_rounded,
+            color: Color(0xFF64748B),
+            size: 20,
+          ),
+          openMenuIcon: Icon(
+            Icons.keyboard_arrow_up_rounded,
+            color: AppColors.primary500,
+            size: 20,
+          ),
+        ),
+        dropdownStyleData: DropdownStyleData(
+          maxHeight: rh(context, 260),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(10),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.10),
+                blurRadius: 16,
+                offset: const Offset(0, 6),
+              ),
+            ],
+            border: Border.all(color: const Color(0xFFE2E8F0)),
+          ),
+          offset: const Offset(0, -4),
+          scrollbarTheme: ScrollbarThemeData(
+            radius: const Radius.circular(4),
+            thickness: WidgetStateProperty.all(4),
+            thumbColor: WidgetStateProperty.all(const Color(0xFFCBD5E1)),
+          ),
+        ),
+        menuItemStyleData: MenuItemStyleData(
+          height: rh(context, 42),
+          padding: EdgeInsets.symmetric(horizontal: rw(context, 12)),
+        ),
       ),
     ),
   );
@@ -1795,6 +2578,15 @@ Widget _buildUploadPlaceholder(
             fontSize: rfs(context, 13),
             fontWeight: FontWeight.w600,
             color: const Color(0xFF1E293B),
+          ),
+        ),
+        vSpace(context, 4),
+        Text(
+          'Supports JPG, JPEG, and PNG only',
+          style: TextStyle(
+            fontSize: rfs(context, 11),
+            color: const Color(0xFF94A3B8),
+            fontWeight: FontWeight.w400,
           ),
         ),
         vSpace(context, 12),

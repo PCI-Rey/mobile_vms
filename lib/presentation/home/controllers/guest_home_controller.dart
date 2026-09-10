@@ -5,6 +5,7 @@ import 'package:get/get.dart';
 import '../../../data/datasources/api_service.dart';
 import '../../../data/datasources/hive_service.dart';
 import '../../../data/models/access_pass_model.dart';
+import '../../auth/controller/user_controller.dart';
 
 class GuestHomeController extends GetxController {
   static GuestHomeController get to => Get.find();
@@ -19,6 +20,24 @@ class GuestHomeController extends GetxController {
   final RxInt selectedVisitIndex = 0.obs;
 
   Timer? _refreshTimer;
+
+  AccessPassModel? get currentSelectedPass {
+    if (accessPasses.isEmpty) return null;
+    final idx = selectedPassIndex.value;
+    if (idx >= 0 && idx < accessPasses.length) {
+      return accessPasses[idx];
+    }
+    return accessPasses.first;
+  }
+
+  String? get currentSelfieUrl {
+    final pass = currentSelectedPass;
+    final passSelfie = pass?.formattedSelfieUrl;
+    if (passSelfie != null && passSelfie.isNotEmpty) {
+      return passSelfie;
+    }
+    return UserController.to.faceUrl;
+  }
 
   @override
   void onInit() {

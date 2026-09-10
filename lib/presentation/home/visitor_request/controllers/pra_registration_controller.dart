@@ -114,6 +114,12 @@ class PraRegistrationController extends GetxController {
   final RxInt formUpdateTrigger = 0.obs;
 
   // ── Step 1: User Type ─────────────────────────────────────────────────────
+  static List<VisitorTypeModel> _cachedVisitorTypes = [];
+  static List<DropdownItem> _cachedSites = [];
+  static List<DropdownItem> _cachedHosts = [];
+  static List<Map<String, dynamic>> _cachedRawEmployees = [];
+  static List<Map<String, dynamic>> _cachedAllVisitors = [];
+
   final RxList<VisitorTypeModel> visitorTypes = <VisitorTypeModel>[].obs;
   final RxBool isLoadingTypes = false.obs;
   final RxString selectedVisitorTypeId = ''.obs;
@@ -167,7 +173,7 @@ class PraRegistrationController extends GetxController {
     'Report',
     'Others',
   ];
-  final RxString selectedAgenda = 'Meeting'.obs;
+  final RxString selectedAgenda = ''.obs;
   final otherAgendaCtrl = TextEditingController();
   final Map<String, TextEditingController> purposeExtraControllers = {};
 
@@ -199,6 +205,30 @@ class PraRegistrationController extends GetxController {
   void onInit() {
     super.onInit();
     resetFields();
+    if (_cachedVisitorTypes.isNotEmpty) {
+      visitorTypes.assignAll(_cachedVisitorTypes);
+    }
+    if (_cachedSites.isNotEmpty) {
+      sites.assignAll(_cachedSites);
+    }
+    if (_cachedHosts.isNotEmpty) {
+      hosts.assignAll(_cachedHosts);
+    }
+    if (_cachedRawEmployees.isNotEmpty) {
+      _rawEmployees.clear();
+      _rawEmployees.addAll(_cachedRawEmployees);
+      employees.value = _rawEmployees
+          .map((e) => DropdownItem(
+                id: e['id']?.toString() ?? '',
+                name: e['name']?.toString() ?? '',
+              ))
+          .where((item) => item.name.isNotEmpty)
+          .toList();
+    }
+    if (_cachedAllVisitors.isNotEmpty) {
+      allVisitors.assignAll(_cachedAllVisitors);
+    }
+
     fetchVisitorTypes();
     fetchVisitors();
     fetchEmployees();
@@ -289,7 +319,7 @@ class PraRegistrationController extends GetxController {
     selectedSiteName.value = '';
     selectedHostId.value = '';
     selectedHostName.value = '';
-    selectedAgenda.value = 'Meeting';
+    selectedAgenda.value = '';
     otherAgendaCtrl.clear();
     for (final c in purposeExtraControllers.values) {
       c.clear();
@@ -421,6 +451,65 @@ class PraRegistrationController extends GetxController {
     return t == 'bicycle' || t == 'sepeda' || t.contains('bicycle') || t.contains('sepeda') || t == 'bike';
   }
 
+  // ── Dynamic Form Fields Helpers ──────────────────────────────────────────
+  List<Map<String, dynamic>> getVisitorInfoFormFields() {
+    final sectionsRaw = visitorTypeRawDetail.value?['section_page_visitor_types'] as List<dynamic>?;
+    if (sectionsRaw != null && sectionsRaw.isNotEmpty) {
+      for (var s in sectionsRaw) {
+        if (s is! Map) continue;
+        final sec = Map<String, dynamic>.from(s);
+        final isDoc = sec['is_document'] == true;
+        if (isDoc) continue;
+        final secName = (sec['name'] ?? '').toString().toLowerCase();
+        if (secName.contains('visitor info') || sec['sort'] == 0) {
+          final form = (sec['visit_form'] as List<dynamic>?) ??
+              (sec['pra_form'] as List<dynamic>?) ??
+              (sec['form'] as List<dynamic>?) ??
+              [];
+          return form
+              .whereType<Map>()
+              .where((f) => f['is_enable'] == true)
+              .map((f) => Map<String, dynamic>.from(f))
+              .toList();
+        }
+      }
+    }
+    // Fallback if not yet loaded
+    return [
+      {'remarks': 'name', 'long_display_text': 'Full Name', 'mandatory': true, 'field_type': 0},
+      {'remarks': 'email', 'long_display_text': 'Email', 'mandatory': true, 'field_type': 2},
+      {'remarks': 'phone', 'long_display_text': 'Phone', 'mandatory': true, 'field_type': 0},
+      {'remarks': 'organization', 'long_display_text': 'Department / Organization / Company', 'mandatory': true, 'field_type': 0},
+    ];
+  }
+
+  bool hasVisitorInfoField(String remarks) {
+    final fields = getVisitorInfoFormFields();
+    final target = remarks.toLowerCase().trim();
+    return fields.any((f) {
+      final r = (f['remarks'] ?? '').toString().toLowerCase().trim();
+      return r == target;
+    });
+  }
+
+  bool isVisitorInfoFieldMandatory(String remarks) {
+    final fields = getVisitorInfoFormFields();
+    final target = remarks.toLowerCase().trim();
+    final f = fields.firstWhereOrNull((f) {
+      final r = (f['remarks'] ?? '').toString().toLowerCase().trim();
+      return r == target;
+    });
+    return f?['mandatory'] == true;
+  }
+
+  String getFieldLabel(Map<String, dynamic> field, String fallback) {
+    final longText = (field['long_display_text'] ?? '').toString().trim();
+    if (longText.isNotEmpty) return longText;
+    final shortName = (field['short_name'] ?? '').toString().trim();
+    if (shortName.isNotEmpty) return shortName;
+    return fallback;
+  }
+
   // ── Autofill helpers for Search Visitor / Employee ────────────────────────
   String _extractOrganizationName(dynamic rawOrg, [dynamic rawCompany]) {
     if (rawOrg is Map) {
@@ -532,7 +621,7 @@ class PraRegistrationController extends GetxController {
   }
 
   // ── Image Picking (Selfie & KTP) ──────────────────────────────────────────
-  Future<void> pickImage({
+  Future<bool> pickImage({
     required bool isKtp,
     required bool fromCamera,
     int? groupIndex,
@@ -545,15 +634,19 @@ class PraRegistrationController extends GetxController {
         maxHeight: 1080,
         imageQuality: 85,
       );
-      if (file == null) return;
+      if (file == null) return false;
 
       final bytes = await file.readAsBytes();
       final size = bytes.length;
       if (size > 5 * 1024 * 1024) {
-        _showError('Ukuran file melebihi 5 MB');
-        return;
+        _showError('File size exceeds 5 MB');
+        return false;
       }
       final ext = file.name.split('.').last.toLowerCase();
+      if (!['jpg', 'jpeg', 'png'].contains(ext)) {
+        _showError('Unsupported file format. Only JPG, JPEG, and PNG are allowed.');
+        return false;
+      }
       final uploadData = UploadedFileData(
         name: file.name,
         sizeBytes: size,
@@ -576,9 +669,11 @@ class PraRegistrationController extends GetxController {
         }
       }
       updateForm();
+      return true;
     } catch (e) {
       debugPrint('pickImage error: $e');
-      _showError('Gagal memilih gambar.');
+      _showError('Failed to pick image.');
+      return false;
     }
   }
 
@@ -609,19 +704,72 @@ class PraRegistrationController extends GetxController {
   }
 
   bool get isStep2Valid {
+    final fields = getVisitorInfoFormFields();
     if (isGroup.value == true) {
+      if (groupName.value.trim().isEmpty) return false;
       if (groupVisitors.isEmpty) return false;
       for (final v in groupVisitors) {
-        if (!v.isValid) return false;
+        for (final f in fields) {
+          final isMandatory = f['mandatory'] == true;
+          if (!isMandatory) continue;
+          final remarks = (f['remarks'] ?? '').toString().toLowerCase().trim();
+          if (remarks == 'is_employee' && v.isEmployee.value == null) return false;
+          if (remarks == 'name' && v.fullNameCtrl.text.trim().isEmpty) return false;
+          if (remarks == 'email' && (v.emailCtrl.text.trim().isEmpty || !v.emailCtrl.text.contains('@'))) return false;
+          if (remarks == 'phone' && v.phoneCtrl.text.trim().isEmpty) return false;
+          if ((remarks == 'organization' || remarks == 'company') && v.orgCtrl.text.trim().isEmpty) return false;
+          if ((remarks == 'identity_id' || remarks == 'indentity_id') && v.identityCtrl.text.trim().isEmpty) return false;
+          if (remarks == 'visitor_role' || remarks == 'role') {
+            if (v.role.value.isEmpty) return false;
+          }
+          if (remarks != 'name' &&
+              remarks != 'email' &&
+              remarks != 'phone' &&
+              remarks != 'organization' &&
+              remarks != 'company' &&
+              remarks != 'identity_id' &&
+              remarks != 'indentity_id' &&
+              remarks != 'visitor_role' &&
+              remarks != 'role' &&
+              remarks != 'is_employee' &&
+              remarks != 'employee') {
+            if (v.extraControllers[remarks]?.text.trim().isEmpty ?? true) {
+              return false;
+            }
+          }
+        }
       }
       return true;
     } else {
-      if (isEmployee.value == null) return false;
-      if (nameCtrl.text.trim().isEmpty) return false;
-      if (emailCtrl.text.trim().isEmpty || !emailCtrl.text.contains('@')) return false;
-      if (phoneCtrl.text.trim().isEmpty) return false;
-      if (organizationCtrl.text.trim().isEmpty) return false;
-      if (identityIdCtrl.text.trim().isEmpty) return false;
+      for (final f in fields) {
+        final isMandatory = f['mandatory'] == true;
+        if (!isMandatory) continue;
+        final remarks = (f['remarks'] ?? '').toString().toLowerCase().trim();
+        if (remarks == 'is_employee' && isEmployee.value == null) return false;
+        if (remarks == 'name' && nameCtrl.text.trim().isEmpty) return false;
+        if (remarks == 'email' && (emailCtrl.text.trim().isEmpty || !emailCtrl.text.contains('@'))) return false;
+        if (remarks == 'phone' && phoneCtrl.text.trim().isEmpty) return false;
+        if ((remarks == 'organization' || remarks == 'company') && organizationCtrl.text.trim().isEmpty) return false;
+        if ((remarks == 'identity_id' || remarks == 'indentity_id') && identityIdCtrl.text.trim().isEmpty) return false;
+        if (remarks == 'visitor_role' || remarks == 'role') {
+          if (selectedVisitorRole.value.isEmpty) return false;
+        }
+        if (remarks != 'name' &&
+            remarks != 'email' &&
+            remarks != 'phone' &&
+            remarks != 'organization' &&
+            remarks != 'company' &&
+            remarks != 'identity_id' &&
+            remarks != 'indentity_id' &&
+            remarks != 'visitor_role' &&
+            remarks != 'role' &&
+            remarks != 'is_employee' &&
+            remarks != 'employee') {
+          if (singleExtraControllers[remarks]?.text.trim().isEmpty ?? true) {
+            return false;
+          }
+        }
+      }
       return true;
     }
   }
@@ -696,6 +844,7 @@ class PraRegistrationController extends GetxController {
         maxStepReached.value = step;
       }
       currentStep.value = step;
+      selectedGroupMemberIndex.value = 0;
     }
   }
 
@@ -707,12 +856,14 @@ class PraRegistrationController extends GetxController {
         maxStepReached.value = next;
       }
       currentStep.value = next;
+      selectedGroupMemberIndex.value = 0;
     }
   }
 
   void prevStep() {
     if (currentStep.value > 1) {
       currentStep.value--;
+      selectedGroupMemberIndex.value = 0;
     }
   }
 
@@ -732,16 +883,20 @@ class PraRegistrationController extends GetxController {
       if (resData is Map) {
         final rawList = resData['collection'] ?? resData['data'];
         if (rawList is List) {
-          visitorTypes.value = rawList
+          final parsed = rawList
               .whereType<Map>()
               .map((e) => VisitorTypeModel.fromJson(Map<String, dynamic>.from(e)))
               .toList();
+          _cachedVisitorTypes = parsed;
+          visitorTypes.assignAll(parsed);
         }
       } else if (resData is List) {
-        visitorTypes.value = resData
+        final parsed = resData
             .whereType<Map>()
             .map((e) => VisitorTypeModel.fromJson(Map<String, dynamic>.from(e)))
             .toList();
+        _cachedVisitorTypes = parsed;
+        visitorTypes.assignAll(parsed);
       }
     } catch (e) {
       debugPrint('fetchVisitorTypes error: $e');
@@ -790,14 +945,37 @@ class PraRegistrationController extends GetxController {
 
   Future<void> fetchVisitors() async {
     final token = _token;
-    if (token == null) return;
+    if (token == null) {
+      debugPrint('fetchVisitors: Token is null');
+      return;
+    }
     isLoadingVisitors.value = true;
     try {
       final response = await _api.getVisitors(token);
-      if (response.data['status'] == 'success') {
-        final collection = response.data['collection'] as List<dynamic>? ?? [];
-        allVisitors.value = collection.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+      final resData = response.data;
+      if (resData is Map) {
+        if (resData['status'] == 'success' ||
+            resData['status_code'] == 200 ||
+            response.statusCode == 200) {
+          final rawList = resData['collection'] ?? resData['data'];
+          if (rawList is List) {
+            final parsed = rawList
+                .whereType<Map>()
+                .map((e) => Map<String, dynamic>.from(e))
+                .toList();
+            _cachedAllVisitors = parsed;
+            allVisitors.assignAll(parsed);
+          }
+        }
+      } else if (resData is List) {
+        final parsed = resData
+            .whereType<Map>()
+            .map((e) => Map<String, dynamic>.from(e))
+            .toList();
+        _cachedAllVisitors = parsed;
+        allVisitors.assignAll(parsed);
       }
+      debugPrint('fetchVisitors loaded: ${allVisitors.length} visitors');
     } catch (e) {
       debugPrint('fetchVisitors error: $e');
     } finally {
@@ -808,19 +986,49 @@ class PraRegistrationController extends GetxController {
 
   Future<void> fetchEmployees() async {
     final token = _token;
-    if (token == null) return;
+    if (token == null) {
+      debugPrint('fetchEmployees: Token is null');
+      return;
+    }
     isLoadingEmployees.value = true;
     try {
       final response = await _api.getEmployees(token);
-      if (response.data['status'] == 'success') {
-        final collection = response.data['collection'] as List<dynamic>? ?? [];
+      final resData = response.data;
+      if (resData is Map) {
+        if (resData['status'] == 'success' ||
+            resData['status_code'] == 200 ||
+            response.statusCode == 200) {
+          final rawList = resData['collection'] ?? resData['data'];
+          if (rawList is List) {
+            _rawEmployees.clear();
+            _rawEmployees.addAll(
+              rawList.whereType<Map>().map((e) => Map<String, dynamic>.from(e)),
+            );
+            _cachedRawEmployees = List.from(_rawEmployees);
+            employees.value = _rawEmployees
+                .map((e) => DropdownItem(
+                      id: e['id']?.toString() ?? '',
+                      name: e['name']?.toString() ?? '',
+                    ))
+                .where((item) => item.name.isNotEmpty)
+                .toList();
+          }
+        }
+      } else if (resData is List) {
         _rawEmployees.clear();
-        _rawEmployees.addAll(collection.map((e) => Map<String, dynamic>.from(e as Map)));
-        employees.value = collection
-            .map((e) => DropdownItem(id: e['id']?.toString() ?? '', name: e['name']?.toString() ?? ''))
+        _rawEmployees.addAll(
+          resData.whereType<Map>().map((e) => Map<String, dynamic>.from(e)),
+        );
+        _cachedRawEmployees = List.from(_rawEmployees);
+        employees.value = _rawEmployees
+            .map((e) => DropdownItem(
+                  id: e['id']?.toString() ?? '',
+                  name: e['name']?.toString() ?? '',
+                ))
             .where((item) => item.name.isNotEmpty)
             .toList();
       }
+      debugPrint('fetchEmployees loaded: ${_rawEmployees.length} employees');
     } catch (e) {
       debugPrint('fetchEmployees error: $e');
     } finally {
@@ -837,10 +1045,12 @@ class PraRegistrationController extends GetxController {
       final response = await _api.getHosts(token);
       if (response.data['status'] == 'success') {
         final collection = response.data['collection'] as List<dynamic>? ?? [];
-        hosts.value = collection
+        final parsed = collection
             .map((e) => DropdownItem(id: e['id']?.toString() ?? '', name: e['name']?.toString() ?? ''))
             .where((item) => item.name.isNotEmpty)
             .toList();
+        _cachedHosts = parsed;
+        hosts.assignAll(parsed);
       }
     } catch (e) {
       debugPrint('fetchHosts error: $e');
@@ -858,10 +1068,12 @@ class PraRegistrationController extends GetxController {
       final response = await _api.getSitesWithToken(token);
       if (response.data['status'] == 'success') {
         final collection = response.data['collection'] as List<dynamic>? ?? [];
-        sites.value = collection
+        final parsed = collection
             .map((e) => DropdownItem(id: e['id']?.toString() ?? '', name: e['name']?.toString() ?? ''))
             .where((item) => item.name.isNotEmpty)
             .toList();
+        _cachedSites = parsed;
+        sites.assignAll(parsed);
       }
     } catch (e) {
       debugPrint('fetchSites error: $e');
@@ -871,21 +1083,30 @@ class PraRegistrationController extends GetxController {
     }
   }
 
-  List<Map<String, dynamic>> get filteredEmployees {
-    final q = singleSearchCtrl.text.toLowerCase().trim();
+  List<Map<String, dynamic>> getFilteredEmployees([String? query]) {
+    final q = (query ?? singleSearchCtrl.text).toLowerCase().trim();
     if (q.isEmpty) return _rawEmployees.toList();
-    return _rawEmployees
-        .where((e) => (e['name']?.toString() ?? '').toLowerCase().contains(q))
-        .toList();
+    return _rawEmployees.where((e) {
+      final name = (e['name'] ?? '').toString().toLowerCase();
+      final email = (e['email'] ?? '').toString().toLowerCase();
+      final phone = (e['phone'] ?? '').toString().toLowerCase();
+      return name.contains(q) || email.contains(q) || phone.contains(q);
+    }).toList();
   }
 
-  List<Map<String, dynamic>> get filteredVisitors {
-    final q = singleSearchCtrl.text.toLowerCase().trim();
+  List<Map<String, dynamic>> getFilteredVisitors([String? query]) {
+    final q = (query ?? singleSearchCtrl.text).toLowerCase().trim();
     if (q.isEmpty) return allVisitors.toList();
-    return allVisitors
-        .where((v) => (v['name']?.toString() ?? '').toLowerCase().contains(q))
-        .toList();
+    return allVisitors.where((v) {
+      final name = (v['name'] ?? v['visitor_name'] ?? '').toString().toLowerCase();
+      final email = (v['email'] ?? '').toString().toLowerCase();
+      final phone = (v['phone'] ?? '').toString().toLowerCase();
+      return name.contains(q) || email.contains(q) || phone.contains(q);
+    }).toList();
   }
+
+  List<Map<String, dynamic>> get filteredEmployees => getFilteredEmployees();
+  List<Map<String, dynamic>> get filteredVisitors => getFilteredVisitors();
 
   // ── Dynamic Question Page Builder (Exact match to dekstop_tablet_vms) ─────
   Future<List<Map<String, dynamic>>> _buildDynamicQuestionPage({
@@ -1130,22 +1351,15 @@ class PraRegistrationController extends GetxController {
           if (siteId.isNotEmpty) 'registered_site': siteId,
           'group_code': groupCode.value,
           'group_name': groupName.value.trim(),
-          'is_self_registered': false,
-          'filled_by_name': primaryName,
-          'filled_by_email': primaryEmail,
-          'filled_by_phone': primaryPhone,
-          'filled_by_relationship': 'Other',
-          'filled_by_relationship_name': 'Other',
-          'flow': 'Invitation',
-          'visitor_role': groupVisitors.first.role.value.isNotEmpty ? groupVisitors.first.role.value : resolvedRole,
           'data_visitor': dataVisitors,
+          'flow': 'Invitation',
         };
 
         body = {
           'list_group': [groupObject],
         };
       } else {
-        // Single Mode -> POST /api/operator-invitation/new-visit
+        // Single Mode -> POST /api/visitor/new-visit
         final singleEmployeeId = (isEmployee.value == true)
             ? (singleSelectedData.value?['id'] ?? singleSelectedData.value?['employee_id'] ?? '').toString()
             : '';
@@ -1179,7 +1393,8 @@ class PraRegistrationController extends GetxController {
           'tz': 'Asia/Jakarta',
           if (siteId.isNotEmpty) 'registered_site': siteId,
           'flow': 'Invitation',
-          'visitor_role': resolvedRole,
+          'is_self_registered': true,
+          'filled_by_relationship': 'Admin',
           'data_visitor': [
             {'question_page': singleQuestionPages},
           ],

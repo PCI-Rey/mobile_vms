@@ -109,9 +109,20 @@ class AccessPassSection extends StatelessWidget {
                   ),
                   hSpace(context, 6),
                   Expanded(
-                    child: AccessPassCard(
-                      item: item,
-                      onTap: () => onTap(item),
+                    child: GestureDetector(
+                      onHorizontalDragEnd: (details) {
+                        if (details.primaryVelocity != null) {
+                          if (details.primaryVelocity! < -100 && hasNext) {
+                            guestCtrl.selectPass(safeIndex + 1);
+                          } else if (details.primaryVelocity! > 100 && hasPrev) {
+                            guestCtrl.selectPass(safeIndex - 1);
+                          }
+                        }
+                      },
+                      child: AccessPassCard(
+                        item: item,
+                        onTap: () => onTap(item),
+                      ),
                     ),
                   ),
                   hSpace(context, 6),
