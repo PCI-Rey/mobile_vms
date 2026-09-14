@@ -28,6 +28,7 @@ import 'widgets/share_link_card.dart';
 import 'widgets/share_link_detail_modal.dart';
 import 'widgets/create_quick_access_dialog.dart';
 import 'widgets/duplicate_selector_sheet.dart';
+import 'widgets/add_invitation_visitor_dialog.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 
@@ -1759,6 +1760,23 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
           receiverPhone: model.receiverPhone,
           canTrackBle: model.canTrackBle,
           canAccess: model.canAccess,
+          transactionVisitorId: widget.item.id.isNotEmpty
+              ? widget.item.id
+              : (model.transactionVisitorId.isNotEmpty
+                  ? model.transactionVisitorId
+                  : widget.item.transactionVisitorId),
+          selfieImage: (model.selfieImage != null && model.selfieImage!.isNotEmpty)
+              ? model.selfieImage
+              : (mutableVisitor['selfie_image'] ??
+                  mutableVisitor['selfie'] ??
+                  mutableVisitor['visitor_face'] ??
+                  mutableVisitor['face_url'] ??
+                  mutableVisitor['face_image'] ??
+                  mutableVisitor['photo'] ??
+                  mutableVisitor['photo_url'] ??
+                  mutableVisitor['avatar'] ??
+                  mutableVisitor['picture'] ??
+                  mutableVisitor['image'])?.toString(),
         );
         models.add(finalModel);
       }
@@ -1821,22 +1839,51 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
                 ),
               ),
               // Avatar
-              CircleAvatar(
-                radius: rw(context, 32),
-                backgroundColor: const Color(
-                  0xFF005596,
-                ).withValues(alpha: 0.12),
-                child: Text(
-                  model.visitorName.isNotEmpty
-                      ? model.visitorName[0].toUpperCase()
-                      : 'V',
-                  style: TextStyle(
-                    fontSize: rfs(context, 24),
-                    fontWeight: FontWeight.bold,
-                    color: const Color(0xFF005596),
+              (() {
+                final selfieUrl = model.formattedSelfieUrl;
+                final hasSelfie = selfieUrl != null && selfieUrl.isNotEmpty;
+                return CircleAvatar(
+                  radius: rw(context, 32),
+                  backgroundColor: const Color(
+                    0xFF005596,
+                  ).withValues(alpha: 0.12),
+                  child: ClipOval(
+                    child: SizedBox(
+                      width: rw(context, 64),
+                      height: rw(context, 64),
+                      child: hasSelfie
+                          ? Image.network(
+                              selfieUrl,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, _, _) => Center(
+                                child: Text(
+                                  model.visitorName.isNotEmpty
+                                      ? model.visitorName[0].toUpperCase()
+                                      : 'V',
+                                  style: TextStyle(
+                                    fontSize: rfs(context, 24),
+                                    fontWeight: FontWeight.bold,
+                                    color: const Color(0xFF005596),
+                                  ),
+                                ),
+                              ),
+                            )
+                          : Center(
+                              child: Text(
+                                model.visitorName.isNotEmpty
+                                    ? model.visitorName[0].toUpperCase()
+                                    : 'V',
+                                style: TextStyle(
+                                  fontSize: rfs(context, 24),
+                                  fontWeight: FontWeight.bold,
+                                  color: const Color(0xFF005596),
+                                ),
+                              ),
+                            ),
+                    ),
                   ),
-                ),
-              ),
+                );
+              })(),
               vSpace(context, 12),
               Text(
                 model.visitorName.isNotEmpty ? model.visitorName : 'Visitor',
@@ -2739,22 +2786,78 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
                     hSpace(context, 8),
                     GestureDetector(
                       onTap: () {
+                        final trxId = widget.item.id.isNotEmpty
+                            ? widget.item.id
+                            : (widget.item.transactionVisitorId.isNotEmpty
+                                ? widget.item.transactionVisitorId
+                                : selectedItem.transactionVisitorId);
+                        showAddInvitationVisitorDialog(
+                          context,
+                          item: widget.item,
+                          parentTransactionId: trxId,
+                          onSuccess: () {
+                            _fetchGroupVisitors();
+                            if (Get.isRegistered<InvitationController>()) {
+                              Get.find<InvitationController>().fetchOngoingInvitations();
+                            }
+                          },
+                        );
+                      },
+                      child: Container(
+                        width: rw(context, 34),
+                        height: rw(context, 34),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFE8F1FB),
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: const Color(0xFFCCE0F5),
+                            width: 1,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFF005596).withValues(alpha: 0.06),
+                              blurRadius: 4,
+                              offset: const Offset(0, 1.5),
+                            ),
+                          ],
+                        ),
+                        child: Icon(
+                          Icons.person_add_alt_1_rounded,
+                          size: rw(context, 17),
+                          color: const Color(0xFF005596),
+                        ),
+                      ),
+                    ),
+                    hSpace(context, 8),
+                    GestureDetector(
+                      onTap: () {
                         final barcodeItems = _groupVisitorModels.isNotEmpty
                             ? _groupVisitorModels
                             : [selectedItem];
                         _downloadBarcodePdf([barcodeItems.first]);
                       },
                       child: Container(
-                        width: rw(context, 32),
-                        height: rw(context, 32),
-                        decoration: const BoxDecoration(
-                          color: Color(0xFFE8F1FB),
+                        width: rw(context, 34),
+                        height: rw(context, 34),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFE8F1FB),
                           shape: BoxShape.circle,
+                          border: Border.all(
+                            color: const Color(0xFFCCE0F5),
+                            width: 1,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFF005596).withValues(alpha: 0.06),
+                              blurRadius: 4,
+                              offset: const Offset(0, 1.5),
+                            ),
+                          ],
                         ),
-                        child: const Icon(
+                        child: Icon(
                           Icons.download_rounded,
-                          size: 16,
-                          color: Color(0xFF1976D2),
+                          size: rw(context, 17),
+                          color: const Color(0xFF005596),
                         ),
                       ),
                     ),
@@ -3351,6 +3454,9 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
                             final firstName = model.visitorName.isNotEmpty
                                 ? model.visitorName.trim().split(' ').first
                                 : 'Visitor';
+                            final selfieUrl = model.formattedSelfieUrl;
+                            final hasSelfie =
+                                selfieUrl != null && selfieUrl.isNotEmpty;
 
                             return GestureDetector(
                               onTap: () =>
@@ -3363,12 +3469,38 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
                                     backgroundColor: avatarColor.withValues(
                                       alpha: 0.15,
                                     ),
-                                    child: Text(
-                                      initials,
-                                      style: TextStyle(
-                                        color: avatarColor,
-                                        fontSize: rfs(context, 15),
-                                        fontWeight: FontWeight.bold,
+                                    child: ClipOval(
+                                      child: SizedBox(
+                                        width: rw(context, 56),
+                                        height: rw(context, 56),
+                                        child: hasSelfie
+                                            ? Image.network(
+                                                selfieUrl,
+                                                fit: BoxFit.cover,
+                                                errorBuilder: (_, _, _) =>
+                                                    Center(
+                                                  child: Text(
+                                                    initials,
+                                                    style: TextStyle(
+                                                      color: avatarColor,
+                                                      fontSize:
+                                                          rfs(context, 15),
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                    ),
+                                                  ),
+                                                ),
+                                              )
+                                            : Center(
+                                                child: Text(
+                                                  initials,
+                                                  style: TextStyle(
+                                                    color: avatarColor,
+                                                    fontSize: rfs(context, 15),
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                ),
+                                              ),
                                       ),
                                     ),
                                   ),
@@ -4880,6 +5012,10 @@ class _OthersVisitorSheetState extends State<_OthersVisitorSheet> {
                           ? model.visitorName.trim().split(' ').first
                           : 'Visitor';
 
+                      final selfieUrl = model.formattedSelfieUrl;
+                      final hasSelfie =
+                          selfieUrl != null && selfieUrl.isNotEmpty;
+
                       return GestureDetector(
                         onTap: () => widget.onVisitorTap(model),
                         child: Column(
@@ -4888,12 +5024,35 @@ class _OthersVisitorSheetState extends State<_OthersVisitorSheet> {
                             CircleAvatar(
                               radius: rw(context, 32),
                               backgroundColor: color.withValues(alpha: 0.15),
-                              child: Text(
-                                initials,
-                                style: TextStyle(
-                                  color: color,
-                                  fontSize: rfs(context, 18),
-                                  fontWeight: FontWeight.bold,
+                              child: ClipOval(
+                                child: SizedBox(
+                                  width: rw(context, 64),
+                                  height: rw(context, 64),
+                                  child: hasSelfie
+                                      ? Image.network(
+                                          selfieUrl,
+                                          fit: BoxFit.cover,
+                                          errorBuilder: (_, _, _) => Center(
+                                            child: Text(
+                                              initials,
+                                              style: TextStyle(
+                                                color: color,
+                                                fontSize: rfs(context, 18),
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                          ),
+                                        )
+                                      : Center(
+                                          child: Text(
+                                            initials,
+                                            style: TextStyle(
+                                              color: color,
+                                              fontSize: rfs(context, 18),
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ),
                                 ),
                               ),
                             ),

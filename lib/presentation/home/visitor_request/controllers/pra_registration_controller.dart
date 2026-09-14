@@ -116,6 +116,7 @@ class PraRegistrationController extends GetxController {
   // ── Step 1: User Type ─────────────────────────────────────────────────────
   static List<VisitorTypeModel> _cachedVisitorTypes = [];
   static List<DropdownItem> _cachedSites = [];
+  static List<Map<String, dynamic>> _cachedRawSites = [];
   static List<DropdownItem> _cachedHosts = [];
   static List<Map<String, dynamic>> _cachedRawEmployees = [];
   static List<Map<String, dynamic>> _cachedAllVisitors = [];
@@ -156,9 +157,71 @@ class PraRegistrationController extends GetxController {
 
   // ── Step 3: Purpose Visit ─────────────────────────────────────────────────
   final RxList<DropdownItem> sites = <DropdownItem>[].obs;
+  final RxList<Map<String, dynamic>> rawSites = <Map<String, dynamic>>[].obs;
+  final Rx<Map<String, dynamic>?> selectedParentSite = Rx<Map<String, dynamic>?>(null);
+  final Rx<Map<String, dynamic>?> selectedChildSite = Rx<Map<String, dynamic>?>(null);
   final RxString selectedSiteId = ''.obs;
   final RxString selectedSiteName = ''.obs;
   final RxBool isLoadingSites = false.obs;
+
+  List<Map<String, dynamic>> get parentSites {
+    return rawSites.where((s) {
+      String parentRef = '';
+      if (s['parent'] is Map) {
+        parentRef = (s['parent']['id'] ?? '').toString().trim().toLowerCase();
+      } else {
+        parentRef = (s['parent_id'] ?? s['parent'] ?? '').toString().trim().toLowerCase();
+      }
+      final isChild = s['is_child'] == true ||
+          s['is_child'] == 1 ||
+          s['is_child'] == 'true' ||
+          (parentRef.isNotEmpty && parentRef != 'null');
+      return !isChild;
+    }).toList();
+  }
+
+  List<Map<String, dynamic>> getChildSites(String parentId, [String? parentName]) {
+    final pId = parentId.trim().toLowerCase();
+    final pName = (parentName ?? '').trim().toLowerCase();
+    if (pId.isEmpty && pName.isEmpty) return [];
+    return rawSites.where((s) {
+      String parentRef = '';
+      if (s['parent'] is Map) {
+        parentRef = (s['parent']['id'] ?? s['parent']['name'] ?? '').toString().trim().toLowerCase();
+      } else {
+        parentRef = (s['parent_id'] ?? s['parent'] ?? '').toString().trim().toLowerCase();
+      }
+      final isChild = s['is_child'] == true ||
+          s['is_child'] == 1 ||
+          s['is_child'] == 'true' ||
+          (parentRef.isNotEmpty && parentRef != 'null');
+      return isChild && ((pId.isNotEmpty && parentRef == pId) || (pName.isNotEmpty && parentRef == pName));
+    }).toList();
+  }
+
+  void selectParentSite(Map<String, dynamic> parent) {
+    selectedParentSite.value = parent;
+    selectedChildSite.value = null;
+    selectedSiteId.value = (parent['id'] ?? '').toString();
+    selectedSiteName.value = (parent['name'] ?? '').toString();
+    updateForm();
+  }
+
+  void selectChildSite(Map<String, dynamic> parent, Map<String, dynamic> child) {
+    selectedParentSite.value = parent;
+    selectedChildSite.value = child;
+    selectedSiteId.value = (child['id'] ?? '').toString();
+    selectedSiteName.value = (child['name'] ?? '').toString();
+    updateForm();
+  }
+
+  void clearSite() {
+    selectedParentSite.value = null;
+    selectedChildSite.value = null;
+    selectedSiteId.value = '';
+    selectedSiteName.value = '';
+    updateForm();
+  }
 
   final RxList<DropdownItem> hosts = <DropdownItem>[].obs;
   final RxString selectedHostId = ''.obs;
@@ -207,6 +270,9 @@ class PraRegistrationController extends GetxController {
     resetFields();
     if (_cachedVisitorTypes.isNotEmpty) {
       visitorTypes.assignAll(_cachedVisitorTypes);
+    }
+    if (_cachedRawSites.isNotEmpty) {
+      rawSites.assignAll(_cachedRawSites);
     }
     if (_cachedSites.isNotEmpty) {
       sites.assignAll(_cachedSites);
@@ -317,6 +383,8 @@ class PraRegistrationController extends GetxController {
 
     selectedSiteId.value = '';
     selectedSiteName.value = '';
+    selectedParentSite.value = null;
+    selectedChildSite.value = null;
     selectedHostId.value = '';
     selectedHostName.value = '';
     selectedAgenda.value = '';
@@ -1068,12 +1136,52 @@ class PraRegistrationController extends GetxController {
       final response = await _api.getSitesWithToken(token);
       if (response.data['status'] == 'success') {
         final collection = response.data['collection'] as List<dynamic>? ?? [];
-        final parsed = collection
-            .map((e) => DropdownItem(id: e['id']?.toString() ?? '', name: e['name']?.toString() ?? ''))
+        final parsedMaps = collection
+            .map((e) => Map<String, dynamic>.from(e as Map))
+            .toList();
+        _cachedRawSites = parsedMaps;
+        rawSites.assignAll(parsedMaps);
+
+        final parsed = parsedMaps
+            .map((e) => DropdownItem(
+                  id: e['id']?.toString() ?? '',
+                  name: e['name']?.toString() ?? '',
+                ))
             .where((item) => item.name.isNotEmpty)
             .toList();
         _cachedSites = parsed;
         sites.assignAll(parsed);
+
+        // Re-resolve selected parent/child if selectedSiteId is already set
+        if (selectedSiteId.value.isNotEmpty) {
+          final found = parsedMaps.firstWhereOrNull(
+            (s) =>
+                (s['id'] ?? '').toString().toLowerCase() ==
+                selectedSiteId.value.toLowerCase(),
+          );
+          if (found != null) {
+            final isChild = found['is_child'] == true ||
+                found['is_child'] == 1 ||
+                found['is_child'] == 'true';
+            if (isChild) {
+              final pRef = (found['parent'] ?? found['parent_id'] ?? '')
+                  .toString()
+                  .trim()
+                  .toLowerCase();
+              final parent = parsedMaps.firstWhereOrNull(
+                (s) =>
+                    (s['id'] ?? '').toString().trim().toLowerCase() == pRef,
+              );
+              selectedParentSite.value = parent;
+              selectedChildSite.value = found;
+              selectedSiteName.value = (found['name'] ?? '').toString();
+            } else {
+              selectedParentSite.value = found;
+              selectedChildSite.value = null;
+              selectedSiteName.value = (found['name'] ?? '').toString();
+            }
+          }
+        }
       }
     } catch (e) {
       debugPrint('fetchSites error: $e');

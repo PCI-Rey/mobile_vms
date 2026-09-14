@@ -912,4 +912,53 @@ class ApiService {
       rethrow;
     }
   }
+
+  /// GET /api/visitor/add-visit/form/{transactionVisitorId}
+  Future<Response> getAddVisitorForm(
+    String token,
+    String transactionVisitorId,
+  ) async {
+    try {
+      debugPrint('[ApiService] GET /$pathApi/visitor/add-visit/form/$transactionVisitorId');
+      final response = await _dio.get(
+        '/$pathApi/visitor/add-visit/form/$transactionVisitorId',
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+      debugPrint('[ApiService] getAddVisitorForm response: ${response.statusCode}');
+      return response;
+    } on DioException catch (e) {
+      debugPrint('Dio Error getAddVisitorForm: ${e.message}');
+      debugPrint('getAddVisitorForm status: ${e.response?.statusCode}, body: ${e.response?.data}');
+      if (e.response != null) return e.response!;
+      rethrow;
+    }
+  }
+
+  /// POST /api/visitor/add-visit
+  Future<Response> submitAddVisitor(
+    String token,
+    Map<String, dynamic> payload,
+  ) async {
+    try {
+      debugPrint('[ApiService] POST /$pathApi/visitor/add-visit trxId: ${payload['transaction_visitor_id']}');
+      final response = await _dio.post(
+        '/$pathApi/visitor/add-visit',
+        data: payload,
+        options: Options(
+          headers: {
+            'Authorization': 'Bearer $token',
+            'Content-Type': 'application/json',
+          },
+        ),
+      );
+      debugPrint('[ApiService] submitAddVisitor response: ${response.statusCode}, body: ${response.data}');
+      return response;
+    } on DioException catch (e) {
+      debugPrint('Dio Error submitAddVisitor: ${e.message}');
+      debugPrint('submitAddVisitor status: ${e.response?.statusCode}, body: ${e.response?.data}');
+      if (e.response != null) return e.response!;
+      rethrow;
+    }
+  }
 }
+

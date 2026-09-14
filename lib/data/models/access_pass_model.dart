@@ -209,16 +209,22 @@ class AccessPassModel {
       selfieImage: () {
         final visitorObj = json['visitor'] is Map ? json['visitor'] as Map : null;
         final raw = json['selfie_image'] ??
+            json['selfie'] ??
             json['visitor_face'] ??
             json['face_url'] ??
             json['face_image'] ??
             json['photo'] ??
             json['photo_url'] ??
+            json['avatar'] ??
+            json['picture'] ??
             json['image'] ??
             visitorObj?['selfie_image'] ??
+            visitorObj?['selfie'] ??
             visitorObj?['visitor_face'] ??
             visitorObj?['face_url'] ??
-            visitorObj?['photo'];
+            visitorObj?['photo'] ??
+            visitorObj?['avatar'] ??
+            visitorObj?['image'];
         return raw?.toString();
       }(),
     );

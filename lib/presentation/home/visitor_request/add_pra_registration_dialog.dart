@@ -1402,24 +1402,7 @@ class _Step3PurposeVisit extends StatelessWidget {
           // Select Destination
           _buildFieldLabel(context, 'Destination (Site)', isRequired: true),
           vSpace(context, 6),
-          _buildDropdownField<String>(
-            context,
-            hintText: 'Select Destination',
-            value: controller.selectedSiteId.value.isNotEmpty
-                ? controller.selectedSiteId.value
-                : null,
-            items: controller.sites
-                .map((s) => DropdownMenuItem(value: s.id, child: Text(s.name)))
-                .toList(),
-            onChanged: (val) {
-              if (val != null) {
-                controller.selectedSiteId.value = val;
-                final found = controller.sites.firstWhereOrNull((s) => s.id == val);
-                if (found != null) controller.selectedSiteName.value = found.name;
-                controller.updateForm();
-              }
-            },
-          ),
+          _buildSiteSelectorField(context, controller),
 
           vSpace(context, 14),
 
@@ -1595,6 +1578,512 @@ class _Step3PurposeVisit extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// DESTINATION SITE SELECTION DIALOG & SELECTOR
+// ─────────────────────────────────────────────────────────────────────────────
+
+Widget _buildSiteSelectorField(
+  BuildContext context,
+  PraRegistrationController controller,
+) {
+  return Obx(() {
+    final hasSelection = controller.selectedSiteId.value.isNotEmpty;
+    final parent = controller.selectedParentSite.value;
+    final child = controller.selectedChildSite.value;
+
+    String displayText = 'Select Destination';
+    if (hasSelection) {
+      if (child != null && parent != null) {
+        final pName = parent['name']?.toString() ?? '';
+        final cName = child['name']?.toString() ?? '';
+        displayText = pName.isNotEmpty && cName.isNotEmpty
+            ? '$pName - $cName'
+            : (cName.isNotEmpty ? cName : pName);
+      } else if (child != null) {
+        displayText = child['name']?.toString() ?? 'Site';
+      } else if (parent != null) {
+        displayText = parent['name']?.toString() ?? 'Site';
+      } else if (controller.selectedSiteName.value.isNotEmpty) {
+        displayText = controller.selectedSiteName.value;
+      }
+    }
+
+    return InkWell(
+      onTap: () => _showSiteSelectionDialog(context, controller),
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        height: rh(context, 48),
+        padding: EdgeInsets.symmetric(horizontal: rw(context, 12)),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: hasSelection ? const Color(0xFF94A3B8) : const Color(0xFFCBD5E1),
+            width: 1.2,
+          ),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Text(
+                displayText,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: GoogleFonts.inter(
+                  fontSize: rfs(context, 13),
+                  fontWeight: hasSelection ? FontWeight.w600 : FontWeight.w400,
+                  color: hasSelection ? const Color(0xFF0F172A) : const Color(0xFF94A3B8),
+                ),
+              ),
+            ),
+            if (hasSelection) ...[
+              GestureDetector(
+                onTap: () => controller.clearSite(),
+                child: Padding(
+                  padding: const EdgeInsets.all(4),
+                  child: Icon(
+                    Icons.close_rounded,
+                    size: 18,
+                    color: Colors.grey.shade500,
+                  ),
+                ),
+              ),
+              hSpace(context, 4),
+            ],
+            const Icon(
+              Icons.keyboard_arrow_down_rounded,
+              color: Color(0xFF64748B),
+              size: 20,
+            ),
+          ],
+        ),
+      ),
+    );
+  });
+}
+
+void _showSiteSelectionDialog(
+  BuildContext context,
+  PraRegistrationController controller,
+) {
+  showDialog(
+    context: context,
+    barrierDismissible: true,
+    builder: (ctx) => _SiteSelectionDialog(controller: controller),
+  );
+}
+
+class _SiteSelectionDialog extends StatefulWidget {
+  final PraRegistrationController controller;
+  const _SiteSelectionDialog({required this.controller});
+
+  @override
+  State<_SiteSelectionDialog> createState() => _SiteSelectionDialogState();
+}
+
+class _SiteSelectionDialogState extends State<_SiteSelectionDialog> {
+  final Set<String> _expandedParentIds = {};
+  Map<String, dynamic>? _selectedParent;
+  Map<String, dynamic>? _selectedChild;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedParent = widget.controller.selectedParentSite.value;
+    _selectedChild = widget.controller.selectedChildSite.value;
+
+    if (_selectedParent != null) {
+      final pId = (_selectedParent!['id'] ?? '').toString().trim().toLowerCase();
+      if (pId.isNotEmpty) {
+        _expandedParentIds.add(pId);
+      }
+    }
+  }
+
+  void _onTapParent(Map<String, dynamic> parent, bool hasChildren) {
+    setState(() {
+      final pId = (parent['id'] ?? '').toString().trim().toLowerCase();
+      final isAlreadySelected = _selectedParent?['id']?.toString().trim().toLowerCase() == pId &&
+          _selectedChild == null;
+
+      if (isAlreadySelected) {
+        _selectedParent = null;
+        _selectedChild = null;
+      } else {
+        _selectedParent = parent;
+        _selectedChild = null;
+        if (hasChildren && pId.isNotEmpty) {
+          _expandedParentIds.add(pId);
+        }
+      }
+    });
+  }
+
+  void _onTapChild(Map<String, dynamic> parent, Map<String, dynamic> child) {
+    setState(() {
+      final cId = (child['id'] ?? '').toString().trim().toLowerCase();
+      final isAlreadySelected = _selectedChild?['id']?.toString().trim().toLowerCase() == cId;
+
+      if (isAlreadySelected) {
+        _selectedChild = null;
+        _selectedParent = null;
+      } else {
+        // Checking child automatically checks parent as well
+        _selectedParent = parent;
+        _selectedChild = child;
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final hasSelection = _selectedParent != null;
+
+    return Dialog(
+      backgroundColor: Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(rw(context, 16)),
+      ),
+      insetPadding: EdgeInsets.symmetric(
+        horizontal: rw(context, 20),
+        vertical: rh(context, 24),
+      ),
+      child: Container(
+        constraints: BoxConstraints(
+          maxWidth: rw(context, 420),
+          maxHeight: MediaQuery.of(context).size.height * 0.75,
+        ),
+        padding: EdgeInsets.symmetric(vertical: rh(context, 16)),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Header
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: rw(context, 20)),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Select Destination (Site)',
+                    style: GoogleFonts.inter(
+                      fontSize: rfs(context, 16),
+                      fontWeight: FontWeight.w700,
+                      color: const Color(0xFF0F172A),
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close_rounded, size: 20),
+                    onPressed: () => Navigator.pop(context),
+                    color: const Color(0xFF64748B),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                  ),
+                ],
+              ),
+            ),
+            vSpace(context, 12),
+            const Divider(height: 1, color: Color(0xFFE2E8F0)),
+            vSpace(context, 12),
+
+            // Sites List
+            Flexible(
+              child: Obx(() {
+                if (widget.controller.isLoadingSites.value) {
+                  return const Center(
+                    child: Padding(
+                      padding: EdgeInsets.all(24),
+                      child: CircularProgressIndicator(),
+                    ),
+                  );
+                }
+
+                final parentSites = widget.controller.parentSites;
+
+                if (parentSites.isEmpty) {
+                  return Center(
+                    child: Padding(
+                      padding: EdgeInsets.all(rw(context, 32)),
+                      child: Text(
+                        'No destinations available',
+                        textAlign: TextAlign.center,
+                        style: GoogleFonts.inter(
+                          fontSize: rfs(context, 13),
+                          color: const Color(0xFF64748B),
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  );
+                }
+
+                return ListView.separated(
+                  shrinkWrap: true,
+                  padding: EdgeInsets.symmetric(
+                    horizontal: rw(context, 16),
+                  ),
+                  itemCount: parentSites.length,
+                  separatorBuilder: (_, __) => vSpace(context, 8),
+                  itemBuilder: (context, index) {
+                    final parent = parentSites[index];
+                    final pId = (parent['id'] ?? '').toString().trim().toLowerCase();
+                    final pName = (parent['name'] ?? 'Site').toString();
+                    final children = widget.controller.getChildSites(pId, pName);
+                    final hasChildren = children.isNotEmpty;
+                    final isExpanded = _expandedParentIds.contains(pId);
+
+                    // Parent is checked if selectedParent == this parent (either alone or via child)
+                    final isParentChecked = _selectedParent?['id']?.toString().trim().toLowerCase() == pId;
+                    final isChildOfThisParentSelected = isParentChecked && _selectedChild != null;
+
+                    return Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                          color: isParentChecked
+                              ? AppColors.primary500.withValues(alpha: 0.6)
+                              : const Color(0xFFE2E8F0),
+                          width: isParentChecked ? 1.5 : 1,
+                        ),
+                      ),
+                      clipBehavior: Clip.antiAlias,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          // Parent Site Row
+                          Padding(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: rw(context, 14),
+                              vertical: rh(context, 4),
+                            ),
+                            child: Row(
+                              children: [
+                                // Tapping checkbox or name checks/unchecks parent
+                                Expanded(
+                                  child: InkWell(
+                                    onTap: () => _onTapParent(parent, hasChildren),
+                                    borderRadius: BorderRadius.circular(6),
+                                    child: Padding(
+                                      padding: EdgeInsets.symmetric(vertical: rh(context, 8)),
+                                      child: Row(
+                                        children: [
+                                          _buildCheckbox(
+                                            context,
+                                            isParentChecked,
+                                          ),
+                                          hSpace(context, 12),
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  pName,
+                                                  style: GoogleFonts.inter(
+                                                    fontSize: rfs(context, 13.5),
+                                                    fontWeight: isParentChecked
+                                                        ? FontWeight.w700
+                                                        : FontWeight.w600,
+                                                    color: isParentChecked
+                                                        ? AppColors.primary500
+                                                        : const Color(0xFF0F172A),
+                                                  ),
+                                                ),
+                                                if (isChildOfThisParentSelected)
+                                                  Text(
+                                                    'Selected: ${_selectedChild?['name'] ?? ''}',
+                                                    style: GoogleFonts.inter(
+                                                      fontSize: rfs(context, 11),
+                                                      fontWeight: FontWeight.w500,
+                                                      color: AppColors.primary500,
+                                                    ),
+                                                  ),
+                                              ],
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                // Expand / Collapse Chevron Button (if has children)
+                                if (hasChildren)
+                                  InkWell(
+                                    onTap: () {
+                                      setState(() {
+                                        if (_expandedParentIds.contains(pId)) {
+                                          _expandedParentIds.remove(pId);
+                                        } else {
+                                          _expandedParentIds.add(pId);
+                                        }
+                                      });
+                                    },
+                                    borderRadius: BorderRadius.circular(20),
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(8),
+                                      child: Icon(
+                                        isExpanded
+                                            ? Icons.keyboard_arrow_up_rounded
+                                            : Icons.keyboard_arrow_down_rounded,
+                                        size: 22,
+                                        color: const Color(0xFF64748B),
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ),
+
+                          // Expandable Children List
+                          if (hasChildren && isExpanded) ...[
+                            const Divider(height: 1, color: Color(0xFFF1F5F9)),
+                            ...children.map((child) {
+                              final cId = (child['id'] ?? '').toString().trim().toLowerCase();
+                              final cName = child['name']?.toString() ?? 'Room';
+                              final isChildChecked =
+                                  _selectedChild?['id']?.toString().trim().toLowerCase() == cId;
+
+                              return InkWell(
+                                onTap: () => _onTapChild(parent, child),
+                                child: Container(
+                                  color: isChildChecked
+                                      ? AppColors.primary500.withValues(alpha: 0.08)
+                                      : const Color(0xFFF8FAFC),
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: rw(context, 14),
+                                    vertical: rh(context, 10),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      hSpace(context, 30),
+                                      _buildCheckbox(context, isChildChecked),
+                                      hSpace(context, 12),
+                                      Expanded(
+                                        child: Text(
+                                          cName,
+                                          style: GoogleFonts.inter(
+                                            fontSize: rfs(context, 12.5),
+                                            fontWeight: isChildChecked
+                                                ? FontWeight.w700
+                                                : FontWeight.w400,
+                                            color: isChildChecked
+                                                ? AppColors.primary500
+                                                : const Color(0xFF334155),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            }),
+                          ],
+                        ],
+                      ),
+                    );
+                  },
+                );
+              }),
+            ),
+
+            vSpace(context, 12),
+            const Divider(height: 1, color: Color(0xFFE2E8F0)),
+            vSpace(context, 12),
+
+            // Footer Buttons (Cancel & OK)
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: rw(context, 16)),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: SizedBox(
+                      height: rh(context, 42),
+                      child: OutlinedButton(
+                        onPressed: () => Navigator.pop(context),
+                        style: OutlinedButton.styleFrom(
+                          side: const BorderSide(color: Color(0xFFCBD5E1)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          padding: EdgeInsets.zero,
+                        ),
+                        child: Text(
+                          'Cancel',
+                          style: GoogleFonts.inter(
+                            fontSize: rfs(context, 13),
+                            fontWeight: FontWeight.w600,
+                            color: const Color(0xFF64748B),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  hSpace(context, 12),
+                  Expanded(
+                    child: SizedBox(
+                      height: rh(context, 42),
+                      child: ElevatedButton(
+                        onPressed: hasSelection
+                            ? () {
+                                if (_selectedChild != null) {
+                                  widget.controller.selectChildSite(
+                                    _selectedParent!,
+                                    _selectedChild!,
+                                  );
+                                } else if (_selectedParent != null) {
+                                  widget.controller.selectParentSite(_selectedParent!);
+                                }
+                                Navigator.pop(context);
+                              }
+                            : null,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primary500,
+                          disabledBackgroundColor: const Color(0xFFE2E8F0),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          elevation: 0,
+                          padding: EdgeInsets.zero,
+                        ),
+                        child: Text(
+                          'OK',
+                          style: GoogleFonts.inter(
+                            fontSize: rfs(context, 13),
+                            fontWeight: FontWeight.w600,
+                            color: hasSelection ? Colors.white : const Color(0xFF94A3B8),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCheckbox(BuildContext context, bool isChecked) {
+    return Container(
+      width: 20,
+      height: 20,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(4),
+        color: isChecked ? AppColors.primary500 : Colors.transparent,
+        border: Border.all(
+          color: isChecked ? AppColors.primary500 : const Color(0xFFCBD5E1),
+          width: 1.5,
+        ),
+      ),
+      child: isChecked
+          ? const Icon(Icons.check, size: 14, color: Colors.white)
+          : null,
     );
   }
 }
