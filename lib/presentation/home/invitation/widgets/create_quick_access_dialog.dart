@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../../data/datasources/hive_service.dart';
@@ -27,14 +28,9 @@ class _CreateQuickAccessDialogState extends State<CreateQuickAccessDialog> {
 
   // Form Fields
   String? selectedProviderId;
-  String? selectedRecipientMode; // 'self' or 'others'
   String? selectedHostId;
   String? selectedSiteId;
   int? selectedDuration;
-
-  final receiverNameCtrl = TextEditingController();
-  final receiverEmailCtrl = TextEditingController();
-  final receiverPhoneCtrl = TextEditingController();
 
   final courierNameCtrl = TextEditingController();
   final courierEmailCtrl = TextEditingController();
@@ -49,60 +45,17 @@ class _CreateQuickAccessDialogState extends State<CreateQuickAccessDialog> {
   @override
   void initState() {
     super.initState();
-    receiverNameCtrl.addListener(_onTextChanged);
-    receiverEmailCtrl.addListener(_onTextChanged);
-    receiverPhoneCtrl.addListener(_onTextChanged);
+    if (controller.dropPoints.isEmpty) {
+      controller.fetchDropPoints();
+    }
     courierNameCtrl.addListener(_onTextChanged);
     courierPhoneCtrl.addListener(_onTextChanged);
     vehiclePlateCtrl.addListener(_onTextChanged);
 
     if (widget.duplicateData != null) {
       final model = widget.duplicateData!;
-      
-      // 1. Recipient Mode
-      String recName = model.receiverName;
-      String recEmail = model.receiverEmail;
-      String recPhone = model.receiverPhone;
 
-      if (widget.subVisitors != null && widget.subVisitors!.isNotEmpty) {
-        final sub = widget.subVisitors!.first;
-        final subName = sub['receiver_name']?.toString() ?? '';
-        final subEmail = sub['receiver_email']?.toString() ?? '';
-        final subPhone = sub['receiver_phone']?.toString() ?? '';
-        if (recName.isEmpty) recName = subName;
-        if (recEmail.isEmpty) recEmail = subEmail;
-        if (recPhone.isEmpty) recPhone = subPhone;
-      }
-
-      final user = _hive.getUser();
-      final userEmail = (user?.email ?? '').toLowerCase().trim();
-      final userFullname = (user?.fullname ?? '').toLowerCase().trim();
-      final recNameLower = recName.toLowerCase().trim();
-      final recEmailLower = recEmail.toLowerCase().trim();
-
-      bool isSelf = model.isReceiverSelf;
-      if (!isSelf) {
-        if (recEmailLower.isNotEmpty && recEmailLower == userEmail) {
-          if (recNameLower.isEmpty || recNameLower == userFullname) {
-            isSelf = true;
-          }
-        } else if (recNameLower.isNotEmpty && recNameLower == userFullname) {
-          isSelf = true;
-        } else if (recNameLower.isEmpty && recEmailLower.isEmpty && recPhone.isEmpty) {
-          isSelf = true;
-        }
-      }
-
-      if (isSelf) {
-        selectedRecipientMode = 'self';
-      } else {
-        selectedRecipientMode = 'others';
-        receiverNameCtrl.text = recName;
-        receiverEmailCtrl.text = recEmail;
-        receiverPhoneCtrl.text = recPhone;
-      }
-
-      // 2. Visitor Provider
+      // 1. Visitor Provider
       final providers = controller.visitorProviders
           .where((p) => p['active'] == true && p['is_quick_access'] == true)
           .toList();
@@ -134,7 +87,8 @@ class _CreateQuickAccessDialogState extends State<CreateQuickAccessDialog> {
 
       if (matchedProvider == null && model.visitorTypeName.isNotEmpty) {
         for (final p in providers) {
-          if (p['name']?.toString().toLowerCase() == model.visitorTypeName.toLowerCase()) {
+          if (p['name']?.toString().toLowerCase() ==
+              model.visitorTypeName.toLowerCase()) {
             matchedProvider = p;
             break;
           }
@@ -159,17 +113,21 @@ class _CreateQuickAccessDialogState extends State<CreateQuickAccessDialog> {
       // 5. Courier/Visitor info
       if (widget.subVisitors != null && widget.subVisitors!.isNotEmpty) {
         final sub = widget.subVisitors!.first;
-        courierNameCtrl.text = sub['visitor_name']?.toString() ?? model.visitorName;
+        courierNameCtrl.text =
+            sub['visitor_name']?.toString() ?? model.visitorName;
         final emailVal = sub['visitor_email']?.toString() ?? model.visitorEmail;
         if (emailVal.isNotEmpty && emailVal != 'courier-no@required.com') {
           courierEmailCtrl.text = emailVal;
         }
-        courierPhoneCtrl.text = sub['visitor_phone']?.toString() ?? model.visitorPhone;
+        courierPhoneCtrl.text =
+            sub['visitor_phone']?.toString() ?? model.visitorPhone;
         // Pre-fill vehicle plate from sub-visitor if present
-        vehiclePlateCtrl.text = sub['vehicle_plate_number']?.toString() ?? model.vehiclePlateNumber;
+        vehiclePlateCtrl.text =
+            sub['vehicle_plate_number']?.toString() ?? model.vehiclePlateNumber;
       } else {
         courierNameCtrl.text = model.visitorName;
-        if (model.visitorEmail.isNotEmpty && model.visitorEmail != 'courier-no@required.com') {
+        if (model.visitorEmail.isNotEmpty &&
+            model.visitorEmail != 'courier-no@required.com') {
           courierEmailCtrl.text = model.visitorEmail;
         }
         courierPhoneCtrl.text = model.visitorPhone;
@@ -177,7 +135,9 @@ class _CreateQuickAccessDialogState extends State<CreateQuickAccessDialog> {
       }
 
       // 6. Duration
-      final differenceMinutes = model.visitorPeriodEnd.difference(model.visitorPeriodStart).inMinutes;
+      final differenceMinutes = model.visitorPeriodEnd
+          .difference(model.visitorPeriodStart)
+          .inMinutes;
       final durationOptions = [10, 15, 30, 60, 120];
       if (durationOptions.contains(differenceMinutes)) {
         selectedDuration = differenceMinutes;
@@ -216,16 +176,10 @@ class _CreateQuickAccessDialogState extends State<CreateQuickAccessDialog> {
 
   @override
   void dispose() {
-    receiverNameCtrl.removeListener(_onTextChanged);
-    receiverEmailCtrl.removeListener(_onTextChanged);
-    receiverPhoneCtrl.removeListener(_onTextChanged);
     courierNameCtrl.removeListener(_onTextChanged);
     courierPhoneCtrl.removeListener(_onTextChanged);
     vehiclePlateCtrl.removeListener(_onTextChanged);
 
-    receiverNameCtrl.dispose();
-    receiverEmailCtrl.dispose();
-    receiverPhoneCtrl.dispose();
     courierNameCtrl.dispose();
     courierEmailCtrl.dispose();
     courierPhoneCtrl.dispose();
@@ -237,24 +191,26 @@ class _CreateQuickAccessDialogState extends State<CreateQuickAccessDialog> {
     final user = _hive.getUser();
     final bool isUserEmp = user?.roleAccess?.toLowerCase() == 'employee';
 
-    if (selectedRecipientMode == null) return false;
     if (selectedProviderId == null) return false;
-
-    if (selectedRecipientMode == 'others') {
-      if (receiverNameCtrl.text.trim().isEmpty) return false;
-      if (receiverEmailCtrl.text.trim().isEmpty) return false;
-      if (receiverPhoneCtrl.text.trim().isEmpty) return false;
-    }
 
     if (!isUserEmp) {
       if (selectedHostId == null) return false;
     }
 
-    final validSites = controller.sites
-        .where((site) => site['name']?.toString().toLowerCase() == 'drop point')
+    final dropPointSites = controller.dropPoints.isNotEmpty
+        ? controller.dropPoints
+        : controller.sites
+              .where(
+                (site) =>
+                    site['name']?.toString().toLowerCase() == 'drop point' ||
+                    site['is_drop_point'] == true,
+              )
+              .toList();
+    final validSites = dropPointSites
         .map((site) => site['id']?.toString())
         .toList();
-    if (selectedSiteId == null || !validSites.contains(selectedSiteId)) return false;
+    if (selectedSiteId == null || !validSites.contains(selectedSiteId))
+      return false;
 
     if (courierNameCtrl.text.trim().isEmpty) return false;
     if (courierPhoneCtrl.text.trim().isEmpty) return false;
@@ -329,11 +285,10 @@ class _CreateQuickAccessDialogState extends State<CreateQuickAccessDialog> {
     setState(() => isSubmitting = true);
 
     try {
-      final bool isSelf = selectedRecipientMode == 'self';
       final Map<String, dynamic> body = {
         "visitor_provider_id": selectedProviderId,
         "tz": "Asia/Jakarta",
-        "is_receiver_self": isSelf,
+        "is_receiver_self": true,
         "duration": selectedDuration,
         "site_id": selectedSiteId,
         "host_id": hostId,
@@ -341,17 +296,11 @@ class _CreateQuickAccessDialogState extends State<CreateQuickAccessDialog> {
         "visitor_email": courierEmailCtrl.text.trim().isEmpty
             ? "courier-no@required.com"
             : courierEmailCtrl.text.trim(),
-        "vehicle_plate_number": showVehiclePlate ? vehiclePlateCtrl.text.trim() : "",
+        "vehicle_plate_number": showVehiclePlate
+            ? vehiclePlateCtrl.text.trim()
+            : "",
+        "visitor_phone": courierPhoneCtrl.text.trim(),
       };
-
-      if (isSelf) {
-        body["visitor_phone"] = courierPhoneCtrl.text.trim();
-      } else {
-        body["receiver_name"] = receiverNameCtrl.text.trim();
-        body["receiver_phone"] = receiverPhoneCtrl.text.trim();
-        body["receiver_email"] = receiverEmailCtrl.text.trim();
-        body["visitor_phone"] = courierPhoneCtrl.text.trim();
-      }
 
       final bool success = await controller.createQuickAccessAction(body);
 
@@ -399,50 +348,144 @@ class _CreateQuickAccessDialogState extends State<CreateQuickAccessDialog> {
   }
 
   bool _hasChanges() {
-    return selectedProviderId != null ||
-        selectedRecipientMode != null ||
+    return widget.duplicateData != null ||
+        selectedProviderId != null ||
         selectedHostId != null ||
         selectedSiteId != null ||
         selectedDuration != null ||
-        receiverNameCtrl.text.isNotEmpty ||
-        receiverEmailCtrl.text.isNotEmpty ||
-        receiverPhoneCtrl.text.isNotEmpty ||
-        courierNameCtrl.text.isNotEmpty ||
-        courierEmailCtrl.text.isNotEmpty ||
-        courierPhoneCtrl.text.isNotEmpty ||
-        vehiclePlateCtrl.text.isNotEmpty;
+        courierNameCtrl.text.trim().isNotEmpty ||
+        courierEmailCtrl.text.trim().isNotEmpty ||
+        courierPhoneCtrl.text.trim().isNotEmpty ||
+        vehiclePlateCtrl.text.trim().isNotEmpty;
   }
 
   Future<bool> _showExitConfirmation() async {
     final hasData = _hasChanges();
     final result = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
+      barrierDismissible: false,
+      builder: (ctx) => Dialog(
         backgroundColor: Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(rw(context, 16))),
-        title: Text(
-          hasData ? 'Discard Progress?' : 'Close Form?',
-          style: const TextStyle(fontWeight: FontWeight.bold),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(rw(context, 20)),
         ),
-        content: Text(
-          hasData
-              ? 'Are you sure you want to close this form? Your progress will be lost.'
-              : 'Are you sure you want to close this form?',
-          textAlign: TextAlign.justify,
+        insetPadding: EdgeInsets.symmetric(
+          horizontal: rw(context, 32),
+          vertical: rh(context, 24),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('No', style: TextStyle(color: Colors.grey)),
+        child: Padding(
+          padding: EdgeInsets.fromLTRB(
+            rw(context, 20),
+            rh(context, 24),
+            rw(context, 20),
+            rh(context, 20),
           ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: Text(
-              hasData ? 'Yes, Discard' : 'Yes, Close',
-              style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
-            ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: rw(context, 54),
+                height: rw(context, 54),
+                decoration: BoxDecoration(
+                  color: hasData
+                      ? const Color(0xFFFEF2F2)
+                      : const Color(0xFFF1F5F9),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  hasData
+                      ? Icons.warning_amber_rounded
+                      : Icons.help_outline_rounded,
+                  size: rw(context, 28),
+                  color: hasData
+                      ? const Color(0xFFDC2626)
+                      : const Color(0xFF475569),
+                ),
+              ),
+              SizedBox(height: rh(context, 16)),
+              Text(
+                hasData ? 'Discard Progress?' : 'Close Form?',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: rfs(context, 18),
+                  fontWeight: FontWeight.bold,
+                  color: const Color(0xFF0F172A),
+                ),
+              ),
+              SizedBox(height: rh(context, 8)),
+              Text(
+                hasData
+                    ? 'Are you sure you want to close this form? Your progress will be lost.'
+                    : 'Are you sure you want to close this form?',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: rfs(context, 13.5),
+                  color: const Color(0xFF64748B),
+                  height: 1.45,
+                ),
+              ),
+              SizedBox(height: rh(context, 22)),
+              Row(
+                children: [
+                  Expanded(
+                    child: SizedBox(
+                      height: rh(context, 42),
+                      child: OutlinedButton(
+                        onPressed: () => Navigator.pop(ctx, false),
+                        style: OutlinedButton.styleFrom(
+                          side: const BorderSide(color: Color(0xFFE2E8F0)),
+                          backgroundColor: const Color(0xFFF8FAFC),
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(
+                              rw(context, 10),
+                            ),
+                          ),
+                          padding: EdgeInsets.zero,
+                        ),
+                        child: Text(
+                          'No',
+                          style: TextStyle(
+                            fontSize: rfs(context, 14),
+                            fontWeight: FontWeight.w600,
+                            color: const Color(0xFF475569),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  SizedBox(width: rw(context, 12)),
+                  Expanded(
+                    child: SizedBox(
+                      height: rh(context, 42),
+                      child: ElevatedButton(
+                        onPressed: () => Navigator.pop(ctx, true),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFDC2626),
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(
+                              rw(context, 10),
+                            ),
+                          ),
+                          padding: EdgeInsets.zero,
+                        ),
+                        child: Text(
+                          hasData ? 'Yes, Continue' : 'Yes, Close',
+                          style: TextStyle(
+                            fontSize: rfs(context, 14),
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
     return result ?? false;
@@ -461,11 +504,6 @@ class _CreateQuickAccessDialogState extends State<CreateQuickAccessDialog> {
     final providerItems = providers
         .map((p) => {"id": p['id'].toString(), "name": p['name'].toString()})
         .toList();
-
-    final recipientItems = [
-      {"id": "self", "name": "Self"},
-      {"id": "others", "name": "Others"},
-    ];
 
     final durationItems = [
       {"id": "10", "name": "10 Minutes"},
@@ -549,33 +587,40 @@ class _CreateQuickAccessDialogState extends State<CreateQuickAccessDialog> {
                   ),
                   const Divider(height: 1),
 
-                // Content Area
-                Flexible(
-                  child: SingleChildScrollView(
-                    padding: EdgeInsets.all(rw(context, 20)),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
+                  // Content Area
+                  Flexible(
+                    child: SingleChildScrollView(
+                      padding: EdgeInsets.all(rw(context, 20)),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Delivery Details heading with VMS blue accent bar
+                          Row(
+                            children: [
+                              Container(
+                                width: rw(context, 3.5),
+                                height: rh(context, 15),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF005596),
+                                  borderRadius: BorderRadius.circular(
+                                    rw(context, 2),
+                                  ),
+                                ),
+                              ),
+                              hSpace(context, 8),
+                              Text(
+                                'Delivery Details',
+                                style: TextStyle(
+                                  fontSize: rfs(context, 15),
+                                  fontWeight: FontWeight.bold,
+                                  color: const Color(0xFF0F172A),
+                                  letterSpacing: -0.2,
+                                ),
+                              ),
+                            ],
+                          ),
+                          vSpace(context, 14),
 
-                        // Recipient
-                        _buildRequiredLabel(
-                          context,
-                          'Recipient',
-                          hasInfo: true,
-                        ),
-                        _buildDropdown(
-                          hint: 'Select Recipient',
-                          value: selectedRecipientMode,
-                          items: recipientItems,
-                          onChanged: (val) {
-                            if (val != null) {
-                              setState(() => selectedRecipientMode = val);
-                            }
-                          },
-                        ),
-                        vSpace(context, 16),
-
-                        if (selectedRecipientMode != null) ...[
                           // Visitor Provider
                           _buildRequiredLabel(
                             context,
@@ -597,51 +642,6 @@ class _CreateQuickAccessDialogState extends State<CreateQuickAccessDialog> {
                             },
                           ),
                           vSpace(context, 16),
-
-                          // Receiver Info (Conditional on Others)
-                          if (selectedRecipientMode == 'others') ...[
-                            _buildRequiredLabel(context, 'Receiver Name'),
-                            _buildTextField(
-                              controller: receiverNameCtrl,
-                              hintText: 'Enter receiver name',
-                              validator: (val) {
-                                if (val == null || val.trim().isEmpty) {
-                                  return 'Receiver name is required';
-                                }
-                                return null;
-                              },
-                            ),
-                            vSpace(context, 16),
-                            _buildRequiredLabel(context, 'Receiver Email'),
-                            _buildTextField(
-                              controller: receiverEmailCtrl,
-                              hintText: 'Enter receiver email',
-                              keyboardType: TextInputType.emailAddress,
-                              validator: (val) {
-                                if (val == null || val.trim().isEmpty) {
-                                  return 'Receiver email is required';
-                                }
-                                if (!GetUtils.isEmail(val.trim())) {
-                                  return 'Invalid email address';
-                                }
-                                return null;
-                              },
-                            ),
-                            vSpace(context, 16),
-                            _buildRequiredLabel(context, 'Receiver Phone'),
-                            _buildTextField(
-                              controller: receiverPhoneCtrl,
-                              hintText: 'Enter receiver phone number',
-                              keyboardType: TextInputType.phone,
-                              validator: (val) {
-                                if (val == null || val.trim().isEmpty) {
-                                  return 'Receiver phone number is required';
-                                }
-                                return null;
-                              },
-                            ),
-                            vSpace(context, 16),
-                          ],
 
                           // Host Selection (Conditional on operator role)
                           if (!isUserEmp) ...[
@@ -670,16 +670,48 @@ class _CreateQuickAccessDialogState extends State<CreateQuickAccessDialog> {
                           _buildDropPointsGrid(),
                           vSpace(context, 16),
 
-                          // Courier Info heading
-                          Text(
-                            'Courier Information',
-                            style: TextStyle(
-                              fontSize: rfs(context, 14),
-                              fontWeight: FontWeight.bold,
-                              color: const Color(0xFF1E293B),
-                            ),
+                          // Duration
+                          _buildRequiredLabel(context, 'Duration'),
+                          _buildDropdown(
+                            hint: 'Select Duration',
+                            value: selectedDuration?.toString(),
+                            items: durationItems,
+                            onChanged: (val) {
+                              if (val != null) {
+                                setState(
+                                  () => selectedDuration = int.parse(val),
+                                );
+                              }
+                            },
                           ),
-                          vSpace(context, 12),
+                          vSpace(context, 24),
+
+                          // Courier Info heading with VMS blue accent bar
+                          Row(
+                            children: [
+                              Container(
+                                width: rw(context, 3.5),
+                                height: rh(context, 15),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF005596),
+                                  borderRadius: BorderRadius.circular(
+                                    rw(context, 2),
+                                  ),
+                                ),
+                              ),
+                              hSpace(context, 8),
+                              Text(
+                                'Courier Information',
+                                style: TextStyle(
+                                  fontSize: rfs(context, 15),
+                                  fontWeight: FontWeight.bold,
+                                  color: const Color(0xFF0F172A),
+                                  letterSpacing: -0.2,
+                                ),
+                              ),
+                            ],
+                          ),
+                          vSpace(context, 14),
 
                           _buildRequiredLabel(context, 'Courier Name'),
                           _buildTextField(
@@ -752,30 +784,13 @@ class _CreateQuickAccessDialogState extends State<CreateQuickAccessDialog> {
                               readOnly: true,
                             ),
                           ],
-                          vSpace(context, 16),
-
-                          // Duration
-                          _buildRequiredLabel(context, 'Duration'),
-                          _buildDropdown(
-                            hint: 'Select Duration',
-                            value: selectedDuration?.toString(),
-                            items: durationItems,
-                            onChanged: (val) {
-                              if (val != null) {
-                                setState(
-                                  () => selectedDuration = int.parse(val),
-                                );
-                              }
-                            },
-                          ),
+                          vSpace(context, 8),
                         ],
-                      ],
+                      ),
                     ),
                   ),
-                ),
 
-                // Footer / Submit Button
-                if (selectedRecipientMode != null) ...[
+                  // Footer / Submit Button
                   const Divider(height: 1),
                   Padding(
                     padding: EdgeInsets.symmetric(
@@ -800,7 +815,9 @@ class _CreateQuickAccessDialogState extends State<CreateQuickAccessDialog> {
                             ),
                             elevation: 0,
                           ),
-                          onPressed: (isSubmitting || !_isFormValid) ? null : _submit,
+                          onPressed: (isSubmitting || !_isFormValid)
+                              ? null
+                              : _submit,
                           child: Text(
                             'Submit',
                             style: TextStyle(
@@ -813,26 +830,27 @@ class _CreateQuickAccessDialogState extends State<CreateQuickAccessDialog> {
                     ),
                   ),
                 ],
-              ],
-            ),
-          ),
-
-          // Loading Overlay
-          if (isSubmitting)
-            Positioned.fill(
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.6),
-                  borderRadius: BorderRadius.circular(rw(context, 16)),
-                ),
-                child: const Center(child: CircularProgressIndicator()),
               ),
             ),
-        ],
+
+            // Loading Overlay
+            if (isSubmitting)
+              Positioned.fill(
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.6),
+                    borderRadius: BorderRadius.circular(rw(context, 16)),
+                  ),
+                  child: const Center(
+                    child: CupertinoActivityIndicator(radius: 14),
+                  ),
+                ),
+              ),
+          ],
+        ),
       ),
-    ),
-  );
-}
+    );
+  }
 
   // --- Sub-widgets builder ---
 
@@ -848,15 +866,15 @@ class _CreateQuickAccessDialogState extends State<CreateQuickAccessDialog> {
           Text(
             label,
             style: TextStyle(
-              fontWeight: FontWeight.bold,
+              fontWeight: FontWeight.w600,
               fontSize: rfs(context, 13),
-              color: const Color(0xFF334155),
+              color: const Color(0xFF475569),
             ),
           ),
           Text(
             ' *',
             style: TextStyle(
-              color: Colors.red,
+              color: const Color(0xFFE11D48),
               fontWeight: FontWeight.bold,
               fontSize: rfs(context, 13),
             ),
@@ -880,9 +898,9 @@ class _CreateQuickAccessDialogState extends State<CreateQuickAccessDialog> {
       child: Text(
         label,
         style: TextStyle(
-          fontWeight: FontWeight.bold,
+          fontWeight: FontWeight.w600,
           fontSize: rfs(context, 13),
-          color: const Color(0xFF334155),
+          color: const Color(0xFF475569),
         ),
       ),
     );
@@ -1066,83 +1084,77 @@ class _CreateQuickAccessDialogState extends State<CreateQuickAccessDialog> {
   }
 
   Widget _buildDropPointsGrid() {
-    final sites = controller.sites
-        .where((site) => site['name']?.toString().toLowerCase() == 'drop point')
-        .toList();
+    return Obx(() {
+      final sites = controller.dropPoints.isNotEmpty
+          ? controller.dropPoints
+          : controller.sites
+                .where(
+                  (site) =>
+                      site['name']?.toString().toLowerCase() == 'drop point' ||
+                      site['is_drop_point'] == true,
+                )
+                .toList();
 
-    if (sites.isEmpty) {
-      return Padding(
-        padding: EdgeInsets.only(top: rh(context, 8)),
-        child: Text(
-          'No Destination available',
-          style: TextStyle(color: Colors.grey, fontSize: rfs(context, 12)),
-        ),
-      );
-    }
-
-    // Auto-select "Drop Point" if there is exactly one matching site and selectedSiteId is not set
-    if (selectedSiteId == null && sites.isNotEmpty) {
-      final dropPointId = sites.first['id']?.toString();
-      if (dropPointId != null) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted && selectedSiteId == null) {
-            setState(() {
-              selectedSiteId = dropPointId;
-            });
-          }
-        });
-      }
-    }
-
-    return Wrap(
-      spacing: rw(context, 8),
-      runSpacing: rh(context, 8),
-      children: sites.map((site) {
-        final siteId = site['id']?.toString();
-        final siteName = site['name']?.toString() ?? '';
-        final isSelected = selectedSiteId == siteId;
-
-        return GestureDetector(
-          onTap: () {
-            setState(() => selectedSiteId = siteId);
-          },
-          child: Container(
-            padding: EdgeInsets.symmetric(
-              horizontal: rw(context, 16),
-              vertical: rh(context, 10),
-            ),
-            decoration: BoxDecoration(
-              color: isSelected
-                  ? const Color(0xFF005596).withValues(alpha: 0.05)
-                  : Colors.white,
-              borderRadius: BorderRadius.circular(rw(context, 8)),
-              border: Border.all(
-                color: isSelected
-                    ? const Color(0xFF005596)
-                    : const Color(0xFFE2E8F0),
-                width: isSelected ? 1.5 : 1.0,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.02),
-                  blurRadius: 4,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: Text(
-              siteName,
-              style: TextStyle(
-                fontSize: rfs(context, 12),
-                fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                color: isSelected
-                    ? const Color(0xFF005596)
-                    : const Color(0xFF475569),
-              ),
-            ),
+      if (sites.isEmpty) {
+        return Padding(
+          padding: EdgeInsets.only(top: rh(context, 8)),
+          child: Text(
+            'No Destination available',
+            style: TextStyle(color: Colors.grey, fontSize: rfs(context, 12)),
           ),
         );
-      }).toList(),
-    );
+      }
+
+      return Wrap(
+        spacing: rw(context, 8),
+        runSpacing: rh(context, 8),
+        children: sites.map((site) {
+          final siteId = site['id']?.toString();
+          final siteName = site['name']?.toString() ?? '';
+          final isSelected = selectedSiteId == siteId;
+
+          return GestureDetector(
+            onTap: () {
+              setState(() => selectedSiteId = siteId);
+            },
+            child: Container(
+              padding: EdgeInsets.symmetric(
+                horizontal: rw(context, 16),
+                vertical: rh(context, 10),
+              ),
+              decoration: BoxDecoration(
+                color: isSelected
+                    ? const Color(0xFF005596).withValues(alpha: 0.05)
+                    : Colors.white,
+                borderRadius: BorderRadius.circular(rw(context, 8)),
+                border: Border.all(
+                  color: isSelected
+                      ? const Color(0xFF005596)
+                      : const Color(0xFFE2E8F0),
+                  width: isSelected ? 1.5 : 1.0,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.02),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Text(
+                siteName,
+                style: TextStyle(
+                  fontSize: rfs(context, 12),
+                  fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                  color: isSelected
+                      ? const Color(0xFF005596)
+                      : const Color(0xFF475569),
+                ),
+              ),
+            ),
+          );
+        }).toList(),
+      );
+    });
   }
 }

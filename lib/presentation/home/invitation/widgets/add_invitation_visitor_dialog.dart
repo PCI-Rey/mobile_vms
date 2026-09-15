@@ -1506,33 +1506,38 @@ class _AddInvitationVisitorDialogState
               rw(context, 10),
               rh(context, 10),
             ),
-            child: Row(
+            child: Stack(
+              alignment: Alignment.center,
               children: [
-                Expanded(
+                Center(
                   child: Text(
                     'Add Visitor',
+                    textAlign: TextAlign.center,
                     style: TextStyle(
-                      fontSize: rfs(context, 16),
-                      fontWeight: FontWeight.w700,
+                      fontSize: rfs(context, 17),
+                      fontWeight: FontWeight.bold,
                       color: const Color(0xFF0F172A),
                     ),
                   ),
                 ),
-                InkWell(
-                  borderRadius: BorderRadius.circular(20),
-                  onTap: () {
-                    if (!_isSubmitting) Navigator.of(context).pop();
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.all(6),
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade100,
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.close_rounded,
-                      size: 18,
-                      color: Colors.black54,
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(20),
+                    onTap: () {
+                      if (!_isSubmitting) Navigator.of(context).pop();
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade100,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.close_rounded,
+                        size: 18,
+                        color: Colors.black54,
+                      ),
                     ),
                   ),
                 ),
@@ -1717,72 +1722,77 @@ class _AddInvitationVisitorDialogState
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // Member Tabs + Add Button
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Row(
-            children: [
-              ...List.generate(_visitors.length, (i) {
-                final isSelected = safeIndex == i;
-                final isComplete = _isVisitorComplete(i);
-                return Padding(
-                  padding: const EdgeInsets.only(right: 8),
-                  child: ChoiceChip(
-                    showCheckmark: false,
-                    avatar: isComplete
-                        ? Icon(
-                            Icons.check_circle_rounded,
-                            size: 16,
-                            color: isSelected
-                                ? Colors.white
-                                : AppColors.primary500,
-                          )
-                        : null,
-                    label: Text('Visitor ${i + 1}'),
-                    selected: isSelected,
-                    selectedColor: AppColors.primary500,
-                    labelStyle: TextStyle(
-                      color: isSelected
-                          ? Colors.white
-                          : const Color(0xFF334155),
-                      fontWeight: isSelected
-                          ? FontWeight.w600
-                          : FontWeight.w500,
-                      fontSize: rfs(context, 12),
-                    ),
-                    backgroundColor: Colors.white,
-                    side: BorderSide(
-                      color: isSelected
-                          ? AppColors.primary500
-                          : const Color(0xFFCBD5E1),
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    onSelected: (_) {
-                      setState(() => _selectedVisitorIndex = i);
-                    },
-                  ),
-                );
-              }),
-              ActionChip(
-                avatar: const Icon(
-                  Icons.add,
-                  size: 16,
-                  color: AppColors.primary500,
+        // Add Visitor button (fixed, always visible)
+        Row(
+          children: [
+            Expanded(
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: List.generate(_visitors.length, (i) {
+                    final isSelected = safeIndex == i;
+                    final isComplete = _isVisitorComplete(i);
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: ChoiceChip(
+                        showCheckmark: false,
+                        avatar: isComplete
+                            ? Icon(
+                                Icons.check_circle_rounded,
+                                size: 16,
+                                color: isSelected
+                                    ? Colors.white
+                                    : AppColors.primary500,
+                              )
+                            : null,
+                        label: Text('Visitor ${i + 1}'),
+                        selected: isSelected,
+                        selectedColor: AppColors.primary500,
+                        labelStyle: TextStyle(
+                          color: isSelected
+                              ? Colors.white
+                              : const Color(0xFF334155),
+                          fontWeight: isSelected
+                              ? FontWeight.w600
+                              : FontWeight.w500,
+                          fontSize: rfs(context, 12),
+                        ),
+                        backgroundColor: Colors.white,
+                        side: BorderSide(
+                          color: isSelected
+                              ? AppColors.primary500
+                              : const Color(0xFFCBD5E1),
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        onSelected: (_) {
+                          setState(() => _selectedVisitorIndex = i);
+                        },
+                      ),
+                    );
+                  }),
                 ),
-                label: const Text('Add Visitor'),
-                labelStyle: TextStyle(
-                  color: AppColors.primary500,
-                  fontWeight: FontWeight.w600,
-                  fontSize: rfs(context, 12),
-                ),
-                backgroundColor: const Color(0xFFEFF6FF),
-                side: const BorderSide(color: Color(0xFF93C5FD)),
-                onPressed: _addVisitorCard,
               ),
-            ],
-          ),
+            ),
+            const SizedBox(width: 8),
+            ActionChip(
+              avatar: const Icon(
+                Icons.add,
+                size: 16,
+                color: AppColors.primary500,
+              ),
+              label: const Text('Add Visitor'),
+              labelStyle: TextStyle(
+                color: AppColors.primary500,
+                fontWeight: FontWeight.w600,
+                fontSize: rfs(context, 12),
+              ),
+              backgroundColor: const Color(0xFFEFF6FF),
+              side: const BorderSide(color: Color(0xFF93C5FD)),
+              onPressed: _addVisitorCard,
+            ),
+          ],
         ),
 
         vSpace(context, 8),

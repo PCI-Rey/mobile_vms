@@ -8,6 +8,7 @@ import 'package:dio/dio.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
@@ -56,6 +57,8 @@ class _SendInvitationPageState extends State<SendInvitationPage>
   DateTime? endDateQuick;
   String? selectedGedungQuick;
   String? selectedStatusQuick;
+
+  final ScrollController _quickScrollController = ScrollController();
 
   List<String> activeFilterKeys = ['date'];
   List<String> activeFilterKeysQuick = ['date'];
@@ -288,8 +291,31 @@ class _SendInvitationPageState extends State<SendInvitationPage>
       siteName: '',
       status: '',
     );
+    _quickScrollController.dispose();
     _tabController.dispose();
     super.dispose();
+  }
+
+  void _onQuickAccessCreated() {
+    controller.quickCurrentPage.value = 0;
+    controller.fetchOngoingInvitations(clearFilters: false);
+    if (_quickScrollController.hasClients) {
+      _quickScrollController.animateTo(
+        0.0,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOut,
+      );
+    }
+    Future.delayed(const Duration(milliseconds: 400), () async {
+      await controller.fetchOngoingInvitations(clearFilters: false);
+      if (_quickScrollController.hasClients) {
+        _quickScrollController.animateTo(
+          0.0,
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeOut,
+        );
+      }
+    });
   }
 
   @override
@@ -363,7 +389,7 @@ class _SendInvitationPageState extends State<SendInvitationPage>
                   builder: (context) => const CreateQuickAccessDialog(),
                 ).then((result) {
                   if (result == true) {
-                    controller.fetchOngoingInvitations(clearFilters: false);
+                    _onQuickAccessCreated();
                   }
                 });
               },
@@ -1140,7 +1166,7 @@ class _SendInvitationPageState extends State<SendInvitationPage>
                       builder: (context) => const CreateQuickAccessDialog(),
                     ).then((result) {
                       if (result == true) {
-                        controller.fetchOngoingInvitations(clearFilters: false);
+                        _onQuickAccessCreated();
                       }
                     });
                   },
@@ -1155,6 +1181,7 @@ class _SendInvitationPageState extends State<SendInvitationPage>
               final showTopLoading = isLoading && listToShow.isNotEmpty;
 
               return ListView.builder(
+                controller: _quickScrollController,
                 padding: EdgeInsets.all(rw(context, 20.0)),
                 physics: const AlwaysScrollableScrollPhysics(),
                 itemCount: listToShow.length + (showTopLoading ? 1 : 0),
@@ -1177,6 +1204,34 @@ class _SendInvitationPageState extends State<SendInvitationPage>
                   final isExpired = DateTime.now().isAfter(
                     item.visitorPeriodEnd,
                   );
+
+                  final cached = inviteCtrl.transactionVisitorsCache[item.id];
+                  final subItem = (cached != null && cached.isNotEmpty)
+                      ? cached.first
+                      : null;
+                  final courierName =
+                      (subItem != null && subItem.visitorName.isNotEmpty)
+                      ? subItem.visitorName
+                      : (item.visitorName.isNotEmpty
+                            ? item.visitorName
+                            : (item.agenda.isEmpty
+                                  ? 'Quick Access'
+                                  : item.agenda));
+                  final providerName =
+                      (subItem != null &&
+                          subItem.visitorOrganizationName.isNotEmpty)
+                      ? subItem.visitorOrganizationName
+                      : (item.visitorOrganizationName.isNotEmpty
+                            ? item.visitorOrganizationName
+                            : (item.visitorTypeName.isEmpty
+                                  ? '-'
+                                  : item.visitorTypeName));
+                  final receiverName =
+                      (subItem != null && subItem.receiverName.isNotEmpty)
+                      ? subItem.receiverName
+                      : (item.receiverName.isNotEmpty
+                            ? item.receiverName
+                            : (item.hostName.isEmpty ? '-' : item.hostName));
 
                   return GestureDetector(
                     onTap: () => _showInvitationDetailSheet(item),
@@ -1226,7 +1281,7 @@ class _SendInvitationPageState extends State<SendInvitationPage>
                                 hSpace(context, 10),
                                 Expanded(
                                   child: Text(
-                                    item.agenda.isEmpty ? '-' : item.agenda,
+                                    courierName,
                                     style: TextStyle(
                                       fontWeight: FontWeight.w700,
                                       fontSize: rfs(context, 16),
@@ -1283,11 +1338,12 @@ class _SendInvitationPageState extends State<SendInvitationPage>
                                     Expanded(
                                       child: _buildCardField(
                                         context,
-                                        Icons.badge_outlined,
-                                        'Visitor Type',
-                                        item.visitorTypeName.isEmpty
-                                            ? '-'
-                                            : item.visitorTypeName,
+                                        Icons.delivery_dining_outlined,
+                                        providerName.isNotEmpty &&
+                                                providerName != '-'
+                                            ? 'Provider'
+                                            : 'Visitor Type',
+                                        providerName,
                                       ),
                                     ),
                                     hSpace(context, 8),
@@ -1295,10 +1351,11 @@ class _SendInvitationPageState extends State<SendInvitationPage>
                                       child: _buildCardField(
                                         context,
                                         Icons.person_outline,
-                                        'Host',
-                                        item.hostName.isEmpty
-                                            ? '-'
-                                            : item.hostName,
+                                        receiverName.isNotEmpty &&
+                                                receiverName != '-'
+                                            ? 'Receiver'
+                                            : 'Host',
+                                        receiverName,
                                       ),
                                     ),
                                   ],
@@ -1763,20 +1820,22 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
           transactionVisitorId: widget.item.id.isNotEmpty
               ? widget.item.id
               : (model.transactionVisitorId.isNotEmpty
-                  ? model.transactionVisitorId
-                  : widget.item.transactionVisitorId),
-          selfieImage: (model.selfieImage != null && model.selfieImage!.isNotEmpty)
+                    ? model.transactionVisitorId
+                    : widget.item.transactionVisitorId),
+          selfieImage:
+              (model.selfieImage != null && model.selfieImage!.isNotEmpty)
               ? model.selfieImage
               : (mutableVisitor['selfie_image'] ??
-                  mutableVisitor['selfie'] ??
-                  mutableVisitor['visitor_face'] ??
-                  mutableVisitor['face_url'] ??
-                  mutableVisitor['face_image'] ??
-                  mutableVisitor['photo'] ??
-                  mutableVisitor['photo_url'] ??
-                  mutableVisitor['avatar'] ??
-                  mutableVisitor['picture'] ??
-                  mutableVisitor['image'])?.toString(),
+                        mutableVisitor['selfie'] ??
+                        mutableVisitor['visitor_face'] ??
+                        mutableVisitor['face_url'] ??
+                        mutableVisitor['face_image'] ??
+                        mutableVisitor['photo'] ??
+                        mutableVisitor['photo_url'] ??
+                        mutableVisitor['avatar'] ??
+                        mutableVisitor['picture'] ??
+                        mutableVisitor['image'])
+                    ?.toString(),
         );
         models.add(finalModel);
       }
@@ -1814,116 +1873,143 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
+      useSafeArea: true,
       builder: (ctx) {
-        return Container(
-          margin: EdgeInsets.symmetric(
-            horizontal: rw(context, 16),
-            vertical: rh(context, 16),
-          ),
-          padding: EdgeInsets.all(rw(context, 20)),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(rw(context, 20)),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Handle
-              Container(
-                width: rw(context, 40),
-                height: rh(context, 4),
-                margin: EdgeInsets.only(bottom: rh(context, 16)),
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade300,
-                  borderRadius: BorderRadius.circular(rw(context, 2)),
+        return SafeArea(
+          top: false,
+          child: Container(
+            margin: EdgeInsets.fromLTRB(
+              rw(context, 16),
+              rh(context, 16),
+              rw(context, 16),
+              rh(context, 16),
+            ),
+            padding: EdgeInsets.fromLTRB(
+              rw(context, 20),
+              rh(context, 16),
+              rw(context, 20),
+              rh(context, 24),
+            ),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(rw(context, 20)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.1),
+                  blurRadius: 20,
+                  offset: const Offset(0, 4),
                 ),
-              ),
-              // Avatar
-              (() {
-                final selfieUrl = model.formattedSelfieUrl;
-                final hasSelfie = selfieUrl != null && selfieUrl.isNotEmpty;
-                return CircleAvatar(
-                  radius: rw(context, 32),
-                  backgroundColor: const Color(
-                    0xFF005596,
-                  ).withValues(alpha: 0.12),
-                  child: ClipOval(
-                    child: SizedBox(
-                      width: rw(context, 64),
-                      height: rw(context, 64),
-                      child: hasSelfie
-                          ? Image.network(
-                              selfieUrl,
-                              fit: BoxFit.cover,
-                              errorBuilder: (_, _, _) => Center(
-                                child: Text(
-                                  model.visitorName.isNotEmpty
-                                      ? model.visitorName[0].toUpperCase()
-                                      : 'V',
-                                  style: TextStyle(
-                                    fontSize: rfs(context, 24),
-                                    fontWeight: FontWeight.bold,
-                                    color: const Color(0xFF005596),
-                                  ),
-                                ),
-                              ),
-                            )
-                          : Center(
-                              child: Text(
-                                model.visitorName.isNotEmpty
-                                    ? model.visitorName[0].toUpperCase()
-                                    : 'V',
-                                style: TextStyle(
-                                  fontSize: rfs(context, 24),
-                                  fontWeight: FontWeight.bold,
-                                  color: const Color(0xFF005596),
-                                ),
-                              ),
-                            ),
+              ],
+            ),
+            child: SingleChildScrollView(
+              physics: const BouncingScrollPhysics(),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Handle
+                  Container(
+                    width: rw(context, 40),
+                    height: rh(context, 4),
+                    margin: EdgeInsets.only(bottom: rh(context, 16)),
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade300,
+                      borderRadius: BorderRadius.circular(rw(context, 2)),
                     ),
                   ),
-                );
-              })(),
-              vSpace(context, 12),
-              Text(
-                model.visitorName.isNotEmpty ? model.visitorName : 'Visitor',
-                style: TextStyle(
-                  fontSize: rfs(context, 16),
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black87,
-                ),
-                textAlign: TextAlign.center,
+                  // Avatar
+                  (() {
+                    final selfieUrl = model.formattedSelfieUrl;
+                    final hasSelfie = selfieUrl != null && selfieUrl.isNotEmpty;
+                    return CircleAvatar(
+                      radius: rw(context, 32),
+                      backgroundColor: const Color(
+                        0xFF005596,
+                      ).withValues(alpha: 0.12),
+                      child: ClipOval(
+                        child: SizedBox(
+                          width: rw(context, 64),
+                          height: rw(context, 64),
+                          child: hasSelfie
+                              ? Image.network(
+                                  selfieUrl,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (_, _, _) => Center(
+                                    child: Text(
+                                      model.visitorName.isNotEmpty
+                                          ? model.visitorName[0].toUpperCase()
+                                          : 'V',
+                                      style: TextStyle(
+                                        fontSize: rfs(context, 24),
+                                        fontWeight: FontWeight.bold,
+                                        color: const Color(0xFF005596),
+                                      ),
+                                    ),
+                                  ),
+                                )
+                              : Center(
+                                  child: Text(
+                                    model.visitorName.isNotEmpty
+                                        ? model.visitorName[0].toUpperCase()
+                                        : 'V',
+                                    style: TextStyle(
+                                      fontSize: rfs(context, 24),
+                                      fontWeight: FontWeight.bold,
+                                      color: const Color(0xFF005596),
+                                    ),
+                                  ),
+                                ),
+                        ),
+                      ),
+                    );
+                  })(),
+                  vSpace(context, 12),
+                  Text(
+                    model.visitorName.isNotEmpty
+                        ? model.visitorName
+                        : 'Visitor',
+                    style: TextStyle(
+                      fontSize: rfs(context, 16),
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  vSpace(context, 16),
+                  // Info rows
+                  _profileInfoRow(
+                    context,
+                    Icons.email_outlined,
+                    'Email',
+                    model.visitorEmail.isNotEmpty ? model.visitorEmail : '-',
+                  ),
+                  vSpace(context, 10),
+                  _profileInfoRow(
+                    context,
+                    Icons.phone_outlined,
+                    'Phone',
+                    model.visitorPhone.isNotEmpty ? model.visitorPhone : '-',
+                  ),
+                  vSpace(context, 10),
+                  _profileInfoRow(
+                    context,
+                    Icons.confirmation_number_outlined,
+                    'Invitation Code',
+                    model.invitationCode.isNotEmpty
+                        ? model.invitationCode
+                        : '-',
+                    canCopy: model.invitationCode.isNotEmpty,
+                  ),
+                  vSpace(context, 10),
+                  _profileInfoRow(
+                    context,
+                    Icons.pin_outlined,
+                    'Visitor Number',
+                    model.visitorNumber.isNotEmpty ? model.visitorNumber : '-',
+                    canCopy: model.visitorNumber.isNotEmpty,
+                  ),
+                ],
               ),
-              vSpace(context, 16),
-              // Info rows
-              _profileInfoRow(
-                context,
-                Icons.email_outlined,
-                'Email',
-                model.visitorEmail.isNotEmpty ? model.visitorEmail : '-',
-              ),
-              vSpace(context, 8),
-              _profileInfoRow(
-                context,
-                Icons.phone_outlined,
-                'Phone',
-                model.visitorPhone.isNotEmpty ? model.visitorPhone : '-',
-              ),
-              vSpace(context, 8),
-              _profileInfoRow(
-                context,
-                Icons.confirmation_number_outlined,
-                'Invitation Code',
-                model.invitationCode.isNotEmpty ? model.invitationCode : '-',
-              ),
-              vSpace(context, 8),
-              _profileInfoRow(
-                context,
-                Icons.pin_outlined,
-                'Visitor Number',
-                model.visitorNumber.isNotEmpty ? model.visitorNumber : '-',
-              ),
-            ],
+            ),
           ),
         );
       },
@@ -1934,43 +2020,74 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
     BuildContext context,
     IconData icon,
     String label,
-    String value,
-  ) {
+    String value, {
+    bool canCopy = false,
+  }) {
     return Row(
       children: [
         Container(
           width: rw(context, 36),
           height: rw(context, 36),
           decoration: BoxDecoration(
-            color: Colors.grey.shade100,
+            color: const Color(0xFFF1F5F9),
             borderRadius: BorderRadius.circular(rw(context, 8)),
           ),
-          child: Icon(icon, size: rw(context, 18), color: Colors.grey.shade600),
+          child: Icon(
+            icon,
+            size: rw(context, 18),
+            color: const Color(0xFF475569),
+          ),
         ),
         hSpace(context, 12),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
             children: [
               Text(
                 label,
                 style: TextStyle(
                   fontSize: rfs(context, 11),
-                  color: Colors.grey.shade500,
+                  color: const Color(0xFF64748B),
+                  fontWeight: FontWeight.w500,
                 ),
               ),
               Text(
                 value,
                 style: TextStyle(
-                  fontSize: rfs(context, 13),
+                  fontSize: rfs(context, 13.5),
                   fontWeight: FontWeight.w600,
-                  color: Colors.black87,
+                  color: const Color(0xFF0F172A),
                 ),
                 overflow: TextOverflow.ellipsis,
               ),
             ],
           ),
         ),
+        if (canCopy && value != '-') ...[
+          IconButton(
+            onPressed: () {
+              Clipboard.setData(ClipboardData(text: value));
+              Get.snackbar(
+                'Copied',
+                '$label copied to clipboard',
+                snackPosition: SnackPosition.TOP,
+                backgroundColor: Colors.green,
+                colorText: Colors.white,
+                duration: const Duration(seconds: 1),
+                margin: EdgeInsets.all(rw(context, 10)),
+              );
+            },
+            icon: Icon(
+              Icons.copy_rounded,
+              size: rw(context, 16),
+              color: const Color(0xFF005596),
+            ),
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(),
+            visualDensity: VisualDensity.compact,
+          ),
+        ],
       ],
     );
   }
@@ -2058,8 +2175,12 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
 
   bool _canShowCancelButton(AccessPassModel item) {
     final status = item.visitorStatus.toLowerCase().trim();
-    // 1. Hilang jika sudah Canceled
-    if (status == 'canceled' || status == 'cancelled') {
+    // 1. Hilang jika sudah Canceled atau Expired
+    if (status == 'canceled' || status == 'cancelled' || status == 'expired') {
+      return false;
+    }
+
+    if (item.visitorPeriodEnd.isBefore(DateTime.now())) {
       return false;
     }
 
@@ -2068,63 +2189,142 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
         ? item.invitedBy.trim()
         : widget.item.invitedBy.trim();
 
-    if (invitedBy.isEmpty || _currentUserId.isEmpty) {
-      return false;
+    if (invitedBy.isNotEmpty && _currentUserId.isNotEmpty) {
+      final hiveUser = HiveService().getUser();
+      final currentUserIdLower = _currentUserId.toLowerCase();
+      final invitedByLower = invitedBy.toLowerCase();
+      final employeeIdLower = (hiveUser?.employeeId ?? '').toLowerCase();
+
+      final isMatched =
+          currentUserIdLower == invitedByLower ||
+          (employeeIdLower.isNotEmpty && employeeIdLower == invitedByLower);
+
+      if (!isMatched) {
+        return false;
+      }
     }
 
-    return _currentUserId.toLowerCase() == invitedBy.toLowerCase();
+    return true;
   }
 
   Future<void> _handleCancelInvitation(AccessPassModel item) async {
     final confirm = await showDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
+      barrierDismissible: false,
+      builder: (ctx) => Dialog(
+        backgroundColor: Colors.white,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(rw(context, 16)),
+          borderRadius: BorderRadius.circular(rw(context, 20)),
         ),
-        title: Text(
-          'Cancel Invitation',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: rfs(context, 16),
+        insetPadding: EdgeInsets.symmetric(
+          horizontal: rw(context, 32),
+          vertical: rh(context, 24),
+        ),
+        child: Padding(
+          padding: EdgeInsets.fromLTRB(
+            rw(context, 20),
+            rh(context, 24),
+            rw(context, 20),
+            rh(context, 20),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: rw(context, 54),
+                height: rw(context, 54),
+                decoration: const BoxDecoration(
+                  color: Color(0xFFFEF2F2),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.warning_amber_rounded,
+                  size: rw(context, 28),
+                  color: const Color(0xFFDC2626),
+                ),
+              ),
+              SizedBox(height: rh(context, 16)),
+              Text(
+                'Cancel Invitation',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: rfs(context, 18),
+                  fontWeight: FontWeight.bold,
+                  color: const Color(0xFF0F172A),
+                ),
+              ),
+              SizedBox(height: rh(context, 8)),
+              Text(
+                'Are you sure you want to cancel this invitation? This action cannot be undone.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: rfs(context, 13.5),
+                  color: const Color(0xFF64748B),
+                  height: 1.45,
+                ),
+              ),
+              SizedBox(height: rh(context, 22)),
+              Row(
+                children: [
+                  Expanded(
+                    child: SizedBox(
+                      height: rh(context, 42),
+                      child: OutlinedButton(
+                        onPressed: () => Navigator.pop(ctx, false),
+                        style: OutlinedButton.styleFrom(
+                          side: const BorderSide(color: Color(0xFFE2E8F0)),
+                          backgroundColor: const Color(0xFFF8FAFC),
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(
+                              rw(context, 10),
+                            ),
+                          ),
+                          padding: EdgeInsets.zero,
+                        ),
+                        child: Text(
+                          'No',
+                          style: TextStyle(
+                            fontSize: rfs(context, 14),
+                            fontWeight: FontWeight.w600,
+                            color: const Color(0xFF475569),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  SizedBox(width: rw(context, 12)),
+                  Expanded(
+                    child: SizedBox(
+                      height: rh(context, 42),
+                      child: ElevatedButton(
+                        onPressed: () => Navigator.pop(ctx, true),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFDC2626),
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(
+                              rw(context, 10),
+                            ),
+                          ),
+                          padding: EdgeInsets.zero,
+                        ),
+                        child: Text(
+                          'Yes, Cancel',
+                          style: TextStyle(
+                            fontSize: rfs(context, 14),
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
         ),
-        content: Text(
-          'Are you sure you want to cancel this invitation? This action cannot be undone.',
-          style: TextStyle(
-            fontSize: rfs(context, 13),
-            color: Colors.grey.shade700,
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: Text(
-              'No',
-              style: TextStyle(
-                color: Colors.grey.shade600,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFE53935),
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(rw(context, 8)),
-              ),
-            ),
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text(
-              'Yes, Cancel',
-              style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-        ],
       ),
     );
 
@@ -2139,8 +2339,8 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
     final trxId = widget.item.id.isNotEmpty
         ? widget.item.id
         : (widget.item.transactionVisitorId.isNotEmpty
-            ? widget.item.transactionVisitorId
-            : item.id);
+              ? widget.item.transactionVisitorId
+              : item.id);
 
     debugPrint(
       'Canceling transaction: trxId=$trxId, widget.item.id=${widget.item.id}, item.id=${item.id}',
@@ -2155,8 +2355,9 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
       setState(() {
         _currentItem = _currentItem.copyWith(visitorStatus: 'Canceled');
         if (_selectedGroupVisitor != null) {
-          _selectedGroupVisitor =
-              _selectedGroupVisitor!.copyWith(visitorStatus: 'Canceled');
+          _selectedGroupVisitor = _selectedGroupVisitor!.copyWith(
+            visitorStatus: 'Canceled',
+          );
         }
         _groupVisitorModels = _groupVisitorModels
             .map((v) => v.copyWith(visitorStatus: 'Canceled'))
@@ -2789,8 +2990,8 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
                         final trxId = widget.item.id.isNotEmpty
                             ? widget.item.id
                             : (widget.item.transactionVisitorId.isNotEmpty
-                                ? widget.item.transactionVisitorId
-                                : selectedItem.transactionVisitorId);
+                                  ? widget.item.transactionVisitorId
+                                  : selectedItem.transactionVisitorId);
                         showAddInvitationVisitorDialog(
                           context,
                           item: widget.item,
@@ -2798,7 +2999,8 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
                           onSuccess: () {
                             _fetchGroupVisitors();
                             if (Get.isRegistered<InvitationController>()) {
-                              Get.find<InvitationController>().fetchOngoingInvitations();
+                              Get.find<InvitationController>()
+                                  .fetchOngoingInvitations();
                             }
                           },
                         );
@@ -2815,7 +3017,9 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
                           ),
                           boxShadow: [
                             BoxShadow(
-                              color: const Color(0xFF005596).withValues(alpha: 0.06),
+                              color: const Color(
+                                0xFF005596,
+                              ).withValues(alpha: 0.06),
                               blurRadius: 4,
                               offset: const Offset(0, 1.5),
                             ),
@@ -2848,7 +3052,9 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
                           ),
                           boxShadow: [
                             BoxShadow(
-                              color: const Color(0xFF005596).withValues(alpha: 0.06),
+                              color: const Color(
+                                0xFF005596,
+                              ).withValues(alpha: 0.06),
                               blurRadius: 4,
                               offset: const Offset(0, 1.5),
                             ),
@@ -3074,7 +3280,9 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
                                             ? visitor.sitePlaceName
                                             : (_sitePlaceName.isNotEmpty
                                                   ? _sitePlaceName
-                                                  : (_loadingSite ? '...' : '-')),
+                                                  : (_loadingSite
+                                                        ? '...'
+                                                        : '-')),
                                         Icons.location_on_outlined,
                                       ),
                                       _SheetField(
@@ -3173,7 +3381,9 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
                                             ? visitor.sitePlaceName
                                             : (_sitePlaceName.isNotEmpty
                                                   ? _sitePlaceName
-                                                  : (_loadingSite ? '...' : '-')),
+                                                  : (_loadingSite
+                                                        ? '...'
+                                                        : '-')),
                                         Icons.location_on_outlined,
                                       ),
                                       _SheetField(
@@ -3405,8 +3615,8 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
                                                 color: Colors.grey.shade100,
                                                 borderRadius:
                                                     BorderRadius.circular(
-                                                  rw(context, 4),
-                                                ),
+                                                      rw(context, 4),
+                                                    ),
                                               ),
                                             ),
                                           ],
@@ -3479,17 +3689,19 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
                                                 fit: BoxFit.cover,
                                                 errorBuilder: (_, _, _) =>
                                                     Center(
-                                                  child: Text(
-                                                    initials,
-                                                    style: TextStyle(
-                                                      color: avatarColor,
-                                                      fontSize:
-                                                          rfs(context, 15),
-                                                      fontWeight:
-                                                          FontWeight.bold,
+                                                      child: Text(
+                                                        initials,
+                                                        style: TextStyle(
+                                                          color: avatarColor,
+                                                          fontSize: rfs(
+                                                            context,
+                                                            15,
+                                                          ),
+                                                          fontWeight:
+                                                              FontWeight.bold,
+                                                        ),
+                                                      ),
                                                     ),
-                                                  ),
-                                                ),
                                               )
                                             : Center(
                                                 child: Text(
@@ -3578,32 +3790,32 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
                             children: [
                               _section(context, 'Others Visitor'),
                               SizedBox(
-                                  height: rh(context, 88),
-                                  child: Row(
-                                    children: [
-                                      Expanded(
-                                        child: ListView.separated(
-                                          scrollDirection: Axis.horizontal,
-                                          itemCount:
-                                              visibleOthers.length +
-                                              (hasMore ? 1 : 0),
-                                          separatorBuilder: (context, index) =>
-                                              hSpace(context, 12),
-                                          itemBuilder: (context, index) {
-                                            if (hasMore &&
-                                                index == visibleOthers.length) {
-                                              return buildMoreButton();
-                                            }
-                                            return buildAvatar(
-                                              visibleOthers[index],
-                                              index,
-                                            );
-                                          },
-                                        ),
+                                height: rh(context, 88),
+                                child: Row(
+                                  children: [
+                                    Expanded(
+                                      child: ListView.separated(
+                                        scrollDirection: Axis.horizontal,
+                                        itemCount:
+                                            visibleOthers.length +
+                                            (hasMore ? 1 : 0),
+                                        separatorBuilder: (context, index) =>
+                                            hSpace(context, 12),
+                                        itemBuilder: (context, index) {
+                                          if (hasMore &&
+                                              index == visibleOthers.length) {
+                                            return buildMoreButton();
+                                          }
+                                          return buildAvatar(
+                                            visibleOthers[index],
+                                            index,
+                                          );
+                                        },
                                       ),
-                                    ],
-                                  ),
+                                    ),
+                                  ],
                                 ),
+                              ),
                               vSpace(context, 16),
                             ],
                           );
@@ -3913,8 +4125,9 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      // Cancel button: only shown if inviter is the logged-in user AND not already canceled
-                      if (_canShowCancelButton(selectedItem)) ...[
+                      // Cancel button: only shown on front/main detail (not in 'More' full detail), if inviter is the logged-in user AND not already canceled
+                      if (!widget.isFullDetail &&
+                          _canShowCancelButton(selectedItem)) ...[
                         SizedBox(
                           width: double.infinity,
                           child: ElevatedButton(
@@ -3925,8 +4138,9 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
                                 vertical: rh(context, 14),
                               ),
                               shape: RoundedRectangleBorder(
-                                borderRadius:
-                                    BorderRadius.circular(rw(context, 12)),
+                                borderRadius: BorderRadius.circular(
+                                  rw(context, 12),
+                                ),
                               ),
                             ),
                             onPressed: _isCanceling
@@ -3936,9 +4150,8 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
                                 ? SizedBox(
                                     width: rw(context, 18),
                                     height: rw(context, 18),
-                                    child: const CircularProgressIndicator(
+                                    child: const CupertinoActivityIndicator(
                                       color: Colors.white,
-                                      strokeWidth: 2,
                                     ),
                                   )
                                 : Text(
@@ -3964,8 +4177,9 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
                               vertical: rh(context, 14),
                             ),
                             shape: RoundedRectangleBorder(
-                              borderRadius:
-                                  BorderRadius.circular(rw(context, 12)),
+                              borderRadius: BorderRadius.circular(
+                                rw(context, 12),
+                              ),
                             ),
                           ),
                           onPressed: () => Navigator.pop(context),

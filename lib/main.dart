@@ -1,5 +1,6 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:flutter_visitor_app/splashscreen.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -73,6 +74,12 @@ void main() async {
   // Inject Controllers
   Get.put(UserController());
   Get.put(LanguageController());
+
+  // Lock orientation to portrait only on all devices
+  await SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+    DeviceOrientation.portraitDown,
+  ]);
 
   runApp(const MyApp());
 }

@@ -11,10 +11,18 @@ import 'package:flutter/foundation.dart';
 import 'package:intl/intl.dart';
 
 List<AccessPassModel> _parseAccessPassData(dynamic responseData) {
-  final collection = responseData as List<dynamic>? ?? [];
-  return collection.map((trx) {
-    return AccessPassModel.fromJson(trx as Map<String, dynamic>);
-  }).toList();
+  if (responseData is! List) return [];
+  final List<AccessPassModel> list = [];
+  for (final trx in responseData) {
+    try {
+      if (trx is Map) {
+        list.add(AccessPassModel.fromJson(Map<String, dynamic>.from(trx)));
+      }
+    } catch (e) {
+      debugPrint('Error parsing AccessPassModel item: $e');
+    }
+  }
+  return list;
 }
 
 List<ApprovalTicketModel> _parseApprovalTicketData(dynamic responseData) {
@@ -253,27 +261,31 @@ class InvitationController extends GetxController {
     _applyFilters();
   }
 
+  bool _isQuickAccessItem(AccessPassModel item) {
+    final flow = item.flow.toLowerCase().trim();
+    final status = item.visitorStatus.toLowerCase().trim();
+    final type = item.visitorTypeName.toLowerCase().trim();
+    final role = item.visitorRole.toLowerCase().trim();
+    final agenda = item.agenda.toLowerCase().trim();
+
+    return flow == 'quickaccessvisit' ||
+        flow == 'quickaccess' ||
+        flow.contains('quick') ||
+        status == 'quickaccess' ||
+        status.contains('quick') ||
+        type == 'quick access' ||
+        type.contains('quick') ||
+        role == 'quick access' ||
+        role.contains('quick') ||
+        agenda.contains('quick access');
+  }
+
   void _applyFilters() {
-    // Split based on `flow` field from new /visitor/transaction/dt API:
-    // flow == 'QuickAccessVisit' → Quick Access tab
-    // everything else (Invitation, Praregister, etc.) → Invitation tab
     List<AccessPassModel> filtered = List.from(
-      allInvitations.where(
-        (item) =>
-            item.flow.toLowerCase() != 'quickaccessvisit' &&
-            !(item.agenda.isEmpty &&
-                item.hostName.isEmpty &&
-                item.visitorTypeName.isEmpty),
-      ),
+      allInvitations.where((item) => !_isQuickAccessItem(item)),
     );
     List<AccessPassModel> quickAccess = List.from(
-      allInvitations.where(
-        (item) =>
-            item.flow.toLowerCase() == 'quickaccessvisit' &&
-            !(item.agenda.isEmpty &&
-                item.hostName.isEmpty &&
-                item.visitorTypeName.isEmpty),
-      ),
+      allInvitations.where((item) => _isQuickAccessItem(item)),
     );
 
     // 1. Filter Berdasarkan Tanggal (Lokal)
@@ -456,8 +468,7 @@ class InvitationController extends GetxController {
       return 'Praregis';
     }
 
-    final lowerFlow = targetItem.flow.toLowerCase();
-    if (lowerFlow == 'quickaccessvisit' || lowerStatus == 'quickaccess') {
+    if (_isQuickAccessItem(targetItem)) {
       return 'Quick Access';
     }
 
@@ -494,50 +505,32 @@ class InvitationController extends GetxController {
 
     if (!isSilent) isLoading.value = true;
     try {
-      final countResponse = await _api.getVisitorDt(
+      final response = await _api.getVisitorDt(
         token,
         draw: 1,
         start: 0,
-        length: 1,
+        length: 100,
         search: '',
       );
 
-      if (countResponse.data is Map &&
-          (countResponse.data['status'] == 'success' ||
-              countResponse.data['status_code'] == 200)) {
-        final recordsFiltered =
-            (countResponse.data['recordsFiltered'] ??
-                    countResponse.data['RecordsFiltered'] ??
-                    countResponse.data['records_filtered'] ??
-                    50)
-                as int;
-        final totalCount = recordsFiltered > 0 ? recordsFiltered : 1;
+      if (response.data is Map &&
+          (response.data['status'] == 'success' ||
+              response.data['status_code'] == 200 ||
+              response.statusCode == 200)) {
+        final rawCollection =
+            response.data['collection'] ?? response.data['data'];
 
-        final response = await _api.getVisitorDt(
-          token,
-          draw: 2,
-          start: 0,
-          length: totalCount,
-          search: '',
+        final List<AccessPassModel> allVisitors = await compute(
+          _parseAccessPassData,
+          rawCollection,
         );
 
-        if (response.data is Map &&
-            (response.data['status'] == 'success' ||
-                response.data['status_code'] == 200)) {
-          final collection = response.data['collection'];
+        allRawVisitors.assignAll(allVisitors);
 
-          final List<AccessPassModel> allVisitors = await compute(
-            _parseAccessPassData,
-            collection,
-          );
-
-          allRawVisitors.assignAll(allVisitors);
-
-          allInvitations.assignAll(allVisitors);
-          _applyFilters();
-          _prefetchTransactionVisitorCounts(allVisitors);
-          fetchVisitorTodayCount();
-        }
+        allInvitations.assignAll(allVisitors);
+        _applyFilters();
+        _prefetchTransactionVisitorCounts(allVisitors);
+        fetchVisitorTodayCount();
       }
     } catch (e) {
       debugPrint('fetchOngoingInvitations error: $e');
@@ -549,6 +542,7 @@ class InvitationController extends GetxController {
 
   final RxList<Map<String, dynamic>> hosts = <Map<String, dynamic>>[].obs;
   final RxList<Map<String, dynamic>> sites = <Map<String, dynamic>>[].obs;
+  final RxList<Map<String, dynamic>> dropPoints = <Map<String, dynamic>>[].obs;
   final RxList<Map<String, dynamic>> visitorTypes =
       <Map<String, dynamic>>[].obs;
   final RxList<Map<String, dynamic>> visitorProviders =
@@ -565,12 +559,20 @@ class InvitationController extends GetxController {
       await Future.wait([
         _fetchHosts(token),
         _fetchSites(token),
+        _fetchDropPoints(token),
         _fetchVisitorTypes(token),
         _fetchVisitorProviders(token),
       ]);
     } finally {
       isLoadingMasters.value = false;
     }
+  }
+
+  Future<void> fetchDropPoints() async {
+    final user = _hive.getUser();
+    final token = user?.token;
+    if (token == null) return;
+    await _fetchDropPoints(token);
   }
 
   Future<void> _fetchHosts(String token) async {
@@ -596,6 +598,20 @@ class InvitationController extends GetxController {
       }
     } catch (e) {
       debugPrint('fetchSites error: $e');
+    }
+  }
+
+  Future<void> _fetchDropPoints(String token) async {
+    try {
+      final response = await _api.getDropPoints(token);
+      if (response.data['status'] == 'success' &&
+          response.data['collection'] != null) {
+        dropPoints.assignAll(
+          List<Map<String, dynamic>>.from(response.data['collection']),
+        );
+      }
+    } catch (e) {
+      debugPrint('fetchDropPoints error: $e');
     }
   }
 
@@ -1130,8 +1146,12 @@ class InvitationController extends GetxController {
       if (response.data is Map &&
           (response.data['status'] == 'success' ||
               response.data['status_code'] == 200)) {
+        quickCurrentPage.value = 0;
         await fetchOngoingInvitations(clearFilters: false);
         triggerActivityRefresh();
+        Future.delayed(const Duration(milliseconds: 500), () {
+          fetchOngoingInvitations(isSilent: true, clearFilters: false);
+        });
         return true;
       }
 
@@ -1858,14 +1878,16 @@ class InvitationController extends GetxController {
           // Update in-memory lists
           for (int i = 0; i < allInvitations.length; i++) {
             if (allInvitations[i].id == transactionVisitorId) {
-              allInvitations[i] =
-                  allInvitations[i].copyWith(visitorStatus: 'Canceled');
+              allInvitations[i] = allInvitations[i].copyWith(
+                visitorStatus: 'Canceled',
+              );
             }
           }
           for (int i = 0; i < allRawVisitors.length; i++) {
             if (allRawVisitors[i].id == transactionVisitorId) {
-              allRawVisitors[i] =
-                  allRawVisitors[i].copyWith(visitorStatus: 'Canceled');
+              allRawVisitors[i] = allRawVisitors[i].copyWith(
+                visitorStatus: 'Canceled',
+              );
             }
           }
           _applyFilters();
@@ -1873,7 +1895,7 @@ class InvitationController extends GetxController {
           fetchOngoingInvitations(isSilent: true);
           return (
             true,
-            data['msg']?.toString() ?? 'Invitation cancelled successfully'
+            data['msg']?.toString() ?? 'Invitation cancelled successfully',
           );
         } else if (data is Map && data['msg'] != null) {
           return (false, data['msg'].toString());

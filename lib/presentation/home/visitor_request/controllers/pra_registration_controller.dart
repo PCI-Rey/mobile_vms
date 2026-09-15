@@ -341,6 +341,49 @@ class PraRegistrationController extends GetxController {
     return List.generate(6, (_) => chars[rand.nextInt(chars.length)]).join();
   }
 
+  bool get hasChanges {
+    if (isDuplicateMode.value) return true;
+    if (currentStep.value > 1) return true;
+    if (selectedVisitorTypeId.value.isNotEmpty) return true;
+    if (isGroup.value != null) return true;
+    if (groupNameCtrl.text.trim().isNotEmpty) return true;
+    if (singleSearchCtrl.text.trim().isNotEmpty) return true;
+    if (singleSelectedData.value != null) return true;
+    if (selectedEmployeeId.value.isNotEmpty) return true;
+    if (nameCtrl.text.trim().isNotEmpty) return true;
+    if (emailCtrl.text.trim().isNotEmpty) return true;
+    if (phoneCtrl.text.trim().isNotEmpty) return true;
+    if (organizationCtrl.text.trim().isNotEmpty) return true;
+    if (identityIdCtrl.text.trim().isNotEmpty) return true;
+    for (final c in singleExtraControllers.values) {
+      if (c.text.trim().isNotEmpty) return true;
+    }
+    if (groupVisitors.length > 1) return true;
+    if (groupVisitors.isNotEmpty) {
+      final g = groupVisitors.first;
+      if (g.fullNameCtrl.text.trim().isNotEmpty ||
+          g.emailCtrl.text.trim().isNotEmpty ||
+          g.phoneCtrl.text.trim().isNotEmpty ||
+          g.orgCtrl.text.trim().isNotEmpty ||
+          g.identityCtrl.text.trim().isNotEmpty) {
+        return true;
+      }
+    }
+    if (selectedSiteId.value.isNotEmpty) return true;
+    if (selectedHostId.value.isNotEmpty) return true;
+    if (selectedAgenda.value.isNotEmpty) return true;
+    if (otherAgendaCtrl.text.trim().isNotEmpty) return true;
+    for (final c in purposeExtraControllers.values) {
+      if (c.text.trim().isNotEmpty) return true;
+    }
+    if (visitStart.value != null || visitEnd.value != null) return true;
+    if (isDriving.value == true) return true;
+    if (vehiclePlateCtrl.text.trim().isNotEmpty) return true;
+    if (selfieImage.value != null) return true;
+    if (ktpImage.value != null) return true;
+    return false;
+  }
+
   void resetFields() {
     currentStep.value = 1;
     maxStepReached.value = 1;

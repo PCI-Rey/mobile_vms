@@ -56,8 +56,14 @@ class _QuickAccessHomeListState extends State<QuickAccessHomeList> {
       }
     }
 
-    _listWorker = ever(controller.quickAccessInvitations, (_) => updateCarousel());
-    _dateWorker = ever(controller.selectedDashboardDate, (_) => updateCarousel());
+    _listWorker = ever(
+      controller.quickAccessInvitations,
+      (_) => updateCarousel(),
+    );
+    _dateWorker = ever(
+      controller.selectedDashboardDate,
+      (_) => updateCarousel(),
+    );
   }
 
   @override
@@ -91,7 +97,8 @@ class _QuickAccessHomeListState extends State<QuickAccessHomeList> {
 
       final list = filtered.length > 3 ? filtered.take(3).toList() : filtered;
 
-      if (controller.isLoading.value && controller.quickAccessInvitations.isEmpty) {
+      if (controller.isLoading.value &&
+          controller.quickAccessInvitations.isEmpty) {
         return Center(
           child: Padding(
             padding: EdgeInsets.all(rw(context, 20.0)),
@@ -169,7 +176,9 @@ class _QuickAccessHomeListState extends State<QuickAccessHomeList> {
                     height: rw(context, 6),
                     width: isActive ? rw(context, 16) : rw(context, 6),
                     decoration: BoxDecoration(
-                      color: isActive ? AppColors.primary500 : Colors.grey.shade300,
+                      color: isActive
+                          ? AppColors.primary500
+                          : Colors.grey.shade300,
                       borderRadius: BorderRadius.circular(rw(context, 3)),
                     ),
                   );
@@ -178,7 +187,6 @@ class _QuickAccessHomeListState extends State<QuickAccessHomeList> {
             ),
             vSpace(context, 12),
           ],
-
         ],
       );
     });
@@ -192,10 +200,13 @@ class _QuickAccessHomeListState extends State<QuickAccessHomeList> {
 
     if (item.visitorStatus.isEmpty) {
       jenis = item.isPraregisterDone ? 'Praregis' : 'Invitation';
-      jenisColor = item.isPraregisterDone ? const Color(0xFF00B0FF) : const Color(0xFF6D4C41);
+      jenisColor = item.isPraregisterDone
+          ? const Color(0xFF00B0FF)
+          : const Color(0xFF6D4C41);
     } else {
       final lowerStatus = item.visitorStatus.toLowerCase();
-      if (lowerStatus.contains('preregis') || lowerStatus.contains('praregis')) {
+      if (lowerStatus.contains('preregis') ||
+          lowerStatus.contains('praregis')) {
         jenis = 'Praregis';
         jenisColor = const Color(0xFF00B0FF);
       } else if (lowerStatus == 'available') {
@@ -220,7 +231,9 @@ class _QuickAccessHomeListState extends State<QuickAccessHomeList> {
         jenis = 'Invitation';
         jenisColor = const Color(0xFF6D4C41);
       } else {
-        jenis = item.visitorStatus[0].toUpperCase() + item.visitorStatus.substring(1);
+        jenis =
+            item.visitorStatus[0].toUpperCase() +
+            item.visitorStatus.substring(1);
         jenisColor = const Color(0xFF546E7A);
       }
     }
@@ -288,7 +301,9 @@ class _QuickAccessHomeListState extends State<QuickAccessHomeList> {
                       vertical: rh(context, 4),
                     ),
                     decoration: BoxDecoration(
-                      color: isExpired ? const Color(0xFFE53935) : const Color(0xFF43A047),
+                      color: isExpired
+                          ? const Color(0xFFE53935)
+                          : const Color(0xFF43A047),
                       borderRadius: BorderRadius.circular(rw(context, 20)),
                     ),
                     child: Text(
@@ -303,11 +318,7 @@ class _QuickAccessHomeListState extends State<QuickAccessHomeList> {
                 ],
               ),
             ),
-            Divider(
-              height: 1,
-              thickness: 1,
-              color: Colors.grey.shade100,
-            ),
+            Divider(height: 1, thickness: 1, color: Colors.grey.shade100),
             Padding(
               padding: EdgeInsets.only(
                 left: rw(context, 16),
@@ -324,7 +335,9 @@ class _QuickAccessHomeListState extends State<QuickAccessHomeList> {
                           context,
                           Icons.badge_outlined,
                           'Visitor Type',
-                          item.visitorTypeName.isEmpty ? '-' : item.visitorTypeName,
+                          item.visitorTypeName.isEmpty
+                              ? '-'
+                              : item.visitorTypeName,
                         ),
                       ),
                       hSpace(context, 8),
@@ -346,7 +359,9 @@ class _QuickAccessHomeListState extends State<QuickAccessHomeList> {
                           context,
                           Icons.login_outlined,
                           'Period Start',
-                          DateFormat('dd MMMM yyyy, HH:mm').format(item.visitorPeriodStart),
+                          DateFormat(
+                            'dd MMMM yyyy, HH:mm',
+                          ).format(item.visitorPeriodStart),
                         ),
                       ),
                       hSpace(context, 8),
@@ -355,7 +370,9 @@ class _QuickAccessHomeListState extends State<QuickAccessHomeList> {
                           context,
                           Icons.logout_outlined,
                           'Period End',
-                          DateFormat('dd MMMM yyyy, HH:mm').format(item.visitorPeriodEnd),
+                          DateFormat(
+                            'dd MMMM yyyy, HH:mm',
+                          ).format(item.visitorPeriodEnd),
                           color: isExpired ? Colors.red.shade600 : null,
                         ),
                       ),

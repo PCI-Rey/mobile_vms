@@ -38,6 +38,131 @@ Future<bool?> showAddPraRegistrationDialog(
   );
 }
 
+Future<bool> _showExitConfirmation(
+  BuildContext context,
+  PraRegistrationController controller,
+) async {
+  final hasData = controller.hasChanges;
+  final result = await showDialog<bool>(
+    context: context,
+    barrierDismissible: false,
+    builder: (ctx) => Dialog(
+      backgroundColor: Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(rw(context, 20)),
+      ),
+      insetPadding: EdgeInsets.symmetric(
+        horizontal: rw(context, 32),
+        vertical: rh(context, 24),
+      ),
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(
+          rw(context, 20),
+          rh(context, 24),
+          rw(context, 20),
+          rh(context, 20),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: rw(context, 54),
+              height: rw(context, 54),
+              decoration: BoxDecoration(
+                color: hasData ? const Color(0xFFFEF2F2) : const Color(0xFFF1F5F9),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                hasData ? Icons.warning_amber_rounded : Icons.help_outline_rounded,
+                size: rw(context, 28),
+                color: hasData ? const Color(0xFFDC2626) : const Color(0xFF475569),
+              ),
+            ),
+            SizedBox(height: rh(context, 16)),
+            Text(
+              hasData ? 'Discard Progress?' : 'Close Form?',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: rfs(context, 18),
+                fontWeight: FontWeight.bold,
+                color: const Color(0xFF0F172A),
+              ),
+            ),
+            SizedBox(height: rh(context, 8)),
+            Text(
+              hasData
+                  ? 'Are you sure you want to close this form? Your progress will be lost.'
+                  : 'Are you sure you want to close this form?',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: rfs(context, 13.5),
+                color: const Color(0xFF64748B),
+                height: 1.45,
+              ),
+            ),
+            SizedBox(height: rh(context, 22)),
+            Row(
+              children: [
+                Expanded(
+                  child: SizedBox(
+                    height: rh(context, 42),
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.pop(ctx, false),
+                      style: OutlinedButton.styleFrom(
+                        side: const BorderSide(color: Color(0xFFE2E8F0)),
+                        backgroundColor: const Color(0xFFF8FAFC),
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(rw(context, 10)),
+                        ),
+                        padding: EdgeInsets.zero,
+                      ),
+                      child: Text(
+                        'No',
+                        style: TextStyle(
+                          fontSize: rfs(context, 14),
+                          fontWeight: FontWeight.w600,
+                          color: const Color(0xFF475569),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                SizedBox(width: rw(context, 12)),
+                Expanded(
+                  child: SizedBox(
+                    height: rh(context, 42),
+                    child: ElevatedButton(
+                      onPressed: () => Navigator.pop(ctx, true),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFDC2626),
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(rw(context, 10)),
+                        ),
+                        padding: EdgeInsets.zero,
+                      ),
+                      child: Text(
+                        hasData ? 'Yes, Continue' : 'Yes, Close',
+                        style: TextStyle(
+                          fontSize: rfs(context, 14),
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
+  return result ?? false;
+}
+
 class _AddPraRegistrationDialog extends StatelessWidget {
   const _AddPraRegistrationDialog();
 
@@ -46,10 +171,14 @@ class _AddPraRegistrationDialog extends StatelessWidget {
     final ctrl = Get.find<PraRegistrationController>();
 
     return PopScope(
-      canPop: true,
-      onPopInvokedWithResult: (didPop, result) {
-        if (didPop) {
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) return;
+        if (ctrl.isSubmitting.value) return;
+        final shouldExit = await _showExitConfirmation(context, ctrl);
+        if (shouldExit && context.mounted) {
           ctrl.resetFields();
+          Navigator.of(context).pop();
         }
       },
       child: Dialog(
@@ -144,7 +273,7 @@ class _DialogHeader extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Top Title Bar
+          // Top Title Bar (Centered title matching Create Share Link)
           Padding(
             padding: EdgeInsets.fromLTRB(
               rw(context, 16),
@@ -152,34 +281,44 @@ class _DialogHeader extends StatelessWidget {
               rw(context, 10),
               rh(context, 10),
             ),
-            child: Row(
+            child: Stack(
+              alignment: Alignment.center,
               children: [
-                Expanded(
+                Center(
                   child: Text(
                     'Create Invitation',
+                    textAlign: TextAlign.center,
                     style: TextStyle(
-                      fontSize: rfs(context, 16),
-                      fontWeight: FontWeight.w700,
+                      fontSize: rfs(context, 17),
+                      fontWeight: FontWeight.bold,
                       color: const Color(0xFF0F172A),
                     ),
                   ),
                 ),
-                InkWell(
-                  borderRadius: BorderRadius.circular(20),
-                  onTap: () {
-                    controller.resetFields();
-                    Navigator.of(context).pop();
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.all(6),
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade100,
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.close_rounded,
-                      size: 18,
-                      color: Colors.black54,
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(20),
+                    onTap: () async {
+                      if (controller.isSubmitting.value) return;
+                      final shouldExit =
+                          await _showExitConfirmation(context, controller);
+                      if (shouldExit && context.mounted) {
+                        controller.resetFields();
+                        Navigator.of(context).pop();
+                      }
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade100,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.close_rounded,
+                        size: 18,
+                        color: Colors.black54,
+                      ),
                     ),
                   ),
                 ),
@@ -906,55 +1045,60 @@ class _Step2VisitorInfo extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // Member Tabs + Add Button
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Row(
-            children: [
-              ...List.generate(controller.groupVisitors.length, (i) {
-                final isSelected = safeIndex == i;
-                return Padding(
-                  padding: const EdgeInsets.only(right: 8),
-                  child: ChoiceChip(
-                    showCheckmark: false,
-                    label: Text('Visitor ${i + 1}'),
-                    selected: isSelected,
-                    selectedColor: AppColors.primary500,
-                    labelStyle: TextStyle(
-                      color: isSelected ? Colors.white : const Color(0xFF334155),
-                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                      fontSize: rfs(context, 12),
-                    ),
-                    backgroundColor: Colors.white,
-                    side: BorderSide(
-                      color: isSelected ? AppColors.primary500 : const Color(0xFFCBD5E1),
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    onSelected: (_) {
-                      controller.selectedGroupMemberIndex.value = i;
-                      controller.updateForm();
-                    },
-                  ),
-                );
-              }),
-              ActionChip(
-                avatar: const Icon(Icons.add, size: 16, color: AppColors.primary500),
-                label: const Text('Add Visitor'),
-                labelStyle: TextStyle(
-                  color: AppColors.primary500,
-                  fontWeight: FontWeight.w600,
-                  fontSize: rfs(context, 12),
+        // Member Tabs + Add Button (fixed)
+        Row(
+          children: [
+            Expanded(
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: List.generate(controller.groupVisitors.length, (i) {
+                    final isSelected = safeIndex == i;
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: ChoiceChip(
+                        showCheckmark: false,
+                        label: Text('Visitor ${i + 1}'),
+                        selected: isSelected,
+                        selectedColor: AppColors.primary500,
+                        labelStyle: TextStyle(
+                          color: isSelected ? Colors.white : const Color(0xFF334155),
+                          fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                          fontSize: rfs(context, 12),
+                        ),
+                        backgroundColor: Colors.white,
+                        side: BorderSide(
+                          color: isSelected ? AppColors.primary500 : const Color(0xFFCBD5E1),
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        onSelected: (_) {
+                          controller.selectedGroupMemberIndex.value = i;
+                          controller.updateForm();
+                        },
+                      ),
+                    );
+                  }),
                 ),
-                backgroundColor: const Color(0xFFEFF6FF),
-                side: const BorderSide(color: Color(0xFF93C5FD)),
-                onPressed: () {
-                  controller.addGroupVisitor();
-                },
               ),
-            ],
-          ),
+            ),
+            const SizedBox(width: 8),
+            ActionChip(
+              avatar: const Icon(Icons.add, size: 16, color: AppColors.primary500),
+              label: const Text('Add Visitor'),
+              labelStyle: TextStyle(
+                color: AppColors.primary500,
+                fontWeight: FontWeight.w600,
+                fontSize: rfs(context, 12),
+              ),
+              backgroundColor: const Color(0xFFEFF6FF),
+              side: const BorderSide(color: Color(0xFF93C5FD)),
+              onPressed: () {
+                controller.addGroupVisitor();
+              },
+            ),
+          ],
         ),
 
         vSpace(context, 8),
@@ -2682,10 +2826,14 @@ class _BottomNav extends StatelessWidget {
               ),
             ),
             onPressed: !controller.isSubmitting.value
-                ? () {
+                ? () async {
                     if (step <= 1) {
-                      controller.resetFields();
-                      Navigator.of(context).pop();
+                      final shouldExit =
+                          await _showExitConfirmation(context, controller);
+                      if (shouldExit && context.mounted) {
+                        controller.resetFields();
+                        Navigator.of(context).pop();
+                      }
                     } else {
                       controller.prevStep();
                     }

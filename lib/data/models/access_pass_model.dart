@@ -169,9 +169,25 @@ class AccessPassModel {
       isDriving: json['is_driving'] == true,
       tz: json['tz']?.toString() ?? '',
       siteId: (json['site_id'] ?? json['site_place'])?.toString() ?? '',
-      visitorName: (json['visitor_name']?.toString() ?? '').isNotEmpty
-          ? json['visitor_name'].toString()
-          : (json['group_name']?.toString() ?? ''),
+      visitorName: () {
+        final direct = json['visitor_name']?.toString() ?? '';
+        if (direct.isNotEmpty) return direct;
+        if (json['list_visitor'] is List && (json['list_visitor'] as List).isNotEmpty) {
+          final first = (json['list_visitor'] as List).first;
+          if (first is Map) {
+            final vName = (first['visitor_name'] ?? first['name'])?.toString() ?? '';
+            if (vName.isNotEmpty) return vName;
+          }
+        }
+        if (json['visitors'] is List && (json['visitors'] as List).isNotEmpty) {
+          final first = (json['visitors'] as List).first;
+          if (first is Map) {
+            final vName = (first['visitor_name'] ?? first['name'])?.toString() ?? '';
+            if (vName.isNotEmpty) return vName;
+          }
+        }
+        return json['group_name']?.toString() ?? '';
+      }(),
       isPraregisterDone:
           json['is_complete_preregister'] == true ||
           json['is_praregister_done'] == true,
@@ -184,12 +200,31 @@ class AccessPassModel {
       invitedBy: json['invited_by']?.toString() ?? '',
       hostOrganizationName: json['host_organization_name']?.toString() ?? '',
       flow: json['flow']?.toString() ?? '',
-      visitorOrganizationName:
-          json['visitor_organization_name']?.toString() ?? '',
+      visitorOrganizationName: () {
+        final direct = json['visitor_organization_name']?.toString() ?? '';
+        if (direct.isNotEmpty) return direct;
+        if (json['list_visitor'] is List && (json['list_visitor'] as List).isNotEmpty) {
+          final first = (json['list_visitor'] as List).first;
+          if (first is Map) {
+            final vOrg = (first['visitor_organization_name'] ?? first['organization_name'] ?? first['organization'])?.toString() ?? '';
+            if (vOrg.isNotEmpty) return vOrg;
+          }
+        }
+        if (json['visitors'] is List && (json['visitors'] as List).isNotEmpty) {
+          final first = (json['visitors'] as List).first;
+          if (first is Map) {
+            final vOrg = (first['visitor_organization_name'] ?? first['organization_name'] ?? first['organization'])?.toString() ?? '';
+            if (vOrg.isNotEmpty) return vOrg;
+          }
+        }
+        return '';
+      }(),
       visitorPhone: json['visitor_phone']?.toString() ?? '',
       visitorEmail: json['visitor_email']?.toString() ?? '',
       visitorIdentityId: json['visitor_identity_id']?.toString() ?? '',
-      receiverName: json['receiver_name']?.toString() ?? '',
+      receiverName: (json['receiver_name']?.toString() ?? '').isNotEmpty
+          ? json['receiver_name'].toString()
+          : (json['host_name']?.toString() ?? ''),
       receiverEmail: json['receiver_email']?.toString() ?? '',
       receiverPhone: json['receiver_phone']?.toString() ?? '',
       groupCode: json['group_code']?.toString() ?? '',

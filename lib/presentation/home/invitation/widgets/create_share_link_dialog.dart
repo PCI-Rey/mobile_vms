@@ -179,16 +179,14 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
   }
 
   bool _hasChanges() {
-    // Only count a field as changed if its toggle is enabled (user explicitly turned it on)
-    // or if the field is always-visible and has been modified
-    return (isHostEnabled && selectedHostId != null) ||
-        (isSiteEnabled && selectedSiteId != null) ||
-        (isVisitorTypeEnabled && selectedVisitorTypeId != null) ||
-        (isAgendaEnabled && (selectedAgendaOption != null || agendaCtrl.text.isNotEmpty)) ||
-        (isVisitStartEnabled && visitStart != null) ||
-        (isVisitEndEnabled && visitEnd != null) ||
-        (isExpiredEnabled && selectedExpiredMinutes != null && selectedExpiredMinutes != '0') ||
-        (quotaCtrl.text.isNotEmpty && quotaCtrl.text != '0') ||
+    return isHostEnabled ||
+        isSiteEnabled ||
+        isVisitorTypeEnabled ||
+        isAgendaEnabled ||
+        isVisitStartEnabled ||
+        isVisitEndEnabled ||
+        isExpiredEnabled ||
+        (quotaCtrl.text.trim().isNotEmpty && quotaCtrl.text.trim() != '0') ||
         isSingleUse == true;
   }
 
@@ -196,32 +194,119 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
     final hasData = _hasChanges();
     final result = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
+      barrierDismissible: false,
+      builder: (ctx) => Dialog(
         backgroundColor: Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(rw(context, 16))),
-        title: Text(
-          hasData ? 'Discard Progress?' : 'Close Form?',
-          style: const TextStyle(fontWeight: FontWeight.bold),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(rw(context, 20)),
         ),
-        content: Text(
-          hasData
-              ? 'Are you sure you want to close this form? Your progress will be lost.'
-              : 'Are you sure you want to close this form?',
-          textAlign: TextAlign.justify,
+        insetPadding: EdgeInsets.symmetric(
+          horizontal: rw(context, 32),
+          vertical: rh(context, 24),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('No', style: TextStyle(color: Colors.grey)),
+        child: Padding(
+          padding: EdgeInsets.fromLTRB(
+            rw(context, 20),
+            rh(context, 24),
+            rw(context, 20),
+            rh(context, 20),
           ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: Text(
-              hasData ? 'Yes, Discard' : 'Yes, Close',
-              style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
-            ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: rw(context, 54),
+                height: rw(context, 54),
+                decoration: BoxDecoration(
+                  color: hasData ? const Color(0xFFFEF2F2) : const Color(0xFFF1F5F9),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  hasData ? Icons.warning_amber_rounded : Icons.help_outline_rounded,
+                  size: rw(context, 28),
+                  color: hasData ? const Color(0xFFDC2626) : const Color(0xFF475569),
+                ),
+              ),
+              SizedBox(height: rh(context, 16)),
+              Text(
+                hasData ? 'Discard Progress?' : 'Close Form?',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: rfs(context, 18),
+                  fontWeight: FontWeight.bold,
+                  color: const Color(0xFF0F172A),
+                ),
+              ),
+              SizedBox(height: rh(context, 8)),
+              Text(
+                hasData
+                    ? 'Are you sure you want to close this form? Your progress will be lost.'
+                    : 'Are you sure you want to close this form?',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: rfs(context, 13.5),
+                  color: const Color(0xFF64748B),
+                  height: 1.45,
+                ),
+              ),
+              SizedBox(height: rh(context, 22)),
+              Row(
+                children: [
+                  Expanded(
+                    child: SizedBox(
+                      height: rh(context, 42),
+                      child: OutlinedButton(
+                        onPressed: () => Navigator.pop(ctx, false),
+                        style: OutlinedButton.styleFrom(
+                          side: const BorderSide(color: Color(0xFFE2E8F0)),
+                          backgroundColor: const Color(0xFFF8FAFC),
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(rw(context, 10)),
+                          ),
+                          padding: EdgeInsets.zero,
+                        ),
+                        child: Text(
+                          'No',
+                          style: TextStyle(
+                            fontSize: rfs(context, 14),
+                            fontWeight: FontWeight.w600,
+                            color: const Color(0xFF475569),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  SizedBox(width: rw(context, 12)),
+                  Expanded(
+                    child: SizedBox(
+                      height: rh(context, 42),
+                      child: ElevatedButton(
+                        onPressed: () => Navigator.pop(ctx, true),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFDC2626),
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(rw(context, 10)),
+                          ),
+                          padding: EdgeInsets.zero,
+                        ),
+                        child: Text(
+                          hasData ? 'Yes, Continue' : 'Yes, Close',
+                          style: TextStyle(
+                            fontSize: rfs(context, 14),
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
     return result ?? false;

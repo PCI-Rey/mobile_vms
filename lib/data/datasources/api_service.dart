@@ -566,7 +566,7 @@ class ApiService {
     String token, {
     int draw = 1,
     int start = 0,
-    int length = 50000,
+    int length = 50,
     String search = '',
     String sortDir = 'desc',
   }) async {
@@ -585,6 +585,7 @@ class ApiService {
       return response;
     } on DioException catch (e) {
       debugPrint('Dio Error getVisitorDt: ${e.message}');
+      debugPrint('Dio Error getVisitorDt response: ${e.response?.data}');
       if (e.response != null) return e.response!;
       rethrow;
     }
