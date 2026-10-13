@@ -12,6 +12,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'presentation/auth/controller/user_controller.dart';
 import 'presentation/auth/controller/language_controller.dart';
+import 'data/datasources/api_service.dart';
 import 'core/localization/app_translations.dart';
 import 'core/core.dart';
 import 'core/services/notification_service.dart';
@@ -57,6 +58,9 @@ void main() async {
   await Hive.openBox('authBox');
   await Hive.openBox('dashboardBox');
   await initializeDateFormatting('id_ID', null);
+
+  // Initialize Base URL from SharedPreferences
+  await ApiService.initBaseUrl();
 
   // Initialize Firebase
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);

@@ -209,8 +209,9 @@ class _CreateQuickAccessDialogState extends State<CreateQuickAccessDialog> {
     final validSites = dropPointSites
         .map((site) => site['id']?.toString())
         .toList();
-    if (selectedSiteId == null || !validSites.contains(selectedSiteId))
+    if (selectedSiteId == null || !validSites.contains(selectedSiteId)) {
       return false;
+    }
 
     if (courierNameCtrl.text.trim().isEmpty) return false;
     if (courierPhoneCtrl.text.trim().isEmpty) return false;

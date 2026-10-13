@@ -2,20 +2,195 @@ import 'dart:convert';
 import 'dart:developer';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import 'dart:io';
 
 class ApiService {
-  final Dio _dio = Dio(
-    BaseOptions(
-      baseUrl: 'https://be-vms.app.bio-experience.com',
-      connectTimeout: const Duration(seconds: 15),
-      receiveTimeout: const Duration(seconds: 30),
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-      },
-    ),
-  );
+  static const String defaultBaseUrl = 'https://be-vms.app.bio-experience.com';
+  static const String prefBaseUrlKey = 'custom_base_url';
+
+  static const String xUseToken =
+      'b02d992e7a03606f90be1114717178b4904a00e35594c499cb1876d59ccff275';
+  static const String xBypassCaptcha =
+      '77a841cca52cfc2bd18d675d9e80321631f27cb25accdcf798ad0ce9345536f2';
+
+  static final ApiService _instance = ApiService._internal();
+  factory ApiService() => _instance;
+
+  late final Dio _dio;
+
+  ApiService._internal() {
+    String initialBaseUrl = defaultBaseUrl;
+    try {
+      if (Hive.isBoxOpen('authBox')) {
+        final saved = Hive.box('authBox').get(prefBaseUrlKey);
+        if (saved != null && saved is String && saved.trim().isNotEmpty) {
+          initialBaseUrl = saved.trim();
+        }
+      }
+    } catch (_) {}
+
+    _dio = Dio(
+      BaseOptions(
+        baseUrl: initialBaseUrl,
+        connectTimeout: const Duration(seconds: 15),
+        receiveTimeout: const Duration(seconds: 30),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'X-Use-Token': xUseToken,
+          'X-Bypass-Captcha': xBypassCaptcha,
+        },
+      ),
+    );
+  }
+
+  String get baseUrl => _dio.options.baseUrl;
+
+  void updateBaseUrl(String newUrl) {
+    String formattedUrl = newUrl.trim();
+    if (!formattedUrl.startsWith('http://') && !formattedUrl.startsWith('https://')) {
+      formattedUrl = 'https://$formattedUrl';
+    }
+    if (formattedUrl.endsWith('/')) {
+      formattedUrl = formattedUrl.substring(0, formattedUrl.length - 1);
+    }
+    _dio.options.baseUrl = formattedUrl;
+    debugPrint('[ApiService] Base URL permanently updated to: ${_dio.options.baseUrl}');
+  }
+
+  static Future<void> initBaseUrl() async {
+    try {
+      // 1. Try Hive first
+      if (Hive.isBoxOpen('authBox')) {
+        final hiveUrl = Hive.box('authBox').get(prefBaseUrlKey);
+        if (hiveUrl != null && hiveUrl is String && hiveUrl.trim().isNotEmpty) {
+          _instance.updateBaseUrl(hiveUrl);
+          return;
+        }
+      }
+
+      // 2. Try SharedPreferences
+      final prefs = await SharedPreferences.getInstance();
+      final savedUrl = prefs.getString(prefBaseUrlKey);
+      if (savedUrl != null && savedUrl.trim().isNotEmpty) {
+        _instance.updateBaseUrl(savedUrl);
+        if (Hive.isBoxOpen('authBox')) {
+          await Hive.box('authBox').put(prefBaseUrlKey, savedUrl);
+        }
+      }
+    } catch (e) {
+      debugPrint('[ApiService] Error initializing base URL: $e');
+    }
+  }
+
+  static Future<void> saveBaseUrl(String newUrl) async {
+    try {
+      String formattedUrl = newUrl.trim();
+      if (!formattedUrl.startsWith('http://') && !formattedUrl.startsWith('https://')) {
+        formattedUrl = 'https://$formattedUrl';
+      }
+      if (formattedUrl.endsWith('/')) {
+        formattedUrl = formattedUrl.substring(0, formattedUrl.length - 1);
+      }
+
+      // Save to SharedPreferences
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(prefBaseUrlKey, formattedUrl);
+
+      // Also save to Hive for instant sync loading
+      if (Hive.isBoxOpen('authBox')) {
+        await Hive.box('authBox').put(prefBaseUrlKey, formattedUrl);
+      }
+
+      // Update in-memory singleton instance
+      _instance.updateBaseUrl(formattedUrl);
+    } catch (e) {
+      debugPrint('[ApiService] Error saving base URL: $e');
+    }
+  }
+
+  static Future<void> resetBaseUrl() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(prefBaseUrlKey);
+
+      if (Hive.isBoxOpen('authBox')) {
+        await Hive.box('authBox').delete(prefBaseUrlKey);
+      }
+
+      _instance.updateBaseUrl(defaultBaseUrl);
+    } catch (e) {
+      debugPrint('[ApiService] Error resetting base URL: $e');
+    }
+  }
+
+  static Future<({bool isSuccess, String message, int? statusCode})> testConnection(String url) async {
+    try {
+      String formattedUrl = url.trim();
+      if (!formattedUrl.startsWith('http://') && !formattedUrl.startsWith('https://')) {
+        formattedUrl = 'https://$formattedUrl';
+      }
+      if (formattedUrl.endsWith('/')) {
+        formattedUrl = formattedUrl.substring(0, formattedUrl.length - 1);
+      }
+
+      final testDio = Dio(
+        BaseOptions(
+          connectTimeout: const Duration(seconds: 8),
+          receiveTimeout: const Duration(seconds: 8),
+          headers: {
+            'Accept': 'application/json',
+            'X-Use-Token': xUseToken,
+            'X-Bypass-Captcha': xBypassCaptcha,
+          },
+        ),
+      );
+
+      final response = await testDio.get(
+        formattedUrl,
+        options: Options(
+          validateStatus: (status) => true,
+        ),
+      );
+
+      return (
+        isSuccess: true,
+        message: 'Server connected & responding (HTTP ${response.statusCode})',
+        statusCode: response.statusCode,
+      );
+    } on DioException catch (e) {
+      if (e.response != null) {
+        return (
+          isSuccess: true,
+          message: 'Server reachable (HTTP ${e.response?.statusCode})',
+          statusCode: e.response?.statusCode,
+        );
+      }
+      String msg = 'Failed to connect to server';
+      if (e.type == DioExceptionType.connectionTimeout ||
+          e.type == DioExceptionType.sendTimeout ||
+          e.type == DioExceptionType.receiveTimeout) {
+        msg = 'Connection timeout (server did not respond)';
+      } else if (e.type == DioExceptionType.connectionError) {
+        msg = 'Connection refused / Host not found';
+      } else {
+        msg = e.message ?? 'Connection error';
+      }
+      return (
+        isSuccess: false,
+        message: msg,
+        statusCode: null,
+      );
+    } catch (e) {
+      return (
+        isSuccess: false,
+        message: 'Error: $e',
+        statusCode: null,
+      );
+    }
+  }
 
   static const String pathApi = 'api';
 
@@ -24,6 +199,12 @@ class ApiService {
       final response = await _dio.post(
         '/$pathApi/_Auth/RequestToken',
         data: {'username': username, 'password': password},
+        options: Options(
+          headers: {
+            'X-Use-Token': xUseToken,
+            'X-Bypass-Captcha': xBypassCaptcha,
+          },
+        ),
       );
       return response;
     } on DioException catch (e) {
