@@ -407,26 +407,52 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                           ),
                           vSpace(context, 10),
 
-                          // Dots Indicators
+                          // Dots Indicators / Page Counter
                           if (currentTickets.length > 1)
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: List.generate(
-                                currentTickets.length,
-                                (index) => Container(
-                                  margin: const EdgeInsets.symmetric(
-                                    horizontal: 3,
-                                  ),
-                                  width: currentPage == index ? 12 : 6,
-                                  height: 6,
-                                  decoration: BoxDecoration(
-                                    color: currentPage == index
-                                        ? AppColors.primary500
-                                        : Colors.grey.shade300,
-                                    borderRadius: BorderRadius.circular(3),
-                                  ),
-                                ),
-                              ),
+                            Center(
+                              child: currentTickets.length <= 8
+                                  ? Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: List.generate(
+                                        currentTickets.length,
+                                        (index) => Container(
+                                          margin: const EdgeInsets.symmetric(
+                                            horizontal: 3,
+                                          ),
+                                          width: currentPage == index ? 12 : 6,
+                                          height: 6,
+                                          decoration: BoxDecoration(
+                                            color: currentPage == index
+                                                ? AppColors.primary500
+                                                : Colors.grey.shade300,
+                                            borderRadius:
+                                                BorderRadius.circular(3),
+                                          ),
+                                        ),
+                                      ),
+                                    )
+                                  : Container(
+                                      padding: EdgeInsets.symmetric(
+                                        horizontal: rw(context, 10),
+                                        vertical: rh(context, 3),
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: AppColors.primary500
+                                            .withValues(alpha: 0.1),
+                                        borderRadius:
+                                            BorderRadius.circular(12),
+                                      ),
+                                      child: Text(
+                                        '${currentPage + 1} / ${currentTickets.length}',
+                                        style: TextStyle(
+                                          fontSize: rfs(context, 12),
+                                          fontWeight: FontWeight.bold,
+                                          color: AppColors.primary500,
+                                        ),
+                                      ),
+                                    ),
                             ),
                           vSpace(context, 14),
 

@@ -14,6 +14,8 @@ class ApiService {
       'b02d992e7a03606f90be1114717178b4904a00e35594c499cb1876d59ccff275';
   static const String xBypassCaptcha =
       '77a841cca52cfc2bd18d675d9e80321631f27cb25accdcf798ad0ce9345536f2';
+  static const String xPlatformId = 'mobileapp';
+  static const String xUserAgent = 'mobile_vms';
 
   static final ApiService _instance = ApiService._internal();
   factory ApiService() => _instance;
@@ -40,6 +42,12 @@ class ApiService {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
           'X-Use-Token': xUseToken,
+          'X-Platform-Id': xPlatformId,
+          'X-UserAgent': xUserAgent,
+        'X-Platform-Id': xPlatformId,
+        'X-UserAgent': xUserAgent,
+          'X-Platform-Id': xPlatformId,
+          'X-UserAgent': xUserAgent,
         },
       ),
     );
@@ -142,6 +150,10 @@ class ApiService {
           headers: {
             'Accept': 'application/json',
             'X-Use-Token': xUseToken,
+        'X-Platform-Id': xPlatformId,
+        'X-UserAgent': xUserAgent,
+          'X-Platform-Id': xPlatformId,
+          'X-UserAgent': xUserAgent,
             'X-Bypass-Captcha': xBypassCaptcha,
           },
         ),
@@ -203,6 +215,12 @@ class ApiService {
           headers: {
             'Accept': 'application/json',
             'X-Use-Token': xUseToken,
+            'X-Platform-Id': xPlatformId,
+            'X-UserAgent': xUserAgent,
+        'X-Platform-Id': xPlatformId,
+        'X-UserAgent': xUserAgent,
+          'X-Platform-Id': xPlatformId,
+          'X-UserAgent': xUserAgent,
           },
         ),
       );
@@ -227,6 +245,8 @@ class ApiService {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
         'X-Use-Token': xUseToken,
+        'X-Platform-Id': xPlatformId,
+        'X-UserAgent': xUserAgent,
       };
 
       if (captchaId != null &&
