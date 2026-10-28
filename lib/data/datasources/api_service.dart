@@ -40,7 +40,6 @@ class ApiService {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
           'X-Use-Token': xUseToken,
-          'X-Bypass-Captcha': xBypassCaptcha,
         },
       ),
     );
@@ -194,17 +193,57 @@ class ApiService {
 
   static const String pathApi = 'api';
 
-  Future<Response> login(String username, String password) async {
+  /// GET /api/captcha/generate
+  /// Fetch captcha ID and base64 SVG image
+  Future<Response> getCaptcha() async {
     try {
+      final response = await _dio.get(
+        '/$pathApi/captcha/generate',
+        options: Options(
+          headers: {
+            'Accept': 'application/json',
+            'X-Use-Token': xUseToken,
+          },
+        ),
+      );
+      return response;
+    } on DioException catch (e) {
+      debugPrint('Dio Error getCaptcha: ${e.message}');
+      if (e.response != null) {
+        return e.response!;
+      }
+      rethrow;
+    }
+  }
+
+  Future<Response> login(
+    String username,
+    String password, {
+    String? captchaId,
+    String? captchaAnswer,
+  }) async {
+    try {
+      final Map<String, dynamic> headers = {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'X-Use-Token': xUseToken,
+      };
+
+      if (captchaId != null &&
+          captchaId.isNotEmpty &&
+          captchaAnswer != null &&
+          captchaAnswer.isNotEmpty) {
+        headers['X-Captcha-Id'] = captchaId;
+        headers['X-Captcha-Answer'] = captchaAnswer;
+      } else {
+        // Fallback bypass jika captcha belum diisi
+        headers['X-Bypass-Captcha'] = xBypassCaptcha;
+      }
+
       final response = await _dio.post(
         '/$pathApi/_Auth/RequestToken',
         data: {'username': username, 'password': password},
-        options: Options(
-          headers: {
-            'X-Use-Token': xUseToken,
-            'X-Bypass-Captcha': xBypassCaptcha,
-          },
-        ),
+        options: Options(headers: headers),
       );
       return response;
     } on DioException catch (e) {

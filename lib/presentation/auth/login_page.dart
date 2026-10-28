@@ -6,6 +6,7 @@ import 'controller/login_controller.dart';
 import '../../data/datasources/api_service.dart';
 import '../../core/core.dart';
 import '../../core/helper/responsive_helper.dart';
+import 'widgets/captcha_box_widget.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -34,7 +35,11 @@ class _LoginPageState extends State<LoginPage> {
       backgroundColor: const Color(0xFF1976D2),
       body: LayoutBuilder(
         builder: (context, constraints) {
-          final heroHeight = constraints.maxHeight * 0.40;
+          final heroHeight = constraints.maxHeight * 0.34;
+          final bottomInset = MediaQuery.of(context).viewPadding.bottom;
+          // Shifted slightly down right towards the navigation bar boundary
+          final safeBottomPadding =
+              bottomInset > 0 ? (bottomInset - 6.0) : 0.0;
 
           return Stack(
             children: [
@@ -89,34 +94,34 @@ class _LoginPageState extends State<LoginPage> {
                     GestureDetector(
                       onTap: _handleLogoTap,
                       child: SizedBox(
-                        width: sw * 0.28,
-                        height: sw * 0.28,
+                        width: sw * 0.21,
+                        height: sw * 0.21,
                         child: Image.asset(
                           'assets/images/VMS.png',
                           fit: BoxFit.contain,
                         ),
                       ),
                     ),
-                    SizedBox(height: sw * 0.05),
+                    SizedBox(height: sw * 0.02),
                     FittedBox(
                       fit: BoxFit.scaleDown,
                       child: Text(
                         'VISITOR MANAGEMENT SYSTEM',
                         style: TextStyle(
                           color: Colors.white,
-                          fontSize: rfs(context, 20),
+                          fontSize: rfs(context, 21),
                           fontWeight: FontWeight.w800,
                           letterSpacing: 1.2,
                         ),
                       ),
                     ),
-                    SizedBox(height: sw * 0.015),
+                    const SizedBox(height: 3),
                     Text(
                       'login_hero_tagline'.tr,
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         color: Colors.white.withValues(alpha: 0.70),
-                        fontSize: rfs(context, 13),
+                        fontSize: rfs(context, 12.5),
                         fontWeight: FontWeight.w400,
                       ),
                     ),
@@ -124,9 +129,9 @@ class _LoginPageState extends State<LoginPage> {
                 ),
               ),
 
-              // 4. White Content Card
+              // 4. White Content Card (Compact, padat & rapat)
               Positioned(
-                top: heroHeight * 0.92, // Slight overlap
+                top: heroHeight * 0.96, // Shifted slightly down
                 left: 0,
                 right: 0,
                 bottom: 0,
@@ -135,7 +140,7 @@ class _LoginPageState extends State<LoginPage> {
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: const BorderRadius.vertical(
-                      top: Radius.circular(32),
+                      top: Radius.circular(28),
                     ),
                     boxShadow: [
                       BoxShadow(
@@ -146,33 +151,34 @@ class _LoginPageState extends State<LoginPage> {
                     ],
                   ),
                   child: SingleChildScrollView(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: sw * 0.06,
-                      vertical: sw * 0.07,
+                    padding: EdgeInsets.only(
+                      left: sw * 0.06,
+                      right: sw * 0.06,
+                      top: sw * 0.048,
+                      bottom: safeBottomPadding,
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        SizedBox(height: sw * 0.02),
                         Text(
                           'welcome_back'.tr,
                           style: TextStyle(
-                            fontSize: rfs(context, 18),
+                            fontSize: rfs(context, 20),
                             fontWeight: FontWeight.w700,
                             color: const Color(0xFF1E293B),
                           ),
                           textAlign: TextAlign.center,
                         ),
-                        SizedBox(height: sw * 0.01),
+                        const SizedBox(height: 2),
                         Text(
                           'login_subtitle'.tr,
                           style: TextStyle(
-                            fontSize: rfs(context, 14),
+                            fontSize: rfs(context, 12.5),
                             color: const Color(0xFF64748B),
                           ),
                           textAlign: TextAlign.center,
                         ),
-                        SizedBox(height: sw * 0.08),
+                        SizedBox(height: sw * 0.035),
 
                         // Form Fields
                         Obx(
@@ -186,7 +192,7 @@ class _LoginPageState extends State<LoginPage> {
                             context: context,
                           ),
                         ),
-                        SizedBox(height: sw * 0.04),
+                        SizedBox(height: sw * 0.022),
                         Obx(
                           () => _buildTextField(
                             controller: controller.passwordController,
@@ -202,7 +208,7 @@ class _LoginPageState extends State<LoginPage> {
                                     ? Icons.visibility_off_outlined
                                     : Icons.visibility_outlined,
                                 color: const Color(0xFF64748B),
-                                size: sw * 0.05,
+                                size: sw * 0.048,
                               ),
                             ),
                             errorText: controller.passwordError.value,
@@ -211,7 +217,7 @@ class _LoginPageState extends State<LoginPage> {
                           ),
                         ),
 
-                        SizedBox(height: sw * 0.03),
+                        SizedBox(height: sw * 0.015),
                         GestureDetector(
                           onTap: () => context.push(const InputEmailPage()),
                           child: Align(
@@ -220,14 +226,30 @@ class _LoginPageState extends State<LoginPage> {
                               'forgot_password'.tr,
                               style: TextStyle(
                                 color: const Color(0xFF1976D2),
-                                fontSize: rfs(context, 13),
+                                fontSize: rfs(context, 12.5),
                                 fontWeight: FontWeight.w500,
                               ),
                             ),
                           ),
                         ),
 
-                        SizedBox(height: sw * 0.08),
+                        SizedBox(height: sw * 0.022),
+
+                        // Captcha Section
+                        Obx(
+                          () => CaptchaBoxWidget(
+                            captchaCode: controller.captchaCode.value,
+                            captchaSvg: controller.captchaSvg.value,
+                            isRefreshing: controller.isRefreshingCaptcha.value,
+                            onRefresh: () => controller.refreshCaptcha(),
+                            controller: controller.captchaController,
+                            errorText: controller.captchaError.value,
+                            sw: sw,
+                          ),
+                        ),
+
+                        // Spacing padat dan presisi menuju tombol Login
+                        SizedBox(height: sw * 0.035),
 
                         // Login Button
                         Obx(() {
@@ -246,7 +268,7 @@ class _LoginPageState extends State<LoginPage> {
                           );
                         }),
 
-                        SizedBox(height: sw * 0.04),
+                        SizedBox(height: sw * 0.022),
 
                         // Guest Button
                         GestureDetector(
@@ -254,14 +276,14 @@ class _LoginPageState extends State<LoginPage> {
                               context.push(const VerificationCodePage()),
                           child: Container(
                             width: double.infinity,
-                            height: sw * 0.135,
+                            height: sw * 0.12,
                             decoration: BoxDecoration(
                               color: Colors.white,
-                              borderRadius: BorderRadius.circular(sw * 0.035),
+                              borderRadius: BorderRadius.circular(sw * 0.03),
                               border: Border.all(
                                 color: const Color(
                                   0xFF1976D2,
-                                ).withValues(alpha: 0.2),
+                                ).withValues(alpha: 0.25),
                               ),
                             ),
                             child: Center(
@@ -269,14 +291,13 @@ class _LoginPageState extends State<LoginPage> {
                                 'login_as_guest'.tr,
                                 style: TextStyle(
                                   color: const Color(0xFF1976D2),
-                                  fontSize: rfs(context, 15),
+                                  fontSize: rfs(context, 14.5),
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
                             ),
                           ),
                         ),
-                        SizedBox(height: MediaQuery.of(context).padding.bottom),
                       ],
                     ),
                   ),
@@ -304,11 +325,11 @@ class _LoginPageState extends State<LoginPage> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: EdgeInsets.only(left: sw * 0.01, bottom: sw * 0.02),
+          padding: EdgeInsets.only(left: sw * 0.01, bottom: sw * 0.012),
           child: Text(
             label,
             style: TextStyle(
-              fontSize: rfs(context, 14),
+              fontSize: rfs(context, 13.5),
               fontWeight: FontWeight.w600,
               color: const Color(0xFF1E293B),
             ),
@@ -317,30 +338,34 @@ class _LoginPageState extends State<LoginPage> {
         TextField(
           controller: controller,
           obscureText: isObscure,
+          style: TextStyle(
+            fontSize: rfs(context, 13.5),
+            color: const Color(0xFF1E293B),
+          ),
           decoration: InputDecoration(
             hintText: hintText,
             hintStyle: TextStyle(
               color: const Color(0xFF64748B),
-              fontSize: rfs(context, 14),
+              fontSize: rfs(context, 13.5),
             ),
             prefixIcon: Icon(
               prefixIcon,
               color: const Color(0xFF1976D2),
-              size: sw * 0.05,
+              size: sw * 0.048,
             ),
             suffixIcon: suffixIcon,
             filled: true,
             fillColor: const Color(0xFFF4F7FB),
             contentPadding: EdgeInsets.symmetric(
-              horizontal: sw * 0.04,
-              vertical: sw * 0.04,
+              horizontal: sw * 0.038,
+              vertical: sw * 0.032,
             ),
             enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(sw * 0.035),
+              borderRadius: BorderRadius.circular(sw * 0.03),
               borderSide: BorderSide(color: Colors.grey.shade200),
             ),
             focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(sw * 0.035),
+              borderRadius: BorderRadius.circular(sw * 0.03),
               borderSide: const BorderSide(
                 color: Color(0xFF1976D2),
                 width: 1.5,
@@ -364,19 +389,19 @@ class _LoginPageState extends State<LoginPage> {
       onTap: onPressed,
       child: Container(
         width: double.infinity,
-        height: sw * 0.135,
+        height: sw * 0.125,
         decoration: BoxDecoration(
           gradient: const LinearGradient(
             colors: [Color(0xFF1976D2), Color(0xFF0E5DB5)],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
-          borderRadius: BorderRadius.circular(sw * 0.035),
+          borderRadius: BorderRadius.circular(sw * 0.03),
           boxShadow: [
             BoxShadow(
               color: const Color(0xFF1976D2).withValues(alpha: 0.35),
-              blurRadius: 12,
-              offset: const Offset(0, 5),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
             ),
           ],
         ),

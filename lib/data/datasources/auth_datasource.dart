@@ -8,9 +8,62 @@ class AuthDatasource {
   final ApiService _apiService = ApiService();
   final HiveService _hiveService = HiveService();
 
-  Future<(UserModel?, String?, String?)> login(String username, String password) async {
+  Future<({String captchaId, String captchaCode, String svgBackground})?> getCaptcha() async {
     try {
-      final response = await _apiService.login(username, password);
+      final response = await _apiService.getCaptcha();
+      if (response.statusCode == 200 && response.data is Map) {
+        final data = response.data as Map;
+        final captchaId = data['captchaId']?.toString() ?? '';
+        final rawImage = data['image']?.toString() ?? '';
+
+        String svgContent = '';
+        if (rawImage.startsWith('data:image/svg+xml;base64,')) {
+          final base64Part =
+              rawImage.substring('data:image/svg+xml;base64,'.length);
+          svgContent = utf8.decode(base64Decode(base64Part));
+        } else if (rawImage.contains(',')) {
+          final base64Part = rawImage.split(',').last;
+          svgContent = utf8.decode(base64Decode(base64Part));
+        } else {
+          svgContent = rawImage;
+        }
+
+        // Extract captcha code text from SVG <text> element
+        final match = RegExp(r'>([^<]+)<\/text>').firstMatch(svgContent);
+        final captchaCode = match?.group(1)?.trim() ?? '';
+
+        // Extract SVG background without the text element so flutter_svg can render background wave
+        final svgBackground = svgContent.replaceAll(
+          RegExp(r'<text[^>]*>[\s\S]*?<\/text>'),
+          '',
+        );
+
+        return (
+          captchaId: captchaId,
+          captchaCode: captchaCode,
+          svgBackground: svgBackground,
+        );
+      }
+      return null;
+    } catch (e) {
+      debugPrint('Error getting captcha: $e');
+      return null;
+    }
+  }
+
+  Future<(UserModel?, String?, String?)> login(
+    String username,
+    String password, {
+    String? captchaId,
+    String? captchaAnswer,
+  }) async {
+    try {
+      final response = await _apiService.login(
+        username,
+        password,
+        captchaId: captchaId,
+        captchaAnswer: captchaAnswer,
+      );
 
       if (response.statusCode == 200) {
         final data = response.data;
