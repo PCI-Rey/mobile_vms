@@ -131,7 +131,9 @@ class AccessPassModel {
                       json['visit_date'])
                   .toString(),
             )
-          : DateTime.now(),
+          : (json['created_at'] != null && json['created_at'].toString().isNotEmpty
+              ? _parseUtcToLocal(json['created_at'].toString())
+              : DateTime(1970, 1, 1)),
       visitorPeriodEnd:
           (json['visitor_period_end'] ??
                   json['visit_end'] ??
@@ -143,7 +145,9 @@ class AccessPassModel {
                       json['end_date'])
                   .toString(),
             )
-          : DateTime.now(),
+          : (json['created_at'] != null && json['created_at'].toString().isNotEmpty
+              ? _parseUtcToLocal(json['created_at'].toString())
+              : DateTime(1970, 1, 1)),
       visitorNumber: json['visitor_number']?.toString() ?? '',
       visitorCode: json['visitor_code']?.toString() ?? json['initial_trx_code']?.toString() ?? '',
       invitationCode: json['invitation_code']?.toString() ?? json['initial_trx_code']?.toString() ?? '',

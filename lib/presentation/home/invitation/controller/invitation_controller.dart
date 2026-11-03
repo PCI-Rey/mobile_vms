@@ -1515,9 +1515,9 @@ class InvitationController extends GetxController {
     final todayTransactions = allRawVisitors.where((item) {
       final itemDate = item.visitorPeriodStart;
       final isEmptyDraft =
-          item.agenda.isEmpty &&
-          item.hostName.isEmpty &&
-          item.visitorTypeName.isEmpty;
+          item.visitorStatus.toLowerCase() == 'undercreated' ||
+          (item.agenda.trim().isEmpty && item.visitorTypeName.trim().isEmpty) ||
+          item.visitorPeriodStart.year < 2000;
       return itemDate.year == date.year &&
           itemDate.month == date.month &&
           itemDate.day == date.day &&
@@ -1593,9 +1593,9 @@ class InvitationController extends GetxController {
     final uncounted = items.where((item) {
       if (transactionVisitorCounts.containsKey(item.id)) return false;
       final isEmptyDraft =
-          item.agenda.isEmpty &&
-          item.hostName.isEmpty &&
-          item.visitorTypeName.isEmpty;
+          item.visitorStatus.toLowerCase() == 'undercreated' ||
+          (item.agenda.trim().isEmpty && item.visitorTypeName.trim().isEmpty) ||
+          item.visitorPeriodStart.year < 2000;
       return !isEmptyDraft;
     }).toList();
 
@@ -1652,9 +1652,9 @@ class InvitationController extends GetxController {
     final todayTransactions = allRawVisitors.where((item) {
       final itemDate = item.visitorPeriodStart;
       final isEmptyDraft =
-          item.agenda.isEmpty &&
-          item.hostName.isEmpty &&
-          item.visitorTypeName.isEmpty;
+          item.visitorStatus.toLowerCase() == 'undercreated' ||
+          (item.agenda.trim().isEmpty && item.visitorTypeName.trim().isEmpty) ||
+          item.visitorPeriodStart.year < 2000;
       return itemDate.year == date.year &&
           itemDate.month == date.month &&
           itemDate.day == date.day &&

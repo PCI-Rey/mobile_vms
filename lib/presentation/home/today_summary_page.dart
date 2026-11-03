@@ -68,12 +68,10 @@ class TodaySummaryPage extends StatelessWidget {
     }).length;
 
     final activeInvitationCount = invitationController.allRawVisitors.where((item) {
-      if (item.flow.toLowerCase() == 'quickaccessvisit') {
-        return false;
-      }
-      if (item.agenda.isEmpty &&
-          item.hostName.isEmpty &&
-          item.visitorTypeName.isEmpty) {
+      if (item.flow.toLowerCase() == 'quickaccessvisit' ||
+          item.visitorStatus.toLowerCase() == 'undercreated' ||
+          (item.agenda.trim().isEmpty && item.visitorTypeName.trim().isEmpty) ||
+          item.visitorPeriodStart.year < 2000) {
         return false;
       }
       final itemDate = item.visitorPeriodStart;
@@ -256,12 +254,10 @@ class TodaySummaryPage extends StatelessWidget {
     final int checkedOutCount = todayVisitorsList.where((v) => v.visitorStatus.toLowerCase() == 'checkout').length;
 
     final dateInvitations = invitationController.allRawVisitors.where((item) {
-      if (item.flow.toLowerCase() == 'quickaccessvisit') {
-        return false;
-      }
-      if (item.agenda.isEmpty &&
-          item.hostName.isEmpty &&
-          item.visitorTypeName.isEmpty) {
+      if (item.flow.toLowerCase() == 'quickaccessvisit' ||
+          item.visitorStatus.toLowerCase() == 'undercreated' ||
+          (item.agenda.trim().isEmpty && item.visitorTypeName.trim().isEmpty) ||
+          item.visitorPeriodStart.year < 2000) {
         return false;
       }
       final itemDate = item.visitorPeriodStart;
@@ -645,12 +641,10 @@ class TodaySummaryPage extends StatelessWidget {
 
     // Compute active invitation details dynamically
     final dateInvitations = invitationController.allRawVisitors.where((item) {
-      if (item.flow.toLowerCase() == 'quickaccessvisit') {
-        return false;
-      }
-      if (item.agenda.isEmpty &&
-          item.hostName.isEmpty &&
-          item.visitorTypeName.isEmpty) {
+      if (item.flow.toLowerCase() == 'quickaccessvisit' ||
+          item.visitorStatus.toLowerCase() == 'undercreated' ||
+          (item.agenda.trim().isEmpty && item.visitorTypeName.trim().isEmpty) ||
+          item.visitorPeriodStart.year < 2000) {
         return false;
       }
       final itemDate = item.visitorPeriodStart;
@@ -892,12 +886,10 @@ class TodaySummaryPage extends StatelessWidget {
 
     // 2. Invitations Created
     final dateInvitations = invitationController.allRawVisitors.where((item) {
-      if (item.flow.toLowerCase() == 'quickaccessvisit') {
-        return false;
-      }
-      if (item.agenda.isEmpty &&
-          item.hostName.isEmpty &&
-          item.visitorTypeName.isEmpty) {
+      if (item.flow.toLowerCase() == 'quickaccessvisit' ||
+          item.visitorStatus.toLowerCase() == 'undercreated' ||
+          (item.agenda.trim().isEmpty && item.visitorTypeName.trim().isEmpty) ||
+          item.visitorPeriodStart.year < 2000) {
         return false;
       }
       final itemDate = item.visitorPeriodStart;
@@ -906,6 +898,7 @@ class TodaySummaryPage extends StatelessWidget {
           itemDate.day == date.day;
     }).toList();
     for (final inv in dateInvitations) {
+      if (inv.agenda.trim().isEmpty) continue;
       final createTime = inv.invitationCreatedAt ?? inv.visitorPeriodStart;
       activities.add(_ActivityItem(
         icon: Icons.note_add_outlined,
@@ -1271,12 +1264,10 @@ class TodaySummaryPage extends StatelessWidget {
       }).toList().length;
 
       final dateInvitations = invitationController.allRawVisitors.where((item) {
-        if (item.flow.toLowerCase() == 'quickaccessvisit') {
-          return false;
-        }
-        if (item.agenda.isEmpty &&
-            item.hostName.isEmpty &&
-            item.visitorTypeName.isEmpty) {
+        if (item.flow.toLowerCase() == 'quickaccessvisit' ||
+            item.visitorStatus.toLowerCase() == 'undercreated' ||
+            (item.agenda.trim().isEmpty && item.visitorTypeName.trim().isEmpty) ||
+            item.visitorPeriodStart.year < 2000) {
           return false;
         }
         final itemDate = item.visitorPeriodStart;
@@ -1340,6 +1331,7 @@ class TodaySummaryPage extends StatelessWidget {
 
       // 3.2. Invitations Created
       for (final inv in dateInvitations) {
+        if (inv.agenda.trim().isEmpty) continue;
         final createTime = inv.invitationCreatedAt ?? inv.visitorPeriodStart;
         activities.add(_ActivityItem(
           icon: Icons.note_add_outlined,
