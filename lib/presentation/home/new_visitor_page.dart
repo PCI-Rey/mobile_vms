@@ -101,7 +101,7 @@ class _NewVisitorPageState extends State<NewVisitorPage> {
         title: Obx(() {
           final isId = langCtrl.selectedLang.value == 'id';
           return Text(
-            isId ? 'Visitor Terbaru' : 'New Visitor',
+            isId ? 'Visitor Active' : 'Visitor Active',
             style: TextStyle(
               fontSize: rfs(context, 22),
               fontWeight: FontWeight.w700,
@@ -143,7 +143,7 @@ class _NewVisitorPageState extends State<NewVisitorPage> {
                   ),
                   vSpace(context, 16),
                   Text(
-                    isId ? 'Tidak ada visitor baru hari ini' : 'No new visitors today',
+                    isId ? 'Tidak ada visitor aktif hari ini' : 'No active visitors today',
                     style: TextStyle(
                       fontSize: rfs(context, 15),
                       color: Colors.grey.shade500,

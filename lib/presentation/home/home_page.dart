@@ -1699,7 +1699,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
 
       final List<AccessPassModel> newVisitors = invitationController
           .getTodayVisitors();
-      final sectionHeaderTitle = isId ? 'Visitor Terbaru' : 'New Visitor';
+      final sectionHeaderTitle = isId ? 'Visitor Active' : 'Visitor Active';
 
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1726,8 +1726,8 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                   vSpace(context, 12),
                   Text(
                     isId
-                        ? 'Tidak ada visitor baru hari ini'
-                        : 'No new visitors today',
+                        ? 'Tidak ada visitor aktif hari ini'
+                        : 'No active visitors today',
                     style: TextStyle(
                       fontSize: rfs(context, 13),
                       color: Colors.grey.shade500,
@@ -1796,7 +1796,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                           Text(
                             isId
                                 ? 'Lihat Semua Visitor'
-                                : 'See All New Visitors',
+                                : 'See All Active Visitors',
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
                               fontSize: rfs(context, 13),
