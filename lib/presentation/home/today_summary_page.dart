@@ -15,9 +15,15 @@ import 'invitation/controller/invitation_controller.dart';
 class TodaySummaryPage extends StatelessWidget {
   const TodaySummaryPage({super.key});
 
+  InvitationController _getInvitationController() {
+    return Get.isRegistered<InvitationController>()
+        ? Get.find<InvitationController>()
+        : Get.put(InvitationController(), permanent: true);
+  }
+
   @override
   Widget build(BuildContext context) {
-    final invitationController = Get.find<InvitationController>();
+    final invitationController = _getInvitationController();
     final date = invitationController.selectedDashboardDate.value;
     final now = DateTime.now();
     final isToday = date.year == now.year && date.month == now.month && date.day == now.day;
@@ -243,7 +249,7 @@ class TodaySummaryPage extends StatelessWidget {
     final String unitAlarm = isIndo ? 'Alarm' : 'Alarm(s)';
 
     // Compute dynamic breakdown stats for Tab 1
-    final invitationController = Get.find<InvitationController>();
+    final invitationController = _getInvitationController();
     final date = invitationController.selectedDashboardDate.value;
 
     final todayVisitorsList = invitationController.getTodayVisitors();
@@ -602,7 +608,7 @@ class TodaySummaryPage extends StatelessWidget {
     final bool isIndo = lang == 'id';
 
     // Compute approval ticket details dynamically
-    final invitationController = Get.find<InvitationController>();
+    final invitationController = _getInvitationController();
     final date = invitationController.selectedDashboardDate.value;
     final dateTickets = invitationController.approvalTickets.where((t) {
       final itemDate = t.visitorPeriodStart;
@@ -853,7 +859,7 @@ class TodaySummaryPage extends StatelessWidget {
     final bool isIndo = lang == 'id';
     final String labelFilter = isIndo ? 'Semua Aktivitas' : 'All Activities';
 
-    final invitationController = Get.find<InvitationController>();
+    final invitationController = _getInvitationController();
     final date = invitationController.selectedDashboardDate.value;
 
     final List<_ActivityItem> activities = [];
@@ -1201,7 +1207,7 @@ class TodaySummaryPage extends StatelessWidget {
     DateTime date,
   ) async {
     final bool isIndo = lang == 'id';
-    final invitationController = Get.find<InvitationController>();
+    final invitationController = _getInvitationController();
     final alarmCtrl = Get.isRegistered<AlarmController>()
         ? Get.find<AlarmController>()
         : Get.put(AlarmController());

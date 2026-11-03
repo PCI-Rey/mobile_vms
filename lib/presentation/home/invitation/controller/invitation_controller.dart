@@ -113,9 +113,7 @@ class InvitationController extends GetxController {
     postponedTicketIds.clear();
   }
 
-  final Rx<DateTime?> startDate = Rx<DateTime?>(
-    DateTime.now().subtract(const Duration(days: 7)),
-  );
+  final Rx<DateTime?> startDate = Rx<DateTime?>(null);
   final Rx<DateTime?> endDate = Rx<DateTime?>(null);
   final Rx<DateTime> selectedDashboardDate = DateTime(
     DateTime.now().year,
@@ -133,18 +131,14 @@ class InvitationController extends GetxController {
   final RxInt invitationTotalRecords = 0.obs;
 
   // Share Link Tab filters
-  final Rx<DateTime?> startDateShare = Rx<DateTime?>(
-    DateTime.now().subtract(const Duration(days: 7)),
-  );
+  final Rx<DateTime?> startDateShare = Rx<DateTime?>(null);
   final Rx<DateTime?> endDateShare = Rx<DateTime?>(null);
   final RxString selectedSiteIdShare = ''.obs;
   final RxString selectedSiteNameShare = ''.obs;
   final RxString selectedStatusShare = ''.obs;
 
   // Quick Access Tab filters
-  final Rx<DateTime?> startDateQuick = Rx<DateTime?>(
-    DateTime.now().subtract(const Duration(days: 7)),
-  );
+  final Rx<DateTime?> startDateQuick = Rx<DateTime?>(null);
   final Rx<DateTime?> endDateQuick = Rx<DateTime?>(null);
   final RxString selectedSiteIdQuick = ''.obs;
   final RxString selectedSiteNameQuick = ''.obs;
@@ -282,10 +276,16 @@ class InvitationController extends GetxController {
 
   void _applyFilters() {
     List<AccessPassModel> filtered = List.from(
-      allInvitations.where((item) => !_isQuickAccessItem(item)),
+      allInvitations.where((item) =>
+          !_isQuickAccessItem(item) &&
+          item.visitorStatus.toLowerCase() != 'undercreated' &&
+          !(item.agenda.trim().isEmpty && item.visitorTypeName.trim().isEmpty)),
     );
     List<AccessPassModel> quickAccess = List.from(
-      allInvitations.where((item) => _isQuickAccessItem(item)),
+      allInvitations.where((item) =>
+          _isQuickAccessItem(item) &&
+          item.visitorStatus.toLowerCase() != 'undercreated' &&
+          !(item.agenda.trim().isEmpty && item.visitorTypeName.trim().isEmpty)),
     );
 
     // 1. Filter Berdasarkan Tanggal (Lokal)
@@ -1041,33 +1041,56 @@ class InvitationController extends GetxController {
           ? await _api.createShareLinkAndEmail(token, body)
           : await _api.createShareLink(token, body);
 
-      if (response.data['status'] == 'success' ||
-          response.data['status_code'] == 200) {
+      final data = response.data;
+      final statusCode = response.statusCode ?? 0;
+      final isSuccess = (statusCode == 200 || statusCode == 201) &&
+          (data is Map && data['status'] != 'error' && data['status'] != 'failed');
+
+      if (isSuccess ||
+          (data is Map &&
+              (data['status'] == 'success' ||
+                  data['status_code'] == 200 ||
+                  data['status_code'] == 201))) {
         await fetchShareLinks(resetPage: true); // Refresh list
         fetchDashboardShareLinks(); // Refresh dashboard list
         triggerActivityRefresh();
 
         // Return the created item if available in response
         Map<String, dynamic>? createdItem;
-        if (response.data['item'] != null) {
-          createdItem = Map<String, dynamic>.from(response.data['item']);
-        } else if (shareLinks.isNotEmpty) {
+        if (data['collection'] is Map) {
+          createdItem = Map<String, dynamic>.from(data['collection']);
+        } else if (data['item'] is Map) {
+          createdItem = Map<String, dynamic>.from(data['item']);
+        }
+        if (createdItem == null && shareLinks.isNotEmpty) {
           createdItem = shareLinks.first;
         }
 
-        // FCM notifications (create + expiry warning) dikirim oleh backend
-        return createdItem ?? {}; // Success but no item data
+        return createdItem ?? {}; // Success
+      } else {
+        String errorMsg = 'Failed to create share link';
+        if (data is Map) {
+          errorMsg = data['message']?.toString() ??
+              data['msg']?.toString() ??
+              data['error']?.toString() ??
+              errorMsg;
+        }
+        throw errorMsg;
       }
-      return null;
     } catch (e) {
       if (e is DioException && e.response != null) {
         debugPrint('createShareLinkAction error response: ${e.response?.data}');
-        throw e.response?.data['message'] ??
-            e.response?.data.toString() ??
-            'Failed to create share link';
+        final resData = e.response?.data;
+        if (resData is Map) {
+          throw resData['message'] ??
+              resData['msg'] ??
+              resData['error'] ??
+              'Failed to create share link';
+        }
+        throw e.response?.data.toString() ?? 'Failed to create share link';
       }
       debugPrint('createShareLinkAction error: $e');
-      throw 'Failed to create share link';
+      rethrow;
     }
   }
 
@@ -1524,6 +1547,40 @@ class InvitationController extends GetxController {
       return bDate.compareTo(aDate);
     });
     return filteredResults;
+  }
+
+  Future<void> prefetchRecentTransactionVisitors({int limit = 15}) async {
+    final user = _hive.getUser();
+    final token = user?.token;
+    if (token == null) return;
+
+    final targets = (ongoingInvitations.isNotEmpty ? ongoingInvitations : allInvitations)
+        .where((item) =>
+            !(item.agenda.isEmpty &&
+                item.hostName.isEmpty &&
+                item.visitorTypeName.isEmpty))
+        .take(limit)
+        .where((item) => !transactionVisitorsCache.containsKey(item.id))
+        .toList();
+
+    if (targets.isEmpty) return;
+
+    await Future.wait(
+      targets.map((item) async {
+        try {
+          final list = await fetchTransactionVisitors(item.id);
+          parseAndCacheSubVisitors(item, list);
+          int count = 1;
+          if (list.isNotEmpty) {
+            count = list.length;
+          } else if (item.isGroup) {
+            final parsed = int.tryParse(item.visitorNumber) ?? 1;
+            count = parsed > 0 ? parsed : 1;
+          }
+          transactionVisitorCounts[item.id] = count;
+        } catch (_) {}
+      }),
+    );
   }
 
   Future<void> _prefetchTransactionVisitorCounts(

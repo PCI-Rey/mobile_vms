@@ -4,7 +4,7 @@ import 'package:get/get.dart';
 import '../../../data/datasources/auth_datasource.dart';
 import '../../../core/services/notification_service.dart';
 import 'user_controller.dart';
-import '../../dashboard.dart';
+import '../../../splashscreen.dart';
 
 class LoginController extends GetxController {
   final AuthDatasource authDatasource = AuthDatasource();
@@ -147,7 +147,7 @@ class LoginController extends GetxController {
         snackPosition: SnackPosition.TOP,
         duration: const Duration(seconds: 3),
       );
-      Get.offAll(() => const Dashboard());
+      Get.offAll(() => const Splashscreen());
 
       // Subscribe to user-specific FCM topic (non-fatal)
       if (userModel.id.isNotEmpty) {

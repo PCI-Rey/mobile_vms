@@ -60,8 +60,8 @@ class _SendInvitationPageState extends State<SendInvitationPage>
 
   final ScrollController _quickScrollController = ScrollController();
 
-  List<String> activeFilterKeys = ['date'];
-  List<String> activeFilterKeysQuick = ['date'];
+  List<String> activeFilterKeys = [];
+  List<String> activeFilterKeysQuick = [];
 
   void _updateActiveFilters({
     required String? newGedung,
@@ -179,19 +179,13 @@ class _SendInvitationPageState extends State<SendInvitationPage>
   void initState() {
     super.initState();
 
-    // Default filters to last 7 days on opening the page
-    controller.startDate.value = DateTime.now().subtract(
-      const Duration(days: 7),
-    );
-    controller.endDate.value = DateTime.now();
-    controller.startDateQuick.value = DateTime.now().subtract(
-      const Duration(days: 7),
-    );
-    controller.endDateQuick.value = DateTime.now();
-    controller.startDateShare.value = DateTime.now().subtract(
-      const Duration(days: 7),
-    );
-    controller.endDateShare.value = DateTime.now();
+    // Default filters to null on opening the page (showing all transactions, matching Web)
+    controller.startDate.value = null;
+    controller.endDate.value = null;
+    controller.startDateQuick.value = null;
+    controller.endDateQuick.value = null;
+    controller.startDateShare.value = null;
+    controller.endDateShare.value = null;
 
     controller.invitationCurrentPage.value = 0;
     controller.quickCurrentPage.value = 0;
@@ -264,9 +258,10 @@ class _SendInvitationPageState extends State<SendInvitationPage>
         : controller.selectedStatusQuick.value;
 
     _tabController = TabController(
-      length: 3,
+      // length: 3,
+      length: 2, // Quick Access di-hide, hanya Invitation & Share Link
       vsync: this,
-      initialIndex: widget.initialTab,
+      initialIndex: widget.initialTab > 1 ? 0 : widget.initialTab,
     );
     _tabController.addListener(() {
       if (_tabController.indexIsChanging) return;
@@ -379,33 +374,33 @@ class _SendInvitationPageState extends State<SendInvitationPage>
                 ),
               ),
             ),
-          // Tombol Add Quick Access hanya muncul di tab Quick Access
-          if (_tabController.index == 2)
-            IconButton(
-              onPressed: () {
-                showDialog(
-                  context: context,
-                  barrierDismissible: false,
-                  builder: (context) => const CreateQuickAccessDialog(),
-                ).then((result) {
-                  if (result == true) {
-                    _onQuickAccessCreated();
-                  }
-                });
-              },
-              icon: Container(
-                padding: EdgeInsets.all(rw(context, 6)),
-                decoration: BoxDecoration(
-                  color: AppColors.primary500,
-                  borderRadius: BorderRadius.circular(rw(context, 8)),
-                ),
-                child: Icon(
-                  Icons.add,
-                  color: Colors.white,
-                  size: rw(context, 20),
-                ),
-              ),
-            ),
+          // Tombol Add Quick Access hanya muncul di tab Quick Access (di-hide)
+          // if (_tabController.index == 2)
+          //   IconButton(
+          //     onPressed: () {
+          //       showDialog(
+          //         context: context,
+          //         barrierDismissible: false,
+          //         builder: (context) => const CreateQuickAccessDialog(),
+          //       ).then((result) {
+          //         if (result == true) {
+          //           _onQuickAccessCreated();
+          //         }
+          //       });
+          //     },
+          //     icon: Container(
+          //       padding: EdgeInsets.all(rw(context, 6)),
+          //       decoration: BoxDecoration(
+          //         color: AppColors.primary500,
+          //         borderRadius: BorderRadius.circular(rw(context, 8)),
+          //       ),
+          //       child: Icon(
+          //         Icons.add,
+          //         color: Colors.white,
+          //         size: rw(context, 20),
+          //       ),
+          //     ),
+          //   ),
           hSpace(context, 8),
         ],
         bottom: PreferredSize(
@@ -441,7 +436,7 @@ class _SendInvitationPageState extends State<SendInvitationPage>
                 tabs: const [
                   Tab(text: 'Invitation'),
                   Tab(text: 'Share Link'),
-                  Tab(text: 'Quick Access'),
+                  // Tab(text: 'Quick Access'),
                 ],
               ),
             ),
@@ -454,7 +449,7 @@ class _SendInvitationPageState extends State<SendInvitationPage>
               children: [
                 KeepAliveWrapper(child: _buildInvitationTab()),
                 const KeepAliveWrapper(child: ShareLinkListInline()),
-                KeepAliveWrapper(child: _buildQuickAccessTab()),
+                // KeepAliveWrapper(child: _buildQuickAccessTab()),
               ],
             ),
           ),
@@ -1648,11 +1643,23 @@ String _formatDateRange(DateTime? start, DateTime? end) {
 
 // ─── _SheetField model ────────────────────────────────────────────────────────
 void showInvitationDetailSheet(BuildContext context, AccessPassModel item) {
+  final controller = Get.isRegistered<InvitationController>()
+      ? Get.find<InvitationController>()
+      : null;
+  final cached = controller?.transactionVisitorsCache[item.id] ??
+      controller?.transactionVisitorsCache[item.transactionVisitorId];
+  final initialVisitor =
+      (cached != null && cached.isNotEmpty) ? cached.first : null;
+
   showModalBottomSheet(
     context: context,
     isScrollControlled: true,
     backgroundColor: Colors.transparent,
-    builder: (ctx) => InvitationDetailSheet(item: item),
+    builder: (ctx) => InvitationDetailSheet(
+      item: item,
+      initialVisitor: initialVisitor,
+      initialGroupVisitors: cached,
+    ),
   );
 }
 
@@ -1660,10 +1667,14 @@ void showInvitationDetailSheet(BuildContext context, AccessPassModel item) {
 class InvitationDetailSheet extends StatefulWidget {
   final AccessPassModel item;
   final bool isFullDetail;
+  final AccessPassModel? initialVisitor;
+  final List<AccessPassModel>? initialGroupVisitors;
   const InvitationDetailSheet({
     super.key,
     required this.item,
     this.isFullDetail = false,
+    this.initialVisitor,
+    this.initialGroupVisitors,
   });
 
   @override
@@ -1680,13 +1691,50 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
   late AccessPassModel _currentItem;
   String _currentUserId = '';
   bool _isCanceling = false;
+  bool _isFullDetail = false;
 
   @override
   void initState() {
     super.initState();
-    _currentItem = widget.item;
-    _sitePlaceName = widget.item.sitePlaceName;
-    _loadingSite = _sitePlaceName.isEmpty;
+    _isFullDetail = widget.isFullDetail;
+
+    final controller = Get.isRegistered<InvitationController>()
+        ? Get.find<InvitationController>()
+        : null;
+
+    final cachedList = widget.initialGroupVisitors ??
+        controller?.transactionVisitorsCache[widget.item.id] ??
+        controller?.transactionVisitorsCache[widget.item.transactionVisitorId];
+
+    if (cachedList != null && cachedList.isNotEmpty) {
+      _groupVisitorModels = List.from(cachedList);
+      final matched = widget.initialVisitor ??
+          cachedList.firstWhere(
+            (m) =>
+                (m.id.isNotEmpty && m.id == widget.item.id) ||
+                (m.visitorNumber.isNotEmpty &&
+                    m.visitorNumber == widget.item.visitorNumber) ||
+                (m.visitorName.isNotEmpty &&
+                    m.visitorName.toLowerCase() ==
+                        widget.item.visitorName.toLowerCase()),
+            orElse: () => cachedList.first,
+          );
+      _selectedGroupVisitor = matched;
+      _currentItem = matched;
+      _loadingGroupVisitors = false;
+
+      final bestSiteName = matched.sitePlaceName.isNotEmpty
+          ? matched.sitePlaceName
+          : widget.item.sitePlaceName;
+      _sitePlaceName = bestSiteName;
+      _loadingSite = _sitePlaceName.isEmpty;
+    } else {
+      _currentItem = widget.initialVisitor ?? widget.item;
+      _selectedGroupVisitor = widget.initialVisitor;
+      _sitePlaceName = widget.item.sitePlaceName;
+      _loadingSite = _sitePlaceName.isEmpty;
+    }
+
     _currentUserId = _resolveLocalUserId();
     _fetchCurrentUserProfile();
     _fetchSiteDetail();
@@ -3171,26 +3219,17 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
                               index != null
                                   ? 'Visitor Information ${index + 1}'
                                   : 'Visitor Information',
-                              trailing: widget.isFullDetail
-                                  ? null
-                                  : GestureDetector(
+                              trailing: GestureDetector(
                                       onTap: () {
-                                        showModalBottomSheet(
-                                          context: context,
-                                          isScrollControlled: true,
-                                          backgroundColor: Colors.transparent,
-                                          builder: (ctx) =>
-                                              InvitationDetailSheet(
-                                                item: widget.item,
-                                                isFullDetail: true,
-                                              ),
-                                        );
+                                        setState(() {
+                                          _isFullDetail = !_isFullDetail;
+                                        });
                                       },
                                       child: Row(
                                         mainAxisSize: MainAxisSize.min,
                                         children: [
                                           Text(
-                                            'More',
+                                            _isFullDetail ? 'Less' : 'More',
                                             style: TextStyle(
                                               fontSize: rfs(context, 12),
                                               fontWeight: FontWeight.bold,
@@ -3199,7 +3238,9 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
                                           ),
                                           hSpace(context, 4),
                                           Icon(
-                                            Icons.arrow_forward_rounded,
+                                            _isFullDetail
+                                                ? Icons.keyboard_arrow_up_rounded
+                                                : Icons.arrow_forward_rounded,
                                             size: rw(context, 16),
                                             color: const Color(0xFF005596),
                                           ),
@@ -3210,7 +3251,7 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
                             _grid(
                               context,
                               sColor,
-                              widget.isFullDetail
+                              _isFullDetail
                                   ? [
                                       _SheetField(
                                         'Visitor Type',
@@ -3412,7 +3453,7 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
                                     ],
                               isExpired: expired,
                             ),
-                            if (!widget.isFullDetail) ...[
+                            if (!_isFullDetail) ...[
                               vSpace(context, 16),
                               // 2. Visit Period
                               _section(context, 'Visit Period'),
@@ -3540,11 +3581,11 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
                                 ),
                               ),
                             ],
-                            vSpace(context, widget.isFullDetail ? 24 : 16),
+                            vSpace(context, _isFullDetail ? 24 : 16),
                           ];
                         }
 
-                        if (widget.isFullDetail) {
+                        if (_isFullDetail) {
                           final barcodeItems = _groupVisitorModels.isNotEmpty
                               ? _groupVisitorModels
                               : [selectedItem];
@@ -3572,7 +3613,7 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
                       },
                     ),
 
-                    if (!widget.isFullDetail) ...[
+                    if (!_isFullDetail) ...[
                       Builder(
                         builder: (context) {
                           final barcodeItems = _groupVisitorModels.isNotEmpty
@@ -3822,7 +3863,7 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
                         },
                       ),
 
-                      if (!widget.isFullDetail) ...[
+                      if (!_isFullDetail) ...[
                         _section(context, 'Access Pass'),
                         (() {
                           final barcodeItems = _groupVisitorModels.isNotEmpty
@@ -3940,7 +3981,7 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
                       ],
 
                       // ── Digital Invitation Card section ───────────────────
-                      if (!widget.isFullDetail &&
+                      if (!_isFullDetail &&
                           widget.item.flow.toLowerCase() !=
                               'quickaccessvisit') ...[
                         StatefulBuilder(
@@ -4126,7 +4167,7 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       // Cancel button: only shown on front/main detail (not in 'More' full detail), if inviter is the logged-in user AND not already canceled
-                      if (!widget.isFullDetail &&
+                      if (!_isFullDetail &&
                           _canShowCancelButton(selectedItem)) ...[
                         SizedBox(
                           width: double.infinity,
@@ -5769,6 +5810,8 @@ class EmptyStateWidget extends StatelessWidget {
                               ) {
                                 return item.flow.toLowerCase() ==
                                         'quickaccessvisit' &&
+                                    item.visitorStatus.toLowerCase() !=
+                                        'undercreated' &&
                                     !(item.agenda.isEmpty &&
                                         item.hostName.isEmpty &&
                                         item.visitorTypeName.isEmpty);
@@ -5861,6 +5904,8 @@ class EmptyStateWidget extends StatelessWidget {
                               ) {
                                 final flowLower = item.flow.toLowerCase();
                                 return flowLower == 'praregister' &&
+                                    item.visitorStatus.toLowerCase() !=
+                                        'undercreated' &&
                                     !(item.agenda.isEmpty &&
                                         item.hostName.isEmpty &&
                                         item.visitorTypeName.isEmpty);

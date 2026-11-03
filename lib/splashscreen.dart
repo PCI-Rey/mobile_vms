@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../presentation/onboarding/language_selection_page.dart';
+import '../core/helper/responsive_helper.dart';
+// import '../presentation/onboarding/language_selection_page.dart';
+import '../presentation/auth/login_page.dart';
 import '../data/datasources/auth_datasource.dart';
 import '../presentation/dashboard.dart';
 import '../presentation/home/invitation/controller/invitation_controller.dart';
@@ -13,77 +15,173 @@ class Splashscreen extends StatefulWidget {
 }
 
 class _SplashscreenState extends State<Splashscreen>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
+    with TickerProviderStateMixin {
+  late AnimationController _logoController;
+  late AnimationController _progressController;
   late Animation<double> _opacityAnimation;
   late Animation<double> _scaleAnimation;
 
   static const Duration _animationDuration = Duration(milliseconds: 1200);
-  static const Duration _minSplashDuration = Duration(seconds: 5);
 
   static const _blue = Color(0xFF1976D2);
   static const _blueDark = Color(0xFF0E5DB5);
 
+  String _statusMessage = 'Starting application...';
+
   @override
   void initState() {
     super.initState();
-    _initializeAnimation();
+    _initializeAnimations();
     _handleSplashFlow();
   }
 
-  void _initializeAnimation() {
-    _controller = AnimationController(
+  void _initializeAnimations() {
+    _logoController = AnimationController(
       duration: _animationDuration,
       vsync: this,
     );
 
+    _progressController = AnimationController(
+      duration: const Duration(milliseconds: 350),
+      vsync: this,
+      lowerBound: 0.0,
+      upperBound: 1.0,
+    );
+
     _opacityAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(
-        parent: _controller,
+        parent: _logoController,
         curve: const Interval(0.0, 0.6, curve: Curves.easeOut),
       ),
     );
 
     _scaleAnimation = Tween<double>(begin: 0.75, end: 1.0).animate(
       CurvedAnimation(
-        parent: _controller,
+        parent: _logoController,
         curve: const Interval(0.0, 0.7, curve: Curves.easeOutBack),
       ),
     );
 
-    _controller.forward();
+    _logoController.forward();
+  }
+
+  Future<void> _updateProgress(double target, String message) async {
+    if (!mounted) return;
+    setState(() {
+      _statusMessage = message;
+    });
+    await _progressController.animateTo(
+      target.clamp(0.0, 1.0),
+      duration: const Duration(milliseconds: 320),
+      curve: Curves.easeOutCubic,
+    );
   }
 
   Future<void> _handleSplashFlow() async {
+    // 0% -> 5%
+    await _updateProgress(0.05, 'Checking user session...');
+    await Future.delayed(const Duration(milliseconds: 300));
+
     final isAuthenticated = await _checkAuthentication();
-    final delayFuture = Future.delayed(_minSplashDuration);
 
-    if (isAuthenticated) {
-      try {
-        final controller = Get.isRegistered<InvitationController>()
-            ? Get.find<InvitationController>()
-            : Get.put(InvitationController());
-
-        // Run prefetch in parallel with the 5-second splash timer.
-        // It will never block navigation past 5 seconds.
-        Future.wait([
-          controller.fetchOngoingInvitations(isSilent: true),
-          controller.fetchApprovalTickets(isSilent: true),
-          controller.fetchDashboardShareLinks(),
-        ]).catchError((e) {
-          debugPrint('Splash prefetch error: $e');
-          return <void>[];
-        });
-      } catch (e) {
-        debugPrint('Splash prefetch error: $e');
-      }
+    if (!isAuthenticated) {
+      // Flow user belum login: animasikan 0% -> 100% lalu buka LoginPage
+      await _updateProgress(0.40, 'Preparing login...');
+      await Future.delayed(const Duration(milliseconds: 400));
+      await _updateProgress(0.75, 'Initializing system...');
+      await Future.delayed(const Duration(milliseconds: 300));
+      await _updateProgress(1.0, 'Ready');
+      await Future.delayed(const Duration(milliseconds: 300));
+      if (!mounted) return;
+      _navigateToNextScreen(false);
+      return;
     }
 
-    // Exactly 5 seconds total duration
-    await delayFuture;
+    // Flow user sudah login: Fetch data real dari backend (0 - 100%)
+    try {
+      final controller = Get.isRegistered<InvitationController>()
+          ? Get.find<InvitationController>()
+          : Get.put(InvitationController(), permanent: true);
+
+      // Task 1: Daftar Transaksi & Invitation (target: 25%)
+      await _updateProgress(0.12, 'Loading transactions & invitations...');
+      await controller
+          .fetchOngoingInvitations(isSilent: true)
+          .timeout(const Duration(seconds: 6), onTimeout: () {
+        debugPrint('Timeout fetchOngoingInvitations');
+      }).catchError((e) {
+        debugPrint('Splash ongoingInvitations error: $e');
+      });
+      await _updateProgress(0.25, 'Transactions & invitations ready');
+      await Future.delayed(const Duration(milliseconds: 100));
+
+      // Task 2: Detail Data Tamu / Sub-Visitors (target: 45%)
+      await _updateProgress(0.32, 'Loading visitor details...');
+      await controller
+          .prefetchRecentTransactionVisitors(limit: 15)
+          .timeout(const Duration(seconds: 6), onTimeout: () {
+        debugPrint('Timeout prefetchRecentTransactionVisitors');
+      }).catchError((e) {
+        debugPrint('Splash prefetchRecentTransactionVisitors error: $e');
+      });
+      await _updateProgress(0.45, 'Visitor details ready');
+      await Future.delayed(const Duration(milliseconds: 100));
+
+      // Task 3: Tiket Approval (target: 60%)
+      await _updateProgress(0.52, 'Loading approval tickets...');
+      await controller
+          .fetchApprovalTickets(isSilent: true)
+          .timeout(const Duration(seconds: 6), onTimeout: () {
+        debugPrint('Timeout fetchApprovalTickets');
+      }).catchError((e) {
+        debugPrint('Splash approvalTickets error: $e');
+      });
+      await _updateProgress(0.60, 'Approval tickets ready');
+      await Future.delayed(const Duration(milliseconds: 100));
+
+      // Task 4: Share Link (target: 74%)
+      await _updateProgress(0.66, 'Loading share links...');
+      await controller
+          .fetchDashboardShareLinks()
+          .timeout(const Duration(seconds: 6), onTimeout: () {
+        debugPrint('Timeout fetchDashboardShareLinks');
+      }).catchError((e) {
+        debugPrint('Splash shareLinks error: $e');
+      });
+      await _updateProgress(0.74, 'Share links ready');
+      await Future.delayed(const Duration(milliseconds: 100));
+
+      // Task 5: Aktivitas Hari Ini (target: 86%)
+      await _updateProgress(0.80, 'Loading today\'s activities...');
+      await controller
+          .fetchTodayActivities(isSilent: true)
+          .timeout(const Duration(seconds: 6), onTimeout: () {
+        debugPrint('Timeout fetchTodayActivities');
+      }).catchError((e) {
+        debugPrint('Splash todayActivities error: $e');
+      });
+      await _updateProgress(0.86, 'Activities ready');
+      await Future.delayed(const Duration(milliseconds: 100));
+
+      // Task 6: Data Master (Gedung, Host, Visitor Type, Drop Points) (target: 100%)
+      await _updateProgress(0.92, 'Loading master data...');
+      await controller
+          .fetchMasterData()
+          .timeout(const Duration(seconds: 6), onTimeout: () {
+        debugPrint('Timeout fetchMasterData');
+      }).catchError((e) {
+        debugPrint('Splash masterData error: $e');
+      });
+      await _updateProgress(1.0, 'All data ready!');
+      await Future.delayed(const Duration(milliseconds: 400));
+    } catch (e) {
+      debugPrint('Splash loading error: $e');
+      await _updateProgress(1.0, 'Ready');
+      await Future.delayed(const Duration(milliseconds: 300));
+    }
 
     if (!mounted) return;
-    _navigateToNextScreen(isAuthenticated);
+    _navigateToNextScreen(true);
   }
 
   Future<bool> _checkAuthentication() async {
@@ -98,7 +196,8 @@ class _SplashscreenState extends State<Splashscreen>
   void _navigateToNextScreen(bool isAuthenticated) {
     final nextScreen = isAuthenticated
         ? const Dashboard()
-        : const LanguageSelectionPage();
+        // : const LanguageSelectionPage();
+        : const LoginPage();
 
     Get.off(
       () => nextScreen,
@@ -110,7 +209,8 @@ class _SplashscreenState extends State<Splashscreen>
 
   @override
   void dispose() {
-    _controller.dispose();
+    _logoController.dispose();
+    _progressController.dispose();
     super.dispose();
   }
 
@@ -161,7 +261,7 @@ class _SplashscreenState extends State<Splashscreen>
             // ── Center content ──────────────────────────────────
             Center(
               child: AnimatedBuilder(
-                animation: _controller,
+                animation: _logoController,
                 builder: (context, child) => Opacity(
                   opacity: _opacityAnimation.value,
                   child: Transform.scale(
@@ -208,21 +308,93 @@ class _SplashscreenState extends State<Splashscreen>
                           ),
                         ),
 
-                        SizedBox(height: sw * 0.12),
+                        SizedBox(height: rh(context, 90)),
 
-                        // Loading indicator — subtle dots
-                        SizedBox(
-                          width: sw * 0.08,
-                          height: sw * 0.008,
-                          child: LinearProgressIndicator(
-                            backgroundColor: Colors.white.withValues(
-                              alpha: 0.2,
-                            ),
-                            valueColor: const AlwaysStoppedAnimation<Color>(
-                              Colors.white,
-                            ),
-                            borderRadius: BorderRadius.circular(4),
-                          ),
+                        // ── Real Progress Bar (0% - 100%) ────────────────
+                        AnimatedBuilder(
+                          animation: _progressController,
+                          builder: (context, _) {
+                            final percent =
+                                (_progressController.value * 100).toInt();
+                            final progress =
+                                _progressController.value.clamp(0.0, 1.0);
+
+                            return SizedBox(
+                              width: sw * 0.72,
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  // Progress Bar track & fill
+                                  Container(
+                                    height: rh(context, 7),
+                                    width: double.infinity,
+                                    decoration: BoxDecoration(
+                                      color:
+                                          Colors.white.withValues(alpha: 0.22),
+                                      borderRadius: BorderRadius.circular(
+                                        rw(context, 10),
+                                      ),
+                                    ),
+                                    child: FractionallySizedBox(
+                                      alignment: Alignment.centerLeft,
+                                      widthFactor:
+                                          progress > 0.01 ? progress : 0.01,
+                                      child: Container(
+                                        decoration: BoxDecoration(
+                                          color: Colors.white,
+                                          borderRadius: BorderRadius.circular(
+                                            rw(context, 10),
+                                          ),
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color: Colors.white
+                                                  .withValues(alpha: 0.45),
+                                              blurRadius: 6,
+                                              offset: const Offset(0, 1),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+
+                                  vSpace(context, 10),
+
+                                  // Status label & percentage text
+                                  Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Expanded(
+                                        child: Text(
+                                          _statusMessage,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: TextStyle(
+                                            color: Colors.white
+                                                .withValues(alpha: 0.85),
+                                            fontSize: rfs(context, 12),
+                                            fontWeight: FontWeight.w500,
+                                            letterSpacing: 0.2,
+                                          ),
+                                        ),
+                                      ),
+                                      hSpace(context, 8),
+                                      Text(
+                                        '$percent%',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: rfs(context, 13),
+                                          fontWeight: FontWeight.w700,
+                                          letterSpacing: 0.5,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
                         ),
                       ],
                     ),
@@ -270,7 +442,8 @@ class _SplashscreenState extends State<Splashscreen>
                               'assets/images/BioExperienceWhite.png',
                               height: sw * 0.05,
                               fit: BoxFit.contain,
-                              errorBuilder: (context, error, stackTrace) => Text(
+                              errorBuilder: (context, error, stackTrace) =>
+                                  Text(
                                 'Bio Experience',
                                 style: TextStyle(
                                   color: Colors.white.withValues(alpha: 0.6),

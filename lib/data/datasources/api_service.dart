@@ -12,8 +12,6 @@ class ApiService {
 
   static const String xUseToken =
       'b02d992e7a03606f90be1114717178b4904a00e35594c499cb1876d59ccff275';
-  static const String xBypassCaptcha =
-      '77a841cca52cfc2bd18d675d9e80321631f27cb25accdcf798ad0ce9345536f2';
   static const String xPlatformId = 'mobileapp';
   static const String xUserAgent = 'mobile_vms';
 
@@ -42,10 +40,6 @@ class ApiService {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
           'X-Use-Token': xUseToken,
-          'X-Platform-Id': xPlatformId,
-          'X-UserAgent': xUserAgent,
-        'X-Platform-Id': xPlatformId,
-        'X-UserAgent': xUserAgent,
           'X-Platform-Id': xPlatformId,
           'X-UserAgent': xUserAgent,
         },
@@ -150,11 +144,8 @@ class ApiService {
           headers: {
             'Accept': 'application/json',
             'X-Use-Token': xUseToken,
-        'X-Platform-Id': xPlatformId,
-        'X-UserAgent': xUserAgent,
-          'X-Platform-Id': xPlatformId,
-          'X-UserAgent': xUserAgent,
-            'X-Bypass-Captcha': xBypassCaptcha,
+            'X-Platform-Id': xPlatformId,
+            'X-UserAgent': xUserAgent,
           },
         ),
       );
@@ -217,10 +208,6 @@ class ApiService {
             'X-Use-Token': xUseToken,
             'X-Platform-Id': xPlatformId,
             'X-UserAgent': xUserAgent,
-        'X-Platform-Id': xPlatformId,
-        'X-UserAgent': xUserAgent,
-          'X-Platform-Id': xPlatformId,
-          'X-UserAgent': xUserAgent,
           },
         ),
       );
@@ -255,9 +242,6 @@ class ApiService {
           captchaAnswer.isNotEmpty) {
         headers['X-Captcha-Id'] = captchaId;
         headers['X-Captcha-Answer'] = captchaAnswer;
-      } else {
-        // Fallback bypass jika captcha belum diisi
-        headers['X-Bypass-Captcha'] = xBypassCaptcha;
       }
 
       final response = await _dio.post(
@@ -451,12 +435,14 @@ class ApiService {
     List<int> bytes,
     String filename, {
     String path = 'face',
+    bool isFace = true,
   }) async {
     try {
       final formData = FormData.fromMap({
         'file': MultipartFile.fromBytes(bytes, filename: filename),
         'file_name': filename,
         'path': path,
+        'is_face': isFace ? 'true' : 'false',
       });
 
       final response = await _dio.post('/cdn/upload', data: formData);
@@ -935,7 +921,7 @@ class ApiService {
   ) async {
     try {
       final response = await _dio.post(
-        '/$pathApi/visitor-share-link/new/send-email',
+        '/$pathApi/visitor-share-link/new',
         data: body,
         options: Options(headers: {'Authorization': 'Bearer $token'}),
       );

@@ -243,6 +243,57 @@ class PraRegistrationController extends GetxController {
   final Rx<DateTime?> visitStart = Rx<DateTime?>(null);
   final Rx<DateTime?> visitEnd = Rx<DateTime?>(null);
 
+  // ── Pre-configured Purpose Visit (from Visitor Type detail) ───────────────
+  bool get hasPreHost => (visitorTypeRawDetail.value?['pre_host_id']?.toString() ?? '').trim().isNotEmpty;
+  bool get hasPreAgenda => (visitorTypeRawDetail.value?['pre_agenda']?.toString() ?? '').trim().isNotEmpty;
+  bool get hasPreSite => (visitorTypeRawDetail.value?['pre_site_id']?.toString() ?? '').trim().isNotEmpty;
+  bool get isPreConfiguredPurpose => hasPreHost && hasPreAgenda && hasPreSite;
+
+  void resolvePreHost(String hostId) {
+    if (hostId.isEmpty) return;
+    final foundHost = hosts.firstWhereOrNull(
+      (h) => h.id.toLowerCase() == hostId.toLowerCase(),
+    );
+    if (foundHost != null) {
+      selectedHostName.value = foundHost.name;
+      return;
+    }
+    final emp = _rawEmployees.firstWhereOrNull(
+      (e) => (e['id'] ?? '').toString().toLowerCase() == hostId.toLowerCase(),
+    );
+    if (emp != null) {
+      selectedHostName.value = (emp['name'] ?? '').toString();
+    }
+  }
+
+  void resolvePreSite(String siteId) {
+    if (rawSites.isEmpty || siteId.isEmpty) return;
+    final found = rawSites.firstWhereOrNull(
+      (s) => (s['id'] ?? '').toString().toLowerCase() == siteId.toLowerCase(),
+    );
+    if (found != null) {
+      final isChild = found['is_child'] == true ||
+          found['is_child'] == 1 ||
+          found['is_child'] == 'true';
+      if (isChild) {
+        final pRef = (found['parent'] ?? found['parent_id'] ?? '')
+            .toString()
+            .trim()
+            .toLowerCase();
+        final parent = rawSites.firstWhereOrNull(
+          (s) => (s['id'] ?? '').toString().trim().toLowerCase() == pRef,
+        );
+        selectedParentSite.value = parent;
+        selectedChildSite.value = found;
+        selectedSiteName.value = (found['name'] ?? '').toString();
+      } else {
+        selectedParentSite.value = found;
+        selectedChildSite.value = null;
+        selectedSiteName.value = (found['name'] ?? '').toString();
+      }
+    }
+  }
+
   // ── Step 4: Vehicle Information (Dynamic) ─────────────────────────────────
   final RxBool isDriving = false.obs;
   final RxString vehicleType = ''.obs;
@@ -527,7 +578,7 @@ class PraRegistrationController extends GetxController {
     return 'Visitor';
   }
 
-  List<String> getVehicleTypeOptions() {
+  Map<String, dynamic>? getIsDrivingField() {
     final sectionsRaw = visitorTypeRawDetail.value?['section_page_visitor_types'] as List<dynamic>?;
     if (sectionsRaw != null && sectionsRaw.isNotEmpty) {
       for (final s in sectionsRaw) {
@@ -541,25 +592,108 @@ class PraRegistrationController extends GetxController {
           if (f is! Map) continue;
           final field = Map<String, dynamic>.from(f);
           final remarks = (field['remarks'] ?? '').toString().toLowerCase().trim();
-          if (remarks == 'vehicle_type') {
+          if (remarks == 'is_driving') {
+            return field;
+          }
+        }
+      }
+    }
+    return null;
+  }
+
+  List<Map<String, String>> getIsDrivingOptions() {
+    final field = getIsDrivingField();
+    final opts = field?['multiple_option_fields'] as List<dynamic>?;
+    if (opts != null && opts.isNotEmpty) {
+      final list = opts.map((opt) {
+        if (opt is Map) {
+          return {
+            'value': (opt['value'] ?? '').toString(),
+            'name': (opt['name'] ?? '').toString(),
+          };
+        }
+        return {'value': opt.toString(), 'name': opt.toString()};
+      }).where((m) => m['value']!.isNotEmpty).toList();
+      list.sort((a, b) {
+        final valA = (a['value'] ?? '').toLowerCase();
+        final valB = (b['value'] ?? '').toLowerCase();
+        if (valA == 'true' || valA == 'yes' || valA == '1') return -1;
+        if (valB == 'true' || valB == 'yes' || valB == '1') return 1;
+        return 0;
+      });
+      return list;
+    }
+    return [
+      {'value': 'true', 'name': 'Yes, Parking'},
+      {'value': 'false', 'name': 'No, Drop Off (Passenger)'},
+    ];
+  }
+
+  String getIsDrivingLabel() {
+    final field = getIsDrivingField();
+    final longText = (field?['long_display_text'] ?? '').toString().trim();
+    if (longText.isNotEmpty) return longText;
+    final shortName = (field?['short_name'] ?? '').toString().trim();
+    if (shortName.isNotEmpty) return shortName;
+    return 'Will you be parking?';
+  }
+
+  List<Map<String, String>> getVehicleTypeOptions() {
+    final sectionsRaw = visitorTypeRawDetail.value?['section_page_visitor_types'] as List<dynamic>?;
+    if (sectionsRaw != null && sectionsRaw.isNotEmpty) {
+      for (final s in sectionsRaw) {
+        if (s is! Map) continue;
+        final sec = Map<String, dynamic>.from(s);
+        final forms = [
+          ...((sec['visit_form'] as List<dynamic>?) ?? []),
+          ...((sec['pra_form'] as List<dynamic>?) ?? []),
+        ];
+        for (final f in forms) {
+          if (f is! Map) continue;
+          final field = Map<String, dynamic>.from(f);
+          final remarks = (field['remarks'] ?? '').toString().toLowerCase().trim();
+          if (remarks == 'vehicle_id' || remarks == 'vehicle_type') {
             final multipleOptions = field['multiple_option_fields'] as List<dynamic>?;
             if (multipleOptions != null && multipleOptions.isNotEmpty) {
-              return multipleOptions
-                  .map((opt) => (opt['value'] ?? opt['name'] ?? '').toString())
-                  .where((v) => v.isNotEmpty)
-                  .toList();
+              return multipleOptions.map((opt) {
+                if (opt is Map) {
+                  return {
+                    'value': (opt['value'] ?? opt['name'] ?? '').toString(),
+                    'name': (opt['name'] ?? opt['value'] ?? '').toString(),
+                  };
+                }
+                return {'value': opt.toString(), 'name': opt.toString()};
+              }).where((m) => m['value']!.isNotEmpty).toList();
             }
           }
         }
       }
     }
-    return ['Car', 'Motorcycle', 'Bicycle', 'Truck', 'Bus'];
+    return [
+      {'value': 'Bus', 'name': 'Bus'},
+      {'value': 'Truck 16 Feet', 'name': 'Truck 16 Feet'},
+      {'value': 'Truck 40 Feet', 'name': 'Truck 40 Feet'},
+      {'value': 'bicycle', 'name': 'Bicycle'},
+      {'value': 'Mini Bus', 'name': 'Mini Bus'},
+      {'value': 'Motor Cycle', 'name': 'Motor Cycle'},
+      {'value': 'Truck 20 Feet', 'name': 'Truck 20 Feet'},
+      {'value': 'Car', 'name': 'Car'},
+    ];
   }
 
-  bool isBicycle(String? type) {
-    if (type == null) return false;
-    final t = type.toLowerCase().trim();
-    return t == 'bicycle' || t == 'sepeda' || t.contains('bicycle') || t.contains('sepeda') || t == 'bike';
+  bool isBicycle(String? typeOrId) {
+    if (typeOrId == null || typeOrId.isEmpty) return false;
+    final t = typeOrId.toLowerCase().trim();
+    if (t == 'bicycle' || t == 'sepeda' || t.contains('bicycle') || t.contains('sepeda') || t == 'bike') {
+      return true;
+    }
+    final options = getVehicleTypeOptions();
+    final found = options.firstWhereOrNull((o) => o['value'] == typeOrId);
+    if (found != null) {
+      final n = (found['name'] ?? '').toLowerCase();
+      return n.contains('bicycle') || n.contains('sepeda');
+    }
+    return false;
   }
 
   // ── Dynamic Form Fields Helpers ──────────────────────────────────────────
@@ -661,6 +795,10 @@ class PraRegistrationController extends GetxController {
       item['company'],
     );
     identityIdCtrl.text = (item['identity_id'] ?? item['indentity_id'] ?? '').toString();
+    final idType = item['identity_type'] ?? item['identityType'] ?? item['IdentityType'];
+    if (idType != null && idType.toString().isNotEmpty) {
+      singleExtraControllers.putIfAbsent('identity_type', () => TextEditingController()).text = idType.toString();
+    }
     updateForm();
   }
 
@@ -693,6 +831,10 @@ class PraRegistrationController extends GetxController {
       item['company'],
     );
     v.identityCtrl.text = (item['identity_id'] ?? item['indentity_id'] ?? '').toString();
+    final idType = item['identity_type'] ?? item['identityType'] ?? item['IdentityType'];
+    if (idType != null && idType.toString().isNotEmpty) {
+      v.extraControllers.putIfAbsent('identity_type', () => TextEditingController()).text = idType.toString();
+    }
     updateForm();
   }
 
@@ -886,12 +1028,18 @@ class PraRegistrationController extends GetxController {
   }
 
   bool get isStep3Valid {
-    if (selectedSiteId.value.isEmpty) return false;
-    if (selectedHostId.value.isEmpty) return false;
-    if (selectedAgenda.value.isEmpty) return false;
-    if (selectedAgenda.value == 'Others' && otherAgendaCtrl.text.trim().isEmpty) {
-      return false;
+    // If destination site is not pre-configured, user must select it manually
+    if (!hasPreSite && selectedSiteId.value.isEmpty) return false;
+    // If PIC host is not pre-configured, user must select it manually
+    if (!hasPreHost && selectedHostId.value.isEmpty) return false;
+    // If agenda is not pre-configured, user must select it manually
+    if (!hasPreAgenda) {
+      if (selectedAgenda.value.isEmpty) return false;
+      if (selectedAgenda.value == 'Others' && otherAgendaCtrl.text.trim().isEmpty) {
+        return false;
+      }
     }
+    // Dates are mandatory
     if (visitStart.value == null || visitEnd.value == null) return false;
     if (visitEnd.value!.isBefore(visitStart.value!) ||
         visitEnd.value!.isAtSameMomentAs(visitStart.value!)) {
@@ -1045,6 +1193,40 @@ class PraRegistrationController extends GetxController {
         for (final v in groupVisitors) {
           v.role.value = defaultRole;
         }
+
+        // Auto-populate Pre-configured Purpose Visit fields from visitor type (Single & Group)
+        final preHost = (collection['pre_host_id'] ?? '').toString().trim();
+        final preAgenda = (collection['pre_agenda'] ?? '').toString().trim();
+        final preSite = (collection['pre_site_id'] ?? '').toString().trim();
+
+        if (preHost.isNotEmpty) {
+          selectedHostId.value = preHost;
+          resolvePreHost(preHost);
+        }
+        if (preAgenda.isNotEmpty) {
+          selectedAgenda.value = preAgenda;
+        }
+        if (preSite.isNotEmpty) {
+          selectedSiteId.value = preSite;
+          resolvePreSite(preSite);
+        }
+
+        // Initialize default values for multiple option fields (e.g. identity_type: NIK)
+        final infoFields = getVisitorInfoFormFields();
+        for (final f in infoFields) {
+          final r = (f['remarks'] ?? '').toString().toLowerCase().trim();
+          final rawOptions = f['multiple_option_fields'] as List<dynamic>? ?? [];
+          final options = rawOptions
+              .map((opt) => (opt is Map ? opt['name'] ?? opt['value'] : opt).toString())
+              .where((s) => s.isNotEmpty)
+              .toList();
+          if (options.isNotEmpty) {
+            singleExtraControllers.putIfAbsent(r, () => TextEditingController()).text = options.first;
+            for (final v in groupVisitors) {
+              v.extraControllers.putIfAbsent(r, () => TextEditingController()).text = options.first;
+            }
+          }
+        }
       }
     } catch (e) {
       debugPrint('fetchFormStructure error: $e');
@@ -1162,6 +1344,9 @@ class PraRegistrationController extends GetxController {
             .toList();
         _cachedHosts = parsed;
         hosts.assignAll(parsed);
+        if (selectedHostId.value.isNotEmpty) {
+          resolvePreHost(selectedHostId.value);
+        }
       }
     } catch (e) {
       debugPrint('fetchHosts error: $e');
@@ -1284,6 +1469,14 @@ class PraRegistrationController extends GetxController {
     final startIso = start?.toUtc().toIso8601String().substring(0, 19);
     final endIso = end?.toUtc().toIso8601String().substring(0, 19);
 
+    final preSite = (visitorTypeRawDetail.value?['pre_site_id'] ?? '').toString().trim();
+    final preHost = (visitorTypeRawDetail.value?['pre_host_id'] ?? '').toString().trim();
+    final preAgenda = (visitorTypeRawDetail.value?['pre_agenda'] ?? '').toString().trim();
+
+    final effSiteId = siteId.isNotEmpty ? siteId : preSite;
+    final effHostId = hostId.isNotEmpty ? hostId : preHost;
+    final effAgenda = agenda.isNotEmpty ? agenda : preAgenda;
+
     // Upload Selfie Image to CDN if present
     String? uploadedSelfiePath;
     if (selfieImage != null && selfieImage.bytes != null) {
@@ -1393,14 +1586,14 @@ class PraRegistrationController extends GetxController {
             } else if (remarks == 'visitor_role' || remarks == 'role') {
               formItem['answer_text'] = role ?? '';
             } else if (remarks == 'site_place' || remarks == 'destination') {
-              formItem['answer_text'] = siteId;
+              formItem['answer_text'] = effSiteId;
             } else if (remarks == 'host' || remarks == 'pic_host') {
-              formItem['answer_text'] = hostId;
+              formItem['answer_text'] = effHostId;
             } else if (remarks == 'agenda') {
-              formItem['answer_text'] = agenda;
+              formItem['answer_text'] = effAgenda;
             } else if (remarks == 'is_driving') {
               formItem['answer_text'] = isDriving ? 'true' : 'false';
-            } else if (remarks == 'vehicle_type') {
+            } else if (remarks == 'vehicle_type' || remarks == 'vehicle_id') {
               formItem['answer_text'] = isDriving ? (vehicleType?.isNotEmpty == true ? vehicleType : null) : null;
             } else if (remarks == 'vehicle_plate') {
               formItem['answer_text'] = (!isDriving || isBicycle(vehicleType))
@@ -1444,11 +1637,15 @@ class PraRegistrationController extends GetxController {
     isSubmitting.value = true;
     try {
       final visitorTypeId = selectedVisitorTypeId.value;
-      final siteId = selectedSiteId.value;
-      final hostId = selectedHostId.value;
-      final resolvedAgenda = selectedAgenda.value == 'Others'
-          ? otherAgendaCtrl.text.trim()
-          : selectedAgenda.value;
+      final preSite = (visitorTypeRawDetail.value?['pre_site_id'] ?? '').toString().trim();
+      final preHost = (visitorTypeRawDetail.value?['pre_host_id'] ?? '').toString().trim();
+      final preAgenda = (visitorTypeRawDetail.value?['pre_agenda'] ?? '').toString().trim();
+
+      final siteId = selectedSiteId.value.isNotEmpty ? selectedSiteId.value : preSite;
+      final hostId = selectedHostId.value.isNotEmpty ? selectedHostId.value : preHost;
+      final resolvedAgenda = selectedAgenda.value.isNotEmpty
+          ? (selectedAgenda.value == 'Others' ? otherAgendaCtrl.text.trim() : selectedAgenda.value)
+          : preAgenda;
       final resolvedRole = selectedVisitorRole.value.isNotEmpty
           ? selectedVisitorRole.value
           : getDefaultVisitorRole();
@@ -1610,28 +1807,57 @@ class PraRegistrationController extends GetxController {
 
         return true;
       } else {
-        // Extract error message safely from various backend conventions
+        // Extract error message safely from various backend conventions (matching web implementation)
         String? errorMsg;
-        if (data['msg'] != null && data['msg'].toString().trim().isNotEmpty) {
-          errorMsg = data['msg'].toString();
-        } else if (data['message'] != null && data['message'].toString().trim().isNotEmpty) {
-          errorMsg = data['message'].toString();
-        } else if (data['error'] != null && data['error'].toString().trim().isNotEmpty) {
-          errorMsg = data['error'].toString();
-        } else if (data['errors'] != null) {
-          if (data['errors'] is Map) {
-            final errMap = data['errors'] as Map;
-            final firstKey = errMap.keys.firstOrNull;
-            if (firstKey != null) {
-              final val = errMap[firstKey];
-              if (val is List && val.isNotEmpty) {
-                errorMsg = val.first.toString();
-              } else {
-                errorMsg = val.toString();
+        if (data['collection'] is List && (data['collection'] as List).isNotEmpty) {
+          final collectionList = data['collection'] as List;
+          final List<String> extracted = [];
+          for (final item in collectionList) {
+            if (item is Map) {
+              if (item['error'] is List) {
+                for (final err in item['error'] as List) {
+                  if (err is Map && err['message'] != null) {
+                    extracted.add(err['message'].toString());
+                  } else if (err != null) {
+                    extracted.add(err.toString());
+                  }
+                }
+              } else if (item['message'] != null) {
+                extracted.add(item['message'].toString());
+              } else if (item['msg'] != null) {
+                extracted.add(item['msg'].toString());
               }
+            } else if (item != null) {
+              extracted.add(item.toString());
             }
-          } else if (data['errors'] is List && (data['errors'] as List).isNotEmpty) {
-            errorMsg = (data['errors'] as List).first.toString();
+          }
+          if (extracted.isNotEmpty) {
+            errorMsg = extracted.join('\n');
+          }
+        }
+
+        if (errorMsg == null || errorMsg.trim().isEmpty) {
+          if (data['msg'] != null && data['msg'].toString().trim().isNotEmpty) {
+            errorMsg = data['msg'].toString();
+          } else if (data['message'] != null && data['message'].toString().trim().isNotEmpty) {
+            errorMsg = data['message'].toString();
+          } else if (data['error'] != null && data['error'].toString().trim().isNotEmpty) {
+            errorMsg = data['error'].toString();
+          } else if (data['errors'] != null) {
+            if (data['errors'] is Map) {
+              final errMap = data['errors'] as Map;
+              final firstKey = errMap.keys.firstOrNull;
+              if (firstKey != null) {
+                final val = errMap[firstKey];
+                if (val is List && val.isNotEmpty) {
+                  errorMsg = val.first.toString();
+                } else {
+                  errorMsg = val.toString();
+                }
+              }
+            } else if (data['errors'] is List && (data['errors'] as List).isNotEmpty) {
+              errorMsg = (data['errors'] as List).first.toString();
+            }
           }
         }
 

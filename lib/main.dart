@@ -12,6 +12,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'presentation/auth/controller/user_controller.dart';
 import 'presentation/auth/controller/language_controller.dart';
+import 'presentation/home/invitation/controller/invitation_controller.dart';
 import 'data/datasources/api_service.dart';
 import 'core/localization/app_translations.dart';
 import 'core/core.dart';
@@ -78,6 +79,7 @@ void main() async {
   // Inject Controllers
   Get.put(UserController());
   Get.put(LanguageController());
+  Get.lazyPut(() => InvitationController(), fenix: true);
 
   // Lock orientation to portrait only on all devices
   await SystemChrome.setPreferredOrientations([

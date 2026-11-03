@@ -749,6 +749,66 @@ class _Step1UserType extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// SHARED NOTICE BANNER (Matching Web UI)
+// ─────────────────────────────────────────────────────────────────────────────
+Widget _buildRequiredNoticeBanner(BuildContext context) {
+  return Container(
+    padding: EdgeInsets.symmetric(
+      horizontal: rw(context, 12),
+      vertical: rh(context, 10),
+    ),
+    decoration: BoxDecoration(
+      color: const Color(0xFFEFF6FF),
+      borderRadius: BorderRadius.circular(rw(context, 8)),
+      border: Border.all(color: const Color(0xFFBFDBFE)),
+    ),
+    child: Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(
+          Icons.info_outline_rounded,
+          color: const Color(0xFF2563EB),
+          size: rw(context, 18),
+        ),
+        hSpace(context, 8),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              RichText(
+                text: TextSpan(
+                  text: 'Required Fields',
+                  style: TextStyle(
+                    fontSize: rfs(context, 12.5),
+                    fontWeight: FontWeight.w700,
+                    color: const Color(0xFF1E3A8A),
+                  ),
+                  children: const [
+                    TextSpan(
+                      text: ' *',
+                      style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+                    ),
+                  ],
+                ),
+              ),
+              vSpace(context, 2),
+              Text(
+                'Please make sure all fields marked with * are completed before continue',
+                style: TextStyle(
+                  fontSize: rfs(context, 11),
+                  color: const Color(0xFF3B82F6),
+                  fontWeight: FontWeight.w400,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // STEP 2: VISITOR INFORMATION
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -765,621 +825,6 @@ class _Step2VisitorInfo extends StatelessWidget {
       }
       return _buildSingleVisitorInfo(context);
     });
-  }
-
-  // ── Single Mode ───────────────────────────────────────────────────────────
-  Widget _buildSingleVisitorInfo(BuildContext context) {
-    final hasEmployeeField = controller.hasVisitorInfoField('is_employee');
-    final hasRoleField = controller.hasVisitorInfoField('visitor_role') || controller.hasVisitorInfoField('role');
-    final isEmployeeMode = hasEmployeeField && controller.isEmployee.value == true;
-    final searchList = isEmployeeMode
-        ? controller.filteredEmployees
-        : controller.filteredVisitors;
-    final roles = controller.getRolesForSelectedType();
-    final fields = controller.getVisitorInfoFormFields();
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        // Quick Search with instant autofill
-        _buildSearchBox(
-          context,
-          hint: isEmployeeMode ? 'Search Employee' : 'Search Visitor',
-          controller: controller.singleSearchCtrl,
-          isOpen: controller.singleIsSearchOpen.value,
-          items: searchList,
-          onToggleOpen: () {
-            controller.singleIsSearchOpen.value = !controller.singleIsSearchOpen.value;
-            controller.updateForm();
-          },
-          onChanged: (val) {
-            controller.singleIsSearchOpen.value = true;
-            controller.updateForm();
-          },
-          onSelect: (item) {
-            controller.onSingleSelect(item);
-          },
-          onClear: () {
-            controller.clearSingle();
-          },
-        ),
-
-        vSpace(context, 16),
-
-        // Are you Employee? Radio (Only if in API schema)
-        if (hasEmployeeField) ...[
-          _buildFieldLabel(
-            context,
-            controller.getFieldLabel(
-              fields.firstWhere((f) => (f['remarks'] ?? '').toString().toLowerCase().trim() == 'is_employee', orElse: () => {}),
-              'Are you Employee?',
-            ),
-            isRequired: controller.isVisitorInfoFieldMandatory('is_employee'),
-          ),
-          vSpace(context, 6),
-          Row(
-            children: [
-              _buildRadioOption(
-                context,
-                label: 'Yes',
-                isSelected: controller.isEmployee.value == true,
-                onTap: () {
-                  controller.isEmployee.value = true;
-                  controller.clearSingle();
-                },
-              ),
-              hSpace(context, 20),
-              _buildRadioOption(
-                context,
-                label: 'No',
-                isSelected: controller.isEmployee.value == false,
-                onTap: () {
-                  controller.isEmployee.value = false;
-                  controller.clearSingle();
-                },
-              ),
-            ],
-          ),
-          vSpace(context, 14),
-        ],
-
-        // Visitor Role Selector (Only if in API schema and roles exist)
-        if (hasRoleField && roles.isNotEmpty) ...[
-          _buildFieldLabel(
-            context,
-            controller.getFieldLabel(
-              fields.firstWhere(
-                (f) => (f['remarks'] ?? '').toString().toLowerCase().trim() == 'visitor_role' ||
-                       (f['remarks'] ?? '').toString().toLowerCase().trim() == 'role',
-                orElse: () => {},
-              ),
-              'Visitor Role',
-            ),
-            isRequired: controller.isVisitorInfoFieldMandatory('visitor_role') || controller.isVisitorInfoFieldMandatory('role'),
-          ),
-          vSpace(context, 6),
-          _buildDropdownField<String>(
-            context,
-            hintText: 'Select Visitor Role',
-            value: controller.selectedVisitorRole.value.isNotEmpty
-                ? controller.selectedVisitorRole.value
-                : roles.first,
-            items: roles
-                .map((r) => DropdownMenuItem(value: r, child: Text(r)))
-                .toList(),
-            onChanged: (val) {
-              if (val != null) {
-                controller.selectedVisitorRole.value = val;
-                controller.updateForm();
-              }
-            },
-          ),
-          vSpace(context, 14),
-        ],
-
-        // Full Name (Only if in API schema)
-        if (controller.hasVisitorInfoField('name')) ...[
-          _buildFieldLabel(
-            context,
-            controller.getFieldLabel(
-              fields.firstWhere((f) => (f['remarks'] ?? '').toString().toLowerCase().trim() == 'name', orElse: () => {}),
-              'Full Name',
-            ),
-            isRequired: controller.isVisitorInfoFieldMandatory('name'),
-          ),
-          vSpace(context, 6),
-          _buildTextInputField(
-            context,
-            controller: controller.nameCtrl,
-            hintText: 'Enter full name',
-            onChanged: (_) => controller.updateForm(),
-          ),
-          vSpace(context, 14),
-        ],
-
-        // Email (Only if in API schema)
-        if (controller.hasVisitorInfoField('email')) ...[
-          _buildFieldLabel(
-            context,
-            controller.getFieldLabel(
-              fields.firstWhere((f) => (f['remarks'] ?? '').toString().toLowerCase().trim() == 'email', orElse: () => {}),
-              'Email',
-            ),
-            isRequired: controller.isVisitorInfoFieldMandatory('email'),
-          ),
-          vSpace(context, 6),
-          _buildTextInputField(
-            context,
-            controller: controller.emailCtrl,
-            hintText: 'Enter email address',
-            keyboardType: TextInputType.emailAddress,
-            onChanged: (_) => controller.updateForm(),
-          ),
-          vSpace(context, 14),
-        ],
-
-        // Phone (Only if in API schema)
-        if (controller.hasVisitorInfoField('phone')) ...[
-          _buildFieldLabel(
-            context,
-            controller.getFieldLabel(
-              fields.firstWhere((f) => (f['remarks'] ?? '').toString().toLowerCase().trim() == 'phone', orElse: () => {}),
-              'Phone',
-            ),
-            isRequired: controller.isVisitorInfoFieldMandatory('phone'),
-          ),
-          vSpace(context, 6),
-          _buildTextInputField(
-            context,
-            controller: controller.phoneCtrl,
-            hintText: 'Enter phone number',
-            keyboardType: TextInputType.phone,
-            onChanged: (_) => controller.updateForm(),
-          ),
-          vSpace(context, 14),
-        ],
-
-        // Department / Organization / Company (Only if in API schema)
-        if (controller.hasVisitorInfoField('organization') || controller.hasVisitorInfoField('company')) ...[
-          _buildFieldLabel(
-            context,
-            controller.getFieldLabel(
-              fields.firstWhere((f) {
-                final r = (f['remarks'] ?? '').toString().toLowerCase().trim();
-                return r == 'organization' || r == 'company';
-              }, orElse: () => {}),
-              'Department / Organization / Company',
-            ),
-            isRequired: controller.isVisitorInfoFieldMandatory('organization') || controller.isVisitorInfoFieldMandatory('company'),
-          ),
-          vSpace(context, 6),
-          _buildTextInputField(
-            context,
-            controller: controller.organizationCtrl,
-            hintText: 'Enter department / organization / company',
-            onChanged: (_) => controller.updateForm(),
-          ),
-          vSpace(context, 14),
-        ],
-
-        // Identity (KTP) (Only if in API schema)
-        if (controller.hasVisitorInfoField('identity_id') || controller.hasVisitorInfoField('indentity_id')) ...[
-          _buildFieldLabel(
-            context,
-            controller.getFieldLabel(
-              fields.firstWhere((f) {
-                final r = (f['remarks'] ?? '').toString().toLowerCase().trim();
-                return r == 'identity_id' || r == 'indentity_id';
-              }, orElse: () => {}),
-              'Identity (KTP)',
-            ),
-            isRequired: controller.isVisitorInfoFieldMandatory('identity_id') || controller.isVisitorInfoFieldMandatory('indentity_id'),
-          ),
-          vSpace(context, 6),
-          _buildTextInputField(
-            context,
-            controller: controller.identityIdCtrl,
-            hintText: 'Enter identity / KTP number',
-            keyboardType: TextInputType.number,
-            onChanged: (_) => controller.updateForm(),
-          ),
-          vSpace(context, 14),
-        ],
-
-        // Dynamic Extra Fields from API
-        ...fields.where((f) {
-          final r = (f['remarks'] ?? '').toString().toLowerCase().trim();
-          return r != 'is_employee' &&
-                 r != 'name' &&
-                 r != 'email' &&
-                 r != 'phone' &&
-                 r != 'organization' &&
-                 r != 'company' &&
-                 r != 'identity_id' &&
-                 r != 'indentity_id' &&
-                 r != 'visitor_role' &&
-                 r != 'role';
-        }).map((f) {
-          final remarks = (f['remarks'] ?? '').toString().trim();
-          final label = controller.getFieldLabel(f, remarks);
-          final isMandatory = f['mandatory'] == true;
-          final ctrl = controller.singleExtraControllers.putIfAbsent(
-            remarks,
-            () => TextEditingController(),
-          );
-          return Padding(
-            padding: EdgeInsets.only(bottom: rh(context, 14)),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildFieldLabel(context, label, isRequired: isMandatory),
-                vSpace(context, 6),
-                _buildTextInputField(
-                  context,
-                  controller: ctrl,
-                  hintText: 'Enter $label',
-                  onChanged: (_) => controller.updateForm(),
-                ),
-              ],
-            ),
-          );
-        }),
-      ],
-    );
-  }
-
-  // ── Group Mode ────────────────────────────────────────────────────────────
-  Widget _buildGroupVisitorInfo(BuildContext context) {
-    final activeIndex = controller.selectedGroupMemberIndex.value;
-    final safeIndex = activeIndex < controller.groupVisitors.length ? activeIndex : 0;
-    final v = controller.groupVisitors[safeIndex];
-    final roles = controller.getRolesForSelectedType();
-    final fields = controller.getVisitorInfoFormFields();
-    final hasEmployeeField = controller.hasVisitorInfoField('is_employee');
-    final hasRoleField = controller.hasVisitorInfoField('visitor_role') || controller.hasVisitorInfoField('role');
-    final isEmployeeMode = hasEmployeeField && v.isEmployee.value == true;
-    final searchList = isEmployeeMode
-        ? controller.getFilteredEmployees(v.searchCtrl.text)
-        : controller.getFilteredVisitors(v.searchCtrl.text);
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        // Member Tabs + Add Button (fixed)
-        Row(
-          children: [
-            Expanded(
-              child: SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Row(
-                  children: List.generate(controller.groupVisitors.length, (i) {
-                    final isSelected = safeIndex == i;
-                    return Padding(
-                      padding: const EdgeInsets.only(right: 8),
-                      child: ChoiceChip(
-                        showCheckmark: false,
-                        label: Text('Visitor ${i + 1}'),
-                        selected: isSelected,
-                        selectedColor: AppColors.primary500,
-                        labelStyle: TextStyle(
-                          color: isSelected ? Colors.white : const Color(0xFF334155),
-                          fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                          fontSize: rfs(context, 12),
-                        ),
-                        backgroundColor: Colors.white,
-                        side: BorderSide(
-                          color: isSelected ? AppColors.primary500 : const Color(0xFFCBD5E1),
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        onSelected: (_) {
-                          controller.selectedGroupMemberIndex.value = i;
-                          controller.updateForm();
-                        },
-                      ),
-                    );
-                  }),
-                ),
-              ),
-            ),
-            const SizedBox(width: 8),
-            ActionChip(
-              avatar: const Icon(Icons.add, size: 16, color: AppColors.primary500),
-              label: const Text('Add Visitor'),
-              labelStyle: TextStyle(
-                color: AppColors.primary500,
-                fontWeight: FontWeight.w600,
-                fontSize: rfs(context, 12),
-              ),
-              backgroundColor: const Color(0xFFEFF6FF),
-              side: const BorderSide(color: Color(0xFF93C5FD)),
-              onPressed: () {
-                controller.addGroupVisitor();
-              },
-            ),
-          ],
-        ),
-
-        vSpace(context, 8),
-
-        // Delete button if more than 1 member
-        if (controller.groupVisitors.length > 1)
-          Align(
-            alignment: Alignment.centerRight,
-            child: TextButton.icon(
-              style: TextButton.styleFrom(
-                foregroundColor: AppColors.error500,
-                padding: EdgeInsets.symmetric(
-                  horizontal: rw(context, 6),
-                  vertical: rh(context, 2),
-                ),
-                minimumSize: Size.zero,
-                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                visualDensity: VisualDensity.compact,
-              ),
-              icon: Icon(
-                Icons.delete_outline_rounded,
-                size: rw(context, 14),
-                color: AppColors.error500,
-              ),
-              label: Text(
-                'Remove this Visitor',
-                style: GoogleFonts.inter(
-                  fontSize: rfs(context, 11.5),
-                  fontWeight: FontWeight.w500,
-                  color: AppColors.error500,
-                ),
-              ),
-              onPressed: () => controller.removeGroupVisitor(safeIndex),
-            ),
-          ),
-
-        vSpace(context, 6),
-
-        // Quick Search for current member
-        _buildSearchBox(
-          context,
-          hint: isEmployeeMode
-              ? 'Search Employee (Visitor ${safeIndex + 1})'
-              : 'Search Visitor (Visitor ${safeIndex + 1})',
-          controller: v.searchCtrl,
-          isOpen: v.isSearchOpen.value,
-          items: searchList,
-          onToggleOpen: () {
-            v.isSearchOpen.value = !v.isSearchOpen.value;
-            controller.updateForm();
-          },
-          onChanged: (val) {
-            v.isSearchOpen.value = true;
-            controller.updateForm();
-          },
-          onSelect: (item) {
-            controller.onGroupSelect(safeIndex, item);
-          },
-          onClear: () {
-            controller.clearGroup(safeIndex);
-          },
-        ),
-
-        vSpace(context, 14),
-
-        // Are you Employee? Radio (Only if in API schema)
-        if (hasEmployeeField) ...[
-          _buildFieldLabel(
-            context,
-            controller.getFieldLabel(
-              fields.firstWhere((f) => (f['remarks'] ?? '').toString().toLowerCase().trim() == 'is_employee', orElse: () => {}),
-              'Are you Employee?',
-            ),
-            isRequired: controller.isVisitorInfoFieldMandatory('is_employee'),
-          ),
-          vSpace(context, 6),
-          Row(
-            children: [
-              _buildRadioOption(
-                context,
-                label: 'Yes',
-                isSelected: v.isEmployee.value == true,
-                onTap: () {
-                  v.isEmployee.value = true;
-                  controller.clearGroup(safeIndex);
-                },
-              ),
-              hSpace(context, 20),
-              _buildRadioOption(
-                context,
-                label: 'No',
-                isSelected: v.isEmployee.value == false,
-                onTap: () {
-                  v.isEmployee.value = false;
-                  controller.clearGroup(safeIndex);
-                },
-              ),
-            ],
-          ),
-          vSpace(context, 14),
-        ],
-
-        // Visitor Role Selector (Only if in API schema and roles exist)
-        if (hasRoleField && roles.isNotEmpty) ...[
-          _buildFieldLabel(
-            context,
-            controller.getFieldLabel(
-              fields.firstWhere(
-                (f) => (f['remarks'] ?? '').toString().toLowerCase().trim() == 'visitor_role' ||
-                       (f['remarks'] ?? '').toString().toLowerCase().trim() == 'role',
-                orElse: () => {},
-              ),
-              'Visitor Role',
-            ),
-            isRequired: controller.isVisitorInfoFieldMandatory('visitor_role') || controller.isVisitorInfoFieldMandatory('role'),
-          ),
-          vSpace(context, 6),
-          _buildDropdownField<String>(
-            context,
-            hintText: 'Select Visitor Role',
-            value: v.role.value.isNotEmpty ? v.role.value : roles.first,
-            items: roles.map((r) => DropdownMenuItem(value: r, child: Text(r))).toList(),
-            onChanged: (val) {
-              if (val != null) {
-                v.role.value = val;
-                controller.updateForm();
-              }
-            },
-          ),
-          vSpace(context, 14),
-        ],
-
-        // Member Full Name (Only if in API schema)
-        if (controller.hasVisitorInfoField('name')) ...[
-          _buildFieldLabel(
-            context,
-            controller.getFieldLabel(
-              fields.firstWhere((f) => (f['remarks'] ?? '').toString().toLowerCase().trim() == 'name', orElse: () => {}),
-              'Full Name',
-            ),
-            isRequired: controller.isVisitorInfoFieldMandatory('name'),
-          ),
-          vSpace(context, 6),
-          _buildTextInputField(
-            context,
-            controller: v.fullNameCtrl,
-            hintText: 'Enter full name',
-            onChanged: (_) => controller.updateForm(),
-          ),
-          vSpace(context, 14),
-        ],
-
-        // Member Email (Only if in API schema)
-        if (controller.hasVisitorInfoField('email')) ...[
-          _buildFieldLabel(
-            context,
-            controller.getFieldLabel(
-              fields.firstWhere((f) => (f['remarks'] ?? '').toString().toLowerCase().trim() == 'email', orElse: () => {}),
-              'Email',
-            ),
-            isRequired: controller.isVisitorInfoFieldMandatory('email'),
-          ),
-          vSpace(context, 6),
-          _buildTextInputField(
-            context,
-            controller: v.emailCtrl,
-            hintText: 'Enter email address',
-            keyboardType: TextInputType.emailAddress,
-            onChanged: (_) => controller.updateForm(),
-          ),
-          vSpace(context, 14),
-        ],
-
-        // Member Phone (Only if in API schema)
-        if (controller.hasVisitorInfoField('phone')) ...[
-          _buildFieldLabel(
-            context,
-            controller.getFieldLabel(
-              fields.firstWhere((f) => (f['remarks'] ?? '').toString().toLowerCase().trim() == 'phone', orElse: () => {}),
-              'Phone',
-            ),
-            isRequired: controller.isVisitorInfoFieldMandatory('phone'),
-          ),
-          vSpace(context, 6),
-          _buildTextInputField(
-            context,
-            controller: v.phoneCtrl,
-            hintText: 'Enter phone number',
-            keyboardType: TextInputType.phone,
-            onChanged: (_) => controller.updateForm(),
-          ),
-          vSpace(context, 14),
-        ],
-
-        // Member Organization (Only if in API schema)
-        if (controller.hasVisitorInfoField('organization') || controller.hasVisitorInfoField('company')) ...[
-          _buildFieldLabel(
-            context,
-            controller.getFieldLabel(
-              fields.firstWhere((f) {
-                final r = (f['remarks'] ?? '').toString().toLowerCase().trim();
-                return r == 'organization' || r == 'company';
-              }, orElse: () => {}),
-              'Department / Organization / Company',
-            ),
-            isRequired: controller.isVisitorInfoFieldMandatory('organization') || controller.isVisitorInfoFieldMandatory('company'),
-          ),
-          vSpace(context, 6),
-          _buildTextInputField(
-            context,
-            controller: v.orgCtrl,
-            hintText: 'Enter department / organization / company',
-            onChanged: (_) => controller.updateForm(),
-          ),
-          vSpace(context, 14),
-        ],
-
-        // Member Identity (Only if in API schema)
-        if (controller.hasVisitorInfoField('identity_id') || controller.hasVisitorInfoField('indentity_id')) ...[
-          _buildFieldLabel(
-            context,
-            controller.getFieldLabel(
-              fields.firstWhere((f) {
-                final r = (f['remarks'] ?? '').toString().toLowerCase().trim();
-                return r == 'identity_id' || r == 'indentity_id';
-              }, orElse: () => {}),
-              'Identity (KTP)',
-            ),
-            isRequired: controller.isVisitorInfoFieldMandatory('identity_id') || controller.isVisitorInfoFieldMandatory('indentity_id'),
-          ),
-          vSpace(context, 6),
-          _buildTextInputField(
-            context,
-            controller: v.identityCtrl,
-            hintText: 'Enter identity / KTP number',
-            keyboardType: TextInputType.number,
-            onChanged: (_) => controller.updateForm(),
-          ),
-          vSpace(context, 14),
-        ],
-
-        // Member Extra Custom Fields
-        ...fields.where((f) {
-          final r = (f['remarks'] ?? '').toString().toLowerCase().trim();
-          return r != 'is_employee' &&
-                 r != 'name' &&
-                 r != 'email' &&
-                 r != 'phone' &&
-                 r != 'organization' &&
-                 r != 'company' &&
-                 r != 'identity_id' &&
-                 r != 'indentity_id' &&
-                 r != 'visitor_role' &&
-                 r != 'role';
-        }).map((f) {
-          final remarks = (f['remarks'] ?? '').toString().trim();
-          final label = controller.getFieldLabel(f, remarks);
-          final isMandatory = f['mandatory'] == true;
-          final ctrl = v.extraControllers.putIfAbsent(
-            remarks,
-            () => TextEditingController(),
-          );
-          return Padding(
-            padding: EdgeInsets.only(bottom: rh(context, 14)),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildFieldLabel(context, label, isRequired: isMandatory),
-                vSpace(context, 6),
-                _buildTextInputField(
-                  context,
-                  controller: ctrl,
-                  hintText: 'Enter $label',
-                  onChanged: (_) => controller.updateForm(),
-                ),
-              ],
-            ),
-          );
-        }),
-      ],
-    );
   }
 
   Widget _buildSearchBox(
@@ -1525,6 +970,816 @@ class _Step2VisitorInfo extends StatelessWidget {
       ],
     );
   }
+
+  // ── Single Mode ───────────────────────────────────────────────────────────
+  Widget _buildSingleVisitorInfo(BuildContext context) {
+    final hasEmployeeField = controller.hasVisitorInfoField('is_employee');
+    final isEmployeeMode = hasEmployeeField && controller.isEmployee.value == true;
+    final searchList = isEmployeeMode
+        ? controller.filteredEmployees
+        : controller.filteredVisitors;
+    final roles = controller.getRolesForSelectedType();
+    final fields = controller.getVisitorInfoFormFields();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        // 1. Required Notice Banner (Matching Web)
+        _buildRequiredNoticeBanner(context),
+        vSpace(context, 14),
+
+        // 2. Search Box
+        _buildSearchBox(
+          context,
+          hint: isEmployeeMode ? 'Search Employee' : 'Search Visitor',
+          controller: controller.singleSearchCtrl,
+          isOpen: controller.singleIsSearchOpen.value,
+          items: searchList,
+          onToggleOpen: () {
+            controller.singleIsSearchOpen.value = !controller.singleIsSearchOpen.value;
+            controller.updateForm();
+          },
+          onChanged: (val) {
+            controller.singleIsSearchOpen.value = true;
+            controller.updateForm();
+          },
+          onSelect: (item) {
+            controller.onSingleSelect(item);
+          },
+          onClear: () {
+            controller.clearSingle();
+          },
+        ),
+        vSpace(context, 16),
+
+        // 3. Dynamic Form Fields in Exact Sequence from Backend
+        ...fields.map((f) => _buildSingleFormField(context, f, roles)),
+      ],
+    );
+  }
+
+  Widget _buildSingleFormField(
+    BuildContext context,
+    Map<String, dynamic> f,
+    List<String> roles,
+  ) {
+    final remarks = (f['remarks'] ?? '').toString().toLowerCase().trim();
+    final rawLabel = (f['long_display_text'] ?? f['short_name'] ?? remarks).toString().trim();
+    final isMandatory = f['mandatory'] == true;
+    final rawOptions = f['multiple_option_fields'] as List<dynamic>? ?? [];
+    final options = rawOptions
+        .map((opt) => (opt is Map ? opt['name'] ?? opt['value'] : opt).toString().trim())
+        .where((s) => s.isNotEmpty)
+        .toList();
+
+    // 1. Are you Employee? Radio
+    if (remarks == 'is_employee') {
+      return Padding(
+        padding: EdgeInsets.only(bottom: rh(context, 14)),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildFieldLabel(context, rawLabel.isNotEmpty ? rawLabel : 'Are you Employee?', isRequired: isMandatory),
+            vSpace(context, 6),
+            Row(
+              children: [
+                _buildRadioOption(
+                  context,
+                  label: 'Yes',
+                  isSelected: controller.isEmployee.value == true,
+                  onTap: () {
+                    controller.isEmployee.value = true;
+                    controller.clearSingle();
+                  },
+                ),
+                hSpace(context, 20),
+                _buildRadioOption(
+                  context,
+                  label: 'No',
+                  isSelected: controller.isEmployee.value == false,
+                  onTap: () {
+                    controller.isEmployee.value = false;
+                    controller.clearSingle();
+                  },
+                ),
+              ],
+            ),
+          ],
+        ),
+      );
+    }
+
+    // 2. Visitor Role Selector
+    if (remarks == 'visitor_role' || remarks == 'role') {
+      if (roles.isEmpty) return const SizedBox.shrink();
+      return Padding(
+        padding: EdgeInsets.only(bottom: rh(context, 14)),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildFieldLabel(context, rawLabel.isNotEmpty ? rawLabel : 'Visitor Role', isRequired: isMandatory),
+            vSpace(context, 6),
+            _buildDropdownField<String>(
+              context,
+              hintText: 'Select Visitor Role',
+              value: controller.selectedVisitorRole.value.isNotEmpty
+                  ? controller.selectedVisitorRole.value
+                  : roles.first,
+              items: roles
+                  .map((r) => DropdownMenuItem(value: r, child: Text(r)))
+                  .toList(),
+              onChanged: (val) {
+                if (val != null) {
+                  controller.selectedVisitorRole.value = val;
+                  controller.updateForm();
+                }
+              },
+            ),
+          ],
+        ),
+      );
+    }
+
+    // 3. Fullname
+    if (remarks == 'name') {
+      return Padding(
+        padding: EdgeInsets.only(bottom: rh(context, 14)),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildFieldLabel(context, rawLabel.isNotEmpty ? rawLabel : 'Fullname', isRequired: isMandatory),
+            vSpace(context, 6),
+            _buildTextInputField(
+              context,
+              controller: controller.nameCtrl,
+              hintText: 'Enter your fullname',
+              onChanged: (_) => controller.updateForm(),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // 4. Email
+    if (remarks == 'email') {
+      return Padding(
+        padding: EdgeInsets.only(bottom: rh(context, 14)),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildFieldLabel(context, rawLabel.isNotEmpty ? rawLabel : 'Email', isRequired: isMandatory),
+            vSpace(context, 6),
+            _buildTextInputField(
+              context,
+              controller: controller.emailCtrl,
+              hintText: 'Example: name@gmail.com',
+              keyboardType: TextInputType.emailAddress,
+              onChanged: (_) => controller.updateForm(),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // 5. Identity Type (Options radio: NIK, KTA, NRP, NIP, etc.)
+    if (remarks == 'identity_type' || (options.isNotEmpty && (remarks.contains('identity') || remarks.contains('type')))) {
+      final opts = options.isNotEmpty ? options : ['NIK', 'KTA', 'NRP', 'NIP'];
+      final ctrl = controller.singleExtraControllers.putIfAbsent(
+        'identity_type',
+        () => TextEditingController(text: opts.first),
+      );
+      if (ctrl.text.isEmpty) ctrl.text = opts.first;
+
+      return Padding(
+        padding: EdgeInsets.only(bottom: rh(context, 14)),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildFieldLabel(context, rawLabel.isNotEmpty ? rawLabel : 'Identity Type', isRequired: isMandatory),
+            vSpace(context, 8),
+            Wrap(
+              spacing: rw(context, 16),
+              runSpacing: rh(context, 8),
+              children: opts.map((opt) {
+                final isSelected = ctrl.text.trim().toLowerCase() == opt.toLowerCase();
+                return _buildRadioOption(
+                  context,
+                  label: opt,
+                  isSelected: isSelected,
+                  onTap: () {
+                    ctrl.text = opt;
+                    controller.updateForm();
+                  },
+                );
+              }).toList(),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // 6. Identity ID
+    if (remarks == 'identity_id' || remarks == 'indentity_id') {
+      return Padding(
+        padding: EdgeInsets.only(bottom: rh(context, 14)),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildFieldLabel(context, rawLabel.isNotEmpty ? rawLabel : 'Identity ID', isRequired: isMandatory),
+            vSpace(context, 6),
+            _buildTextInputField(
+              context,
+              controller: controller.identityIdCtrl,
+              hintText: 'Enter your identity id',
+              keyboardType: TextInputType.text,
+              onChanged: (_) => controller.updateForm(),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // 7. Phone
+    if (remarks == 'phone') {
+      return Padding(
+        padding: EdgeInsets.only(bottom: rh(context, 14)),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildFieldLabel(context, rawLabel.isNotEmpty ? rawLabel : 'Phone', isRequired: isMandatory),
+            vSpace(context, 6),
+            _buildTextInputField(
+              context,
+              controller: controller.phoneCtrl,
+              hintText: 'Enter your phone',
+              keyboardType: TextInputType.phone,
+              onChanged: (_) => controller.updateForm(),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // 8. Department / Organization / Company
+    if (remarks == 'organization' || remarks == 'company') {
+      return Padding(
+        padding: EdgeInsets.only(bottom: rh(context, 14)),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildFieldLabel(
+              context,
+              rawLabel.isNotEmpty ? rawLabel : 'Department/Organization/Company',
+              isRequired: isMandatory,
+            ),
+            vSpace(context, 6),
+            _buildTextInputField(
+              context,
+              controller: controller.organizationCtrl,
+              hintText: 'Enter your department/organization/company',
+              onChanged: (_) => controller.updateForm(),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // 9. Generic options (Radio if <= 4, Dropdown if > 4)
+    if (options.isNotEmpty) {
+      final ctrl = controller.singleExtraControllers.putIfAbsent(
+        remarks,
+        () => TextEditingController(text: options.first),
+      );
+      if (ctrl.text.isEmpty) ctrl.text = options.first;
+
+      if (options.length <= 4) {
+        return Padding(
+          padding: EdgeInsets.only(bottom: rh(context, 14)),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildFieldLabel(context, rawLabel, isRequired: isMandatory),
+              vSpace(context, 8),
+              Wrap(
+                spacing: rw(context, 16),
+                runSpacing: rh(context, 8),
+                children: options.map((opt) {
+                  final isSelected = ctrl.text.trim().toLowerCase() == opt.toLowerCase();
+                  return _buildRadioOption(
+                    context,
+                    label: opt,
+                    isSelected: isSelected,
+                    onTap: () {
+                      ctrl.text = opt;
+                      controller.updateForm();
+                    },
+                  );
+                }).toList(),
+              ),
+            ],
+          ),
+        );
+      } else {
+        return Padding(
+          padding: EdgeInsets.only(bottom: rh(context, 14)),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildFieldLabel(context, rawLabel, isRequired: isMandatory),
+              vSpace(context, 6),
+              _buildDropdownField<String>(
+                context,
+                hintText: 'Select $rawLabel',
+                value: ctrl.text.isNotEmpty ? ctrl.text : options.first,
+                items: options.map((opt) => DropdownMenuItem(value: opt, child: Text(opt))).toList(),
+                onChanged: (val) {
+                  if (val != null) {
+                    ctrl.text = val;
+                    controller.updateForm();
+                  }
+                },
+              ),
+            ],
+          ),
+        );
+      }
+    }
+
+    // 10. Fallback generic text input
+    final ctrl = controller.singleExtraControllers.putIfAbsent(
+      remarks,
+      () => TextEditingController(),
+    );
+    return Padding(
+      padding: EdgeInsets.only(bottom: rh(context, 14)),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildFieldLabel(context, rawLabel, isRequired: isMandatory),
+          vSpace(context, 6),
+          _buildTextInputField(
+            context,
+            controller: ctrl,
+            hintText: 'Enter your ${rawLabel.toLowerCase()}',
+            onChanged: (_) => controller.updateForm(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── Group Mode ────────────────────────────────────────────────────────────
+  Widget _buildGroupVisitorInfo(BuildContext context) {
+    final activeIndex = controller.selectedGroupMemberIndex.value;
+    final safeIndex = activeIndex < controller.groupVisitors.length ? activeIndex : 0;
+    final v = controller.groupVisitors[safeIndex];
+    final roles = controller.getRolesForSelectedType();
+    final fields = controller.getVisitorInfoFormFields();
+    final hasEmployeeField = controller.hasVisitorInfoField('is_employee');
+    final isEmployeeMode = hasEmployeeField && v.isEmployee.value == true;
+    final searchList = isEmployeeMode
+        ? controller.getFilteredEmployees(v.searchCtrl.text)
+        : controller.getFilteredVisitors(v.searchCtrl.text);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        // 1. Required Notice Banner (Matching Web)
+        _buildRequiredNoticeBanner(context),
+        vSpace(context, 14),
+
+        // Member Tabs + Add Button
+        Row(
+          children: [
+            Expanded(
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: List.generate(controller.groupVisitors.length, (i) {
+                    final isSelected = safeIndex == i;
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: ChoiceChip(
+                        showCheckmark: false,
+                        label: Text('Visitor ${i + 1}'),
+                        selected: isSelected,
+                        selectedColor: AppColors.primary500,
+                        labelStyle: TextStyle(
+                          color: isSelected ? Colors.white : const Color(0xFF334155),
+                          fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                          fontSize: rfs(context, 12),
+                        ),
+                        backgroundColor: Colors.white,
+                        side: BorderSide(
+                          color: isSelected ? AppColors.primary500 : const Color(0xFFCBD5E1),
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        onSelected: (_) {
+                          controller.selectedGroupMemberIndex.value = i;
+                          controller.updateForm();
+                        },
+                      ),
+                    );
+                  }),
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            ActionChip(
+              avatar: const Icon(Icons.add, size: 16, color: AppColors.primary500),
+              label: const Text('Add Visitor'),
+              labelStyle: TextStyle(
+                color: AppColors.primary500,
+                fontWeight: FontWeight.w600,
+                fontSize: rfs(context, 12),
+              ),
+              backgroundColor: const Color(0xFFEFF6FF),
+              side: const BorderSide(color: Color(0xFF93C5FD)),
+              onPressed: () {
+                controller.addGroupVisitor();
+              },
+            ),
+          ],
+        ),
+
+        vSpace(context, 8),
+
+        // Delete button if more than 1 member
+        if (controller.groupVisitors.length > 1)
+          Align(
+            alignment: Alignment.centerRight,
+            child: TextButton.icon(
+              style: TextButton.styleFrom(
+                foregroundColor: AppColors.error500,
+                padding: EdgeInsets.symmetric(
+                  horizontal: rw(context, 6),
+                  vertical: rh(context, 2),
+                ),
+                minimumSize: Size.zero,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                visualDensity: VisualDensity.compact,
+              ),
+              icon: Icon(
+                Icons.delete_outline_rounded,
+                size: rw(context, 14),
+                color: AppColors.error500,
+              ),
+              label: Text(
+                'Remove this Visitor',
+                style: GoogleFonts.inter(
+                  fontSize: rfs(context, 11.5),
+                  fontWeight: FontWeight.w500,
+                  color: AppColors.error500,
+                ),
+              ),
+              onPressed: () => controller.removeGroupVisitor(safeIndex),
+            ),
+          ),
+
+        vSpace(context, 6),
+
+        // Quick Search for current member
+        _buildSearchBox(
+          context,
+          hint: isEmployeeMode
+              ? 'Search Employee (Visitor ${safeIndex + 1})'
+              : 'Search Visitor (Visitor ${safeIndex + 1})',
+          controller: v.searchCtrl,
+          isOpen: v.isSearchOpen.value,
+          items: searchList,
+          onToggleOpen: () {
+            v.isSearchOpen.value = !v.isSearchOpen.value;
+            controller.updateForm();
+          },
+          onChanged: (val) {
+            v.isSearchOpen.value = true;
+            controller.updateForm();
+          },
+          onSelect: (item) {
+            controller.onGroupSelect(safeIndex, item);
+          },
+          onClear: () {
+            controller.clearGroup(safeIndex);
+          },
+        ),
+
+        vSpace(context, 16),
+
+        // Dynamic Form Fields in Exact Sequence from Backend for current group member
+        ...fields.map((f) => _buildGroupFormField(context, v, safeIndex, f, roles)),
+      ],
+    );
+  }
+
+  Widget _buildGroupFormField(
+    BuildContext context,
+    GroupWalkInVisitorEntry v,
+    int memberIndex,
+    Map<String, dynamic> f,
+    List<String> roles,
+  ) {
+    final remarks = (f['remarks'] ?? '').toString().toLowerCase().trim();
+    final rawLabel = (f['long_display_text'] ?? f['short_name'] ?? remarks).toString().trim();
+    final isMandatory = f['mandatory'] == true;
+    final rawOptions = f['multiple_option_fields'] as List<dynamic>? ?? [];
+    final options = rawOptions
+        .map((opt) => (opt is Map ? opt['name'] ?? opt['value'] : opt).toString().trim())
+        .where((s) => s.isNotEmpty)
+        .toList();
+
+    // 1. Are you Employee? Radio
+    if (remarks == 'is_employee') {
+      return Padding(
+        padding: EdgeInsets.only(bottom: rh(context, 14)),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildFieldLabel(context, rawLabel.isNotEmpty ? rawLabel : 'Are you Employee?', isRequired: isMandatory),
+            vSpace(context, 6),
+            Row(
+              children: [
+                _buildRadioOption(
+                  context,
+                  label: 'Yes',
+                  isSelected: v.isEmployee.value == true,
+                  onTap: () {
+                    v.isEmployee.value = true;
+                    controller.clearGroup(memberIndex);
+                  },
+                ),
+                hSpace(context, 20),
+                _buildRadioOption(
+                  context,
+                  label: 'No',
+                  isSelected: v.isEmployee.value == false,
+                  onTap: () {
+                    v.isEmployee.value = false;
+                    controller.clearGroup(memberIndex);
+                  },
+                ),
+              ],
+            ),
+          ],
+        ),
+      );
+    }
+
+    // 2. Visitor Role Selector
+    if (remarks == 'visitor_role' || remarks == 'role') {
+      if (roles.isEmpty) return const SizedBox.shrink();
+      return Padding(
+        padding: EdgeInsets.only(bottom: rh(context, 14)),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildFieldLabel(context, rawLabel.isNotEmpty ? rawLabel : 'Visitor Role', isRequired: isMandatory),
+            vSpace(context, 6),
+            _buildDropdownField<String>(
+              context,
+              hintText: 'Select Visitor Role',
+              value: v.role.value.isNotEmpty ? v.role.value : roles.first,
+              items: roles.map((r) => DropdownMenuItem(value: r, child: Text(r))).toList(),
+              onChanged: (val) {
+                if (val != null) {
+                  v.role.value = val;
+                  controller.updateForm();
+                }
+              },
+            ),
+          ],
+        ),
+      );
+    }
+
+    // 3. Fullname
+    if (remarks == 'name') {
+      return Padding(
+        padding: EdgeInsets.only(bottom: rh(context, 14)),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildFieldLabel(context, rawLabel.isNotEmpty ? rawLabel : 'Fullname', isRequired: isMandatory),
+            vSpace(context, 6),
+            _buildTextInputField(
+              context,
+              controller: v.fullNameCtrl,
+              hintText: 'Enter your fullname',
+              onChanged: (_) => controller.updateForm(),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // 4. Email
+    if (remarks == 'email') {
+      return Padding(
+        padding: EdgeInsets.only(bottom: rh(context, 14)),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildFieldLabel(context, rawLabel.isNotEmpty ? rawLabel : 'Email', isRequired: isMandatory),
+            vSpace(context, 6),
+            _buildTextInputField(
+              context,
+              controller: v.emailCtrl,
+              hintText: 'Example: name@gmail.com',
+              keyboardType: TextInputType.emailAddress,
+              onChanged: (_) => controller.updateForm(),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // 5. Identity Type
+    if (remarks == 'identity_type' || (options.isNotEmpty && (remarks.contains('identity') || remarks.contains('type')))) {
+      final opts = options.isNotEmpty ? options : ['NIK', 'KTA', 'NRP', 'NIP'];
+      final ctrl = v.extraControllers.putIfAbsent(
+        'identity_type',
+        () => TextEditingController(text: opts.first),
+      );
+      if (ctrl.text.isEmpty) ctrl.text = opts.first;
+
+      return Padding(
+        padding: EdgeInsets.only(bottom: rh(context, 14)),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildFieldLabel(context, rawLabel.isNotEmpty ? rawLabel : 'Identity Type', isRequired: isMandatory),
+            vSpace(context, 8),
+            Wrap(
+              spacing: rw(context, 16),
+              runSpacing: rh(context, 8),
+              children: opts.map((opt) {
+                final isSelected = ctrl.text.trim().toLowerCase() == opt.toLowerCase();
+                return _buildRadioOption(
+                  context,
+                  label: opt,
+                  isSelected: isSelected,
+                  onTap: () {
+                    ctrl.text = opt;
+                    controller.updateForm();
+                  },
+                );
+              }).toList(),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // 6. Identity ID
+    if (remarks == 'identity_id' || remarks == 'indentity_id') {
+      return Padding(
+        padding: EdgeInsets.only(bottom: rh(context, 14)),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildFieldLabel(context, rawLabel.isNotEmpty ? rawLabel : 'Identity ID', isRequired: isMandatory),
+            vSpace(context, 6),
+            _buildTextInputField(
+              context,
+              controller: v.identityCtrl,
+              hintText: 'Enter your identity id',
+              keyboardType: TextInputType.text,
+              onChanged: (_) => controller.updateForm(),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // 7. Phone
+    if (remarks == 'phone') {
+      return Padding(
+        padding: EdgeInsets.only(bottom: rh(context, 14)),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildFieldLabel(context, rawLabel.isNotEmpty ? rawLabel : 'Phone', isRequired: isMandatory),
+            vSpace(context, 6),
+            _buildTextInputField(
+              context,
+              controller: v.phoneCtrl,
+              hintText: 'Enter your phone',
+              keyboardType: TextInputType.phone,
+              onChanged: (_) => controller.updateForm(),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // 8. Department / Organization / Company
+    if (remarks == 'organization' || remarks == 'company') {
+      return Padding(
+        padding: EdgeInsets.only(bottom: rh(context, 14)),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildFieldLabel(
+              context,
+              rawLabel.isNotEmpty ? rawLabel : 'Department/Organization/Company',
+              isRequired: isMandatory,
+            ),
+            vSpace(context, 6),
+            _buildTextInputField(
+              context,
+              controller: v.orgCtrl,
+              hintText: 'Enter your department/organization/company',
+              onChanged: (_) => controller.updateForm(),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // 9. Generic options (Radio if <= 4, Dropdown if > 4)
+    if (options.isNotEmpty) {
+      final ctrl = v.extraControllers.putIfAbsent(
+        remarks,
+        () => TextEditingController(text: options.first),
+      );
+      if (ctrl.text.isEmpty) ctrl.text = options.first;
+
+      if (options.length <= 4) {
+        return Padding(
+          padding: EdgeInsets.only(bottom: rh(context, 14)),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildFieldLabel(context, rawLabel, isRequired: isMandatory),
+              vSpace(context, 8),
+              Wrap(
+                spacing: rw(context, 16),
+                runSpacing: rh(context, 8),
+                children: options.map((opt) {
+                  final isSelected = ctrl.text.trim().toLowerCase() == opt.toLowerCase();
+                  return _buildRadioOption(
+                    context,
+                    label: opt,
+                    isSelected: isSelected,
+                    onTap: () {
+                      ctrl.text = opt;
+                      controller.updateForm();
+                    },
+                  );
+                }).toList(),
+              ),
+            ],
+          ),
+        );
+      } else {
+        return Padding(
+          padding: EdgeInsets.only(bottom: rh(context, 14)),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildFieldLabel(context, rawLabel, isRequired: isMandatory),
+              vSpace(context, 6),
+              _buildDropdownField<String>(
+                context,
+                hintText: 'Select $rawLabel',
+                value: ctrl.text.isNotEmpty ? ctrl.text : options.first,
+                items: options.map((opt) => DropdownMenuItem(value: opt, child: Text(opt))).toList(),
+                onChanged: (val) {
+                  if (val != null) {
+                    ctrl.text = val;
+                    controller.updateForm();
+                  }
+                },
+              ),
+            ],
+          ),
+        );
+      }
+    }
+
+    // 10. Fallback generic text input
+    final ctrl = v.extraControllers.putIfAbsent(
+      remarks,
+      () => TextEditingController(),
+    );
+    return Padding(
+      padding: EdgeInsets.only(bottom: rh(context, 14)),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildFieldLabel(context, rawLabel, isRequired: isMandatory),
+          vSpace(context, 6),
+          _buildTextInputField(
+            context,
+            controller: ctrl,
+            hintText: 'Enter your ${rawLabel.toLowerCase()}',
+            onChanged: (_) => controller.updateForm(),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1538,74 +1793,88 @@ class _Step3PurposeVisit extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Obx(() {
+      final _ = controller.formUpdateTrigger.value;
       final dateFormat = DateFormat('EEEE, dd MMM yyyy, HH:mm', 'id');
+
+      final hasPreHost = controller.hasPreHost;
+      final hasPreAgenda = controller.hasPreAgenda;
+      final hasPreSite = controller.hasPreSite;
+      final isPreConfigured = hasPreHost && hasPreAgenda && hasPreSite;
 
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Select Destination
-          _buildFieldLabel(context, 'Destination (Site)', isRequired: true),
-          vSpace(context, 6),
-          _buildSiteSelectorField(context, controller),
-
+          // Required Notice Banner (Matching Web UI)
+          _buildRequiredNoticeBanner(context),
           vSpace(context, 14),
 
-          // Select PIC Host
-          _buildFieldLabel(context, 'PIC Host', isRequired: true),
-          vSpace(context, 6),
-          _buildDropdownField<String>(
-            context,
-            hintText: 'Select PIC Host',
-            value: controller.selectedHostId.value.isNotEmpty
-                ? controller.selectedHostId.value
-                : null,
-            items: controller.hosts
-                .map((h) => DropdownMenuItem(value: h.id, child: Text(h.name)))
-                .toList(),
-            onChanged: (val) {
-              if (val != null) {
-                controller.selectedHostId.value = val;
-                final found = controller.hosts.firstWhereOrNull((h) => h.id == val);
-                if (found != null) controller.selectedHostName.value = found.name;
-                controller.updateForm();
-              }
-            },
-          ),
+          // Fallback manual selectors (only when not pre-configured)
+          if (!isPreConfigured) ...[
+            // Select Destination (only when not pre-configured)
+            if (!hasPreSite) ...[
+              _buildFieldLabel(context, 'Destination (Site)', isRequired: true),
+              vSpace(context, 6),
+              _buildSiteSelectorField(context, controller),
+              vSpace(context, 14),
+            ],
 
-          vSpace(context, 14),
+            // Select PIC Host (only when not pre-configured)
+            if (!hasPreHost) ...[
+              _buildFieldLabel(context, 'PIC Host', isRequired: true),
+              vSpace(context, 6),
+              _buildDropdownField<String>(
+                context,
+                hintText: 'Select PIC Host',
+                value: controller.selectedHostId.value.isNotEmpty
+                    ? controller.selectedHostId.value
+                    : null,
+                items: controller.hosts
+                    .map((h) => DropdownMenuItem(value: h.id, child: Text(h.name)))
+                    .toList(),
+                onChanged: (val) {
+                  if (val != null) {
+                    controller.selectedHostId.value = val;
+                    final found = controller.hosts.firstWhereOrNull((h) => h.id == val);
+                    if (found != null) controller.selectedHostName.value = found.name;
+                    controller.updateForm();
+                  }
+                },
+              ),
+              vSpace(context, 14),
+            ],
 
-          // Select Agenda
-          _buildFieldLabel(context, 'Agenda', isRequired: true),
-          vSpace(context, 6),
-          _buildDropdownField<String>(
-            context,
-            hintText: 'Select Agenda',
-            value: controller.selectedAgenda.value.isNotEmpty
-                ? controller.selectedAgenda.value
-                : null,
-            items: controller.agendaOptions
-                .map((a) => DropdownMenuItem(value: a, child: Text(a)))
-                .toList(),
-            onChanged: (val) {
-              if (val != null) {
-                controller.selectedAgenda.value = val;
-                controller.updateForm();
-              }
-            },
-          ),
-
-          // If Agenda is 'Others', show custom agenda input
-          if (controller.selectedAgenda.value == 'Others') ...[
-            vSpace(context, 10),
-            _buildTextInputField(
-              context,
-              controller: controller.otherAgendaCtrl,
-              hintText: 'Specify your agenda',
-              onChanged: (_) => controller.updateForm(),
-            ),
+            // Select Agenda (only when not pre-configured)
+            if (!hasPreAgenda) ...[
+              _buildFieldLabel(context, 'Agenda', isRequired: true),
+              vSpace(context, 6),
+              _buildDropdownField<String>(
+                context,
+                hintText: 'Select Agenda',
+                value: controller.selectedAgenda.value.isNotEmpty
+                    ? controller.selectedAgenda.value
+                    : null,
+                items: controller.agendaOptions
+                    .map((a) => DropdownMenuItem(value: a, child: Text(a)))
+                    .toList(),
+                onChanged: (val) {
+                  if (val != null) {
+                    controller.selectedAgenda.value = val;
+                    controller.updateForm();
+                  }
+                },
+              ),
+              if (controller.selectedAgenda.value == 'Others') ...[
+                vSpace(context, 10),
+                _buildTextInputField(
+                  context,
+                  controller: controller.otherAgendaCtrl,
+                  hintText: 'Specify your agenda',
+                  onChanged: (_) => controller.updateForm(),
+                ),
+              ],
+              vSpace(context, 14),
+            ],
           ],
-
-          vSpace(context, 14),
 
           // Visit Start
           _buildFieldLabel(context, 'Visit Start', isRequired: true),
@@ -2301,176 +2570,239 @@ class _Step4VehicleInfo extends StatelessWidget {
   final PraRegistrationController controller;
   const _Step4VehicleInfo({required this.controller});
 
-  String _formatOption(String text) {
-    if (text.isEmpty) return text;
-    return text.split(' ').map((word) {
-      if (word.isEmpty) return word;
-      return '${word[0].toUpperCase()}${word.substring(1)}';
-    }).join(' ');
-  }
-
   @override
   Widget build(BuildContext context) {
-    final vehicleOptions = controller.getVehicleTypeOptions();
+    return Obx(() {
+      final _ = controller.formUpdateTrigger.value;
+      final vehicleOptions = controller.getVehicleTypeOptions();
+      final isDrivingOptions = controller.getIsDrivingOptions();
+      final isDrivingLabel = controller.getIsDrivingLabel();
 
-    if (controller.isGroup.value == true) {
-      final activeIndex = controller.selectedGroupMemberIndex.value;
-      final safeIndex = activeIndex < controller.groupVisitors.length ? activeIndex : 0;
-      final v = controller.groupVisitors[safeIndex];
-      final memberName = v.fullNameCtrl.text.trim();
+      if (controller.isGroup.value == true) {
+        final activeIndex = controller.selectedGroupMemberIndex.value;
+        final safeIndex = activeIndex < controller.groupVisitors.length ? activeIndex : 0;
+        final v = controller.groupVisitors[safeIndex];
+        final memberName = v.fullNameCtrl.text.trim();
 
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            _buildRequiredNoticeBanner(context),
+            vSpace(context, 14),
+            _buildGroupMemberTabs(
+              context,
+              controller: controller,
+              activeIndex: safeIndex,
+            ),
+            vSpace(context, 10),
+            Text(
+              memberName.isNotEmpty
+                  ? 'Vehicle Information for $memberName (Visitor ${safeIndex + 1})'
+                  : 'Vehicle Information for Visitor ${safeIndex + 1}',
+              style: TextStyle(
+                fontSize: rfs(context, 14),
+                fontWeight: FontWeight.w700,
+                color: const Color(0xFF0F2B48),
+              ),
+            ),
+            vSpace(context, 12),
+
+            // Will you be parking? / Is Driving
+            _buildFieldLabel(context, isDrivingLabel, isRequired: true),
+            vSpace(context, 8),
+            Wrap(
+              spacing: rw(context, 20),
+              runSpacing: rh(context, 8),
+              children: isDrivingOptions.map((opt) {
+                final isYes = opt['value'] == 'true';
+                final isSelected = v.isDriving.value == isYes;
+                return InkWell(
+                  borderRadius: BorderRadius.circular(6),
+                  onTap: () {
+                    v.isDriving.value = isYes;
+                    if (!isYes) {
+                      v.vehicleType.value = '';
+                      v.vehiclePlateCtrl.clear();
+                    } else if (v.vehicleType.value.isEmpty && vehicleOptions.isNotEmpty) {
+                      v.vehicleType.value = vehicleOptions.first['value']!;
+                    }
+                    controller.updateForm();
+                  },
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(vertical: rh(context, 4)),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          isSelected ? Icons.radio_button_checked : Icons.radio_button_off,
+                          size: rw(context, 18),
+                          color: isSelected ? AppColors.primary500 : const Color(0xFF94A3B8),
+                        ),
+                        hSpace(context, 8),
+                        Text(
+                          opt['name']!,
+                          style: GoogleFonts.inter(
+                            fontSize: rfs(context, 13),
+                            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                            color: isSelected ? const Color(0xFF0F172A) : const Color(0xFF334155),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+
+            if (v.isDriving.value) ...[
+              vSpace(context, 16),
+              _buildFieldLabel(context, 'Vehicle Type', isRequired: true),
+              vSpace(context, 6),
+              _buildDropdownField<String>(
+                context,
+                hintText: 'Select Vehicle Type',
+                value: v.vehicleType.value.isNotEmpty ? v.vehicleType.value : null,
+                items: vehicleOptions.map((opt) {
+                  return DropdownMenuItem<String>(
+                    value: opt['value']!,
+                    child: Text(
+                      opt['name']!,
+                      style: GoogleFonts.inter(
+                        fontSize: rfs(context, 13),
+                        color: const Color(0xFF0F172A),
+                      ),
+                    ),
+                  );
+                }).toList(),
+                onChanged: (val) {
+                  if (val != null) {
+                    v.vehicleType.value = val;
+                    if (controller.isBicycle(val)) {
+                      v.vehiclePlateCtrl.clear();
+                    }
+                    controller.updateForm();
+                  }
+                },
+              ),
+
+              if (!controller.isBicycle(v.vehicleType.value)) ...[
+                vSpace(context, 16),
+                _buildFieldLabel(context, 'License Plate Number', isRequired: true),
+                vSpace(context, 6),
+                _buildTextInputField(
+                  context,
+                  controller: v.vehiclePlateCtrl,
+                  hintText: 'Enter your license plate number',
+                  onChanged: (_) => controller.updateForm(),
+                ),
+              ],
+            ],
+          ],
+        );
+      }
+
+      // Single Mode
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          _buildGroupMemberTabs(
-            context,
-            controller: controller,
-            activeIndex: safeIndex,
-          ),
-          Text(
-            memberName.isNotEmpty
-                ? 'Vehicle Information for $memberName (Visitor ${safeIndex + 1})'
-                : 'Vehicle Information for Visitor ${safeIndex + 1}',
-            style: TextStyle(
-              fontSize: rfs(context, 14),
-              fontWeight: FontWeight.w700,
-              color: const Color(0xFF0F2B48),
-            ),
-          ),
-          vSpace(context, 12),
+          _buildRequiredNoticeBanner(context),
+          vSpace(context, 14),
 
-          // Are you driving a vehicle?
-          _buildFieldLabel(context, 'Are you driving a vehicle?', isRequired: true),
-          vSpace(context, 6),
-          Row(
-            children: [
-              _buildRadioOption(
-                context,
-                label: 'Yes',
-                isSelected: v.isDriving.value == true,
+          // Will you be parking? / Is Driving
+          _buildFieldLabel(context, isDrivingLabel, isRequired: true),
+          vSpace(context, 8),
+          Wrap(
+            spacing: rw(context, 20),
+            runSpacing: rh(context, 8),
+            children: isDrivingOptions.map((opt) {
+              final isYes = opt['value'] == 'true';
+              final isSelected = controller.isDriving.value == isYes;
+              return InkWell(
+                borderRadius: BorderRadius.circular(6),
                 onTap: () {
-                  v.isDriving.value = true;
-                  if (v.vehicleType.value.isEmpty && vehicleOptions.isNotEmpty) {
-                    v.vehicleType.value = vehicleOptions.first;
+                  controller.isDriving.value = isYes;
+                  if (!isYes) {
+                    controller.vehicleType.value = '';
+                    controller.vehiclePlateCtrl.clear();
+                  } else if (controller.vehicleType.value.isEmpty && vehicleOptions.isNotEmpty) {
+                    controller.vehicleType.value = vehicleOptions.first['value']!;
                   }
                   controller.updateForm();
                 },
-              ),
-              hSpace(context, 20),
-              _buildRadioOption(
-                context,
-                label: 'No',
-                isSelected: v.isDriving.value == false,
-                onTap: () {
-                  v.isDriving.value = false;
-                  controller.updateForm();
-                },
-              ),
-            ],
+                child: Padding(
+                  padding: EdgeInsets.symmetric(vertical: rh(context, 4)),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        isSelected ? Icons.radio_button_checked : Icons.radio_button_off,
+                        size: rw(context, 18),
+                        color: isSelected ? AppColors.primary500 : const Color(0xFF94A3B8),
+                      ),
+                      hSpace(context, 8),
+                      Text(
+                        opt['name']!,
+                        style: GoogleFonts.inter(
+                          fontSize: rfs(context, 13),
+                          fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                          color: isSelected ? const Color(0xFF0F172A) : const Color(0xFF334155),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }).toList(),
           ),
 
-          if (v.isDriving.value) ...[
-            vSpace(context, 14),
+          if (controller.isDriving.value) ...[
+            vSpace(context, 16),
             _buildFieldLabel(context, 'Vehicle Type', isRequired: true),
             vSpace(context, 6),
             _buildDropdownField<String>(
               context,
               hintText: 'Select Vehicle Type',
-              value: v.vehicleType.value.isNotEmpty ? v.vehicleType.value : vehicleOptions.first,
-              items: vehicleOptions
-                  .map((opt) => DropdownMenuItem(value: opt, child: Text(_formatOption(opt))))
-                  .toList(),
+              value: controller.vehicleType.value.isNotEmpty
+                  ? controller.vehicleType.value
+                  : null,
+              items: vehicleOptions.map((opt) {
+                return DropdownMenuItem<String>(
+                  value: opt['value']!,
+                  child: Text(
+                    opt['name']!,
+                    style: GoogleFonts.inter(
+                      fontSize: rfs(context, 13),
+                      color: const Color(0xFF0F172A),
+                    ),
+                  ),
+                );
+              }).toList(),
               onChanged: (val) {
                 if (val != null) {
-                  v.vehicleType.value = val;
+                  controller.vehicleType.value = val;
+                  if (controller.isBicycle(val)) {
+                    controller.vehiclePlateCtrl.clear();
+                  }
                   controller.updateForm();
                 }
               },
             ),
 
-            if (!controller.isBicycle(v.vehicleType.value)) ...[
-              vSpace(context, 14),
+            if (!controller.isBicycle(controller.vehicleType.value)) ...[
+              vSpace(context, 16),
               _buildFieldLabel(context, 'License Plate Number', isRequired: true),
               vSpace(context, 6),
               _buildTextInputField(
                 context,
-                controller: v.vehiclePlateCtrl,
-                hintText: 'e.g. B 1234 ABC',
+                controller: controller.vehiclePlateCtrl,
+                hintText: 'Enter your license plate number',
                 onChanged: (_) => controller.updateForm(),
               ),
             ],
           ],
         ],
       );
-    }
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        _buildFieldLabel(context, 'Are you driving a vehicle?', isRequired: true),
-        vSpace(context, 6),
-        Row(
-          children: [
-            _buildRadioOption(
-              context,
-              label: 'Yes',
-              isSelected: controller.isDriving.value == true,
-              onTap: () {
-                controller.isDriving.value = true;
-                if (controller.vehicleType.value.isEmpty && vehicleOptions.isNotEmpty) {
-                  controller.vehicleType.value = vehicleOptions.first;
-                }
-                controller.updateForm();
-              },
-            ),
-            hSpace(context, 20),
-            _buildRadioOption(
-              context,
-              label: 'No',
-              isSelected: controller.isDriving.value == false,
-              onTap: () {
-                controller.isDriving.value = false;
-                controller.updateForm();
-              },
-            ),
-          ],
-        ),
-
-        if (controller.isDriving.value) ...[
-          vSpace(context, 14),
-          _buildFieldLabel(context, 'Vehicle Type', isRequired: true),
-          vSpace(context, 6),
-          _buildDropdownField<String>(
-            context,
-            hintText: 'Select Vehicle Type',
-            value: controller.vehicleType.value.isNotEmpty
-                ? controller.vehicleType.value
-                : vehicleOptions.first,
-            items: vehicleOptions
-                .map((opt) => DropdownMenuItem(value: opt, child: Text(_formatOption(opt))))
-                .toList(),
-            onChanged: (val) {
-              if (val != null) {
-                controller.vehicleType.value = val;
-                controller.updateForm();
-              }
-            },
-          ),
-
-          if (!controller.isBicycle(controller.vehicleType.value)) ...[
-            vSpace(context, 14),
-            _buildFieldLabel(context, 'License Plate Number', isRequired: true),
-            vSpace(context, 6),
-            _buildTextInputField(
-              context,
-              controller: controller.vehiclePlateCtrl,
-              hintText: 'e.g. B 1234 ABC',
-              onChanged: (_) => controller.updateForm(),
-            ),
-          ],
-        ],
-      ],
-    );
+    });
   }
 }
 
@@ -2640,13 +2972,17 @@ class _Step5SelfieImage extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        if (isGroup)
+        _buildRequiredNoticeBanner(context),
+        vSpace(context, 14),
+        if (isGroup) ...[
           _buildGroupMemberTabs(
             context,
             controller: controller,
             activeIndex: safeIndex,
             isCompleted: (i) => controller.groupVisitors[i].selfieImage.value != null,
           ),
+          vSpace(context, 10),
+        ],
         _buildSectionHeader(
           context,
           isGroup
@@ -2656,14 +2992,8 @@ class _Step5SelfieImage extends StatelessWidget {
               : 'Selfie Image',
           isRequired: false,
         ),
-        vSpace(context, 4),
-        Text(
-          'Take a clear selfie photo or select from gallery (Supports JPG, JPEG, and PNG only, max 5 MB).',
-          style: TextStyle(
-            fontSize: rfs(context, 12),
-            color: const Color(0xFF64748B),
-          ),
-        ),
+        vSpace(context, 8),
+        _buildSelfieGuidelines(context),
         vSpace(context, 16),
 
         if (currentImage != null)
@@ -2684,7 +3014,7 @@ class _Step5SelfieImage extends StatelessWidget {
         else
           _buildUploadPlaceholder(
             context,
-            title: 'Take Selfie or Choose File',
+            title: 'Upload File',
             onCamera: () async {
               final ok = await controller.pickImage(isKtp: false, fromCamera: true, groupIndex: isGroup ? safeIndex : null);
               if (ok) {
@@ -2698,6 +3028,77 @@ class _Step5SelfieImage extends StatelessWidget {
               }
             },
           ),
+      ],
+    );
+  }
+
+  Widget _buildSelfieGuidelines(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: rw(context, 12),
+        vertical: rh(context, 10),
+      ),
+      decoration: BoxDecoration(
+        color: const Color(0xFFEFF6FF),
+        borderRadius: BorderRadius.circular(rw(context, 8)),
+        border: Border.all(color: const Color(0xFFBFDBFE)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.info_outline_rounded,
+                color: const Color(0xFF2563EB),
+                size: rw(context, 16),
+              ),
+              hSpace(context, 6),
+              Text(
+                'Selfie Guidelines',
+                style: GoogleFonts.inter(
+                  fontSize: rfs(context, 12),
+                  fontWeight: FontWeight.w700,
+                  color: const Color(0xFF1E3A8A),
+                ),
+              ),
+            ],
+          ),
+          vSpace(context, 6),
+          _buildGuidelineBullet(context, 'Make sure your entire face is clearly visible.'),
+          vSpace(context, 3),
+          _buildGuidelineBullet(context, 'Remove glasses and accessories that cover your face.'),
+          vSpace(context, 3),
+          _buildGuidelineBullet(context, 'Take the photo in a well-lit area and avoid shadows.'),
+          vSpace(context, 3),
+          _buildGuidelineBullet(context, 'Look directly at the camera and use a simple background.'),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildGuidelineBullet(BuildContext context, String text) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          '• ',
+          style: TextStyle(
+            fontSize: rfs(context, 11),
+            fontWeight: FontWeight.w700,
+            color: const Color(0xFF3B82F6),
+          ),
+        ),
+        Expanded(
+          child: Text(
+            text,
+            style: GoogleFonts.inter(
+              fontSize: rfs(context, 11),
+              color: const Color(0xFF1E3A8A),
+              height: 1.3,
+            ),
+          ),
+        ),
       ],
     );
   }
@@ -3207,26 +3608,35 @@ Widget _buildUploadPlaceholder(
     ),
     child: Column(
       children: [
-        Icon(Icons.cloud_upload_outlined, size: 36, color: Colors.blue.shade600),
+        Icon(Icons.cloud_upload_outlined, size: 40, color: const Color(0xFF2563EB)),
         vSpace(context, 8),
         Text(
           title,
           style: TextStyle(
-            fontSize: rfs(context, 13),
+            fontSize: rfs(context, 14),
             fontWeight: FontWeight.w600,
             color: const Color(0xFF1E293B),
           ),
         ),
         vSpace(context, 4),
         Text(
-          'Supports JPG, JPEG, and PNG only',
+          'Tap to select file from gallery or use camera',
+          style: TextStyle(
+            fontSize: rfs(context, 12),
+            color: const Color(0xFF64748B),
+            fontWeight: FontWeight.w400,
+          ),
+        ),
+        vSpace(context, 4),
+        Text(
+          'Supports: JPG, PNG, JPEG, Up to 5 MB',
           style: TextStyle(
             fontSize: rfs(context, 11),
             color: const Color(0xFF94A3B8),
             fontWeight: FontWeight.w400,
           ),
         ),
-        vSpace(context, 12),
+        vSpace(context, 14),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -3237,8 +3647,8 @@ Widget _buildUploadPlaceholder(
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
               ),
-              icon: const Icon(Icons.camera_alt, size: 16),
-              label: const Text('Camera'),
+              icon: const Icon(Icons.camera_alt_outlined, size: 16),
+              label: const Text('Use Camera'),
               onPressed: onCamera,
             ),
             hSpace(context, 12),
@@ -3249,7 +3659,7 @@ Widget _buildUploadPlaceholder(
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
               ),
-              icon: const Icon(Icons.photo_library, size: 16),
+              icon: const Icon(Icons.photo_library_outlined, size: 16),
               label: const Text('Gallery'),
               onPressed: onGallery,
             ),

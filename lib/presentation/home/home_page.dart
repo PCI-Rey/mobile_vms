@@ -46,7 +46,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   final InvitationController invitationController =
       Get.isRegistered<InvitationController>()
       ? Get.find<InvitationController>()
-      : Get.put(InvitationController());
+      : Get.put(InvitationController(), permanent: true);
 
   bool _showBellRedDot = false;
   bool _isPageTransitionComplete = false;
@@ -407,52 +407,29 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                           ),
                           vSpace(context, 10),
 
-                          // Dots Indicators / Page Counter
+                          // Page Counter (always number format)
                           if (currentTickets.length > 1)
                             Center(
-                              child: currentTickets.length <= 8
-                                  ? Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: List.generate(
-                                        currentTickets.length,
-                                        (index) => Container(
-                                          margin: const EdgeInsets.symmetric(
-                                            horizontal: 3,
-                                          ),
-                                          width: currentPage == index ? 12 : 6,
-                                          height: 6,
-                                          decoration: BoxDecoration(
-                                            color: currentPage == index
-                                                ? AppColors.primary500
-                                                : Colors.grey.shade300,
-                                            borderRadius:
-                                                BorderRadius.circular(3),
-                                          ),
-                                        ),
-                                      ),
-                                    )
-                                  : Container(
-                                      padding: EdgeInsets.symmetric(
-                                        horizontal: rw(context, 10),
-                                        vertical: rh(context, 3),
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: AppColors.primary500
-                                            .withValues(alpha: 0.1),
-                                        borderRadius:
-                                            BorderRadius.circular(12),
-                                      ),
-                                      child: Text(
-                                        '${currentPage + 1} / ${currentTickets.length}',
-                                        style: TextStyle(
-                                          fontSize: rfs(context, 12),
-                                          fontWeight: FontWeight.bold,
-                                          color: AppColors.primary500,
-                                        ),
-                                      ),
-                                    ),
+                              child: Container(
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: rw(context, 10),
+                                  vertical: rh(context, 3),
+                                ),
+                                decoration: BoxDecoration(
+                                  color: AppColors.primary500
+                                      .withValues(alpha: 0.1),
+                                  borderRadius:
+                                      BorderRadius.circular(12),
+                                ),
+                                child: Text(
+                                  '${currentPage + 1} / ${currentTickets.length}',
+                                  style: TextStyle(
+                                    fontSize: rfs(context, 12),
+                                    fontWeight: FontWeight.bold,
+                                    color: AppColors.primary500,
+                                  ),
+                                ),
+                              ),
                             ),
                           vSpace(context, 14),
 
@@ -2234,26 +2211,26 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                   },
                 ),
               ),
-              hSpace(context, 10),
-              Expanded(
-                child: _buildQuickActionItem(
-                  context,
-                  label: isId ? 'Daftarkan Visitor' : 'Quick Access',
-                  icon: Icons.flash_on_rounded,
-                  iconColor: const Color(0xFFFF9800),
-                  bgColor: const Color(0xFFFFF4E5),
-                  onTap: () {
-                    if (!Get.isRegistered<InvitationController>()) {
-                      Get.put(InvitationController());
-                    }
-                    showDialog(
-                      context: context,
-                      barrierDismissible: false,
-                      builder: (context) => const CreateQuickAccessDialog(),
-                    );
-                  },
-                ),
-              ),
+              // hSpace(context, 10),
+              // Expanded(
+              //   child: _buildQuickActionItem(
+              //     context,
+              //     label: isId ? 'Daftarkan Visitor' : 'Quick Access',
+              //     icon: Icons.flash_on_rounded,
+              //     iconColor: const Color(0xFFFF9800),
+              //     bgColor: const Color(0xFFFFF4E5),
+              //     onTap: () {
+              //       if (!Get.isRegistered<InvitationController>()) {
+              //         Get.put(InvitationController());
+              //       }
+              //       showDialog(
+              //         context: context,
+              //         barrierDismissible: false,
+              //         builder: (context) => const CreateQuickAccessDialog(),
+              //       );
+              //     },
+              //   ),
+              // ),
             ],
           ),
         ],
