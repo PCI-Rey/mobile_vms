@@ -18,21 +18,18 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
   final _formKey = GlobalKey<FormState>();
   bool _success = false;
 
-  // Form States & Toggles (Aligned with Web: CreateLinkDialog)
-  bool isVisitorTypeEnabled = false;
+  // Form States (Aligned with Web CreateLinkDialog: required fields have no switch buttons)
   String? selectedVisitorTypeId;
   Map<String, dynamic>? selectedVisitorTypeData;
 
-  bool isVisitStartEnabled = false;
   DateTime? visitStart;
 
+  // Visit End is optional with toggle switch
   bool isVisitEndEnabled = false;
   DateTime? visitEnd;
 
-  bool isExpiredEnabled = false;
   String? selectedExpiredMinutes = '30';
 
-  bool isQuotaEnabled = false;
   final TextEditingController quotaCtrl = TextEditingController(text: '0');
 
   bool isSingleUse = false;
@@ -63,7 +60,6 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
         }
       }
       if (vTypeVal.isNotEmpty && vTypeVal != 'null') {
-        isVisitorTypeEnabled = true;
         selectedVisitorTypeId = vTypeVal;
         selectedVisitorTypeData = controller.visitorTypes.firstWhereOrNull(
           (vt) => (vt['id']?.toString() ?? '') == vTypeVal,
@@ -73,21 +69,18 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
       // 2. Expiry & Quota limits
       final expiredVal = (data['expired_number'] ?? 0).toString();
       if (expiredVal != '0' && expiredVal.isNotEmpty) {
-        isExpiredEnabled = true;
         selectedExpiredMinutes = expiredVal;
       }
 
       final maxUsage = data['max_usage'] as int? ?? 0;
       isSingleUse = data['is_single_use'] == true || maxUsage == 1;
       if (maxUsage > 0 || isSingleUse) {
-        isQuotaEnabled = true;
         quotaCtrl.text = maxUsage.toString();
       }
 
       // 3. Visit Start & End
       final startVal = data['visitor_period_start']?.toString();
       if (startVal != null && startVal.isNotEmpty && startVal != 'null') {
-        isVisitStartEnabled = true;
         String normalized = startVal;
         if (!normalized.endsWith('Z') && !normalized.contains('+')) {
           normalized = '${normalized.replaceFirst(' ', 'T')}Z';
@@ -114,12 +107,39 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
   }
 
   bool _hasChanges() {
-    return isVisitorTypeEnabled ||
-        isVisitStartEnabled ||
-        isVisitEndEnabled ||
-        isExpiredEnabled ||
-        (isQuotaEnabled && quotaCtrl.text.trim().isNotEmpty && quotaCtrl.text.trim() != '0') ||
+    return selectedVisitorTypeId != null ||
+        visitStart != null ||
+        (isVisitEndEnabled && visitEnd != null) ||
+        (selectedExpiredMinutes != null && selectedExpiredMinutes != '30') ||
+        (quotaCtrl.text.trim().isNotEmpty && quotaCtrl.text.trim() != '0') ||
         isSingleUse;
+  }
+
+  bool get _isRemiseOrCit {
+    final data = selectedVisitorTypeData ??
+        (selectedVisitorTypeId != null
+            ? controller.visitorTypes.firstWhereOrNull(
+                (vt) => (vt['id']?.toString() ?? '') == selectedVisitorTypeId,
+              )
+            : null);
+    if (data == null) return false;
+
+    final name = (data['name'] ?? '').toString().toLowerCase();
+    final category = (data['visitor_category'] ??
+            data['category'] ??
+            data['visitor_category_name'] ??
+            data['type'] ??
+            '')
+        .toString()
+        .toLowerCase();
+    final code = (data['code'] ?? '').toString().toLowerCase();
+
+    return name.contains('remise') ||
+        name.contains('cit') ||
+        category.contains('remise') ||
+        category.contains('cit') ||
+        code.contains('remise') ||
+        code.contains('cit');
   }
 
   Future<bool> _showExitConfirmation() async {
@@ -224,7 +244,7 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
                           padding: EdgeInsets.zero,
                         ),
                         child: Text(
-                          hasData ? 'Yes, Continue' : 'Yes, Close',
+                          hasData ? 'Yes, Discard' : 'Yes, Close',
                           style: TextStyle(
                             fontSize: rfs(context, 14),
                             fontWeight: FontWeight.bold,
@@ -261,7 +281,10 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
         }
       },
       child: Dialog(
-        insetPadding: EdgeInsets.all(rw(context, 16)),
+        insetPadding: EdgeInsets.symmetric(
+          horizontal: rw(context, 16),
+          vertical: rh(context, 24),
+        ),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(rw(context, 16))),
         child: Container(
           width: double.infinity,
@@ -272,52 +295,44 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Stack(
-                  alignment: Alignment.center,
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Center(
-                      child: Text(
-                        'Create Link Invitation',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: rfs(context, 17),
-                        ),
+                    Text(
+                      'Create Link Invitation',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: rfs(context, 17),
+                        color: const Color(0xFF1E293B),
                       ),
                     ),
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: IconButton(
-                        icon: const Icon(Icons.close),
-                        onPressed: () async {
-                          final navigator = Navigator.of(context);
-                          if (await _showExitConfirmation()) {
-                            if (mounted) navigator.pop();
-                          }
-                        },
-                      ),
+                    IconButton(
+                      icon: const Icon(Icons.close, color: Colors.grey),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                      onPressed: () async {
+                        final navigator = Navigator.of(context);
+                        if (await _showExitConfirmation()) {
+                          if (mounted) navigator.pop();
+                        }
+                      },
                     ),
                   ],
                 ),
-                const Divider(),
+                vSpace(context, 8),
+                const Divider(height: 1),
                 vSpace(context, 16),
                 Flexible(
                   child: SingleChildScrollView(
+                    physics: const BouncingScrollPhysics(),
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // 1. Visitor Type
-                        _buildFieldRow(
+                        // 1. Visitor Type * (Required, no switch button)
+                        _buildFormField(
                           label: 'Visitor Type',
-                          isEnabled: isVisitorTypeEnabled,
-                          onToggle: (v) => setState(() {
-                            isVisitorTypeEnabled = v;
-                            if (!v) {
-                              selectedVisitorTypeId = null;
-                              selectedVisitorTypeData = null;
-                            }
-                          }),
+                          isRequired: true,
                           input: Obx(() => _buildDropdown(
                             hint: 'Select Visitor Type',
                             value: selectedVisitorTypeId,
@@ -327,7 +342,7 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
                                       'name': vt['name']?.toString() ?? '',
                                     })
                                 .toList(),
-                            enabled: isVisitorTypeEnabled,
+                            enabled: true,
                             onChanged: (v) => setState(() {
                               selectedVisitorTypeId = v;
                               selectedVisitorTypeData = controller.visitorTypes.firstWhereOrNull(
@@ -337,30 +352,34 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
                           )),
                         ),
 
-                        // 2. Visit Start
-                        _buildFieldRow(
+                        // 2. Visit Start * (Required, no switch button)
+                        _buildFormField(
                           label: 'Visit Start',
-                          isEnabled: isVisitStartEnabled,
-                          onToggle: (v) => setState(() {
-                            isVisitStartEnabled = v;
-                            if (!v) visitStart = null;
-                          }),
+                          isRequired: true,
                           input: _buildDateTimePicker(
                             value: visitStart,
-                            enabled: isVisitStartEnabled,
+                            enabled: true,
                             onTap: () => _pickDateTime(true),
                             onClear: () => setState(() => visitStart = null),
                           ),
                         ),
 
-                        // 3. Visit End
-                        _buildFieldRow(
+                        // 3. Visit End (Optional with toggle switch, matching web)
+                        _buildFormField(
                           label: 'Visit End',
-                          isEnabled: isVisitEndEnabled,
-                          onToggle: (v) => setState(() {
-                            isVisitEndEnabled = v;
-                            if (!v) visitEnd = null;
-                          }),
+                          isRequired: false,
+                          trailing: Transform.scale(
+                            scale: 0.7,
+                            child: Switch(
+                              value: isVisitEndEnabled,
+                              onChanged: (v) => setState(() {
+                                isVisitEndEnabled = v;
+                                if (!v) visitEnd = null;
+                              }),
+                              activeTrackColor: const Color(0xFF005596).withValues(alpha: 0.5),
+                              activeThumbColor: const Color(0xFF005596),
+                            ),
+                          ),
                           input: _buildDateTimePicker(
                             value: visitEnd,
                             enabled: isVisitEndEnabled,
@@ -369,45 +388,50 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
                           ),
                         ),
 
-                        // 4. Expired Link
-                        _buildFieldRow(
+                        // 4. Expired Link * (Required, no switch button)
+                        _buildFormField(
                           label: 'Expired Link',
-                          isEnabled: isExpiredEnabled,
-                          onToggle: (v) => setState(() {
-                            isExpiredEnabled = v;
-                            if (v) {
-                              selectedExpiredMinutes ??= '30';
-                            }
-                          }),
-                          input: _buildDropdown(
-                            hint: 'Select Expired Link',
-                            value: selectedExpiredMinutes,
-                            items: expiryOptions,
-                            enabled: isExpiredEnabled,
-                            onChanged: (v) => setState(() => selectedExpiredMinutes = v),
+                          isRequired: true,
+                          input: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _buildDropdown(
+                                hint: 'Select Expired Link',
+                                value: selectedExpiredMinutes,
+                                items: expiryOptions,
+                                enabled: true,
+                                onChanged: (v) => setState(() => selectedExpiredMinutes = v),
+                              ),
+                              if (_isRemiseOrCit) ...[
+                                vSpace(context, 4),
+                                Text(
+                                  'Note: Must be set to H-1 from the visit start time.',
+                                  style: TextStyle(
+                                    fontSize: rfs(context, 11),
+                                    color: Colors.grey.shade600,
+                                  ),
+                                ),
+                              ],
+                            ],
                           ),
                         ),
 
-                        // 5. Visitor Quota Limit
-                        _buildFieldRow(
+                        // 5. Visitor Quota Limit * (Required, no switch button)
+                        _buildFormField(
                           label: 'Visitor Quota Limit',
-                          isEnabled: isQuotaEnabled,
-                          onToggle: (v) => setState(() {
-                            isQuotaEnabled = v;
-                            if (!v && !isSingleUse) quotaCtrl.text = '0';
-                          }),
+                          isRequired: true,
                           input: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               _buildTextField(
                                 hint: '0',
                                 controller: quotaCtrl,
-                                enabled: isQuotaEnabled && !isSingleUse,
+                                enabled: !isSingleUse,
                                 keyboardType: TextInputType.number,
                               ),
                               vSpace(context, 4),
                               Text(
-                                'Enter the maximum number of visitors allowed',
+                                'Enter the maximum number of visitors allowed.',
                                 style: TextStyle(
                                   fontSize: rfs(context, 11),
                                   color: Colors.grey.shade600,
@@ -425,7 +449,6 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
                               onChanged: (v) => setState(() {
                                 isSingleUse = v;
                                 if (v) {
-                                  isQuotaEnabled = true;
                                   quotaCtrl.text = '1';
                                 }
                               }),
@@ -466,7 +489,7 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
                                     borderRadius: BorderRadius.circular(rw(context, 8)),
                                   ),
                                   textStyle: TextStyle(
-                                    fontSize: rfs(context, 14),
+                                    fontSize: rfs(context, 13.5),
                                     fontWeight: FontWeight.w600,
                                   ),
                                 ),
@@ -487,7 +510,7 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
                                     borderRadius: BorderRadius.circular(rw(context, 8)),
                                   ),
                                   textStyle: TextStyle(
-                                    fontSize: rfs(context, 13),
+                                    fontSize: rfs(context, 12.5),
                                     fontWeight: FontWeight.w600,
                                   ),
                                 ),
@@ -513,11 +536,11 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
     );
   }
 
-  Widget _buildFieldRow({
+  Widget _buildFormField({
     required String label,
-    required bool isEnabled,
-    required Function(bool) onToggle,
     required Widget input,
+    bool isRequired = true,
+    Widget? trailing,
   }) {
     return Padding(
       padding: EdgeInsets.only(bottom: rh(context, 16.0)),
@@ -527,25 +550,30 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                label,
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: rfs(context, 13),
+              RichText(
+                text: TextSpan(
+                  text: label,
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: rfs(context, 13),
+                    color: Colors.black87,
+                  ),
+                  children: [
+                    if (isRequired)
+                      const TextSpan(
+                        text: ' *',
+                        style: TextStyle(
+                          color: Colors.red,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                  ],
                 ),
               ),
-              Transform.scale(
-                scale: 0.7,
-                child: Switch(
-                  value: isEnabled,
-                  onChanged: onToggle,
-                  activeTrackColor: const Color(0xFF005596).withValues(alpha: 0.5),
-                  activeThumbColor: const Color(0xFF005596),
-                ),
-              ),
+              if (trailing != null) trailing,
             ],
           ),
-          vSpace(context, 4),
+          vSpace(context, 6),
           input,
         ],
       ),
@@ -561,10 +589,12 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
   }) {
     String? selectedName;
     if (value != null) {
-      final selectedItem = items.firstWhereOrNull(
-        (i) => (i['id']?.toString().toLowerCase() ?? '') == value.toLowerCase(),
-      );
-      selectedName = selectedItem?['name']?.toString();
+      for (final i in items) {
+        if ((i['id']?.toString().toLowerCase() ?? '') == value.toLowerCase()) {
+          selectedName = i['name']?.toString();
+          break;
+        }
+      }
     }
 
     return TextFormField(
@@ -574,7 +604,7 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
       style: TextStyle(fontSize: rfs(context, 13)),
       decoration: _inputDecoration(enabled: enabled).copyWith(
         hintText: hint,
-        hintStyle: TextStyle(color: Colors.grey, fontSize: rfs(context, 13)),
+        hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: rfs(context, 13)),
         suffixIcon: const Icon(
           Icons.keyboard_arrow_down_rounded,
           color: Colors.grey,
@@ -632,7 +662,7 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
                       currentValue?.toLowerCase();
                   return ListTile(
                     title: Text(
-                      item['name'] ?? '',
+                      item['name']?.toString() ?? '',
                       style: TextStyle(
                         fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                         color: isSelected ? const Color(0xFF005596) : Colors.black87,
@@ -689,8 +719,8 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
       enabled: enabled,
       style: TextStyle(fontSize: rfs(context, 13)),
       decoration: _inputDecoration(enabled: enabled).copyWith(
-        hintText: 'Select Date and Time',
-        hintStyle: TextStyle(color: Colors.grey, fontSize: rfs(context, 13)),
+        hintText: 'EEEE, DD MMMM YYYY, hh:mm',
+        hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: rfs(context, 13)),
         suffixIcon: enabled && value != null
             ? GestureDetector(
                 behavior: HitTestBehavior.opaque,
@@ -703,7 +733,7 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
               )
             : Icon(
                 Icons.calendar_today_outlined,
-                color: Colors.grey,
+                color: Colors.grey.shade500,
                 size: rw(context, 18),
               ),
       ),
@@ -714,15 +744,15 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
   InputDecoration _inputDecoration({required bool enabled}) {
     return InputDecoration(
       filled: true,
-      fillColor: enabled ? Colors.white : Colors.grey.shade100,
+      fillColor: enabled ? const Color(0xFFF8FAFC) : Colors.grey.shade100,
       contentPadding: EdgeInsets.symmetric(horizontal: rw(context, 12), vertical: rh(context, 12)),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(rw(context, 10)),
-        borderSide: const BorderSide(color: Color(0xFFDDDDDD)),
+        borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(rw(context, 10)),
-        borderSide: const BorderSide(color: Color(0xFFDDDDDD)),
+        borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
       ),
       disabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(rw(context, 10)),
@@ -785,14 +815,11 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
   }
 
   Future<void> _submit(bool sendEmail) async {
-    // 1. Quota Validation
-    final quotaValue = int.tryParse(quotaCtrl.text.trim());
-    if (isQuotaEnabled &&
-        !isSingleUse &&
-        (quotaCtrl.text.trim().isEmpty || quotaValue == null || quotaValue < 1)) {
+    // 1. Visitor Type check (Required)
+    if (selectedVisitorTypeId == null || selectedVisitorTypeId!.isEmpty) {
       Get.snackbar(
         'Required',
-        'Visitor Quota Limit is required and must be at least 1',
+        'Visitor Type is required',
         backgroundColor: Colors.red,
         colorText: Colors.white,
         snackPosition: SnackPosition.TOP,
@@ -801,38 +828,62 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
       return;
     }
 
-    // 2. Missing Enabled Information Check
-    List<String> missingFields = [];
-    if (isVisitorTypeEnabled && selectedVisitorTypeId == null) {
-      missingFields.add('Visitor Type');
-    }
-    if (isVisitStartEnabled && visitStart == null) {
-      missingFields.add('Visit Start');
-    }
-    if (isVisitEndEnabled && visitEnd == null) {
-      missingFields.add('Visit End');
-    }
-    if (isExpiredEnabled && (selectedExpiredMinutes == null || selectedExpiredMinutes == '0')) {
-      missingFields.add('Expired Link');
-    }
-
-    if (missingFields.isNotEmpty) {
-      String fieldNames = missingFields.join(', ');
+    // 2. Visit Start check (Required)
+    if (visitStart == null) {
       Get.snackbar(
-        'Missing Information',
-        '$fieldNames must be filled to create link invitation',
+        'Required',
+        'Visit Start is required',
         backgroundColor: Colors.red,
         colorText: Colors.white,
         snackPosition: SnackPosition.TOP,
         margin: EdgeInsets.all(rw(context, 12)),
-        duration: const Duration(seconds: 3),
+      );
+      return;
+    }
+
+    // 3. Visit End check (Optional - only check order if both visitStart and visitEnd are present)
+    if (isVisitEndEnabled && visitEnd != null && visitStart != null && visitEnd!.isBefore(visitStart!)) {
+      Get.snackbar(
+        'Invalid Date',
+        'Visit End cannot be before Visit Start',
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+        snackPosition: SnackPosition.TOP,
+        margin: EdgeInsets.all(rw(context, 12)),
+      );
+      return;
+    }
+
+    // 4. Expired Link check (Required)
+    if (selectedExpiredMinutes == null || selectedExpiredMinutes!.isEmpty || selectedExpiredMinutes == '0') {
+      Get.snackbar(
+        'Required',
+        'Expired Link is required',
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+        snackPosition: SnackPosition.TOP,
+        margin: EdgeInsets.all(rw(context, 12)),
+      );
+      return;
+    }
+
+    // 5. Visitor Quota Limit check (Required)
+    final quotaValue = int.tryParse(quotaCtrl.text.trim());
+    if (!isSingleUse && (quotaCtrl.text.trim().isEmpty || quotaValue == null || quotaValue < 0)) {
+      Get.snackbar(
+        'Required',
+        'Visitor Quota Limit is required',
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+        snackPosition: SnackPosition.TOP,
+        margin: EdgeInsets.all(rw(context, 12)),
       );
       return;
     }
 
     if (!_formKey.currentState!.validate()) return;
 
-    // 3. Email Input Prompt if "Create Link And Send Email"
+    // 6. Email Input Prompt if "Create Link And Send Email"
     String? email;
     if (sendEmail) {
       email = await _showEmailDialog();
@@ -846,35 +897,29 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
       );
     }
 
-    // 4. Construct Payload matching Web H() in CreateLinkDialog
-    final dynamic hostVal = isVisitorTypeEnabled && selectedVisitorTypeData != null
+    // 7. Construct Payload (Identical to Web H() in CreateLinkDialog)
+    final dynamic hostVal = selectedVisitorTypeData != null
         ? selectedVisitorTypeData!['pre_host_id']
         : null;
-    final dynamic siteVal = isVisitorTypeEnabled && selectedVisitorTypeData != null
+    final dynamic siteVal = selectedVisitorTypeData != null
         ? selectedVisitorTypeData!['pre_site_id']
         : null;
-    final dynamic agendaVal = isVisitorTypeEnabled && selectedVisitorTypeData != null
+    final dynamic agendaVal = selectedVisitorTypeData != null
         ? selectedVisitorTypeData!['pre_agenda']
         : null;
-    final String? vTypeVal = isVisitorTypeEnabled ? selectedVisitorTypeId : null;
+    final String? vTypeVal = selectedVisitorTypeId;
 
     final Map<String, dynamic> body = {
       'host': (hostVal != null && hostVal.toString().isNotEmpty) ? hostVal : null,
       'site_id': (siteVal != null && siteVal.toString().isNotEmpty) ? siteVal : null,
       'visitor_type_id': vTypeVal,
       'agenda': (agendaVal != null && agendaVal.toString().isNotEmpty) ? agendaVal : null,
-      'visitor_period_start': isVisitStartEnabled && visitStart != null
-          ? visitStart!.toUtc().toIso8601String().substring(0, 19)
-          : null,
-      'visitor_period_end': isVisitEndEnabled && visitEnd != null
+      'visitor_period_start': visitStart?.toUtc().toIso8601String().substring(0, 19),
+      'visitor_period_end': (isVisitEndEnabled && visitEnd != null)
           ? visitEnd!.toUtc().toIso8601String().substring(0, 19)
           : null,
-      'expired_number': isExpiredEnabled
-          ? (int.tryParse(selectedExpiredMinutes ?? '0') ?? 0)
-          : 0,
-      'max_usage': isQuotaEnabled
-          ? (isSingleUse ? 1 : (int.tryParse(quotaCtrl.text.trim()) ?? 0))
-          : 0,
+      'expired_number': int.tryParse(selectedExpiredMinutes ?? '30') ?? 30,
+      'max_usage': isSingleUse ? 1 : (int.tryParse(quotaCtrl.text.trim()) ?? 0),
       'is_single_use': isSingleUse,
       if (email != null && email.isNotEmpty) 'emails': [email],
       'tz': 'Asia/Jakarta',

@@ -9,8 +9,15 @@ import '../../core/core.dart';
 import '../../core/helper/responsive_helper.dart';
 import '../auth/controller/language_controller.dart';
 import '../auth/controller/user_controller.dart';
+import '../../data/models/access_pass_model.dart';
+import '../../data/models/alarm_model.dart';
+import '../../data/models/approval_ticket_model.dart';
+import '../notification/notification_page.dart';
 import 'alarm/controller/alarm_controller.dart';
+import 'approval/approval_page.dart';
 import 'invitation/controller/invitation_controller.dart';
+import 'invitation/send_invitation_page.dart';
+import 'new_visitor_page.dart';
 
 class TodaySummaryPage extends StatelessWidget {
   const TodaySummaryPage({super.key});
@@ -239,12 +246,12 @@ class TodaySummaryPage extends StatelessWidget {
     final String labelVisitor = isIndo ? 'Visitor Hari Ini' : 'Visitor Today';
     final String labelApproval = isIndo ? 'Menunggu Persetujuan' : 'Waiting Approval';
     final String labelInvitation = isIndo ? 'Undangan Aktif' : 'Active Invitation';
-    final String labelAlarm = isIndo ? 'Alarm Aktif' : 'Active Alarm';
+    final String labelAlarm = isIndo ? 'Notifikasi Aktif' : 'Active Notification';
 
     final String unitPeople = isIndo ? 'Orang' : 'People';
     final String unitReq = isIndo ? 'Permintaan' : 'Request(s)';
     final String unitInv = isIndo ? 'Undangan' : 'Invitation(s)';
-    final String unitAlarm = isIndo ? 'Alarm' : 'Alarm(s)';
+    final String unitAlarm = isIndo ? 'Notifikasi' : 'Notification(s)';
 
     // Compute dynamic breakdown stats for Tab 1
     final invitationController = _getInvitationController();
@@ -266,6 +273,7 @@ class TodaySummaryPage extends StatelessWidget {
           itemDate.day == date.day;
     }).toList();
     final int expiredInvitationCount = dateInvitations.where((item) => item.visitorPeriodEnd.isBefore(DateTime.now())).length;
+    final activeInvitationsList = dateInvitations.where((item) => !item.visitorPeriodEnd.isBefore(DateTime.now())).toList();
 
     final alarmCtrl = Get.isRegistered<AlarmController>()
         ? Get.find<AlarmController>()
@@ -278,10 +286,31 @@ class TodaySummaryPage extends StatelessWidget {
     }).toList();
     final int resolvedAlarmCount = dateAlarms.where((a) => a.isApproved || a.isDenied).length;
 
+    final dateTickets = invitationController.approvalTickets.where((t) {
+      final actorStatus = (t.approvalActorStatus ?? '').toLowerCase();
+      final ticketStatus = (t.approvalStatus ?? '').toLowerCase();
+      final isApproved = actorStatus == 'approved' || ticketStatus == 'approved';
+      final isRejected = actorStatus == 'rejected' ||
+          actorStatus == 'denied' ||
+          ticketStatus == 'rejected' ||
+          ticketStatus == 'denied';
+      final isPending = !isApproved && !isRejected;
+      if (!isPending) {
+        return false;
+      }
+      final itemDate = t.visitorPeriodStart;
+      if (itemDate == null) {
+        return false;
+      }
+      return itemDate.year == date.year &&
+          itemDate.month == date.month &&
+          itemDate.day == date.day;
+    }).toList();
+
     final String descVisitor = isIndo ? 'Jumlah visitor yang datang hari ini' : 'Total visitors arriving today';
     final String descApproval = isIndo ? 'Permintaan akses yang menunggu persetujuan' : 'Access requests waiting for approval';
     final String descInvitation = isIndo ? 'Undangan yang masih aktif' : 'Active visitor invitations';
-    final String descAlarm = isIndo ? 'Alarm yang sedang aktif' : 'Alarms currently triggered and active';
+    final String descAlarm = isIndo ? 'Notifikasi yang sedang aktif' : 'Active notifications';
 
     return SingleChildScrollView(
       physics: const BouncingScrollPhysics(),
@@ -294,15 +323,31 @@ class TodaySummaryPage extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 2x2 Grid of Main Cards
+          // 2x2 Grid of Main Cards (Tap opens full page)
           Row(
             children: [
               Expanded(
-                child: _buildSummaryGridCard(context, labelVisitor, '$visitorCount', unitPeople, Icons.people, const Color(0xFF1976D2)),
+                child: _buildSummaryGridCard(
+                  context,
+                  labelVisitor,
+                  '$visitorCount',
+                  unitPeople,
+                  Icons.people,
+                  const Color(0xFF1976D2),
+                  onTap: () => context.push(const NewVisitorPage()),
+                ),
               ),
               hSpace(context, 12),
               Expanded(
-                child: _buildSummaryGridCard(context, labelApproval, '$approvalCount', unitReq, Icons.access_time, const Color(0xFFF57C00)),
+                child: _buildSummaryGridCard(
+                  context,
+                  labelApproval,
+                  '$approvalCount',
+                  unitReq,
+                  Icons.access_time,
+                  const Color(0xFFF57C00),
+                  onTap: () => context.push(const ApprovalPage()),
+                ),
               ),
             ],
           ),
@@ -310,11 +355,27 @@ class TodaySummaryPage extends StatelessWidget {
           Row(
             children: [
               Expanded(
-                child: _buildSummaryGridCard(context, labelInvitation, '$invitationCount', unitInv, Icons.mail_outline, const Color(0xFF43A047)),
+                child: _buildSummaryGridCard(
+                  context,
+                  labelInvitation,
+                  '$invitationCount',
+                  unitInv,
+                  Icons.mail_outline,
+                  const Color(0xFF43A047),
+                  onTap: () => context.push(const SendInvitationPage()),
+                ),
               ),
               hSpace(context, 12),
               Expanded(
-                child: _buildSummaryGridCard(context, labelAlarm, '$notificationCount', unitAlarm, Icons.notifications_none, const Color(0xFFE53935)),
+                child: _buildSummaryGridCard(
+                  context,
+                  labelAlarm,
+                  '$notificationCount',
+                  unitAlarm,
+                  Icons.notifications_none,
+                  const Color(0xFFE53935),
+                  onTap: () => context.push(const NotificationPage()),
+                ),
               ),
             ],
           ),
@@ -323,11 +384,43 @@ class TodaySummaryPage extends StatelessWidget {
           Divider(color: Colors.grey.shade300, thickness: 1),
           vSpace(context, 16),
 
-          // Flat list representation with description
-          _buildSummaryListTile(context, labelVisitor, '$visitorCount $unitPeople', descVisitor, Icons.people, const Color(0xFF1976D2)),
-          _buildSummaryListTile(context, labelApproval, '$approvalCount $unitReq', descApproval, Icons.access_time, const Color(0xFFF57C00)),
-          _buildSummaryListTile(context, labelInvitation, '$invitationCount $unitInv', descInvitation, Icons.mail_outline, const Color(0xFF43A047)),
-          _buildSummaryListTile(context, labelAlarm, '$notificationCount $unitAlarm', descAlarm, Icons.notifications_none, const Color(0xFFE53935)),
+          // Flat list representation with description (Tap opens bottom sheet popup)
+          _buildSummaryListTile(
+            context,
+            labelVisitor,
+            '$visitorCount $unitPeople',
+            descVisitor,
+            Icons.people,
+            const Color(0xFF1976D2),
+            onTap: () => _showVisitorTodayPopup(context, todayVisitorsList, lang),
+          ),
+          _buildSummaryListTile(
+            context,
+            labelApproval,
+            '$approvalCount $unitReq',
+            descApproval,
+            Icons.access_time,
+            const Color(0xFFF57C00),
+            onTap: () => _showWaitingApprovalPopup(context, dateTickets, lang),
+          ),
+          _buildSummaryListTile(
+            context,
+            labelInvitation,
+            '$invitationCount $unitInv',
+            descInvitation,
+            Icons.mail_outline,
+            const Color(0xFF43A047),
+            onTap: () => _showActiveInvitationPopup(context, activeInvitationsList, lang),
+          ),
+          _buildSummaryListTile(
+            context,
+            labelAlarm,
+            '$notificationCount $unitAlarm',
+            descAlarm,
+            Icons.notifications_none,
+            const Color(0xFFE53935),
+            onTap: () => _showActiveAlarmPopup(context, dateAlarms, isGuest, dateTickets, lang),
+          ),
 
           vSpace(context, 24),
 
@@ -406,7 +499,7 @@ class TodaySummaryPage extends StatelessWidget {
                 _buildBreakdownItem(context, labelInvitation, '$invitationCount $unitInv', true),
                 _buildBreakdownItem(context, isIndo ? 'Undangan Kadaluarsa' : 'Expired Invitations', '$expiredInvitationCount $unitInv', false),
                 _buildBreakdownItem(context, labelAlarm, '$notificationCount $unitAlarm', true),
-                _buildBreakdownItem(context, isIndo ? 'Alarm Selesai' : 'Resolved Alarms', '$resolvedAlarmCount $unitAlarm', false),
+                _buildBreakdownItem(context, isIndo ? 'Notifikasi Selesai' : 'Resolved Notifications', '$resolvedAlarmCount $unitAlarm', false),
               ],
             ),
           ),
@@ -431,67 +524,75 @@ class TodaySummaryPage extends StatelessWidget {
     String count,
     String unit,
     IconData icon,
-    Color color,
-  ) {
-    return Container(
-      padding: EdgeInsets.all(rw(context, 16)),
-      decoration: BoxDecoration(
-        color: Colors.white,
+    Color color, {
+    VoidCallback? onTap,
+  }) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
         borderRadius: BorderRadius.circular(rw(context, 16)),
-        border: Border.all(color: Colors.grey.shade200),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.02),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Container(
-                padding: EdgeInsets.all(rw(context, 8)),
-                decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(icon, color: color, size: rw(context, 20)),
-              ),
-              Text(
-                unit,
-                style: TextStyle(
-                  fontSize: rfs(context, 10),
-                  color: Colors.grey,
-                  fontWeight: FontWeight.w500,
-                ),
+        child: Ink(
+          padding: EdgeInsets.all(rw(context, 16)),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(rw(context, 16)),
+            border: Border.all(color: Colors.grey.shade200),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.02),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
               ),
             ],
           ),
-          vSpace(context, 12),
-          Text(
-            count,
-            style: TextStyle(
-              fontSize: rfs(context, 26),
-              fontWeight: FontWeight.w900,
-              color: Colors.black87,
-            ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Container(
+                    padding: EdgeInsets.all(rw(context, 8)),
+                    decoration: BoxDecoration(
+                      color: color.withValues(alpha: 0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(icon, color: color, size: rw(context, 20)),
+                  ),
+                  Text(
+                    unit,
+                    style: TextStyle(
+                      fontSize: rfs(context, 10),
+                      color: Colors.grey,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+              vSpace(context, 12),
+              Text(
+                count,
+                style: TextStyle(
+                  fontSize: rfs(context, 26),
+                  fontWeight: FontWeight.w900,
+                  color: Colors.black87,
+                ),
+              ),
+              vSpace(context, 4),
+              Text(
+                title,
+                style: TextStyle(
+                  fontSize: rfs(context, 12),
+                  fontWeight: FontWeight.w600,
+                  color: Colors.grey.shade700,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
           ),
-          vSpace(context, 4),
-          Text(
-            title,
-            style: TextStyle(
-              fontSize: rfs(context, 12),
-              fontWeight: FontWeight.w600,
-              color: Colors.grey.shade700,
-            ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -502,11 +603,397 @@ class TodaySummaryPage extends StatelessWidget {
     String value,
     String desc,
     IconData icon,
-    Color color,
-  ) {
+    Color color, {
+    VoidCallback? onTap,
+  }) {
+    return Padding(
+      padding: EdgeInsets.only(bottom: rh(context, 12)),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(rw(context, 12)),
+          child: Ink(
+            padding: EdgeInsets.all(rw(context, 16)),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(rw(context, 12)),
+              border: Border.all(color: Colors.grey.shade200),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: EdgeInsets.all(rw(context, 10)),
+                  decoration: BoxDecoration(
+                    color: color.withValues(alpha: 0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(icon, color: color, size: rw(context, 20)),
+                ),
+                hSpace(context, 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              title,
+                              style: TextStyle(
+                                fontSize: rfs(context, 14),
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black87,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          hSpace(context, 8),
+                          Text(
+                            value,
+                            style: TextStyle(
+                              fontSize: rfs(context, 14),
+                              fontWeight: FontWeight.w900,
+                              color: Colors.black87,
+                            ),
+                          ),
+                        ],
+                      ),
+                      vSpace(context, 4),
+                      Text(
+                        desc,
+                        style: TextStyle(
+                          fontSize: rfs(context, 11),
+                          color: Colors.grey.shade600,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+                hSpace(context, 8),
+                Icon(
+                  Icons.chevron_right,
+                  size: rw(context, 20),
+                  color: Colors.grey.shade400,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // --- BOTTOM SHEET POPUPS FOR 4 LIST TILES ---
+
+  void _showSummaryBottomSheet({
+    required BuildContext context,
+    required String title,
+    required String countBadge,
+    required IconData headerIcon,
+    required Color themeColor,
+    required String actionButtonText,
+    required VoidCallback onActionTap,
+    required Widget content,
+  }) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (bottomSheetContext) => Container(
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(bottomSheetContext).size.height * 0.75,
+        ),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(
+            top: Radius.circular(rw(bottomSheetContext, 20)),
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.15),
+              blurRadius: 15,
+              offset: const Offset(0, -2),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Drag handle
+            Center(
+              child: Container(
+                width: rw(bottomSheetContext, 40),
+                height: rh(bottomSheetContext, 4),
+                margin: EdgeInsets.only(
+                  top: rh(bottomSheetContext, 12),
+                  bottom: rh(bottomSheetContext, 8),
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+
+            // Header Row
+            Padding(
+              padding: EdgeInsets.symmetric(
+                horizontal: rw(bottomSheetContext, 20),
+                vertical: rh(bottomSheetContext, 10),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    padding: EdgeInsets.all(rw(bottomSheetContext, 8)),
+                    decoration: BoxDecoration(
+                      color: themeColor.withValues(alpha: 0.12),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      headerIcon,
+                      color: themeColor,
+                      size: rw(bottomSheetContext, 18),
+                    ),
+                  ),
+                  hSpace(bottomSheetContext, 10),
+                  Expanded(
+                    child: Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            title,
+                            style: TextStyle(
+                              fontSize: rfs(bottomSheetContext, 16),
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black87,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        hSpace(bottomSheetContext, 8),
+                        Container(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: rw(bottomSheetContext, 8),
+                            vertical: rh(bottomSheetContext, 2),
+                          ),
+                          decoration: BoxDecoration(
+                            color: themeColor.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(rw(bottomSheetContext, 12)),
+                            border: Border.all(
+                              color: themeColor.withValues(alpha: 0.3),
+                              width: 1,
+                            ),
+                          ),
+                          child: Text(
+                            countBadge,
+                            style: TextStyle(
+                              fontSize: rfs(bottomSheetContext, 11),
+                              fontWeight: FontWeight.w700,
+                              color: themeColor,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  GestureDetector(
+                    onTap: () => Navigator.of(bottomSheetContext).pop(),
+                    child: Container(
+                      width: rw(bottomSheetContext, 30),
+                      height: rw(bottomSheetContext, 30),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade100,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Icons.close,
+                        size: rw(bottomSheetContext, 16),
+                        color: Colors.grey.shade600,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Divider(height: 1, color: Colors.grey.shade200),
+
+            // Content
+            Flexible(
+              child: content,
+            ),
+
+            // Bottom Action Button
+            SafeArea(
+              top: false,
+              child: Padding(
+                padding: EdgeInsets.fromLTRB(
+                  rw(bottomSheetContext, 20),
+                  rh(bottomSheetContext, 10),
+                  rw(bottomSheetContext, 20),
+                  rh(bottomSheetContext, 14),
+                ),
+                child: SizedBox(
+                  width: double.infinity,
+                  height: rh(bottomSheetContext, 44),
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.of(bottomSheetContext).pop();
+                      onActionTap();
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: themeColor,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(rw(bottomSheetContext, 10)),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          actionButtonText,
+                          style: TextStyle(
+                            fontSize: rfs(bottomSheetContext, 14),
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                        hSpace(bottomSheetContext, 6),
+                        const Icon(
+                          Icons.arrow_forward_rounded,
+                          size: 16,
+                          color: Colors.white,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildModalEmptyState(BuildContext context, IconData icon, String message) {
+    return Center(
+      child: Padding(
+        padding: EdgeInsets.symmetric(
+          horizontal: rw(context, 24),
+          vertical: rh(context, 36),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              size: rw(context, 54),
+              color: Colors.grey.shade300,
+            ),
+            vSpace(context, 12),
+            Text(
+              message,
+              style: TextStyle(
+                fontSize: rfs(context, 14),
+                fontWeight: FontWeight.w500,
+                color: Colors.grey.shade500,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showVisitorTodayPopup(BuildContext context, List<AccessPassModel> visitors, String lang) {
+    final bool isIndo = lang == 'id';
+    _showSummaryBottomSheet(
+      context: context,
+      title: isIndo ? 'Visitor Hari Ini' : 'Visitor Today',
+      countBadge: '${visitors.length} ${isIndo ? 'Orang' : 'People'}',
+      headerIcon: Icons.people,
+      themeColor: const Color(0xFF1976D2),
+      actionButtonText: isIndo ? 'Buka Visitor Active' : 'Open Visitor Active',
+      onActionTap: () => context.push(const NewVisitorPage()),
+      content: visitors.isEmpty
+          ? _buildModalEmptyState(
+              context,
+              Icons.people_outline_rounded,
+              isIndo ? 'Tidak ada data visitor aktif hari ini' : 'No active visitors today',
+            )
+          : ListView.separated(
+              padding: EdgeInsets.symmetric(
+                horizontal: rw(context, 20),
+                vertical: rh(context, 14),
+              ),
+              shrinkWrap: true,
+              itemCount: visitors.length,
+              separatorBuilder: (_, __) => vSpace(context, 10),
+              itemBuilder: (ctx, index) => _buildVisitorModalItem(ctx, visitors[index], index),
+            ),
+    );
+  }
+
+  Widget _buildVisitorModalItem(BuildContext context, AccessPassModel visitor, int index) {
+    final initials = visitor.visitorName.trim().isNotEmpty
+        ? visitor.visitorName.trim()[0].toUpperCase()
+        : 'V';
+    final colors = [
+      const Color(0xFF1976D2), // Blue
+      const Color(0xFF388E3C), // Green
+      const Color(0xFFD32F2F), // Red
+      const Color(0xFFF57C00), // Orange
+      const Color(0xFF7B1FA2), // Purple
+    ];
+    final color = colors[index % colors.length];
+
+    final status = visitor.visitorStatus.toLowerCase().trim();
+    Color bg;
+    Color fg;
+    String displayStatus;
+    if (status == 'checkin') {
+      bg = const Color(0xFFE8F5E9);
+      fg = const Color(0xFF2E7D32);
+      displayStatus = 'Checked In';
+    } else if (status == 'checkout') {
+      bg = const Color(0xFFE8EAF6);
+      fg = const Color(0xFF283593);
+      displayStatus = 'Checked Out';
+    } else if (status == 'pending' || status == 'waiting') {
+      bg = const Color(0xFFFFF3E0);
+      fg = const Color(0xFFEF6C00);
+      displayStatus = 'Pending';
+    } else if (status == 'reject' || status == 'rejected' || status == 'denied') {
+      bg = const Color(0xFFFFEBEE);
+      fg = const Color(0xFFC62828);
+      displayStatus = 'Rejected';
+    } else {
+      bg = const Color(0xFFE0F7FA);
+      fg = const Color(0xFF006064);
+      displayStatus = visitor.visitorStatus.isNotEmpty
+          ? (visitor.visitorStatus[0].toUpperCase() + visitor.visitorStatus.substring(1))
+          : 'Active';
+    }
+
+    final timeStr = DateFormat('HH:mm').format(visitor.invitationCreatedAt ?? visitor.visitorPeriodStart);
+    final org = visitor.visitorOrganizationName.isNotEmpty
+        ? visitor.visitorOrganizationName
+        : (visitor.hostName.isNotEmpty ? 'Host: ${visitor.hostName}' : '-');
+
     return Container(
-      margin: EdgeInsets.only(bottom: rh(context, 12)),
-      padding: EdgeInsets.all(rw(context, 16)),
+      padding: EdgeInsets.symmetric(
+        horizontal: rw(context, 16),
+        vertical: rh(context, 12),
+      ),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(rw(context, 12)),
@@ -515,48 +1002,491 @@ class TodaySummaryPage extends StatelessWidget {
       child: Row(
         children: [
           Container(
-            padding: EdgeInsets.all(rw(context, 10)),
+            width: rw(context, 40),
+            height: rw(context, 40),
             decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.1),
+              color: color.withValues(alpha: 0.12),
               shape: BoxShape.circle,
             ),
-            child: Icon(icon, color: color, size: rw(context, 20)),
+            child: Center(
+              child: Text(
+                initials,
+                style: TextStyle(
+                  color: color,
+                  fontWeight: FontWeight.bold,
+                  fontSize: rfs(context, 15),
+                ),
+              ),
+            ),
           ),
           hSpace(context, 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      title,
-                      style: TextStyle(
-                        fontSize: rfs(context, 14),
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black87,
-                      ),
-                    ),
-                    Text(
-                      value,
-                      style: TextStyle(
-                        fontSize: rfs(context, 14),
-                        fontWeight: FontWeight.w900,
-                        color: Colors.black87,
-                      ),
-                    ),
-                  ],
-                ),
-                vSpace(context, 4),
                 Text(
-                  desc,
+                  visitor.visitorName.isNotEmpty ? visitor.visitorName : 'Visitor',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: rfs(context, 13),
+                    color: Colors.black87,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                vSpace(context, 3),
+                Text(
+                  org,
                   style: TextStyle(
                     fontSize: rfs(context, 11),
                     color: Colors.grey.shade600,
                   ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ],
+            ),
+          ),
+          hSpace(context, 8),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Container(
+                padding: EdgeInsets.symmetric(
+                  horizontal: rw(context, 8),
+                  vertical: rh(context, 3),
+                ),
+                decoration: BoxDecoration(
+                  color: bg,
+                  borderRadius: BorderRadius.circular(rw(context, 12)),
+                ),
+                child: Text(
+                  displayStatus,
+                  style: TextStyle(
+                    fontSize: rfs(context, 10.5),
+                    fontWeight: FontWeight.bold,
+                    color: fg,
+                  ),
+                ),
+              ),
+              vSpace(context, 4),
+              Text(
+                timeStr,
+                style: TextStyle(
+                  fontSize: rfs(context, 10.5),
+                  color: Colors.grey.shade500,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showWaitingApprovalPopup(BuildContext context, List<ApprovalTicketModel> tickets, String lang) {
+    final bool isIndo = lang == 'id';
+    _showSummaryBottomSheet(
+      context: context,
+      title: isIndo ? 'Menunggu Persetujuan' : 'Waiting Approval',
+      countBadge: '${tickets.length} ${isIndo ? 'Permintaan' : 'Request(s)'}',
+      headerIcon: Icons.access_time,
+      themeColor: const Color(0xFFF57C00),
+      actionButtonText: isIndo ? 'Buka Halaman Persetujuan' : 'Open Approval Page',
+      onActionTap: () => context.push(const ApprovalPage()),
+      content: tickets.isEmpty
+          ? _buildModalEmptyState(
+              context,
+              Icons.fact_check_outlined,
+              isIndo ? 'Tidak ada permintaan menunggu persetujuan' : 'No requests waiting for approval',
+            )
+          : ListView.separated(
+              padding: EdgeInsets.symmetric(
+                horizontal: rw(context, 20),
+                vertical: rh(context, 14),
+              ),
+              shrinkWrap: true,
+              itemCount: tickets.length,
+              separatorBuilder: (_, __) => vSpace(context, 10),
+              itemBuilder: (ctx, index) => _buildApprovalModalItem(ctx, tickets[index], index),
+            ),
+    );
+  }
+
+  Widget _buildApprovalModalItem(BuildContext context, ApprovalTicketModel ticket, int index) {
+    final title = (ticket.agenda != null && ticket.agenda!.trim().isNotEmpty)
+        ? ticket.agenda!
+        : (ticket.visitorTypeName != null && ticket.visitorTypeName!.trim().isNotEmpty)
+            ? ticket.visitorTypeName!
+            : 'Access Request #${index + 1}';
+    final host = (ticket.hostName != null && ticket.hostName!.trim().isNotEmpty)
+        ? ticket.hostName!
+        : (ticket.hostOrganizationName != null && ticket.hostOrganizationName!.trim().isNotEmpty)
+            ? ticket.hostOrganizationName!
+            : '-';
+    final start = ticket.visitorPeriodStart;
+    final timeStr = start != null ? DateFormat('dd MMM yyyy, HH:mm').format(start) : '-';
+
+    return Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: rw(context, 16),
+        vertical: rh(context, 12),
+      ),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(rw(context, 12)),
+        border: Border.all(color: Colors.grey.shade200),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Container(
+            width: rw(context, 40),
+            height: rw(context, 40),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF57C00).withValues(alpha: 0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              Icons.fact_check_outlined,
+              color: const Color(0xFFF57C00),
+              size: rw(context, 20),
+            ),
+          ),
+          hSpace(context, 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: rfs(context, 13),
+                    color: Colors.black87,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                vSpace(context, 3),
+                Text(
+                  'Host: $host',
+                  style: TextStyle(
+                    fontSize: rfs(context, 11),
+                    color: Colors.grey.shade600,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                vSpace(context, 2),
+                Text(
+                  timeStr,
+                  style: TextStyle(
+                    fontSize: rfs(context, 10.5),
+                    color: Colors.grey.shade500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          hSpace(context, 8),
+          Container(
+            padding: EdgeInsets.symmetric(
+              horizontal: rw(context, 8),
+              vertical: rh(context, 3),
+            ),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFFF3E0),
+              borderRadius: BorderRadius.circular(rw(context, 12)),
+              border: Border.all(color: const Color(0xFFFFB74D), width: 1),
+            ),
+            child: Text(
+              'Pending',
+              style: TextStyle(
+                fontSize: rfs(context, 10.5),
+                fontWeight: FontWeight.bold,
+                color: const Color(0xFFE65100),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showActiveInvitationPopup(BuildContext context, List<AccessPassModel> invitations, String lang) {
+    final bool isIndo = lang == 'id';
+    _showSummaryBottomSheet(
+      context: context,
+      title: isIndo ? 'Undangan Aktif' : 'Active Invitation',
+      countBadge: '${invitations.length} ${isIndo ? 'Undangan' : 'Invitation(s)'}',
+      headerIcon: Icons.mail_outline,
+      themeColor: const Color(0xFF43A047),
+      actionButtonText: isIndo ? 'Buka Halaman Undangan' : 'Open Invitation Page',
+      onActionTap: () => context.push(const SendInvitationPage()),
+      content: invitations.isEmpty
+          ? _buildModalEmptyState(
+              context,
+              Icons.mail_outline,
+              isIndo ? 'Tidak ada undangan aktif saat ini' : 'No active invitations currently',
+            )
+          : ListView.separated(
+              padding: EdgeInsets.symmetric(
+                horizontal: rw(context, 20),
+                vertical: rh(context, 14),
+              ),
+              shrinkWrap: true,
+              itemCount: invitations.length,
+              separatorBuilder: (_, __) => vSpace(context, 10),
+              itemBuilder: (ctx, index) => _buildInvitationModalItem(ctx, invitations[index], index),
+            ),
+    );
+  }
+
+  Widget _buildInvitationModalItem(BuildContext context, AccessPassModel invitation, int index) {
+    final title = invitation.agenda.trim().isNotEmpty
+        ? invitation.agenda
+        : (invitation.visitorTypeName.trim().isNotEmpty
+            ? invitation.visitorTypeName
+            : 'Invitation #${index + 1}');
+    final host = invitation.hostName.trim().isNotEmpty
+        ? invitation.hostName
+        : (invitation.invitedByName.trim().isNotEmpty
+            ? invitation.invitedByName
+            : (invitation.host.trim().isNotEmpty ? invitation.host : '-'));
+    final startStr = DateFormat('dd MMM, HH:mm').format(invitation.visitorPeriodStart);
+    final endStr = DateFormat('HH:mm').format(invitation.visitorPeriodEnd);
+
+    return Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: rw(context, 16),
+        vertical: rh(context, 12),
+      ),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(rw(context, 12)),
+        border: Border.all(color: Colors.grey.shade200),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Container(
+            width: rw(context, 40),
+            height: rw(context, 40),
+            decoration: BoxDecoration(
+              color: const Color(0xFF43A047).withValues(alpha: 0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              Icons.mail_outline,
+              color: const Color(0xFF43A047),
+              size: rw(context, 20),
+            ),
+          ),
+          hSpace(context, 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: rfs(context, 13),
+                    color: Colors.black87,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                vSpace(context, 3),
+                Text(
+                  'Host: $host',
+                  style: TextStyle(
+                    fontSize: rfs(context, 11),
+                    color: Colors.grey.shade600,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                vSpace(context, 2),
+                Text(
+                  '$startStr - $endStr',
+                  style: TextStyle(
+                    fontSize: rfs(context, 10.5),
+                    color: Colors.grey.shade500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          hSpace(context, 8),
+          Container(
+            padding: EdgeInsets.symmetric(
+              horizontal: rw(context, 8),
+              vertical: rh(context, 3),
+            ),
+            decoration: BoxDecoration(
+              color: const Color(0xFFE8F5E9),
+              borderRadius: BorderRadius.circular(rw(context, 12)),
+              border: Border.all(color: const Color(0xFF81C784), width: 1),
+            ),
+            child: Text(
+              'Active',
+              style: TextStyle(
+                fontSize: rfs(context, 10.5),
+                fontWeight: FontWeight.bold,
+                color: const Color(0xFF2E7D32),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showActiveAlarmPopup(
+    BuildContext context,
+    List<AlarmModel> alarms,
+    bool isGuest,
+    List<ApprovalTicketModel> tickets,
+    String lang,
+  ) {
+    final bool isIndo = lang == 'id';
+    final int count = isGuest ? alarms.length : (alarms.isNotEmpty ? alarms.length : tickets.length);
+    _showSummaryBottomSheet(
+      context: context,
+      title: isIndo ? 'Notifikasi Aktif' : 'Active Notification',
+      countBadge: '$count ${isIndo ? 'Notifikasi' : 'Notification(s)'}',
+      headerIcon: Icons.notifications_none,
+      themeColor: const Color(0xFFE53935),
+      actionButtonText: isIndo ? 'Buka Halaman Notifikasi' : 'Open Notification Page',
+      onActionTap: () => context.push(const NotificationPage()),
+      content: count == 0
+          ? _buildModalEmptyState(
+              context,
+              Icons.notifications_none,
+              isIndo ? 'Tidak ada notifikasi aktif' : 'No active notifications',
+            )
+          : (alarms.isNotEmpty
+              ? ListView.separated(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: rw(context, 20),
+                    vertical: rh(context, 14),
+                  ),
+                  shrinkWrap: true,
+                  itemCount: alarms.length,
+                  separatorBuilder: (_, __) => vSpace(context, 10),
+                  itemBuilder: (ctx, index) => _buildAlarmModalItem(ctx, alarms[index], index),
+                )
+              : ListView.separated(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: rw(context, 20),
+                    vertical: rh(context, 14),
+                  ),
+                  shrinkWrap: true,
+                  itemCount: tickets.length,
+                  separatorBuilder: (_, __) => vSpace(context, 10),
+                  itemBuilder: (ctx, index) => _buildApprovalModalItem(ctx, tickets[index], index),
+                )),
+    );
+  }
+
+  Widget _buildAlarmModalItem(BuildContext context, AlarmModel alarm, int index) {
+    final title = alarm.alarmDescription.trim().isNotEmpty
+        ? alarm.alarmDescription
+        : (alarm.visitorName.trim().isNotEmpty ? alarm.visitorName : 'Notification #${index + 1}');
+    final loc = alarm.location.trim().isNotEmpty ? alarm.location : 'Site Area';
+    final timeStr = '${alarm.date} ${alarm.timeRange}';
+
+    return Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: rw(context, 16),
+        vertical: rh(context, 12),
+      ),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(rw(context, 12)),
+        border: Border.all(color: Colors.grey.shade200),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Container(
+            width: rw(context, 40),
+            height: rw(context, 40),
+            decoration: BoxDecoration(
+              color: const Color(0xFFE53935).withValues(alpha: 0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              Icons.notifications_active_outlined,
+              color: const Color(0xFFE53935),
+              size: rw(context, 20),
+            ),
+          ),
+          hSpace(context, 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: rfs(context, 13),
+                    color: Colors.black87,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                vSpace(context, 3),
+                Row(
+                  children: [
+                    Icon(Icons.location_on_outlined, size: 12, color: Colors.grey.shade500),
+                    const SizedBox(width: 2),
+                    Expanded(
+                      child: Text(
+                        loc,
+                        style: TextStyle(
+                          fontSize: rfs(context, 11),
+                          color: Colors.grey.shade600,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+                vSpace(context, 2),
+                Text(
+                  timeStr,
+                  style: TextStyle(
+                    fontSize: rfs(context, 10.5),
+                    color: Colors.grey.shade500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          hSpace(context, 8),
+          Container(
+            padding: EdgeInsets.symmetric(
+              horizontal: rw(context, 8),
+              vertical: rh(context, 3),
+            ),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFFEBEE),
+              borderRadius: BorderRadius.circular(rw(context, 12)),
+              border: Border.all(color: const Color(0xFFE57373), width: 1),
+            ),
+            child: Text(
+              'Active',
+              style: TextStyle(
+                fontSize: rfs(context, 10.5),
+                fontWeight: FontWeight.bold,
+                color: const Color(0xFFC62828),
+              ),
             ),
           ),
         ],
@@ -683,12 +1613,12 @@ class TodaySummaryPage extends StatelessWidget {
     final String labelVisitor = isIndo ? 'Visitor Hari Ini' : 'Visitor Today';
     final String labelApproval = isIndo ? 'Menunggu Persetujuan' : 'Waiting Approval';
     final String labelInvitation = isIndo ? 'Undangan Aktif' : 'Active Invitation';
-    final String labelAlarm = isIndo ? 'Alarm Aktif' : 'Active Alarm';
+    final String labelAlarm = isIndo ? 'Notifikasi Aktif' : 'Active Notification';
 
     final String unitPeople = isIndo ? 'Orang' : 'People';
     final String unitReq = isIndo ? 'Permintaan' : 'Request(s)';
     final String unitInv = isIndo ? 'Undangan' : 'Invitation(s)';
-    final String unitAlarm = isIndo ? 'Alarm' : 'Alarm(s)';
+    final String unitAlarm = isIndo ? 'Notifikasi' : 'Notification(s)';
 
     return SingleChildScrollView(
       physics: const BouncingScrollPhysics(),
@@ -749,7 +1679,7 @@ class TodaySummaryPage extends StatelessWidget {
             title: labelAlarm,
             color: const Color(0xFFE53935),
             rows: [
-              _buildDetailRow(context, isIndo ? 'Total Alarm Aktif' : 'Total Active Alarms', '$totalActiveAlarms $unitAlarm'),
+              _buildDetailRow(context, isIndo ? 'Total Notifikasi Aktif' : 'Total Active Notifications', '$totalActiveAlarms $unitAlarm'),
               _buildDetailRow(context, isIndo ? 'Prioritas Tinggi' : 'High Priority', '$highPriorityAlarms $unitAlarm'),
               _buildDetailRow(context, isIndo ? 'Prioritas Sedang' : 'Medium Priority', '$mediumPriorityAlarms $unitAlarm'),
               _buildDetailRow(context, isIndo ? 'Prioritas Rendah' : 'Low Priority', '$lowPriorityAlarms $unitAlarm'),
@@ -1426,7 +2356,7 @@ class TodaySummaryPage extends StatelessWidget {
       final String sheet1Name = isIndo ? 'Today Visitor List' : 'Today Visitor List';
       final String sheet2Name = isIndo ? 'Today Approval List' : 'Today Approval List';
       final String sheet3Name = isIndo ? 'Today Invitation List' : 'Today Invitation List';
-      final String sheet4Name = isIndo ? 'Today Alarm List' : 'Today Alarm List';
+      final String sheet4Name = isIndo ? 'Today Notification List' : 'Today Notification List';
 
       excelObj.rename(defaultSheet, sheet1Name);
 
@@ -1786,7 +2716,7 @@ class TodaySummaryPage extends StatelessWidget {
       for (int i = 0; i <= 5; i++) {
         final cell = sheet4.cell(xl.CellIndex.indexByColumnRow(columnIndex: i, rowIndex: 0));
         if (i == 0) {
-          cell.value = xl.TextCellValue(isIndo ? 'DAFTAR ALARM HARI INI (TODAY ALARM LIST)' : 'TODAY ALARM LIST REPORT');
+          cell.value = xl.TextCellValue(isIndo ? 'DAFTAR NOTIFIKASI HARI INI (TODAY NOTIFICATION LIST)' : 'TODAY NOTIFICATION LIST REPORT');
         }
         cell.cellStyle = alarmBannerStyle;
       }
@@ -1794,7 +2724,7 @@ class TodaySummaryPage extends StatelessWidget {
       // KPI Metadata
       writeCell(sheet4, 0, 2, xl.TextCellValue(isIndo ? 'Tanggal Laporan:' : 'Report Date:'), metaLabelStyle);
       writeCell(sheet4, 1, 2, xl.TextCellValue(formatDate), metaValueStyle);
-      writeCell(sheet4, 3, 2, xl.TextCellValue(isIndo ? 'Total Alarm:' : 'Total Alarms:'), metaLabelStyle);
+      writeCell(sheet4, 3, 2, xl.TextCellValue(isIndo ? 'Total Notifikasi:' : 'Total Notifications:'), metaLabelStyle);
       writeCell(sheet4, 4, 2, xl.IntCellValue(totalActiveAlarms), metaValueStyle);
 
       writeCell(sheet4, 0, 3, xl.TextCellValue(isIndo ? 'Prioritas Tinggi:' : 'High Priority:'), metaLabelStyle);
@@ -1808,7 +2738,7 @@ class TodaySummaryPage extends StatelessWidget {
       // Table Header Row 6
       final alarmHeaders = [
         'No',
-        isIndo ? 'Deskripsi Alarm' : 'Description',
+        isIndo ? 'Deskripsi Notifikasi' : 'Description',
         isIndo ? 'Lokasi / Pintu' : 'Location',
         isIndo ? 'Tingkat Prioritas' : 'Priority',
         isIndo ? 'Waktu Terdeteksi' : 'Detected At',
@@ -1823,9 +2753,9 @@ class TodaySummaryPage extends StatelessWidget {
         sheet4.merge(
           xl.CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: s4Row),
           xl.CellIndex.indexByColumnRow(columnIndex: 5, rowIndex: s4Row),
-          customValue: xl.TextCellValue(isIndo ? 'Tidak ada data alarm hari ini' : 'No alarms today'),
+          customValue: xl.TextCellValue(isIndo ? 'Tidak ada data notifikasi hari ini' : 'No notifications today'),
         );
-        writeCell(sheet4, 0, s4Row, xl.TextCellValue(isIndo ? 'Tidak ada data alarm hari ini' : 'No alarms today'), normalCenter);
+        writeCell(sheet4, 0, s4Row, xl.TextCellValue(isIndo ? 'Tidak ada data notifikasi hari ini' : 'No notifications today'), normalCenter);
       } else {
         int no = 1;
         for (final a in dateAlarms) {

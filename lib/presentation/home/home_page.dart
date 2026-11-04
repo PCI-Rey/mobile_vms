@@ -2100,6 +2100,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                   isLoading:
                       invitationController.isVisitorTodayLoading.value &&
                       invitationController.visitorTodayCount.value == 0,
+                  onTap: () => context.push(const NewVisitorPage()),
                 ),
               ),
               hSpace(context, 12),
@@ -2111,6 +2112,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                   unit: 'Request(s)',
                   icon: Icons.access_time,
                   color: const Color(0xFFF57C00),
+                  onTap: () => context.push(const ApprovalPage()),
                 ),
               ),
             ],
@@ -2126,6 +2128,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                   unit: 'Invitation(s)',
                   icon: Icons.mail_outline,
                   color: const Color(0xFF43A047),
+                  onTap: () => context.push(const SendInvitationPage()),
                 ),
               ),
               hSpace(context, 12),
@@ -2134,9 +2137,10 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                   context,
                   title: 'Active Notification',
                   count: notificationCount,
-                  unit: 'Alarm(s)',
+                  unit: 'Notification(s)',
                   icon: Icons.notifications_none_rounded,
                   color: const Color(0xFFD32F2F),
+                  onTap: () => context.push(const NotificationPage()),
                 ),
               ),
             ],
@@ -2306,8 +2310,14 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     required IconData icon,
     required Color color,
     bool isLoading = false,
+    VoidCallback? onTap,
   }) {
-    return Container(
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(rw(context, 16)),
+        child: Ink(
       padding: EdgeInsets.symmetric(
         horizontal: rw(context, 12),
         vertical: rh(context, 16),
@@ -2381,6 +2391,8 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
             ),
           ),
         ],
+          ),
+        ),
       ),
     );
   }
