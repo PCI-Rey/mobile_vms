@@ -135,10 +135,13 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
     final code = (data['code'] ?? '').toString().toLowerCase();
 
     return name.contains('remise') ||
+        name.contains('remnise') ||
         name.contains('cit') ||
         category.contains('remise') ||
+        category.contains('remnise') ||
         category.contains('cit') ||
         code.contains('remise') ||
+        code.contains('remnise') ||
         code.contains('cit');
   }
 
@@ -348,6 +351,11 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
                               selectedVisitorTypeData = controller.visitorTypes.firstWhereOrNull(
                                 (vt) => (vt['id']?.toString() ?? '') == v,
                               );
+                              if (_isRemiseOrCit) {
+                                selectedExpiredMinutes = '99999999';
+                              } else if (selectedExpiredMinutes == '99999999') {
+                                selectedExpiredMinutes = '30';
+                              }
                             }),
                           )),
                         ),
@@ -397,10 +405,17 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
                             children: [
                               _buildDropdown(
                                 hint: 'Select Expired Link',
-                                value: selectedExpiredMinutes,
-                                items: expiryOptions,
-                                enabled: true,
-                                onChanged: (v) => setState(() => selectedExpiredMinutes = v),
+                                value: _isRemiseOrCit ? '99999999' : selectedExpiredMinutes,
+                                items: _isRemiseOrCit
+                                    ? [
+                                        {'id': '99999999', 'name': '99999999'},
+                                        ...expiryOptions,
+                                      ]
+                                    : expiryOptions,
+                                enabled: !_isRemiseOrCit,
+                                onChanged: !_isRemiseOrCit
+                                    ? (v) => setState(() => selectedExpiredMinutes = v)
+                                    : (_) {},
                               ),
                               if (_isRemiseOrCit) ...[
                                 vSpace(context, 4),
@@ -595,6 +610,7 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
           break;
         }
       }
+      selectedName ??= value;
     }
 
     return TextFormField(
@@ -605,9 +621,10 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
       decoration: _inputDecoration(enabled: enabled).copyWith(
         hintText: hint,
         hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: rfs(context, 13)),
-        suffixIcon: const Icon(
-          Icons.keyboard_arrow_down_rounded,
+        suffixIcon: Icon(
+          enabled ? Icons.keyboard_arrow_down_rounded : Icons.lock_outline,
           color: Colors.grey,
+          size: enabled ? 22 : 18,
         ),
       ),
       onTap: enabled
@@ -855,7 +872,8 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
     }
 
     // 4. Expired Link check (Required)
-    if (selectedExpiredMinutes == null || selectedExpiredMinutes!.isEmpty || selectedExpiredMinutes == '0') {
+    final effectiveExpiredMinutes = _isRemiseOrCit ? '99999999' : selectedExpiredMinutes;
+    if (effectiveExpiredMinutes == null || effectiveExpiredMinutes.isEmpty || effectiveExpiredMinutes == '0') {
       Get.snackbar(
         'Required',
         'Expired Link is required',
@@ -918,7 +936,9 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
       'visitor_period_end': (isVisitEndEnabled && visitEnd != null)
           ? visitEnd!.toUtc().toIso8601String().substring(0, 19)
           : null,
-      'expired_number': int.tryParse(selectedExpiredMinutes ?? '30') ?? 30,
+      'expired_number': _isRemiseOrCit
+          ? 99999999
+          : (int.tryParse(selectedExpiredMinutes ?? '30') ?? 30),
       'max_usage': isSingleUse ? 1 : (int.tryParse(quotaCtrl.text.trim()) ?? 0),
       'is_single_use': isSingleUse,
       if (email != null && email.isNotEmpty) 'emails': [email],
