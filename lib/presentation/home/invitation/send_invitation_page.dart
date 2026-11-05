@@ -27,6 +27,7 @@ import '../../../../data/datasources/hive_service.dart';
 import 'widgets/create_share_link_dialog.dart';
 import 'widgets/share_link_card.dart';
 import 'widgets/share_link_detail_modal.dart';
+import 'widgets/history_approval_modal.dart';
 import 'widgets/create_quick_access_dialog.dart';
 import 'widgets/duplicate_selector_sheet.dart';
 import 'widgets/add_invitation_visitor_dialog.dart';
@@ -3115,6 +3116,51 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
                         ),
                       ),
                     ),
+                    hSpace(context, 8),
+                    GestureDetector(
+                      onTap: () {
+                        final eid = selectedItem.transactionVisitorId.isNotEmpty
+                            ? selectedItem.transactionVisitorId
+                            : (widget.item.transactionVisitorId.isNotEmpty
+                                ? widget.item.transactionVisitorId
+                                : (widget.item.id.isNotEmpty
+                                    ? widget.item.id
+                                    : selectedItem.id));
+                        HistoryApprovalModal.show(
+                          context,
+                          entityId: eid,
+                          fallbackTitle: selectedItem.agenda.isNotEmpty
+                              ? 'Agenda: ${selectedItem.agenda}'
+                              : null,
+                        );
+                      },
+                      child: Container(
+                        width: rw(context, 34),
+                        height: rw(context, 34),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFE8F1FB),
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: const Color(0xFFCCE0F5),
+                            width: 1,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(
+                                0xFF005596,
+                              ).withValues(alpha: 0.06),
+                              blurRadius: 4,
+                              offset: const Offset(0, 1.5),
+                            ),
+                          ],
+                        ),
+                        child: Icon(
+                          Icons.history_rounded,
+                          size: rw(context, 17),
+                          color: const Color(0xFF005596),
+                        ),
+                      ),
+                    ),
                     // hSpace(context, 8),
                     // if (_loadingGroupVisitors) ...[
                     //   Container(
@@ -3453,6 +3499,8 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
                                     ],
                               isExpired: expired,
                             ),
+                            vSpace(context, 12),
+                            _buildHistoryApprovalCard(context, visitor),
                             if (!_isFullDetail) ...[
                               vSpace(context, 16),
                               // 2. Visit Period
@@ -4242,6 +4290,143 @@ class InvitationDetailSheetState extends State<InvitationDetailSheet> {
           ),
         );
       },
+    );
+  }
+
+  Widget _buildHistoryApprovalCard(
+    BuildContext context,
+    AccessPassModel visitor,
+  ) {
+    final eid = visitor.transactionVisitorId.isNotEmpty
+        ? visitor.transactionVisitorId
+        : (widget.item.transactionVisitorId.isNotEmpty
+            ? widget.item.transactionVisitorId
+            : (widget.item.id.isNotEmpty ? widget.item.id : visitor.id));
+
+    final approvalStatus = visitor.approvalStatus.isNotEmpty
+        ? visitor.approvalStatus
+        : (widget.item.approvalStatus.isNotEmpty
+            ? widget.item.approvalStatus
+            : 'Pending');
+
+    Color statusColor = const Color(0xFFF59E0B);
+    Color statusBg = const Color(0xFFFEF3C7);
+    if (approvalStatus.toLowerCase() == 'approved' ||
+        approvalStatus.toLowerCase() == 'completed') {
+      statusColor = const Color(0xFF10B981);
+      statusBg = const Color(0xFFD1FAE5);
+    } else if (approvalStatus.toLowerCase() == 'rejected' ||
+        approvalStatus.toLowerCase() == 'reject' ||
+        approvalStatus.toLowerCase() == 'denied') {
+      statusColor = const Color(0xFFEF4444);
+      statusBg = const Color(0xFFFEE2E2);
+    }
+
+    return Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: rw(context, 14),
+        vertical: rh(context, 12),
+      ),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(rw(context, 10)),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: EdgeInsets.all(rw(context, 8)),
+            decoration: BoxDecoration(
+              color: const Color(0xFF005596).withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(rw(context, 8)),
+            ),
+            child: Icon(
+              Icons.history_rounded,
+              color: const Color(0xFF005596),
+              size: rw(context, 20),
+            ),
+          ),
+          hSpace(context, 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'History Approval',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: rfs(context, 13),
+                    color: const Color(0xFF1E293B),
+                  ),
+                ),
+                vSpace(context, 3),
+                Row(
+                  children: [
+                    Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: rw(context, 6),
+                        vertical: rh(context, 2),
+                      ),
+                      decoration: BoxDecoration(
+                        color: statusBg,
+                        borderRadius: BorderRadius.circular(rw(context, 4)),
+                      ),
+                      child: Text(
+                        approvalStatus,
+                        style: TextStyle(
+                          fontSize: rfs(context, 10.5),
+                          fontWeight: FontWeight.w700,
+                          color: statusColor,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          GestureDetector(
+            onTap: () {
+              HistoryApprovalModal.show(
+                context,
+                entityId: eid,
+                fallbackTitle: visitor.agenda.isNotEmpty
+                    ? 'Agenda ${visitor.agenda}'
+                    : null,
+              );
+            },
+            child: Container(
+              padding: EdgeInsets.symmetric(
+                horizontal: rw(context, 10),
+                vertical: rh(context, 6),
+              ),
+              decoration: BoxDecoration(
+                color: const Color(0xFF005596),
+                borderRadius: BorderRadius.circular(rw(context, 6)),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'Lihat',
+                    style: TextStyle(
+                      fontSize: rfs(context, 11),
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                    ),
+                  ),
+                  hSpace(context, 4),
+                  Icon(
+                    Icons.arrow_forward_ios_rounded,
+                    size: rw(context, 9),
+                    color: Colors.white,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 

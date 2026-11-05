@@ -1086,6 +1086,29 @@ class ApiService {
     }
   }
 
+  /// GET /api/approval-ticket/entity/{entityId}/history
+  Future<Response> getApprovalTicketHistory(
+    String token,
+    String entityId,
+  ) async {
+    try {
+      final response = await _dio.get(
+        '/$pathApi/approval-ticket/entity/$entityId/history',
+        options: Options(
+          headers: {
+            'Authorization': 'Bearer $token',
+            'Accept': 'application/json',
+          },
+        ),
+      );
+      return response;
+    } on DioException catch (e) {
+      debugPrint('Dio Error getApprovalTicketHistory: ${e.message}');
+      if (e.response != null) return e.response!;
+      rethrow;
+    }
+  }
+
   /// POST /api/profile/password
   Future<Response> changePassword(
     String token,

@@ -8,6 +8,7 @@ import '../../../../data/datasources/hive_service.dart';
 import '../../../../data/datasources/api_service.dart';
 import '../controller/invitation_controller.dart';
 import 'invite_share_link_dialog.dart';
+import 'history_approval_modal.dart';
 
 class ShareLinkDetailModal {
   static void show(BuildContext context, dynamic item) {
@@ -311,6 +312,17 @@ class ShareLinkDetailModal {
                                   builder: (context) =>
                                       InviteShareLinkDialog(item: item),
                                 );
+                              },
+                            ),
+                            hSpace(ctx, 16),
+                            _buildActionButton(
+                              ctx,
+                              label: 'Approval',
+                              icon: Icons.history_rounded,
+                              color: AppColors.primary500,
+                              onTap: () {
+                                final eid = (item['entity_id'] ?? item['transaction_visitor_id'] ?? item['id'] ?? '').toString();
+                                HistoryApprovalModal.show(context, entityId: eid, fallbackTitle: agenda);
                               },
                             ),
                             hSpace(ctx, 16),

@@ -45,3 +45,16 @@ app.*.map.json
 /android/app/release
 
 .vscode/templates
+
+# AI Agent Skills & Configurations
+.agent/
+.agents/
+_agent/
+_agents/
+.gemini/
+skills/
+.skills/
+.claude/
+.claude-plugin/
+.codex-plugin/
+
