@@ -266,7 +266,10 @@ class ShareLinkDetailModal {
                                   ? Icons.timer_off_outlined
                                   : Icons.timer_outlined,
                               'Expired At',
-                              item['expired_number'] == 0
+                              (item['expired_number'] == 0 ||
+                                      item['expired_number'] == 99999 ||
+                                      item['expired_number'] == 9999 ||
+                                      item['expired_number'] == 99999999)
                                   ? 'Never'
                                   : formatDate(item['expired_at']),
                               valueColor: isExpired

@@ -57,6 +57,7 @@ class _ShareLinkHomeListState extends State<ShareLinkHomeList> {
       final selectedDate = controller.selectedDashboardDate.value;
       final filtered = controller.dashboardShareLinks.where((item) {
         final dateStr = item['visitor_period_start']?.toString() ??
+            item['active_at']?.toString() ??
             item['created_at']?.toString() ??
             item['expired_at']?.toString();
         final date = _parseShareLinkDate(dateStr);
@@ -113,6 +114,7 @@ class _ShareLinkHomeListState extends State<ShareLinkHomeList> {
       final selectedDate = controller.selectedDashboardDate.value;
       final filteredShareLinks = controller.dashboardShareLinks.where((item) {
         final dateStr = item['visitor_period_start']?.toString() ??
+            item['active_at']?.toString() ??
             item['created_at']?.toString() ??
             item['expired_at']?.toString();
         final date = _parseShareLinkDate(dateStr);
@@ -151,11 +153,15 @@ class _ShareLinkHomeListState extends State<ShareLinkHomeList> {
           return aExpired ? 1 : -1;
         }
 
-        final dateStrA = aMap['visitor_period_start']?.toString() ??
+        final dateStrA = aMap['active_at']?.toString() ??
             aMap['created_at']?.toString() ??
+            aMap['link_active_at']?.toString() ??
+            aMap['visitor_period_start']?.toString() ??
             aMap['expired_at']?.toString();
-        final dateStrB = bMap['visitor_period_start']?.toString() ??
+        final dateStrB = bMap['active_at']?.toString() ??
             bMap['created_at']?.toString() ??
+            bMap['link_active_at']?.toString() ??
+            bMap['visitor_period_start']?.toString() ??
             bMap['expired_at']?.toString();
         final dateA = _parseShareLinkDate(dateStrA);
         final dateB = _parseShareLinkDate(dateStrB);

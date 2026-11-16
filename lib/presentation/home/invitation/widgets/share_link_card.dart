@@ -322,7 +322,7 @@ class ShareLinkCard extends StatelessWidget {
                           context,
                           Icons.timer_off_outlined,
                           'Expired At',
-                          item['expired_number'] == 0 ? 'Never' : formatDate(item['expired_at']),
+                          (item['expired_number'] == 0 || item['expired_number'] == 99999 || item['expired_number'] == 9999 || item['expired_number'] == 99999999) ? 'Never' : formatDate(item['expired_at']),
                           color: Colors.red.shade600,
                         ),
                       ],
@@ -440,10 +440,16 @@ class _CountdownBadgeState extends State<_CountdownBadge> {
     }
   }
 
+  bool get _isNoExpired =>
+      widget.expiredNumber == 0 ||
+      widget.expiredNumber == 99999 ||
+      widget.expiredNumber == 9999 ||
+      widget.expiredNumber == 99999999;
+
   void _startOrStopTimer() {
     _timer?.cancel();
     _timer = null;
-    if (!widget.isExpired && widget.expiredNumber != 0) {
+    if (!widget.isExpired && !_isNoExpired) {
       _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
         if (mounted) setState(() {});
       });
@@ -457,7 +463,7 @@ class _CountdownBadgeState extends State<_CountdownBadge> {
   }
 
   String _getRemainingTime(DateTime? expiredAt) {
-    if (widget.expiredNumber == 0) return 'No Expired';
+    if (_isNoExpired) return 'No Expired';
     if (expiredAt == null) return '00:00:00';
     final now = DateTime.now();
     final difference = expiredAt.difference(now);

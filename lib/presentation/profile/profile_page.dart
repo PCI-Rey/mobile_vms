@@ -29,7 +29,10 @@ class ProfilePage extends StatelessWidget {
           ),
         ),
       ),
-      body: Obx(() {
+      body: SafeArea(
+        top: false,
+        bottom: true,
+        child: Obx(() {
         final user = UserController.to.user.value;
         final bool isEmployee =
             (user?.roleAccess?.toLowerCase() == 'employee' ||
@@ -175,7 +178,7 @@ class ProfilePage extends StatelessWidget {
                           padding: EdgeInsets.only(
                             left: rw(context, 20),
                             right: rw(context, 20),
-                            bottom: rw(context, 20),
+                            bottom: rw(context, 24),
                           ),
                           child: Column(
                             children: [
@@ -329,7 +332,7 @@ class ProfilePage extends StatelessWidget {
                               // Logout button
                               SizedBox(
                                 width: double.infinity,
-                                height: rh(context, 41),
+                                height: rh(context, 44),
                                 child: Obx(() {
                                   final isLoading = UserController.to.isLoggingOut.value;
                                   return ElevatedButton(
@@ -405,8 +408,9 @@ class ProfilePage extends StatelessWidget {
           ],
         );
       }),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildProductItem(BuildContext context, IconData icon, String label) {
     return SizedBox(

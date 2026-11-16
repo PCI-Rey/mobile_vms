@@ -662,9 +662,22 @@ class InvitationController extends GetxController {
       );
       if (response.data['status'] == 'success' ||
           response.data['status_code'] == 200) {
-        dashboardShareLinks.assignAll(
-          response.data['collection'] as List<dynamic>? ?? [],
-        );
+        final collection =
+            response.data['collection'] as List<dynamic>? ?? [];
+        final list = List<dynamic>.from(collection);
+        list.sort((a, b) {
+          final dateA = _parseItemCreationDate(a);
+          final dateB = _parseItemCreationDate(b);
+          if (dateA != null && dateB != null) {
+            return dateB.compareTo(dateA);
+          } else if (dateA != null) {
+            return -1;
+          } else if (dateB != null) {
+            return 1;
+          }
+          return 0;
+        });
+        dashboardShareLinks.assignAll(list);
       } else if (response.data['status'] == 'not_found' ||
           response.data['status_code'] == 404) {
         dashboardShareLinks.clear();
@@ -734,67 +747,26 @@ class InvitationController extends GetxController {
 
     isShareLinkLoading.value = true;
     try {
-      // Step 1: Query with length 10 to trigger/get correct records count info
-      final countResponse = await _api.getShareLinkDt(
+      final response = await _api.getShareLinkDt(
         token,
         start: 0,
-        length: 10,
+        length: 500,
         sortDir: 'desc',
       );
 
       debugPrint(
-        'DEBUG: fetchShareLinks count response status: ${countResponse.statusCode}',
+        'DEBUG: fetchShareLinks response status: ${response.statusCode}',
       );
-      if (countResponse.data is Map &&
-          (countResponse.data['status'] == 'success' ||
-              countResponse.data['status_code'] == 200)) {
-        final recordsFiltered =
-            (countResponse.data['recordsFiltered'] ??
-                    countResponse.data['RecordsFiltered'] ??
-                    countResponse.data['records_filtered'] ??
-                    50)
-                as int;
-
-        final collectionList =
-            countResponse.data['collection'] as List<dynamic>? ?? [];
-        debugPrint(
-          'DEBUG: fetchShareLinks RecordsFiltered = $recordsFiltered, collection length = ${collectionList.length}',
-        );
-
-        if (recordsFiltered <= collectionList.length) {
-          // If the total count is <= the retrieved collection size (e.g. 10), we already have the full list!
-          allShareLinks.assignAll(collectionList);
-          _applyShareFilters();
-        } else {
-          // Step 2: Fetch the actual total count of items (capped at 500 to prevent backend limit issues)
-          final totalCount = recordsFiltered > 500 ? 500 : recordsFiltered;
-          final response = await _api.getShareLinkDt(
-            token,
-            start: 0,
-            length: totalCount,
-            sortDir: 'desc',
-          );
-
-          debugPrint(
-            'DEBUG: fetchShareLinks second response status: ${response.statusCode}',
-          );
-          if (response.data is Map &&
-              (response.data['status'] == 'success' ||
-                  response.data['status_code'] == 200)) {
-            final collection =
-                response.data['collection'] as List<dynamic>? ?? [];
-            debugPrint(
-              'DEBUG: fetchShareLinks second collection length = ${collection.length}',
-            );
-            allShareLinks.assignAll(collection);
-          } else {
-            allShareLinks.assignAll(collectionList);
-          }
-          _applyShareFilters();
-        }
-      } else if (countResponse.data is Map &&
-          (countResponse.data['status'] == 'not_found' ||
-              countResponse.data['status_code'] == 404)) {
+      if (response.data is Map &&
+          (response.data['status'] == 'success' ||
+              response.data['status_code'] == 200)) {
+        final collection =
+            response.data['collection'] as List<dynamic>? ?? [];
+        allShareLinks.assignAll(collection);
+        _applyShareFilters();
+      } else if (response.data is Map &&
+          (response.data['status'] == 'not_found' ||
+              response.data['status_code'] == 404)) {
         allShareLinks.clear();
         _applyShareFilters();
       }
@@ -803,6 +775,45 @@ class InvitationController extends GetxController {
     } finally {
       isShareLinkLoading.value = false;
     }
+  }
+
+  DateTime? _parseItemCreationDate(dynamic item) {
+    if (item == null || item is! Map) return null;
+    final keys = ['active_at', 'created_at', 'link_active_at'];
+    for (final key in keys) {
+      final value = item[key];
+      if (value == null) continue;
+      final valueStr = value.toString().trim();
+      if (valueStr.isEmpty || valueStr == 'null' || valueStr == '-') continue;
+      try {
+        String normalized = valueStr;
+        if (!normalized.endsWith('Z') && !normalized.contains('+')) {
+          normalized = '${normalized.replaceFirst(' ', 'T')}Z';
+        }
+        final parsed = DateTime.tryParse(normalized);
+        if (parsed != null) {
+          return parsed.toLocal();
+        }
+      } catch (_) {}
+    }
+
+    final urlStr = item['url']?.toString();
+    if (urlStr != null && urlStr.contains('timestamp=')) {
+      try {
+        final uri = Uri.tryParse(urlStr);
+        final ts = uri?.queryParameters['timestamp'];
+        if (ts != null && ts.isNotEmpty) {
+          String normalized = ts;
+          if (!normalized.endsWith('Z') && !normalized.contains('+')) {
+            normalized = '${normalized.replaceFirst(' ', 'T')}Z';
+          }
+          final parsed = DateTime.tryParse(normalized);
+          if (parsed != null) return parsed.toLocal();
+        }
+      } catch (_) {}
+    }
+
+    return _parseItemDate(item);
   }
 
   DateTime? _parseItemDate(dynamic item) {
@@ -917,11 +928,24 @@ class InvitationController extends GetxController {
       }).toList();
     }
 
-    // Sort: Active first, then by visitor_period_start / created_at / expired_at descending
+    // Sort: Newest created share link first (nomor 1 untuk data paling baru dibuat di UI Mobile)
     filtered.sort((a, b) {
       final aMap = Map<String, dynamic>.from(a as Map);
       final bMap = Map<String, dynamic>.from(b as Map);
 
+      // 1. Prioritaskan tanggal pembuatan terbaru (active_at / created_at / url timestamp)
+      final dateA = _parseItemCreationDate(aMap);
+      final dateB = _parseItemCreationDate(bMap);
+      if (dateA != null && dateB != null) {
+        final cmp = dateB.compareTo(dateA);
+        if (cmp != 0) return cmp;
+      } else if (dateA != null) {
+        return -1;
+      } else if (dateB != null) {
+        return 1;
+      }
+
+      // 2. Jika tanggal pembuatan sama persis, prioritaskan status Active
       bool isExpiredLink(Map<String, dynamic> item) {
         final expiredAtStr = item['expired_at'];
         DateTime? expiredAt;
@@ -951,12 +975,14 @@ class InvitationController extends GetxController {
         return aExpired ? 1 : -1;
       }
 
-      final dateA = _parseItemDate(aMap);
-      final dateB = _parseItemDate(bMap);
-      if (dateA == null && dateB == null) return 0;
-      if (dateA == null) return 1;
-      if (dateB == null) return -1;
-      return dateB.compareTo(dateA);
+      // 3. Fallback: visitor_period_start descending
+      final periodA = _parseItemDate(aMap);
+      final periodB = _parseItemDate(bMap);
+      if (periodA != null && periodB != null) {
+        return periodB.compareTo(periodA);
+      }
+
+      return 0;
     });
 
     // 4. Paginate
@@ -1062,6 +1088,18 @@ class InvitationController extends GetxController {
         } else if (data['item'] is Map) {
           createdItem = Map<String, dynamic>.from(data['item']);
         }
+
+        // Pastikan item yang baru dibuat berada di paling depan (nomor 1 di UI Mobile)
+        if (createdItem != null && createdItem['id'] != null) {
+          final idStr = createdItem['id'].toString();
+          final index = allShareLinks.indexWhere((el) => el['id']?.toString() == idStr);
+          if (index >= 0) {
+            allShareLinks.removeAt(index);
+          }
+          allShareLinks.insert(0, createdItem);
+          _applyShareFilters();
+        }
+
         if (createdItem == null && shareLinks.isNotEmpty) {
           createdItem = shareLinks.first;
         }

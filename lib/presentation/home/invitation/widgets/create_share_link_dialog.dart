@@ -23,9 +23,6 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
   Map<String, dynamic>? selectedVisitorTypeData;
 
   DateTime? visitStart;
-
-  // Visit End is optional with toggle switch
-  bool isVisitEndEnabled = false;
   DateTime? visitEnd;
 
   String? selectedExpiredMinutes = '30';
@@ -68,7 +65,7 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
 
       // 2. Expiry & Quota limits
       final expiredVal = (data['expired_number'] ?? 0).toString();
-      if (expiredVal != '0' && expiredVal.isNotEmpty) {
+      if (expiredVal != '0' && expiredVal != '99999' && expiredVal != '9999' && expiredVal.isNotEmpty) {
         selectedExpiredMinutes = expiredVal;
       }
 
@@ -90,7 +87,6 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
 
       final endVal = data['visitor_period_end']?.toString();
       if (endVal != null && endVal.isNotEmpty && endVal != 'null') {
-        isVisitEndEnabled = true;
         String normalized = endVal;
         if (!normalized.endsWith('Z') && !normalized.contains('+')) {
           normalized = '${normalized.replaceFirst(' ', 'T')}Z';
@@ -109,7 +105,7 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
   bool _hasChanges() {
     return selectedVisitorTypeId != null ||
         visitStart != null ||
-        (isVisitEndEnabled && visitEnd != null) ||
+        visitEnd != null ||
         (selectedExpiredMinutes != null && selectedExpiredMinutes != '30') ||
         (quotaCtrl.text.trim().isNotEmpty && quotaCtrl.text.trim() != '0') ||
         isSingleUse;
@@ -124,25 +120,69 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
             : null);
     if (data == null) return false;
 
-    final name = (data['name'] ?? '').toString().toLowerCase();
+    final name = (data['name'] ?? '').toString().toLowerCase().trim();
     final category = (data['visitor_category'] ??
             data['category'] ??
             data['visitor_category_name'] ??
             data['type'] ??
             '')
         .toString()
-        .toLowerCase();
-    final code = (data['code'] ?? '').toString().toLowerCase();
+        .toLowerCase()
+        .trim();
+    final code = (data['code'] ?? '').toString().toLowerCase().trim();
 
-    return name.contains('remise') ||
-        name.contains('remnise') ||
-        name.contains('cit') ||
-        category.contains('remise') ||
-        category.contains('remnise') ||
-        category.contains('cit') ||
-        code.contains('remise') ||
-        code.contains('remnise') ||
-        code.contains('cit');
+    bool isMatch(String text) {
+      if (text.isEmpty) return false;
+      return text.contains('cit') ||
+          text.contains('remise') ||
+          text.contains('remnise') ||
+          text.contains('dcvendor') ||
+          text.contains('dc vendor') ||
+          text.contains('dc-vendor') ||
+          text.contains('dc_vendor');
+    }
+
+    return isMatch(category) || isMatch(name) || isMatch(code);
+  }
+
+  int get _effectiveExpiredMinutes {
+    if (_isRemiseOrCit) {
+      return 1440; // Remise/CIT must be H-1 (24 hours / 1 day)
+    }
+    return int.tryParse(selectedExpiredMinutes ?? '30') ?? 30;
+  }
+
+  // Waktu minimal dengan detik & milidetik dimatikan (bersih hingga menit)
+  DateTime get _minVisitStart {
+    final now = DateTime.now();
+    final cleanNow = DateTime(now.year, now.month, now.day, now.hour, now.minute);
+    return cleanNow.add(Duration(minutes: _effectiveExpiredMinutes));
+  }
+
+  // Pengecekan validasi dengan toleransi 1 menit agar jam yang sama persis (misal 15:30 besok) selalu lolos
+  bool _isBeforeMinVisitStart(DateTime dt) {
+    final cleanDt = DateTime(dt.year, dt.month, dt.day, dt.hour, dt.minute);
+    final targetLimit = _minVisitStart.subtract(const Duration(minutes: 1));
+    return cleanDt.isBefore(targetLimit);
+  }
+
+  String get _visitStartHelperText {
+    final exactTarget = _minVisitStart;
+    return 'Must be at least ${_formatDuration(_effectiveExpiredMinutes)} from now (${DateFormat('dd MMM, HH:mm').format(exactTarget)} onwards).';
+  }
+
+  String _formatDuration(int minutes) {
+    if (minutes >= 1440) {
+      final days = minutes ~/ 1440;
+      return '$days day${days > 1 ? 's' : ''}';
+    }
+    if (minutes >= 60) {
+      final hours = minutes ~/ 60;
+      final rem = minutes % 60;
+      if (rem > 0) return '$hours hour $rem min';
+      return '$hours hour${hours > 1 ? 's' : ''}';
+    }
+    return '$minutes minutes';
   }
 
   Future<bool> _showExitConfirmation() async {
@@ -352,9 +392,15 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
                                 (vt) => (vt['id']?.toString() ?? '') == v,
                               );
                               if (_isRemiseOrCit) {
-                                selectedExpiredMinutes = '99999999';
-                              } else if (selectedExpiredMinutes == '99999999') {
+                                selectedExpiredMinutes = '0';
+                              } else if (selectedExpiredMinutes == '0' ||
+                                  selectedExpiredMinutes == '9999' ||
+                                  selectedExpiredMinutes == '99999' ||
+                                  selectedExpiredMinutes == '99999999') {
                                 selectedExpiredMinutes = '30';
+                              }
+                              if (visitStart != null && _isBeforeMinVisitStart(visitStart!)) {
+                                visitStart = null;
                               }
                             }),
                           )),
@@ -364,33 +410,34 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
                         _buildFormField(
                           label: 'Visit Start',
                           isRequired: true,
-                          input: _buildDateTimePicker(
-                            value: visitStart,
-                            enabled: true,
-                            onTap: () => _pickDateTime(true),
-                            onClear: () => setState(() => visitStart = null),
+                          input: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _buildDateTimePicker(
+                                value: visitStart,
+                                enabled: true,
+                                onTap: () => _pickDateTime(true),
+                                onClear: () => setState(() => visitStart = null),
+                              ),
+                              vSpace(context, 4),
+                              Text(
+                                _visitStartHelperText,
+                                style: TextStyle(
+                                  fontSize: rfs(context, 11),
+                                  color: Colors.grey.shade600,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
 
-                        // 3. Visit End (Optional with toggle switch, matching web)
+                        // 3. Visit End (Optional, no switch button)
                         _buildFormField(
                           label: 'Visit End',
                           isRequired: false,
-                          trailing: Transform.scale(
-                            scale: 0.7,
-                            child: Switch(
-                              value: isVisitEndEnabled,
-                              onChanged: (v) => setState(() {
-                                isVisitEndEnabled = v;
-                                if (!v) visitEnd = null;
-                              }),
-                              activeTrackColor: const Color(0xFF005596).withValues(alpha: 0.5),
-                              activeThumbColor: const Color(0xFF005596),
-                            ),
-                          ),
                           input: _buildDateTimePicker(
                             value: visitEnd,
-                            enabled: isVisitEndEnabled,
+                            enabled: true,
                             onTap: () => _pickDateTime(false),
                             onClear: () => setState(() => visitEnd = null),
                           ),
@@ -405,16 +452,21 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
                             children: [
                               _buildDropdown(
                                 hint: 'Select Expired Link',
-                                value: _isRemiseOrCit ? '99999999' : selectedExpiredMinutes,
+                                value: _isRemiseOrCit ? '0' : selectedExpiredMinutes,
                                 items: _isRemiseOrCit
                                     ? [
-                                        {'id': '99999999', 'name': '99999999'},
+                                        {'id': '0', 'name': '0'},
                                         ...expiryOptions,
                                       ]
                                     : expiryOptions,
                                 enabled: !_isRemiseOrCit,
                                 onChanged: !_isRemiseOrCit
-                                    ? (v) => setState(() => selectedExpiredMinutes = v)
+                                    ? (v) => setState(() {
+                                        selectedExpiredMinutes = v;
+                                        if (visitStart != null && visitStart!.isBefore(_minVisitStart)) {
+                                          visitStart = null;
+                                        }
+                                      })
                                     : (_) {},
                               ),
                               if (_isRemiseOrCit) ...[
@@ -443,6 +495,9 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
                                 controller: quotaCtrl,
                                 enabled: !isSingleUse,
                                 keyboardType: TextInputType.number,
+                                onChanged: (val) {
+                                  setState(() {});
+                                },
                               ),
                               vSpace(context, 4),
                               Text(
@@ -456,39 +511,43 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
                           ),
                         ),
 
-                        // 6. Single Use Link
-                        Row(
-                          children: [
-                            Switch(
-                              value: isSingleUse,
-                              onChanged: (v) => setState(() {
-                                isSingleUse = v;
-                                if (v) {
-                                  quotaCtrl.text = '1';
-                                }
-                              }),
-                              activeTrackColor: const Color(0xFF005596).withValues(alpha: 0.5),
-                              activeThumbColor: const Color(0xFF005596),
-                            ),
-                            Text(
-                              'Single Use Link',
+                        // 6. Single Use Link (Visible only if isSingleUse is active OR quota is not yet filled / < 1)
+                        if (isSingleUse || (int.tryParse(quotaCtrl.text.trim()) ?? 0) < 1) ...[
+                          Row(
+                            children: [
+                              Switch(
+                                value: isSingleUse,
+                                onChanged: (v) => setState(() {
+                                  isSingleUse = v;
+                                  if (v) {
+                                    quotaCtrl.text = '1';
+                                  } else {
+                                    quotaCtrl.text = '0';
+                                  }
+                                }),
+                                activeTrackColor: const Color(0xFF005596).withValues(alpha: 0.5),
+                                activeThumbColor: const Color(0xFF005596),
+                              ),
+                              Text(
+                                'Single Use Link',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: rfs(context, 13),
+                                ),
+                              ),
+                            ],
+                          ),
+                          Padding(
+                            padding: EdgeInsets.only(left: rw(context, 12)),
+                            child: Text(
+                              'Enable this option to allow the link to be used only once. After the first use, the link will become inactive.',
                               style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: rfs(context, 13),
+                                fontSize: rfs(context, 11),
+                                color: Colors.grey.shade600,
                               ),
                             ),
-                          ],
-                        ),
-                        Padding(
-                          padding: EdgeInsets.only(left: rw(context, 12)),
-                          child: Text(
-                            'Enable this option to allow the link to be used only once. After the first use, the link will become inactive.',
-                            style: TextStyle(
-                              fontSize: rfs(context, 11),
-                              color: Colors.grey.shade600,
-                            ),
                           ),
-                        ),
+                        ],
 
                         vSpace(context, 24),
 
@@ -709,6 +768,7 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
     required TextEditingController controller,
     required bool enabled,
     TextInputType? keyboardType,
+    ValueChanged<String>? onChanged,
   }) {
     return TextFormField(
       controller: controller,
@@ -716,6 +776,7 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
       keyboardType: keyboardType,
       style: TextStyle(fontSize: rfs(context, 13)),
       decoration: _inputDecoration(enabled: enabled).copyWith(hintText: hint),
+      onChanged: onChanged,
     );
   }
 
@@ -783,20 +844,38 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
   }
 
   Future<void> _pickDateTime(bool isStart) async {
-    final initialDate = isStart ? visitStart : visitEnd;
+    final effectiveMin = isStart ? _minVisitStart.subtract(const Duration(minutes: 1)) : visitStart;
+    final initialDate = isStart
+        ? (visitStart != null && !_isBeforeMinVisitStart(visitStart!)
+            ? visitStart
+            : _minVisitStart)
+        : visitEnd;
 
     final dt = await showAppDateTimePicker(
       context,
       initialDate: initialDate,
-      minDateTime: !isStart ? visitStart : null,
+      minDateTime: effectiveMin,
       maxDateTime: isStart ? visitEnd : null,
       referenceStartDateTime: !isStart ? visitStart : null,
       quickHourPresets: !isStart ? const [2, 5] : null,
       title: isStart ? 'Select Visit Start' : 'Select Visit End',
       withTime: true,
+      showNowButton: !isStart,
     );
 
     if (dt != null && mounted) {
+      if (isStart && _isBeforeMinVisitStart(dt)) {
+        Get.snackbar(
+          'Invalid Time',
+          _visitStartHelperText,
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+          snackPosition: SnackPosition.TOP,
+          margin: EdgeInsets.all(rw(context, 12)),
+        );
+        return;
+      }
+
       if (!isStart && visitStart != null && dt.isBefore(visitStart!)) {
         Get.snackbar(
           'Invalid Time',
@@ -858,8 +937,20 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
       return;
     }
 
+    if (_isBeforeMinVisitStart(visitStart!)) {
+      Get.snackbar(
+        'Invalid Time',
+        _visitStartHelperText,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+        snackPosition: SnackPosition.TOP,
+        margin: EdgeInsets.all(rw(context, 12)),
+      );
+      return;
+    }
+
     // 3. Visit End check (Optional - only check order if both visitStart and visitEnd are present)
-    if (isVisitEndEnabled && visitEnd != null && visitStart != null && visitEnd!.isBefore(visitStart!)) {
+    if (visitEnd != null && visitStart != null && visitEnd!.isBefore(visitStart!)) {
       Get.snackbar(
         'Invalid Date',
         'Visit End cannot be before Visit Start',
@@ -872,8 +963,8 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
     }
 
     // 4. Expired Link check (Required)
-    final effectiveExpiredMinutes = _isRemiseOrCit ? '99999999' : selectedExpiredMinutes;
-    if (effectiveExpiredMinutes == null || effectiveExpiredMinutes.isEmpty || effectiveExpiredMinutes == '0') {
+    final effectiveExpiredMinutes = _isRemiseOrCit ? '9999' : selectedExpiredMinutes;
+    if (!_isRemiseOrCit && (effectiveExpiredMinutes == null || effectiveExpiredMinutes.isEmpty || effectiveExpiredMinutes == '0')) {
       Get.snackbar(
         'Required',
         'Expired Link is required',
@@ -887,10 +978,10 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
 
     // 5. Visitor Quota Limit check (Required)
     final quotaValue = int.tryParse(quotaCtrl.text.trim());
-    if (!isSingleUse && (quotaCtrl.text.trim().isEmpty || quotaValue == null || quotaValue < 0)) {
+    if (!isSingleUse && (quotaCtrl.text.trim().isEmpty || quotaValue == null || quotaValue < 1)) {
       Get.snackbar(
         'Required',
-        'Visitor Quota Limit is required',
+        'Visitor Quota Limit is required (minimum 1)',
         backgroundColor: Colors.red,
         colorText: Colors.white,
         snackPosition: SnackPosition.TOP,
@@ -933,9 +1024,7 @@ class _CreateShareLinkDialogState extends State<CreateShareLinkDialog> {
       'visitor_type_id': vTypeVal,
       'agenda': (agendaVal != null && agendaVal.toString().isNotEmpty) ? agendaVal : null,
       'visitor_period_start': visitStart?.toUtc().toIso8601String().substring(0, 19),
-      'visitor_period_end': (isVisitEndEnabled && visitEnd != null)
-          ? visitEnd!.toUtc().toIso8601String().substring(0, 19)
-          : null,
+      'visitor_period_end': visitEnd?.toUtc().toIso8601String().substring(0, 19),
       'expired_number': _isRemiseOrCit
           ? 99999999
           : (int.tryParse(selectedExpiredMinutes ?? '30') ?? 30),

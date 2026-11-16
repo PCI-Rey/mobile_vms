@@ -14,6 +14,7 @@ class ApiService {
       'b02d992e7a03606f90be1114717178b4904a00e35594c499cb1876d59ccff275';
   static const String xPlatformId = 'mobileapp';
   static const String xUserAgent = 'mobile_vms';
+  static const String xEmployeeRole = 'DLAF';
 
   static final ApiService _instance = ApiService._internal();
   factory ApiService() => _instance;
@@ -234,6 +235,7 @@ class ApiService {
         'X-Use-Token': xUseToken,
         'X-Platform-Id': xPlatformId,
         'X-UserAgent': xUserAgent,
+        'X-Employee-Role': xEmployeeRole,
       };
 
       if (captchaId != null &&
@@ -245,7 +247,7 @@ class ApiService {
       }
 
       final response = await _dio.post(
-        '/$pathApi/_Auth/RequestToken',
+        '/$pathApi/_Auth/RequestToken/satker',
         data: {'username': username, 'password': password},
         options: Options(headers: headers),
       );

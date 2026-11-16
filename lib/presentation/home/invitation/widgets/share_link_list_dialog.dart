@@ -219,9 +219,9 @@ class _ShareLinkListDialogState extends State<ShareLinkListDialog> {
     }
 
     String getRemainingTime() {
-      // Check if it's "No Expired" (expired_number is 0)
+      // Check if it's "No Expired" (expired_number is 0 or 99999)
       final int expiredNumber = item['expired_number'] ?? -1;
-      if (expiredNumber == 0) return 'No Expired';
+      if (expiredNumber == 0 || expiredNumber == 99999 || expiredNumber == 9999 || expiredNumber == 99999999) return 'No Expired';
 
       if (expiredAt == null) return '00:00:00';
       final now = DateTime.now();
@@ -385,7 +385,7 @@ class _ShareLinkListDialogState extends State<ShareLinkListDialog> {
                 vSpace(context, 8),
                 _buildInfoRow(
                   'Expired At',
-                  item['expired_number'] == 0
+                  (item['expired_number'] == 0 || item['expired_number'] == 99999 || item['expired_number'] == 9999)
                       ? 'Never'
                       : formatDate(item['expired_at']),
                   color: Colors.orange.shade700,
