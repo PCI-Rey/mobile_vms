@@ -691,6 +691,21 @@ class ApiService {
     }
   }
 
+  Future<Response> openParkingBlocker(String token, String trxVisitorId) async {
+    try {
+      final response = await _dio.post(
+        '/$pathApi/dashboard/parking/open-blocker',
+        data: {'trx_visitor_id': trxVisitorId},
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+      return response;
+    } on DioException catch (e) {
+      debugPrint('Dio Error openParkingBlocker: ${e.message}');
+      if (e.response != null) return e.response!;
+      rethrow;
+    }
+  }
+
   Future<Response> getTodayActivities(
     String token, {
     required String startDate,

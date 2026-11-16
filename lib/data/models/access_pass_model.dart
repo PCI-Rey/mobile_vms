@@ -48,6 +48,11 @@ class AccessPassModel {
   final String? sitePlaceId;
   final bool isReceiverSelf;
   final String? selfieImage;
+  final DateTime? checkinAt;
+  final String checkinBy;
+  final DateTime? checkoutAt;
+  final String checkoutBy;
+  final String? parkingMap;
 
   AccessPassModel({
     required this.id,
@@ -96,6 +101,11 @@ class AccessPassModel {
     this.sitePlaceId,
     this.isReceiverSelf = false,
     this.selfieImage,
+    this.checkinAt,
+    this.checkinBy = '',
+    this.checkoutAt,
+    this.checkoutBy = '',
+    this.parkingMap,
   });
 
   factory AccessPassModel.fromRawJson(String str) =>
@@ -266,6 +276,33 @@ class AccessPassModel {
             visitorObj?['image'];
         return raw?.toString();
       }(),
+      checkinAt: json['checkin_at'] != null && json['checkin_at'].toString().isNotEmpty
+          ? _parseUtcToLocal(json['checkin_at'].toString())
+          : null,
+      checkinBy: json['checkin_by']?.toString() ?? '',
+      checkoutAt: json['checkout_at'] != null && json['checkout_at'].toString().isNotEmpty
+          ? _parseUtcToLocal(json['checkout_at'].toString())
+          : null,
+      checkoutBy: json['checkout_by']?.toString() ?? '',
+      parkingMap: () {
+        final val = json['parking_map'] ??
+            json['parkingMap'] ??
+            json['parking_map_url'] ??
+            json['map_url'];
+        if (val == null) return null;
+        if (val is String) {
+          final s = val.trim();
+          if (s.isEmpty || s == 'null' || s == '-') return null;
+          return s;
+        }
+        if (val is Map) {
+          final u = (val['url'] ?? val['link'] ?? val['src'])?.toString().trim();
+          if (u != null && u.isNotEmpty && u != 'null' && u != '-') return u;
+        }
+        final s = val.toString().trim();
+        if (s.isEmpty || s == 'null' || s == '-') return null;
+        return s;
+      }(),
     );
   }
 
@@ -316,6 +353,11 @@ class AccessPassModel {
     'site_place_id': sitePlaceId,
     'is_receiver_self': isReceiverSelf,
     'selfie_image': selfieImage,
+    'checkin_at': checkinAt?.toIso8601String(),
+    'checkin_by': checkinBy,
+    'checkout_at': checkoutAt?.toIso8601String(),
+    'checkout_by': checkoutBy,
+    'parking_map': parkingMap,
   };
 
   AccessPassModel copyWith({
@@ -365,6 +407,11 @@ class AccessPassModel {
     String? sitePlaceId,
     bool? isReceiverSelf,
     String? selfieImage,
+    DateTime? checkinAt,
+    String? checkinBy,
+    DateTime? checkoutAt,
+    String? checkoutBy,
+    String? parkingMap,
   }) {
     return AccessPassModel(
       id: id ?? this.id,
@@ -399,8 +446,7 @@ class AccessPassModel {
       invitedBy: invitedBy ?? this.invitedBy,
       hostOrganizationName: hostOrganizationName ?? this.hostOrganizationName,
       flow: flow ?? this.flow,
-      visitorOrganizationName:
-          visitorOrganizationName ?? this.visitorOrganizationName,
+      visitorOrganizationName: visitorOrganizationName ?? this.visitorOrganizationName,
       visitorPhone: visitorPhone ?? this.visitorPhone,
       visitorEmail: visitorEmail ?? this.visitorEmail,
       visitorIdentityId: visitorIdentityId ?? this.visitorIdentityId,
@@ -414,6 +460,11 @@ class AccessPassModel {
       sitePlaceId: sitePlaceId ?? this.sitePlaceId,
       isReceiverSelf: isReceiverSelf ?? this.isReceiverSelf,
       selfieImage: selfieImage ?? this.selfieImage,
+      checkinAt: checkinAt ?? this.checkinAt,
+      checkinBy: checkinBy ?? this.checkinBy,
+      checkoutAt: checkoutAt ?? this.checkoutAt,
+      checkoutBy: checkoutBy ?? this.checkoutBy,
+      parkingMap: parkingMap ?? this.parkingMap,
     );
   }
 

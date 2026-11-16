@@ -4,6 +4,7 @@ import 'package:qr_flutter/qr_flutter.dart';
 import '../../../../core/core.dart';
 import '../../../../core/helper/responsive_helper.dart';
 import '../scan_ticket_page.dart';
+import 'parking_map_webview_page.dart';
 
 class GuestParkingPage extends StatefulWidget {
   const GuestParkingPage({super.key});
@@ -494,26 +495,86 @@ class _GuestParkingPageState extends State<GuestParkingPage> with SingleTickerPr
                       _buildDetailItem(context, 'Status', res.status, isStatus: true),
                       const Divider(),
                       vSpace(context, 8),
-                      Text(
-                        'View Parking',
-                        style: TextStyle(
-                          fontSize: rfs(context, 13),
-                          fontWeight: FontWeight.w600,
-                          color: Colors.grey.shade500,
-                        ),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'View Parking',
+                            style: TextStyle(
+                              fontSize: rfs(context, 13),
+                              fontWeight: FontWeight.w600,
+                              color: Colors.grey.shade600,
+                            ),
+                          ),
+                          GestureDetector(
+                            onTap: () {
+                              Navigator.pop(context);
+                              Get.to(() => const ParkingMapWebViewPage());
+                            },
+                            child: Text(
+                              'Open 2D Map →',
+                              style: TextStyle(
+                                fontSize: rfs(context, 12),
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.primary600,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                       vSpace(context, 8),
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(rw(context, 8)),
-                        child: Container(
-                          width: double.infinity,
-                          height: rh(context, 150),
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(rw(context, 8)),
-                            border: Border.all(color: Colors.grey.shade200),
-                          ),
-                          child: Assets.images.parkingSlot.image(
-                            fit: BoxFit.cover,
+                      GestureDetector(
+                        onTap: () {
+                          Navigator.pop(context);
+                          Get.to(() => const ParkingMapWebViewPage());
+                        },
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(rw(context, 8)),
+                          child: Stack(
+                            alignment: Alignment.bottomRight,
+                            children: [
+                              Container(
+                                width: double.infinity,
+                                height: rh(context, 150),
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(rw(context, 8)),
+                                  border: Border.all(color: Colors.grey.shade200),
+                                ),
+                                child: Assets.images.parkingSlot.image(
+                                  fit: BoxFit.cover,
+                                ),
+                              ),
+                              Container(
+                                margin: EdgeInsets.all(rw(context, 8)),
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: rw(context, 10),
+                                  vertical: rh(context, 4),
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.black.withValues(alpha: 0.7),
+                                  borderRadius: BorderRadius.circular(rw(context, 6)),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      Icons.map_rounded,
+                                      color: Colors.white,
+                                      size: rw(context, 12),
+                                    ),
+                                    hSpace(context, 4),
+                                    Text(
+                                      'Interactive 2D',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: rfs(context, 10),
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ),

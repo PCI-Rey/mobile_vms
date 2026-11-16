@@ -4,7 +4,6 @@ import '../../../core/core.dart';
 import '../../../core/helper/responsive_helper.dart';
 import '../../auth/controller/language_controller.dart';
 import '../../auth/controller/user_controller.dart';
-import '../../notification/notification_page.dart';
 import '../controllers/guest_home_controller.dart';
 import '../../profile/profile_page.dart';
 
@@ -21,9 +20,9 @@ class GuestHeader extends StatelessWidget {
 
     return Padding(
       padding: EdgeInsets.fromLTRB(
-        rw(context, 20),
-        rh(context, 16),
-        rw(context, 20),
+        rw(context, 16),
+        rh(context, 6),
+        rw(context, 16),
         0,
       ),
       child: Row(
@@ -43,7 +42,7 @@ class GuestHeader extends StatelessWidget {
                           child: Icon(
                             Icons.person,
                             color: const Color(0xFF94A3B8),
-                            size: rw(context, 26),
+                            size: rw(context, 22),
                           ),
                         ),
                       )
@@ -52,22 +51,23 @@ class GuestHeader extends StatelessWidget {
                         child: Icon(
                           Icons.person,
                           color: const Color(0xFF94A3B8),
-                          size: rw(context, 26),
+                          size: rw(context, 22),
                         ),
                       ),
-                size: rw(context, 48),
+                size: rw(context, 40),
               );
             }),
           ),
-          hSpace(context, 12),
+          hSpace(context, 10),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
                   'welcome'.tr,
                   style: TextStyle(
-                    fontSize: rfs(context, 22),
+                    fontSize: rfs(context, 13),
                     color: Colors.white.withValues(alpha: 0.8),
                     fontWeight: FontWeight.w500,
                   ),
@@ -78,10 +78,10 @@ class GuestHeader extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
-                      fontSize: rfs(context, 18),
+                      fontSize: rfs(context, 15),
                       fontWeight: FontWeight.w800,
                       color: Colors.white,
-                      letterSpacing: -0.5,
+                      letterSpacing: -0.3,
                     ),
                   ),
                 ),
@@ -98,45 +98,7 @@ class GuestHeader extends StatelessWidget {
     BuildContext context,
     LanguageController langCtrl,
   ) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        _buildLangSelector(context, langCtrl),
-        hSpace(context, 12),
-        GestureDetector(
-          onTap: () => showNotificationDialog(context),
-          child: Container(
-            padding: EdgeInsets.all(rw(context, 9)),
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.12),
-              shape: BoxShape.circle,
-              border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
-            ),
-            child: Stack(
-              children: [
-                Icon(
-                  Icons.notifications_none_rounded,
-                  color: Colors.white,
-                  size: rw(context, 22),
-                ),
-                Positioned(
-                  right: 1,
-                  top: 1,
-                  child: Container(
-                    width: rw(context, 7),
-                    height: rw(context, 7),
-                    decoration: const BoxDecoration(
-                      color: Colors.redAccent,
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ],
-    );
+    return _buildLangSelector(context, langCtrl);
   }
 
   Widget _buildLangSelector(BuildContext context, LanguageController langCtrl) {

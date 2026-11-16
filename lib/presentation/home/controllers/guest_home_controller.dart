@@ -259,6 +259,51 @@ class GuestHomeController extends GetxController {
     }
   }
 
+  Future<bool> openParkingBlockerAction(String trxVisitorId) async {
+    final user = _hive.getUser();
+    final token = user?.token;
+
+    if (token == null) {
+      Get.snackbar(
+        'Error',
+        'Token tidak ditemukan. Silakan login kembali.',
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
+      return false;
+    }
+
+    try {
+      final response = await _api.openParkingBlocker(token, trxVisitorId);
+      if (response.statusCode == 200 &&
+          response.data is Map &&
+          response.data['status'] == 'success') {
+        return true;
+      } else {
+        final msg = response.data is Map
+            ? (response.data['msg'] ??
+                response.data['message'] ??
+                'Gagal membuka parking blocker')
+            : 'Gagal membuka parking blocker';
+        Get.snackbar(
+          'Failed',
+          msg.toString(),
+          backgroundColor: Colors.redAccent,
+          colorText: Colors.white,
+        );
+        return false;
+      }
+    } catch (e) {
+      Get.snackbar(
+        'Error',
+        'Terjadi kesalahan: $e',
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
+      return false;
+    }
+  }
+
   @override
   void onClose() {
     _refreshTimer?.cancel();
