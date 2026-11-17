@@ -512,7 +512,7 @@ class _GuestParkingPageState extends State<GuestParkingPage> with SingleTickerPr
                               Get.to(() => const ParkingMapWebViewPage());
                             },
                             child: Text(
-                              'Open 2D Map →',
+                              'View Parking Location →',
                               style: TextStyle(
                                 fontSize: rfs(context, 12),
                                 fontWeight: FontWeight.w700,
@@ -564,7 +564,7 @@ class _GuestParkingPageState extends State<GuestParkingPage> with SingleTickerPr
                                     ),
                                     hSpace(context, 4),
                                     Text(
-                                      'Interactive 2D',
+                                      'Interactive Map',
                                       style: TextStyle(
                                         color: Colors.white,
                                         fontSize: rfs(context, 10),

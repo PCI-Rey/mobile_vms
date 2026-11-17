@@ -2,7 +2,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:webview_flutter/webview_flutter.dart';
-import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/core.dart';
 import '../../../../core/helper/responsive_helper.dart';
 import '../../../data/models/access_pass_model.dart';
@@ -135,17 +134,6 @@ class _ParkingMapWebViewPageState extends State<ParkingMapWebViewPage> {
     }
   }
 
-  Future<void> _openExternalBrowser() async {
-    final uri = Uri.parse(_mapUrl);
-    if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Could not launch external map URL')),
-        );
-      }
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     // Resolve vehicle & parking info from passed item
@@ -202,7 +190,7 @@ class _ParkingMapWebViewPageState extends State<ParkingMapWebViewPage> {
           },
         ),
         title: Text(
-          'Parking Map',
+          'Parking Location',
           style: TextStyle(
             fontSize: rfs(context, 18),
             fontWeight: FontWeight.w700,
@@ -231,12 +219,7 @@ class _ParkingMapWebViewPageState extends State<ParkingMapWebViewPage> {
               });
             },
           ),
-          IconButton(
-            tooltip: 'Open in Browser',
-            icon: const Icon(Icons.open_in_browser_rounded, color: Color(0xFF1E293B)),
-            onPressed: _openExternalBrowser,
-          ),
-          hSpace(context, 6),
+          hSpace(context, 8),
         ],
         bottom: PreferredSize(
           preferredSize: Size.fromHeight(rh(context, 1.0)),
@@ -547,7 +530,7 @@ class _ParkingMapWebViewPageState extends State<ParkingMapWebViewPage> {
                         ),
                         vSpace(context, 18),
                         Text(
-                          'Loading 2D Parking Map...',
+                          'Loading Parking Location...',
                           style: TextStyle(
                             fontSize: rfs(context, 16),
                             fontWeight: FontWeight.w800,

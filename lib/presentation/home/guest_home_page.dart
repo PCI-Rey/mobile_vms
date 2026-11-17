@@ -53,66 +53,91 @@ class _GuestHomePageState extends State<GuestHomePage> {
 
                     // --- DIRECT VISITOR CARD BODY ---
                     Expanded(
-                      child: RefreshIndicator(
-                        color: _blue,
-                        backgroundColor: Colors.white,
-                        onRefresh: () async {
-                          await guestCtrl.fetchAccessPass();
-                        },
-                        child: SingleChildScrollView(
-                          physics: const BouncingScrollPhysics(),
-                          child: Padding(
-                            padding: EdgeInsets.fromLTRB(
-                              rw(context, 16),
-                              rh(context, 8),
-                              rw(context, 16),
-                              rh(context, 16),
-                            ),
-                            child: Obx(() {
-                              langCtrl.selectedLang.value;
+                      child: LayoutBuilder(
+                        builder: (context, constraints) {
+                          final double minBodyHeight =
+                              (constraints.maxHeight - rh(context, 24))
+                                  .clamp(0.0, double.infinity);
 
-                              if (guestCtrl.isLoading.value) {
-                                return _buildLoadingPlaceholder(context);
-                              }
+                          return RefreshIndicator(
+                            color: _blue,
+                            backgroundColor: Colors.white,
+                            onRefresh: () async {
+                              await guestCtrl.fetchAccessPass();
+                            },
+                            child: SingleChildScrollView(
+                              physics: const AlwaysScrollableScrollPhysics(
+                                parent: BouncingScrollPhysics(),
+                              ),
+                              child: Padding(
+                                padding: EdgeInsets.fromLTRB(
+                                  rw(context, 16),
+                                  rh(context, 8),
+                                  rw(context, 16),
+                                  rh(context, 16),
+                                ),
+                                child: Obx(() {
+                                  langCtrl.selectedLang.value;
 
-                              if (guestCtrl.accessPasses.isEmpty) {
-                                return _buildEmptyState(context);
-                              }
+                                  if (guestCtrl.isLoading.value) {
+                                    return Container(
+                                      constraints: BoxConstraints(
+                                        minHeight: minBodyHeight,
+                                      ),
+                                      alignment: Alignment.center,
+                                      child: _buildLoadingPlaceholder(context),
+                                    );
+                                  }
 
-                              final int total = guestCtrl.accessPasses.length;
-                              final int currentIndex =
-                                  guestCtrl.selectedPassIndex.value;
-                              final int safeIndex =
-                                  (currentIndex >= 0 && currentIndex < total)
+                                  if (guestCtrl.accessPasses.isEmpty) {
+                                    return Container(
+                                      constraints: BoxConstraints(
+                                        minHeight: minBodyHeight,
+                                      ),
+                                      alignment: Alignment.center,
+                                      child: _buildEmptyState(context),
+                                    );
+                                  }
+
+                                  final int total =
+                                      guestCtrl.accessPasses.length;
+                                  final int currentIndex =
+                                      guestCtrl.selectedPassIndex.value;
+                                  final int safeIndex = (currentIndex >= 0 &&
+                                          currentIndex < total)
                                       ? currentIndex
                                       : 0;
-                              final item = guestCtrl.accessPasses[safeIndex];
+                                  final item =
+                                      guestCtrl.accessPasses[safeIndex];
 
-                              return Column(
-                                crossAxisAlignment: CrossAxisAlignment.center,
-                                children: [
-                                  // Multiple passes indicator/switcher
-                                  if (total > 1) ...[
-                                    _buildPassSwitcher(
-                                      context,
-                                      safeIndex,
-                                      total,
-                                    ),
-                                    vSpace(context, 8),
-                                  ],
+                                  return Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.center,
+                                    children: [
+                                      // Multiple passes indicator/switcher
+                                      if (total > 1) ...[
+                                        _buildPassSwitcher(
+                                          context,
+                                          safeIndex,
+                                          total,
+                                        ),
+                                        vSpace(context, 8),
+                                      ],
 
-                                  // ── 1. Check In & Check Out Row ──
-                                  CheckStatusRow(item: item),
-                                  vSpace(context, 10),
+                                      // ── 1. Check In & Check Out Row ──
+                                      CheckStatusRow(item: item),
+                                      vSpace(context, 10),
 
-                                  // ── 2. Full Web-Style Visitor Code Card ──
-                                  WebVisitorCodeCard(item: item),
-                                  vSpace(context, 8),
-                                ],
-                              );
-                            }),
-                          ),
-                        ),
+                                      // ── 2. Full Web-Style Visitor Code Card ──
+                                      WebVisitorCodeCard(item: item),
+                                      vSpace(context, 8),
+                                    ],
+                                  );
+                                }),
+                              ),
+                            ),
+                          );
+                        },
                       ),
                     ),
                   ],
@@ -193,12 +218,14 @@ class _GuestHomePageState extends State<GuestHomePage> {
         ],
       ),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
           vSpace(context, 24),
           const CircularProgressIndicator(color: _blue),
           vSpace(context, 16),
           Text(
             'Memuat Visitor Code...',
+            textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: rfs(context, 13),
               fontWeight: FontWeight.w600,
@@ -247,6 +274,7 @@ class _GuestHomePageState extends State<GuestHomePage> {
           vSpace(context, 16),
           Text(
             'Belum Ada Access Pass',
+            textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: rfs(context, 16),
               fontWeight: FontWeight.w800,

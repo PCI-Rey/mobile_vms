@@ -756,7 +756,7 @@ class _WebVisitorCodeCardState extends State<WebVisitorCodeCard> {
                       ),
                     ),
                     child: Text(
-                      'View 2D Parking Map',
+                      'View Parking Location',
                       style: TextStyle(
                         fontSize: rfs(context, 13),
                         fontWeight: FontWeight.w700,
@@ -890,10 +890,10 @@ class _WebVisitorCodeCardState extends State<WebVisitorCodeCard> {
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Left Column: Agenda, Host Name, Visit Start, Visit End
+                  // Left Column: Agenda, Host Name, Visit Start, Visit End (Centered)
                   Expanded(
                     child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         _buildInfoField(context, 'Agenda', agenda),
                         vSpace(context, 6),
@@ -907,10 +907,10 @@ class _WebVisitorCodeCardState extends State<WebVisitorCodeCard> {
                   ),
                   hSpace(context, 12),
 
-                  // Right Column: Group Name, Status, Site
+                  // Right Column: Group Name, Status, Site (Centered)
                   Expanded(
                     child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         _buildInfoField(context, 'Group Name', groupName),
                         vSpace(context, 6),
@@ -956,6 +956,7 @@ class _WebVisitorCodeCardState extends State<WebVisitorCodeCard> {
               // ── 4. Invitation Code + Copy Icon + ID ─────────────────
               Text(
                 'Invitation Code',
+                textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: rfs(context, 10),
                   fontWeight: FontWeight.w600,
@@ -968,9 +969,11 @@ class _WebVisitorCodeCardState extends State<WebVisitorCodeCard> {
                 behavior: HitTestBehavior.opaque,
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
                       invitationCode,
+                      textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: rfs(context, 14.5),
                         fontWeight: FontWeight.w800,
@@ -990,6 +993,7 @@ class _WebVisitorCodeCardState extends State<WebVisitorCodeCard> {
               vSpace(context, 2),
               Text(
                 'ID: $visitorIdDisplay',
+                textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: rfs(context, 9.5),
                   fontWeight: FontWeight.w500,
@@ -1126,10 +1130,11 @@ class _WebVisitorCodeCardState extends State<WebVisitorCodeCard> {
 
   Widget _buildInfoField(BuildContext context, String label, String value) {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Text(
           label,
+          textAlign: TextAlign.center,
           style: TextStyle(
             fontSize: rfs(context, 9.5),
             fontWeight: FontWeight.w500,
@@ -1139,6 +1144,7 @@ class _WebVisitorCodeCardState extends State<WebVisitorCodeCard> {
         vSpace(context, 2),
         Text(
           value,
+          textAlign: TextAlign.center,
           style: TextStyle(
             fontSize: rfs(context, 11.5),
             fontWeight: FontWeight.w700,
@@ -1153,10 +1159,11 @@ class _WebVisitorCodeCardState extends State<WebVisitorCodeCard> {
 
   Widget _buildStatusField(BuildContext context, String label, String status) {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Text(
           label,
+          textAlign: TextAlign.center,
           style: TextStyle(
             fontSize: rfs(context, 9.5),
             fontWeight: FontWeight.w500,
@@ -1175,6 +1182,7 @@ class _WebVisitorCodeCardState extends State<WebVisitorCodeCard> {
           ),
           child: Text(
             status,
+            textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: rfs(context, 10.5),
               fontWeight: FontWeight.w700,
