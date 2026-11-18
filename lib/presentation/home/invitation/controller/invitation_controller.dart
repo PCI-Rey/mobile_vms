@@ -1841,14 +1841,22 @@ class InvitationController extends GetxController {
           final model = DashboardOverviewModel.fromJson(data);
           dashboardOverview.value = model;
 
-          // If kpi_summary active visitors is present and > 0, update visitorTodayCount
-          if (model.kpiSummary.totalActiveVisitor > 0) {
-            visitorTodayCount.value = model.kpiSummary.totalActiveVisitor;
-          }
+          // Update visitorTodayCount from API
+          visitorTodayCount.value = model.kpiSummary.totalActiveVisitor;
           debugPrint(
             '✅ [fetchDashboardOverview] Success: overall=${model.kpiSummary.totalOverall}, active=${model.kpiSummary.totalActiveVisitor}, pending=${model.kpiSummary.totalPendingApproval}, guests=${model.kpiSummary.totalInvitedGuest}',
           );
         }
+      } else if (response.statusCode == 404 ||
+          (response.data is Map &&
+              (response.data['status'] == 'not_found' ||
+                  response.data['status_code'] == 404))) {
+        // Backend returns 404 when there are no records for the selected date
+        dashboardOverview.value = DashboardOverviewModel.empty(targetDate);
+        visitorTodayCount.value = 0;
+        debugPrint(
+          'ℹ️ [fetchDashboardOverview] No records found on $dateStr (404 Not Found) - reset overview to 0.',
+        );
       } else {
         dashboardOverviewError.value =
             response.statusMessage ?? 'Failed to load dashboard overview';

@@ -740,12 +740,17 @@ class ApiService {
   }) async {
     try {
       final queryParams = <String, dynamic>{};
-      if (today != null) queryParams['today'] = today;
+      // Only send 'today' param when it is explicitly true
+      if (today == true) {
+        queryParams['today'] = true;
+      }
       if (startDate != null && startDate.isNotEmpty) {
         queryParams['start_date'] = startDate;
+        queryParams['start-date'] = startDate;
       }
       if (endDate != null && endDate.isNotEmpty) {
         queryParams['end_date'] = endDate;
+        queryParams['end-date'] = endDate;
       }
       if (visitorType != null && visitorType.isNotEmpty) {
         queryParams['visitor_type'] = visitorType;
@@ -757,7 +762,10 @@ class ApiService {
       final response = await _dio.get(
         '/$pathApi/dashboard-visitor/overview',
         queryParameters: queryParams,
-        options: Options(headers: {'Authorization': 'Bearer $token'}),
+        options: Options(
+          headers: {'Authorization': 'Bearer $token'},
+          validateStatus: (status) => status != null && status < 500,
+        ),
       );
       return response;
     } on DioException catch (e) {

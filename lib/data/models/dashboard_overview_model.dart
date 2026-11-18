@@ -329,6 +329,30 @@ class DashboardOverviewModel {
     );
   }
 
+  factory DashboardOverviewModel.empty([DateTime? date]) {
+    final d = date ?? DateTime.now();
+    final dateStr =
+        '${d.year.toString().padLeft(4, '0')}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+    return DashboardOverviewModel(
+      status: 'not_found',
+      statusCode: 404,
+      title: 'No Data',
+      msg: 'No data found for this date',
+      metadata: DashboardMetadata(
+        periodLabel: dateStr,
+        startDate: '${dateStr}T00:00:00Z',
+        endDate: '${dateStr}T23:59:59Z',
+      ),
+      kpiSummary: DashboardKpiSummary(),
+      charts: DashboardCharts(
+        categoryComparison: DashboardCategoryComparisonChart(),
+        activityTrend: DashboardActivityTrendChart(),
+      ),
+      details: DashboardDetails(),
+      rawCollection: const {},
+    );
+  }
+
   Map<String, dynamic> toJson() => {
     'status': status,
     'status_code': statusCode,
