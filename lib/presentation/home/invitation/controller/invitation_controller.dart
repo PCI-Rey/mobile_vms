@@ -1,12 +1,15 @@
 import 'dart:convert';
 import 'dart:async';
+import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:path_provider/path_provider.dart';
 import '../../../../data/datasources/api_service.dart';
 import '../../../../data/datasources/hive_service.dart';
 import '../../../../data/models/access_pass_model.dart';
 import '../../../../data/models/approval_ticket_model.dart';
+import '../../../../data/models/dashboard_overview_model.dart';
 import 'package:flutter/foundation.dart';
 import 'package:intl/intl.dart';
 
@@ -49,6 +52,12 @@ class InvitationController extends GetxController {
       <AccessPassModel>[].obs;
   final RxBool isLoading = false.obs;
   final RxBool isNewestFirst = true.obs; // Default: Terbaru di atas
+
+  // Dashboard Overview state (/api/dashboard-visitor/overview)
+  final Rxn<DashboardOverviewModel> dashboardOverview =
+      Rxn<DashboardOverviewModel>();
+  final RxBool isDashboardOverviewLoading = false.obs;
+  final RxString dashboardOverviewError = ''.obs;
 
   // Approval Ticket States
   final RxList<ApprovalTicketModel> approvalTickets =
@@ -173,11 +182,13 @@ class InvitationController extends GetxController {
     ever(selectedDashboardDate, (_) {
       fetchVisitorTodayCount();
       fetchTodayActivities();
+      fetchDashboardOverview();
     });
 
     // ── STAGE 1: Immediate & High Priority (Critical for Home Screen) ──
     fetchOngoingInvitations();
     fetchApprovalTickets();
+    fetchDashboardOverview();
 
     // ── STAGE 2: Secondary Data (Staggered by 400ms after initial build) ──
     Future.delayed(const Duration(milliseconds: 400), () {
@@ -1774,6 +1785,142 @@ class InvitationController extends GetxController {
       if (fetchId == _visitorTodayFetchId) {
         isVisitorTodayLoading.value = false;
       }
+    }
+  }
+
+  // ── Dashboard Overview (GET /dashboard-visitor/overview) ───────────────────
+  Future<void> fetchDashboardOverview({
+    DateTime? date,
+    bool isSilent = false,
+  }) async {
+    final targetDate = date ?? selectedDashboardDate.value;
+    final user = _hive.getUser();
+    final token = user?.token;
+    if (token == null || token.isEmpty) {
+      debugPrint('[fetchDashboardOverview] token is null or empty');
+      return;
+    }
+
+    if (!isSilent) isDashboardOverviewLoading.value = true;
+    dashboardOverviewError.value = '';
+
+    final now = DateTime.now();
+    final isToday = targetDate.year == now.year &&
+        targetDate.month == now.month &&
+        targetDate.day == now.day;
+    final dateStr = DateFormat('yyyy-MM-dd').format(targetDate);
+
+    try {
+      final response = await _api.getDashboardOverview(
+        token,
+        today: isToday,
+        startDate: dateStr,
+        endDate: dateStr,
+      );
+
+      if (response.statusCode == 200 && response.data != null) {
+        final dynamic data = response.data;
+        if (data is Map<String, dynamic>) {
+          final model = DashboardOverviewModel.fromJson(data);
+          dashboardOverview.value = model;
+
+          // If kpi_summary active visitors is present and > 0, update visitorTodayCount
+          if (model.kpiSummary.totalActiveVisitor > 0) {
+            visitorTodayCount.value = model.kpiSummary.totalActiveVisitor;
+          }
+          debugPrint(
+            '✅ [fetchDashboardOverview] Success: overall=${model.kpiSummary.totalOverall}, active=${model.kpiSummary.totalActiveVisitor}, pending=${model.kpiSummary.totalPendingApproval}, guests=${model.kpiSummary.totalInvitedGuest}',
+          );
+        }
+      } else {
+        dashboardOverviewError.value =
+            response.statusMessage ?? 'Failed to load dashboard overview';
+        debugPrint(
+          '⚠️ [fetchDashboardOverview] Status code: ${response.statusCode}',
+        );
+      }
+    } catch (e) {
+      dashboardOverviewError.value = e.toString();
+      debugPrint('❌ [fetchDashboardOverview] Error: $e');
+    } finally {
+      isDashboardOverviewLoading.value = false;
+    }
+  }
+
+  // ── Export Today Summary (POST /dashboard-visitor/export) ─────────────────
+  Future<({bool isSuccess, String? filePath, String message})>
+      exportDashboardSummary({
+    required String format, // 'pdf', 'xlsx', 'csv'
+    DateTime? date,
+  }) async {
+    final targetDate = date ?? selectedDashboardDate.value;
+    final user = _hive.getUser();
+    final token = user?.token;
+    if (token == null || token.isEmpty) {
+      return (isSuccess: false, filePath: null, message: 'Token is missing');
+    }
+
+    final now = DateTime.now();
+    final isToday = targetDate.year == now.year &&
+        targetDate.month == now.month &&
+        targetDate.day == now.day;
+    final dateStr = DateFormat('yyyy-MM-dd').format(targetDate);
+
+    // Prepare payload according to backend specification
+    final Map<String, dynamic> body = {
+      'today': isToday,
+      'start_date': dateStr,
+      'end_date': dateStr,
+      'is_export': true,
+      'export_format': format.toLowerCase(),
+      'data': dashboardOverview.value?.rawCollection ?? {},
+      'analytics_data': null,
+    };
+
+    try {
+      final response = await _api.exportDashboardSummary(token, body);
+
+      if (response.statusCode == 200 && response.data != null) {
+        // If server returns file bytes (ResponseType.bytes)
+        if (response.data is List<int>) {
+          final bytes = response.data as List<int>;
+          if (bytes.isNotEmpty) {
+            final tempDir = await getTemporaryDirectory();
+            final ext = format.toLowerCase().replaceAll('.', '');
+            final file =
+                File('${tempDir.path}/dashboard_summary_$dateStr.$ext');
+            await file.writeAsBytes(bytes, flush: true);
+            return (
+              isSuccess: true,
+              filePath: file.path,
+              message: 'Export file saved successfully',
+            );
+          }
+        } else if (response.data is Map) {
+          final map = response.data as Map;
+          final downloadUrl = map['file_url'] ??
+              map['url'] ??
+              map['download_url'] ??
+              (map['collection'] is Map ? map['collection']['url'] : null);
+          if (downloadUrl != null && downloadUrl.toString().isNotEmpty) {
+            return (
+              isSuccess: true,
+              filePath: downloadUrl.toString(),
+              message: 'Export URL ready',
+            );
+          }
+        }
+        return (isSuccess: true, filePath: null, message: 'Export completed');
+      } else {
+        return (
+          isSuccess: false,
+          filePath: null,
+          message: 'Server error: ${response.statusCode}',
+        );
+      }
+    } catch (e) {
+      debugPrint('❌ [exportDashboardSummary] Error: $e');
+      return (isSuccess: false, filePath: null, message: e.toString());
     }
   }
 

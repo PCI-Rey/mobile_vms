@@ -712,6 +712,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                         invitationController.fetchApprovalTickets(),
                         invitationController.fetchDashboardShareLinks(),
                         invitationController.fetchTodayActivities(),
+                        invitationController.fetchDashboardOverview(isSilent: true),
                       ]);
                     },
                     child: SingleChildScrollView(
@@ -1986,11 +1987,16 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   Widget _buildSummaryCards(BuildContext context) {
     return Obx(() {
       final date = invitationController.selectedDashboardDate.value;
+      final overview = invitationController.dashboardOverview.value;
+      final kpi = overview?.kpiSummary;
 
-      // 1. Today Summary
-      final todaySummaryCount = invitationController.visitorTodayCount.value;
+      // 1. Today Summary / Visitor Today
+      final todaySummaryCount = kpi != null
+          ? kpi.totalActiveVisitor
+          : invitationController.visitorTodayCount.value;
 
-      final waitingApprovalCount = invitationController.approvalTickets.where((
+      // 2. Waiting Approval
+      final localWaitingApprovalCount = invitationController.approvalTickets.where((
         t,
       ) {
         final actorStatus = (t.approvalActorStatus ?? '').toLowerCase();
@@ -2008,9 +2014,12 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
             itemDate.month == date.month &&
             itemDate.day == date.day;
       }).length;
+      final waitingApprovalCount = kpi != null
+          ? kpi.totalPendingApproval
+          : localWaitingApprovalCount;
 
       // 3. Active Invitation
-      final activeInvitationCount = invitationController.allRawVisitors.where((
+      final localActiveInvitationCount = invitationController.allRawVisitors.where((
         item,
       ) {
         if (item.flow.toLowerCase() == 'quickaccessvisit') return false;
@@ -2026,6 +2035,9 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
         if (item.visitorPeriodEnd.isBefore(DateTime.now())) return false;
         return true;
       }).length;
+      final activeInvitationCount = kpi != null
+          ? kpi.totalInvitedGuest
+          : localActiveInvitationCount;
 
       // 4. Active Notification
       int notificationCount = 0;
@@ -2044,33 +2056,22 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
         }
       }
 
-      if (isGuest) {
-        final alarmCtrl = Get.isRegistered<AlarmController>()
-            ? Get.find<AlarmController>()
-            : Get.put(AlarmController());
-        notificationCount = alarmCtrl.alarms.where((alarm) {
-          final itemDate = alarm.createdAt;
-          return itemDate.year == date.year &&
-              itemDate.month == date.month &&
-              itemDate.day == date.day;
-        }).length;
+      if (kpi != null) {
+        notificationCount = isGuest ? kpi.totalAlarm : kpi.totalPendingApproval;
       } else {
-        notificationCount = invitationController.approvalTickets.where((t) {
-          final actorStatus = (t.approvalActorStatus ?? '').toLowerCase();
-          final ticketStatus = (t.approvalStatus ?? '').toLowerCase();
-          final isApproved = actorStatus == 'approved' || ticketStatus == 'approved';
-          final isRejected = actorStatus == 'rejected' ||
-              actorStatus == 'denied' ||
-              ticketStatus == 'rejected' ||
-              ticketStatus == 'denied';
-          final isPending = !isApproved && !isRejected;
-          if (!isPending) return false;
-          final itemDate = t.visitorPeriodStart;
-          if (itemDate == null) return false;
-          return itemDate.year == date.year &&
-              itemDate.month == date.month &&
-              itemDate.day == date.day;
-        }).length;
+        if (isGuest) {
+          final alarmCtrl = Get.isRegistered<AlarmController>()
+              ? Get.find<AlarmController>()
+              : Get.put(AlarmController());
+          notificationCount = alarmCtrl.alarms.where((alarm) {
+            final itemDate = alarm.createdAt;
+            return itemDate.year == date.year &&
+                itemDate.month == date.month &&
+                itemDate.day == date.day;
+          }).length;
+        } else {
+          notificationCount = localWaitingApprovalCount;
+        }
       }
 
       final now = DateTime.now();
@@ -2098,8 +2099,9 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                   icon: Icons.people,
                   color: const Color(0xFF1976D2),
                   isLoading:
-                      invitationController.isVisitorTodayLoading.value &&
-                      invitationController.visitorTodayCount.value == 0,
+                      (invitationController.isVisitorTodayLoading.value ||
+                       invitationController.isDashboardOverviewLoading.value) &&
+                      todaySummaryCount == 0,
                   onTap: () => context.push(const NewVisitorPage()),
                 ),
               ),

@@ -730,6 +730,67 @@ class ApiService {
     }
   }
 
+  Future<Response> getDashboardOverview(
+    String token, {
+    bool? today,
+    String? startDate,
+    String? endDate,
+    String? visitorType,
+    String? search,
+  }) async {
+    try {
+      final queryParams = <String, dynamic>{};
+      if (today != null) queryParams['today'] = today;
+      if (startDate != null && startDate.isNotEmpty) {
+        queryParams['start_date'] = startDate;
+      }
+      if (endDate != null && endDate.isNotEmpty) {
+        queryParams['end_date'] = endDate;
+      }
+      if (visitorType != null && visitorType.isNotEmpty) {
+        queryParams['visitor_type'] = visitorType;
+      }
+      if (search != null && search.isNotEmpty) {
+        queryParams['search'] = search;
+      }
+
+      final response = await _dio.get(
+        '/$pathApi/dashboard-visitor/overview',
+        queryParameters: queryParams,
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+      return response;
+    } on DioException catch (e) {
+      debugPrint('Dio Error getDashboardOverview: ${e.message}');
+      if (e.response != null) return e.response!;
+      rethrow;
+    }
+  }
+
+  Future<Response> exportDashboardSummary(
+    String token,
+    Map<String, dynamic> body,
+  ) async {
+    try {
+      final response = await _dio.post(
+        '/$pathApi/dashboard-visitor/export',
+        data: body,
+        options: Options(
+          responseType: ResponseType.bytes,
+          headers: {
+            'Authorization': 'Bearer $token',
+            'Accept': '*/*',
+          },
+        ),
+      );
+      return response;
+    } on DioException catch (e) {
+      debugPrint('Dio Error exportDashboardSummary: ${e.message}');
+      if (e.response != null) return e.response!;
+      rethrow;
+    }
+  }
+
   Future<Response> getActiveVisits(String token) async {
     try {
       final response = await _dio.get(

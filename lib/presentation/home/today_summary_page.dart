@@ -30,97 +30,35 @@ class TodaySummaryPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final invitationController = _getInvitationController();
-    final date = invitationController.selectedDashboardDate.value;
-    final now = DateTime.now();
-    final isToday = date.year == now.year && date.month == now.month && date.day == now.day;
+    return Obx(() {
+      final invitationController = _getInvitationController();
+      final date = invitationController.selectedDashboardDate.value;
+      final now = DateTime.now();
+      final isToday = date.year == now.year && date.month == now.month && date.day == now.day;
+      final overview = invitationController.dashboardOverview.value;
+      final kpi = overview?.kpiSummary;
 
-    final String lang = Get.isRegistered<LanguageController>()
-        ? LanguageController.to.selectedLang.value
-        : 'id';
+      final String lang = Get.isRegistered<LanguageController>()
+          ? LanguageController.to.selectedLang.value
+          : 'id';
 
-    String formatDate(DateTime d) {
-      try {
-        return DateFormat(
-          'EEEE, d MMMM yyyy',
-          lang == 'id' ? 'id_ID' : 'en_US',
-        ).format(d);
-      } catch (e) {
-        return DateFormat('EEEE, d MMMM yyyy').format(d);
+      String formatDate(DateTime d) {
+        try {
+          return DateFormat(
+            'EEEE, d MMMM yyyy',
+            lang == 'id' ? 'id_ID' : 'en_US',
+          ).format(d);
+        } catch (e) {
+          return DateFormat('EEEE, d MMMM yyyy').format(d);
+        }
       }
-    }
 
-    // Calculations matching home_page.dart
-    final todaySummaryCount = invitationController.visitorTodayCount.value;
+      // Calculations matching home_page.dart (with API fallback)
+      final todaySummaryCount = kpi != null
+          ? kpi.totalActiveVisitor
+          : invitationController.visitorTodayCount.value;
 
-    final waitingApprovalCount = invitationController.approvalTickets.where((t) {
-      final actorStatus = (t.approvalActorStatus ?? '').toLowerCase();
-      final ticketStatus = (t.approvalStatus ?? '').toLowerCase();
-      final isApproved = actorStatus == 'approved' || ticketStatus == 'approved';
-      final isRejected = actorStatus == 'rejected' ||
-          actorStatus == 'denied' ||
-          ticketStatus == 'rejected' ||
-          ticketStatus == 'denied';
-      final isPending = !isApproved && !isRejected;
-      if (!isPending) {
-        return false;
-      }
-      final itemDate = t.visitorPeriodStart;
-      if (itemDate == null) {
-        return false;
-      }
-      return itemDate.year == date.year &&
-          itemDate.month == date.month &&
-          itemDate.day == date.day;
-    }).length;
-
-    final activeInvitationCount = invitationController.allRawVisitors.where((item) {
-      if (item.flow.toLowerCase() == 'quickaccessvisit' ||
-          item.visitorStatus.toLowerCase() == 'undercreated' ||
-          (item.agenda.trim().isEmpty && item.visitorTypeName.trim().isEmpty) ||
-          item.visitorPeriodStart.year < 2000) {
-        return false;
-      }
-      final itemDate = item.visitorPeriodStart;
-      if (itemDate.year != date.year ||
-          itemDate.month != date.month ||
-          itemDate.day != date.day) {
-        return false;
-      }
-      if (item.visitorPeriodEnd.isBefore(DateTime.now())) {
-        return false;
-      }
-      return true;
-    }).length;
-
-    int notificationCount = 0;
-    final user = UserController.to.user.value;
-    bool isGuest = true;
-    if (user != null) {
-      final r = (user.roleAccess ?? 'guest').toLowerCase();
-      if ([
-        'operator',
-        'employee',
-        'admin',
-        'superadmin',
-        'staff',
-      ].contains(r)) {
-        isGuest = false;
-      }
-    }
-
-    if (isGuest) {
-      final alarmCtrl = Get.isRegistered<AlarmController>()
-          ? Get.find<AlarmController>()
-          : Get.put(AlarmController());
-      notificationCount = alarmCtrl.alarms.where((alarm) {
-        final itemDate = alarm.createdAt;
-        return itemDate.year == date.year &&
-            itemDate.month == date.month &&
-            itemDate.day == date.day;
-      }).length;
-    } else {
-      notificationCount = invitationController.approvalTickets.where((t) {
+      final localWaitingApprovalCount = invitationController.approvalTickets.where((t) {
         final actorStatus = (t.approvalActorStatus ?? '').toLowerCase();
         final ticketStatus = (t.approvalStatus ?? '').toLowerCase();
         final isApproved = actorStatus == 'approved' || ticketStatus == 'approved';
@@ -140,94 +78,153 @@ class TodaySummaryPage extends StatelessWidget {
             itemDate.month == date.month &&
             itemDate.day == date.day;
       }).length;
-    }
+      final waitingApprovalCount = kpi != null
+          ? kpi.totalPendingApproval
+          : localWaitingApprovalCount;
 
-    final String pageTitle = lang == 'id'
-        ? (isToday ? 'Ringkasan Hari Ini' : 'Ringkasan')
-        : (isToday ? 'Today Summary' : 'Summary');
+      final localActiveInvitationCount = invitationController.allRawVisitors.where((item) {
+        if (item.flow.toLowerCase() == 'quickaccessvisit' ||
+            item.visitorStatus.toLowerCase() == 'undercreated' ||
+            (item.agenda.trim().isEmpty && item.visitorTypeName.trim().isEmpty) ||
+            item.visitorPeriodStart.year < 2000) {
+          return false;
+        }
+        final itemDate = item.visitorPeriodStart;
+        if (itemDate.year != date.year ||
+            itemDate.month != date.month ||
+            itemDate.day != date.day) {
+          return false;
+        }
+        if (item.visitorPeriodEnd.isBefore(DateTime.now())) {
+          return false;
+        }
+        return true;
+      }).length;
+      final activeInvitationCount = kpi != null
+          ? kpi.totalInvitedGuest
+          : localActiveInvitationCount;
 
-    final String tabAll = lang == 'id' ? 'Semua Ringkasan' : 'All Summary';
-    final String tabDetail = lang == 'id' ? 'Detail' : 'Detail';
-    final String tabHistory = lang == 'id' ? 'Riwayat Aktifitas' : 'Activity Log';
+      int notificationCount = 0;
+      final user = UserController.to.user.value;
+      bool isGuest = true;
+      if (user != null) {
+        final r = (user.roleAccess ?? 'guest').toLowerCase();
+        if ([
+          'operator',
+          'employee',
+          'admin',
+          'superadmin',
+          'staff',
+        ].contains(r)) {
+          isGuest = false;
+        }
+      }
 
-    return DefaultTabController(
-      length: 3,
-      child: Scaffold(
-        backgroundColor: const Color(0xFFF5F7FB),
-        appBar: AppBar(
-          backgroundColor: Colors.white,
-          elevation: 0,
-          leading: const BackButton(color: Colors.black87),
-          centerTitle: false,
-          title: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                pageTitle,
-                style: TextStyle(
-                  color: Colors.black87,
-                  fontWeight: FontWeight.w700,
-                  fontSize: rfs(context, 24),
-                ),
-              ),
-              const SizedBox(height: 2),
-              Row(
-                children: [
-                  const Icon(Icons.calendar_month_outlined, size: 14, color: Colors.grey),
-                  const SizedBox(width: 4),
-                  Text(
-                    formatDate(date),
-                    style: TextStyle(
-                      color: Colors.grey,
-                      fontSize: rfs(context, 12),
-                      fontWeight: FontWeight.normal,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-          bottom: PreferredSize(
-            preferredSize: Size.fromHeight(rh(context, 48)),
-            child: Container(
-              color: Colors.white,
-              child: MediaQuery(
-                data: MediaQuery.of(context).copyWith(textScaler: TextScaler.noScaling),
-                child: TabBar(
-                  dividerColor: Colors.transparent,
-                  labelColor: AppColors.primary600,
-                  unselectedLabelColor: Colors.grey.shade500,
-                  indicatorColor: AppColors.primary600,
-                  indicatorWeight: 2.5,
-                  indicatorSize: TabBarIndicatorSize.label,
-                  labelPadding: EdgeInsets.zero,
-                  labelStyle: TextStyle(
-                    fontSize: rfs(context, 15),
+      if (kpi != null) {
+        notificationCount = isGuest ? kpi.totalAlarm : kpi.totalPendingApproval;
+      } else {
+        if (isGuest) {
+          final alarmCtrl = Get.isRegistered<AlarmController>()
+              ? Get.find<AlarmController>()
+              : Get.put(AlarmController());
+          notificationCount = alarmCtrl.alarms.where((alarm) {
+            final itemDate = alarm.createdAt;
+            return itemDate.year == date.year &&
+                itemDate.month == date.month &&
+                itemDate.day == date.day;
+          }).length;
+        } else {
+          notificationCount = localWaitingApprovalCount;
+        }
+      }
+
+      final String pageTitle = lang == 'id'
+          ? (isToday ? 'Ringkasan Hari Ini' : 'Ringkasan')
+          : (isToday ? 'Today Summary' : 'Summary');
+
+      final String tabAll = lang == 'id' ? 'Semua Ringkasan' : 'All Summary';
+      final String tabDetail = lang == 'id' ? 'Detail' : 'Detail';
+      final String tabHistory = lang == 'id' ? 'Riwayat Aktifitas' : 'Activity Log';
+
+      return DefaultTabController(
+        length: 3,
+        child: Scaffold(
+          backgroundColor: const Color(0xFFF5F7FB),
+          appBar: AppBar(
+            backgroundColor: Colors.white,
+            elevation: 0,
+            leading: const BackButton(color: Colors.black87),
+            centerTitle: false,
+            title: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  pageTitle,
+                  style: TextStyle(
+                    color: Colors.black87,
                     fontWeight: FontWeight.w700,
+                    fontSize: rfs(context, 24),
                   ),
-                  unselectedLabelStyle: TextStyle(
-                    fontSize: rfs(context, 15),
-                    fontWeight: FontWeight.w500,
-                  ),
-                  tabs: [
-                    Tab(text: tabAll),
-                    Tab(text: tabDetail),
-                    Tab(text: tabHistory),
+                ),
+                const SizedBox(height: 2),
+                Row(
+                  children: [
+                    const Icon(Icons.calendar_month_outlined, size: 14, color: Colors.grey),
+                    const SizedBox(width: 4),
+                    Text(
+                      formatDate(date),
+                      style: TextStyle(
+                        color: Colors.grey,
+                        fontSize: rfs(context, 12),
+                        fontWeight: FontWeight.normal,
+                      ),
+                    ),
                   ],
+                ),
+              ],
+            ),
+            bottom: PreferredSize(
+              preferredSize: Size.fromHeight(rh(context, 48)),
+              child: Container(
+                color: Colors.white,
+                child: MediaQuery(
+                  data: MediaQuery.of(context).copyWith(textScaler: TextScaler.noScaling),
+                  child: TabBar(
+                    dividerColor: Colors.transparent,
+                    labelColor: AppColors.primary600,
+                    unselectedLabelColor: Colors.grey.shade500,
+                    indicatorColor: AppColors.primary600,
+                    indicatorWeight: 2.5,
+                    indicatorSize: TabBarIndicatorSize.label,
+                    labelPadding: EdgeInsets.zero,
+                    labelStyle: TextStyle(
+                      fontSize: rfs(context, 15),
+                      fontWeight: FontWeight.w700,
+                    ),
+                    unselectedLabelStyle: TextStyle(
+                      fontSize: rfs(context, 15),
+                      fontWeight: FontWeight.w500,
+                    ),
+                    tabs: [
+                      Tab(text: tabAll),
+                      Tab(text: tabDetail),
+                      Tab(text: tabHistory),
+                    ],
+                  ),
                 ),
               ),
             ),
           ),
+          body: TabBarView(
+            children: [
+              _buildSemuaRingkasanTab(context, todaySummaryCount, waitingApprovalCount, activeInvitationCount, notificationCount, isGuest, lang, formatDate(date)),
+              _buildDetailTab(context, todaySummaryCount, waitingApprovalCount, activeInvitationCount, notificationCount, isGuest, lang),
+              _buildRiwayatAktifitasTab(context, lang, formatDate(date), formatDate(date.subtract(const Duration(days: 1)))),
+            ],
+          ),
         ),
-        body: TabBarView(
-          children: [
-            _buildSemuaRingkasanTab(context, todaySummaryCount, waitingApprovalCount, activeInvitationCount, notificationCount, isGuest, lang, formatDate(date)),
-            _buildDetailTab(context, todaySummaryCount, waitingApprovalCount, activeInvitationCount, notificationCount, isGuest, lang),
-            _buildRiwayatAktifitasTab(context, lang, formatDate(date), formatDate(date.subtract(const Duration(days: 1)))),
-          ],
-        ),
-      ),
-    );
+      );
+    });
   }
 
   // --- TAB 1: ALL SUMMARY (SEMUA RINGKASAN) ---
@@ -256,9 +253,12 @@ class TodaySummaryPage extends StatelessWidget {
     // Compute dynamic breakdown stats for Tab 1
     final invitationController = _getInvitationController();
     final date = invitationController.selectedDashboardDate.value;
+    final overview = invitationController.dashboardOverview.value;
+    final kpi = overview?.kpiSummary;
 
     final todayVisitorsList = invitationController.getTodayVisitors();
-    final int checkedOutCount = todayVisitorsList.where((v) => v.visitorStatus.toLowerCase() == 'checkout').length;
+    final int localCheckedOutCount = todayVisitorsList.where((v) => v.visitorStatus.toLowerCase() == 'checkout').length;
+    final int checkedOutCount = kpi != null ? kpi.totalInvitedCheckout : localCheckedOutCount;
 
     final dateInvitations = invitationController.allRawVisitors.where((item) {
       if (item.flow.toLowerCase() == 'quickaccessvisit' ||
@@ -272,7 +272,8 @@ class TodaySummaryPage extends StatelessWidget {
           itemDate.month == date.month &&
           itemDate.day == date.day;
     }).toList();
-    final int expiredInvitationCount = dateInvitations.where((item) => item.visitorPeriodEnd.isBefore(DateTime.now())).length;
+    final int localExpiredInvitationCount = dateInvitations.where((item) => item.visitorPeriodEnd.isBefore(DateTime.now())).length;
+    final int expiredInvitationCount = kpi != null ? kpi.totalExpiredVisitor : localExpiredInvitationCount;
     final activeInvitationsList = dateInvitations.where((item) => !item.visitorPeriodEnd.isBefore(DateTime.now())).toList();
 
     final alarmCtrl = Get.isRegistered<AlarmController>()
@@ -446,7 +447,9 @@ class TodaySummaryPage extends StatelessWidget {
                 const Icon(Icons.calendar_month, size: 18, color: Color(0xFF1976D2)),
                 hSpace(context, 8),
                 Text(
-                  formattedDate,
+                  (overview != null && overview.metadata.periodLabel.isNotEmpty)
+                      ? overview.metadata.periodLabel
+                      : formattedDate,
                   style: TextStyle(
                     fontSize: rfs(context, 14),
                     fontWeight: FontWeight.w500,
@@ -464,7 +467,7 @@ class TodaySummaryPage extends StatelessWidget {
             width: double.infinity,
             height: rh(context, 44),
             child: ElevatedButton.icon(
-              onPressed: () => _exportSummaryToExcel(context, lang, date),
+              onPressed: () => _showExportFormatDialog(context, lang, date),
               icon: const Icon(Icons.file_download_outlined, color: Colors.white),
               label: Text(
                 isIndo ? 'Ekspor Ringkasan' : 'Export Summary',
@@ -510,8 +513,8 @@ class TodaySummaryPage extends StatelessWidget {
           _buildInfoBanner(
             context,
             isIndo
-                ? 'Data ringkasan diperbarui secara real-time. Terakhir diperbarui pada $formattedDate, 14:42 WIB.'
-                : 'Summary data is updated in real-time. Last updated on $formattedDate at 02:42 PM.',
+                ? 'Data ringkasan diperbarui secara real-time.${(overview != null && overview.metadata.generatedAt.isNotEmpty) ? ' Terakhir diperbarui pada ${overview.metadata.generatedAt}.' : ' Terakhir diperbarui pada $formattedDate, 14:42 WIB.'}'
+                : 'Summary data is updated in real-time.${(overview != null && overview.metadata.generatedAt.isNotEmpty) ? ' Last updated at ${overview.metadata.generatedAt}.' : ' Last updated on $formattedDate at 02:42 PM.'}',
           ),
         ],
       ),
@@ -1536,6 +1539,9 @@ class TodaySummaryPage extends StatelessWidget {
     // Compute approval ticket details dynamically
     final invitationController = _getInvitationController();
     final date = invitationController.selectedDashboardDate.value;
+    final overview = invitationController.dashboardOverview.value;
+    final kpi = overview?.kpiSummary;
+
     final dateTickets = invitationController.approvalTickets.where((t) {
       final itemDate = t.visitorPeriodStart;
       if (itemDate == null) {
@@ -1546,28 +1552,43 @@ class TodaySummaryPage extends StatelessWidget {
           itemDate.day == date.day;
     }).toList();
 
-    final int totalRequests = dateTickets.length;
-    final int awaitingApproval = dateTickets.where((t) =>
+    final int localTotalRequests = dateTickets.length;
+    final int localAwaitingApproval = dateTickets.where((t) =>
         (t.approvalActorStatus ?? '').toLowerCase() == 'pending' ||
         (t.approvalStatus ?? '').toLowerCase() == 'pending').length;
-    final int approved = dateTickets.where((t) {
+    final int localApproved = dateTickets.where((t) {
       final status = (t.approvalStatus ?? '').toLowerCase();
       final actorStatus = (t.approvalActorStatus ?? '').toLowerCase();
       return status == 'approved' || status == 'success' || actorStatus == 'approved' || actorStatus == 'success';
     }).length;
-    final int rejected = dateTickets.where((t) {
+    final int localRejected = dateTickets.where((t) {
       final status = (t.approvalStatus ?? '').toLowerCase();
       final actorStatus = (t.approvalActorStatus ?? '').toLowerCase();
       return status == 'rejected' || status == 'reject' || actorStatus == 'rejected' || actorStatus == 'reject';
     }).length;
 
+    final int totalRequests = kpi != null
+        ? (kpi.totalPendingApproval + kpi.totalApprovedApproval + kpi.totalRejectedApproval)
+        : localTotalRequests;
+    final int awaitingApproval = kpi != null ? kpi.totalPendingApproval : localAwaitingApproval;
+    final int approved = kpi != null ? kpi.totalApprovedApproval : localApproved;
+    final int rejected = kpi != null ? kpi.totalRejectedApproval : localRejected;
+
     // Compute visitor stats dynamically
     final todayVisitorsList = invitationController.getTodayVisitors();
-    final int totalTodayVisitors = todayVisitorsList.length;
-    final int checkedInToday = todayVisitorsList.where((v) => v.visitorStatus.toLowerCase() == 'checkin' || v.visitorStatus.toLowerCase() == 'checkout').length;
-    final int checkedOutToday = todayVisitorsList.where((v) => v.visitorStatus.toLowerCase() == 'checkout').length;
-    final int notCheckedInToday = totalTodayVisitors - checkedInToday;
-    final int stillOnSiteToday = todayVisitorsList.where((v) => v.visitorStatus.toLowerCase() == 'checkin').length;
+    final int localTotalTodayVisitors = todayVisitorsList.length;
+    final int localCheckedInToday = todayVisitorsList.where((v) => v.visitorStatus.toLowerCase() == 'checkin' || v.visitorStatus.toLowerCase() == 'checkout').length;
+    final int localCheckedOutToday = todayVisitorsList.where((v) => v.visitorStatus.toLowerCase() == 'checkout').length;
+    final int localNotCheckedInToday = localTotalTodayVisitors - localCheckedInToday;
+    final int localStillOnSiteToday = todayVisitorsList.where((v) => v.visitorStatus.toLowerCase() == 'checkin').length;
+
+    final int totalTodayVisitors = kpi != null ? kpi.totalActiveVisitor : localTotalTodayVisitors;
+    final int checkedInToday = kpi != null ? kpi.totalInvitedCheckin : localCheckedInToday;
+    final int checkedOutToday = kpi != null ? kpi.totalInvitedCheckout : localCheckedOutToday;
+    final int stillOnSiteToday = kpi != null ? kpi.totalInvitedStillOnSite : localStillOnSiteToday;
+    final int notCheckedInToday = kpi != null
+        ? ((kpi.totalActiveVisitor - kpi.totalInvitedCheckin) > 0 ? (kpi.totalActiveVisitor - kpi.totalInvitedCheckin) : 0)
+        : localNotCheckedInToday;
 
     // Compute active invitation details dynamically
     final dateInvitations = invitationController.allRawVisitors.where((item) {
@@ -1583,8 +1604,8 @@ class TodaySummaryPage extends StatelessWidget {
           itemDate.day == date.day;
     }).toList();
 
-    final int activeInvitations = dateInvitations.where((item) => !item.visitorPeriodEnd.isBefore(DateTime.now())).length;
-    final int expiredInvitations = dateInvitations.where((item) => item.visitorPeriodEnd.isBefore(DateTime.now())).length;
+    final int localActiveInvitations = dateInvitations.where((item) => !item.visitorPeriodEnd.isBefore(DateTime.now())).length;
+    final int localExpiredInvitations = dateInvitations.where((item) => item.visitorPeriodEnd.isBefore(DateTime.now())).length;
     final int expiringSoonInvitations = dateInvitations.where((item) {
       final now = DateTime.now();
       if (item.visitorPeriodEnd.isBefore(now)) {
@@ -1593,6 +1614,9 @@ class TodaySummaryPage extends StatelessWidget {
       final diff = item.visitorPeriodEnd.difference(now);
       return diff.inDays <= 3;
     }).length;
+
+    final int activeInvitations = kpi != null ? kpi.totalInvitedGuest : localActiveInvitations;
+    final int expiredInvitations = kpi != null ? kpi.totalExpiredVisitor : localExpiredInvitations;
 
     // Compute alarm counts dynamically
     final alarmCtrl = Get.isRegistered<AlarmController>()
@@ -1605,7 +1629,7 @@ class TodaySummaryPage extends StatelessWidget {
           itemDate.day == date.day;
     }).toList();
 
-    final int totalActiveAlarms = dateAlarms.length;
+    final int totalActiveAlarms = kpi != null ? kpi.totalAlarm : dateAlarms.length;
     final int highPriorityAlarms = dateAlarms.where((a) => a.status == AlarmStatus.high).length;
     final int mediumPriorityAlarms = dateAlarms.where((a) => a.status == AlarmStatus.medium).length;
     final int lowPriorityAlarms = dateAlarms.where((a) => a.status == AlarmStatus.low).length;
@@ -2122,6 +2146,227 @@ class TodaySummaryPage extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  void _showExportFormatDialog(BuildContext context, String lang, DateTime date) {
+    final bool isIndo = lang == 'id';
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (bottomSheetContext) {
+        return Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          padding: EdgeInsets.fromLTRB(
+            rw(context, 20),
+            rh(context, 16),
+            rw(context, 20),
+            rh(context, 24) + MediaQuery.of(context).padding.bottom,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: rw(context, 40),
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade300,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              vSpace(context, 16),
+              Text(
+                isIndo ? 'Pilih Format Ekspor' : 'Select Export Format',
+                style: TextStyle(
+                  fontSize: rfs(context, 17),
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
+                ),
+              ),
+              vSpace(context, 6),
+              Text(
+                isIndo
+                    ? 'Pilih format file laporan ringkasan yang ingin diunduh'
+                    : 'Choose the summary report file format to download',
+                style: TextStyle(
+                  fontSize: rfs(context, 13),
+                  color: Colors.grey.shade600,
+                ),
+              ),
+              vSpace(context, 16),
+              ListTile(
+                contentPadding: EdgeInsets.symmetric(horizontal: rw(context, 8)),
+                leading: Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: Colors.red.shade50,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(Icons.picture_as_pdf, color: Colors.red),
+                ),
+                title: Text(
+                  'PDF Document (*.pdf)',
+                  style: TextStyle(
+                    fontSize: rfs(context, 15),
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                subtitle: Text(
+                  isIndo ? 'Laporan ringkasan siap cetak' : 'Ready-to-print summary report',
+                  style: TextStyle(fontSize: rfs(context, 12), color: Colors.grey),
+                ),
+                trailing: const Icon(Icons.chevron_right, color: Colors.grey),
+                onTap: () {
+                  Navigator.pop(bottomSheetContext);
+                  _handleExport(context, lang, date, 'pdf');
+                },
+              ),
+              const Divider(),
+              ListTile(
+                contentPadding: EdgeInsets.symmetric(horizontal: rw(context, 8)),
+                leading: Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: Colors.green.shade50,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(Icons.table_chart, color: Colors.green),
+                ),
+                title: Text(
+                  'Excel Spreadsheet (*.xlsx)',
+                  style: TextStyle(
+                    fontSize: rfs(context, 15),
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                subtitle: Text(
+                  isIndo ? 'Data lengkap dalam format spreadsheet' : 'Complete dataset in spreadsheet format',
+                  style: TextStyle(fontSize: rfs(context, 12), color: Colors.grey),
+                ),
+                trailing: const Icon(Icons.chevron_right, color: Colors.grey),
+                onTap: () {
+                  Navigator.pop(bottomSheetContext);
+                  _handleExport(context, lang, date, 'xlsx');
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _handleExport(
+    BuildContext context,
+    String lang,
+    DateTime date,
+    String format,
+  ) async {
+    final bool isIndo = lang == 'id';
+    final invitationController = _getInvitationController();
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+              ),
+            ),
+            const SizedBox(width: 16),
+            Text(
+              isIndo
+                  ? 'Sedang membuat laporan ${format.toUpperCase()}...'
+                  : 'Generating ${format.toUpperCase()} report...',
+            ),
+          ],
+        ),
+        duration: const Duration(seconds: 4),
+      ),
+    );
+
+    try {
+      final result = await invitationController.exportDashboardSummary(
+        format: format,
+        date: date,
+      );
+
+      if (result.isSuccess && result.filePath != null) {
+        final filePath = result.filePath!;
+        try {
+          await OpenFilex.open(filePath);
+        } catch (e) {
+          debugPrint('OpenFilex error: $e');
+        }
+
+        final fileName = filePath.split(Platform.pathSeparator).last;
+        Get.snackbar(
+          'Success',
+          isIndo
+              ? 'Laporan $fileName berhasil diunduh!'
+              : 'Report $fileName downloaded successfully!',
+          messageText: Text(
+            isIndo ? 'Tersimpan di folder Download' : 'Saved to Download folder',
+            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          ),
+          snackPosition: SnackPosition.TOP,
+          backgroundColor: Colors.green,
+          colorText: Colors.white,
+          duration: const Duration(seconds: 6),
+          mainButton: TextButton(
+            onPressed: () => OpenFilex.open(filePath),
+            child: Text(
+              isIndo ? 'BUKA' : 'OPEN',
+              style: const TextStyle(
+                color: Colors.yellowAccent,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        );
+      } else {
+        debugPrint('Export API failed: ${result.message}. Falling back to client-side exporter.');
+        if (format == 'xlsx') {
+          if (context.mounted) {
+            await _exportSummaryToExcel(context, lang, date);
+          }
+        } else {
+          Get.snackbar(
+            'Error',
+            result.message.isNotEmpty
+                ? result.message
+                : (isIndo ? 'Gagal mengekspor laporan' : 'Failed to export report'),
+            snackPosition: SnackPosition.TOP,
+            backgroundColor: Colors.red,
+            colorText: Colors.white,
+          );
+        }
+      }
+    } catch (e) {
+      debugPrint('Export error: $e. Falling back to client-side exporter.');
+      if (format == 'xlsx') {
+        if (context.mounted) {
+          await _exportSummaryToExcel(context, lang, date);
+        }
+      } else {
+        Get.snackbar(
+          'Error',
+          e.toString(),
+          snackPosition: SnackPosition.TOP,
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+        );
+      }
+    }
   }
 
   Future<void> _exportSummaryToExcel(
