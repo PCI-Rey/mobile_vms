@@ -1560,6 +1560,23 @@ class InvitationController extends GetxController {
   }
 
   List<AccessPassModel> getTodayVisitors() {
+    // 1. First priority: Check if dashboardOverview has activeVisitors from API
+    final overview = dashboardOverview.value;
+    if (overview != null && overview.details.activeVisitors.isNotEmpty) {
+      final List<AccessPassModel> overviewList = [];
+      for (final map in overview.details.activeVisitors) {
+        try {
+          overviewList.add(AccessPassModel.fromJson(map));
+        } catch (e) {
+          debugPrint('Error parsing active_visitor from overview: $e');
+        }
+      }
+      if (overviewList.isNotEmpty) {
+        return overviewList;
+      }
+    }
+
+    // 2. Fallback: Filter locally from allRawVisitors
     final date = selectedDashboardDate.value;
     final todayTransactions = allRawVisitors.where((item) {
       final itemDate = item.visitorPeriodStart;

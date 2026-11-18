@@ -308,6 +308,36 @@ class TodaySummaryPage extends StatelessWidget {
           itemDate.day == date.day;
     }).toList();
 
+    final List<ApprovalTicketModel> effectiveTickets = dateTickets.isNotEmpty
+        ? dateTickets
+        : (overview != null && overview.details.pendingApprovals.isNotEmpty
+            ? overview.details.pendingApprovals
+                .map((m) {
+                  try {
+                    return ApprovalTicketModel.fromJson(m);
+                  } catch (_) {
+                    return null;
+                  }
+                })
+                .whereType<ApprovalTicketModel>()
+                .toList()
+            : []);
+
+    final List<AccessPassModel> effectiveInvitations = activeInvitationsList.isNotEmpty
+        ? activeInvitationsList
+        : (overview != null && overview.details.invitedGuests.isNotEmpty
+            ? overview.details.invitedGuests
+                .map((m) {
+                  try {
+                    return AccessPassModel.fromJson(m);
+                  } catch (_) {
+                    return null;
+                  }
+                })
+                .whereType<AccessPassModel>()
+                .toList()
+            : []);
+
     final String descVisitor = isIndo ? 'Jumlah visitor yang datang hari ini' : 'Total visitors arriving today';
     final String descApproval = isIndo ? 'Permintaan akses yang menunggu persetujuan' : 'Access requests waiting for approval';
     final String descInvitation = isIndo ? 'Undangan yang masih aktif' : 'Active visitor invitations';
@@ -402,7 +432,7 @@ class TodaySummaryPage extends StatelessWidget {
             descApproval,
             Icons.access_time,
             const Color(0xFFF57C00),
-            onTap: () => _showWaitingApprovalPopup(context, dateTickets, lang),
+            onTap: () => _showWaitingApprovalPopup(context, effectiveTickets, lang),
           ),
           _buildSummaryListTile(
             context,
@@ -411,7 +441,7 @@ class TodaySummaryPage extends StatelessWidget {
             descInvitation,
             Icons.mail_outline,
             const Color(0xFF43A047),
-            onTap: () => _showActiveInvitationPopup(context, activeInvitationsList, lang),
+            onTap: () => _showActiveInvitationPopup(context, effectiveInvitations, lang),
           ),
           _buildSummaryListTile(
             context,
@@ -420,7 +450,7 @@ class TodaySummaryPage extends StatelessWidget {
             descAlarm,
             Icons.notifications_none,
             const Color(0xFFE53935),
-            onTap: () => _showActiveAlarmPopup(context, dateAlarms, isGuest, dateTickets, lang),
+            onTap: () => _showActiveAlarmPopup(context, dateAlarms, isGuest, effectiveTickets, lang),
           ),
 
           vSpace(context, 24),
