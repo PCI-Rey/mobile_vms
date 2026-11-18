@@ -1,4 +1,5 @@
 import 'dart:ui';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -12,6 +13,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+
 import 'presentation/auth/controller/user_controller.dart';
 import 'presentation/auth/controller/language_controller.dart';
 import 'presentation/home/invitation/controller/invitation_controller.dart';
@@ -20,6 +22,7 @@ import 'core/localization/app_translations.dart';
 import 'core/core.dart';
 import 'core/services/notification_service.dart';
 import 'firebase_options.dart';
+
 // import 'routes/routes.dart';
 
 // FCM Background message handler — MUST be top-level function
@@ -156,7 +159,9 @@ class PageLogObserver extends GetObserver {
     }
 
     // If still null or generic, try to clean up the runtimeType
-    if (name == null || name.contains('Material') || name.contains('PageRoute')) {
+    if (name == null ||
+        name.contains('Material') ||
+        name.contains('PageRoute')) {
       name =
           route.settings.name ??
           route.runtimeType
