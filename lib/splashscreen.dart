@@ -139,8 +139,20 @@ class _SplashscreenState extends State<Splashscreen>
       await _updateProgress(0.60, 'Approval tickets ready');
       await Future.delayed(const Duration(milliseconds: 100));
 
-      // Task 4: Share Link (target: 74%)
-      await _updateProgress(0.66, 'Loading share links...');
+      // Task 4: Dashboard Overview (target: 72%)
+      await _updateProgress(0.66, 'Loading dashboard summary...');
+      await controller
+          .fetchDashboardOverview()
+          .timeout(const Duration(seconds: 6), onTimeout: () {
+        debugPrint('Timeout fetchDashboardOverview');
+      }).catchError((e) {
+        debugPrint('Splash dashboardOverview error: $e');
+      });
+      await _updateProgress(0.72, 'Dashboard summary ready');
+      await Future.delayed(const Duration(milliseconds: 100));
+
+      // Task 5: Share Link (target: 80%)
+      await _updateProgress(0.76, 'Loading share links...');
       await controller
           .fetchDashboardShareLinks()
           .timeout(const Duration(seconds: 6), onTimeout: () {
@@ -148,11 +160,11 @@ class _SplashscreenState extends State<Splashscreen>
       }).catchError((e) {
         debugPrint('Splash shareLinks error: $e');
       });
-      await _updateProgress(0.74, 'Share links ready');
+      await _updateProgress(0.82, 'Share links ready');
       await Future.delayed(const Duration(milliseconds: 100));
 
-      // Task 5: Aktivitas Hari Ini (target: 86%)
-      await _updateProgress(0.80, 'Loading today\'s activities...');
+      // Task 6: Aktivitas Hari Ini (target: 90%)
+      await _updateProgress(0.86, 'Loading today\'s activities...');
       await controller
           .fetchTodayActivities(isSilent: true)
           .timeout(const Duration(seconds: 6), onTimeout: () {
@@ -160,11 +172,11 @@ class _SplashscreenState extends State<Splashscreen>
       }).catchError((e) {
         debugPrint('Splash todayActivities error: $e');
       });
-      await _updateProgress(0.86, 'Activities ready');
+      await _updateProgress(0.90, 'Activities ready');
       await Future.delayed(const Duration(milliseconds: 100));
 
-      // Task 6: Data Master (Gedung, Host, Visitor Type, Drop Points) (target: 100%)
-      await _updateProgress(0.92, 'Loading master data...');
+      // Task 7: Data Master (Gedung, Host, Visitor Type, Drop Points) (target: 100%)
+      await _updateProgress(0.95, 'Loading master data...');
       await controller
           .fetchMasterData()
           .timeout(const Duration(seconds: 6), onTimeout: () {

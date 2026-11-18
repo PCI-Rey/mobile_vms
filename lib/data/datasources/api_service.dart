@@ -735,21 +735,22 @@ class ApiService {
     bool? today,
     String? startDate,
     String? endDate,
+    bool includeDetails = true,
     String? visitorType,
     String? search,
   }) async {
     try {
       final queryParams = <String, dynamic>{};
-      // Only send 'today' param when it is explicitly true
       if (today == true) {
         queryParams['today'] = true;
       }
+      if (includeDetails) {
+        queryParams['include-details'] = true;
+      }
       if (startDate != null && startDate.isNotEmpty) {
-        queryParams['start_date'] = startDate;
         queryParams['start-date'] = startDate;
       }
       if (endDate != null && endDate.isNotEmpty) {
-        queryParams['end_date'] = endDate;
         queryParams['end-date'] = endDate;
       }
       if (visitorType != null && visitorType.isNotEmpty) {

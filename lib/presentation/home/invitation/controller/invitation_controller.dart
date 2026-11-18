@@ -179,10 +179,10 @@ class InvitationController extends GetxController {
   void onInit() {
     super.onInit();
     ever(allRawVisitors, (_) => fetchVisitorTodayCount());
-    ever(selectedDashboardDate, (_) {
-      fetchVisitorTodayCount();
+    ever(selectedDashboardDate, (d) {
+      fetchDashboardOverview(date: d);
       fetchTodayActivities();
-      fetchDashboardOverview();
+      fetchVisitorTodayCount();
     });
 
     // ── STAGE 1: Immediate & High Priority (Critical for Home Screen) ──
@@ -1826,13 +1826,17 @@ class InvitationController extends GetxController {
         targetDate.month == now.month &&
         targetDate.day == now.day;
     final dateStr = DateFormat('yyyy-MM-dd').format(targetDate);
+    // Format full UTC timestamps as expected by the backend overview contract
+    final startIso = '${dateStr}T00:00:00Z';
+    final endIso = '${dateStr}T23:59:59Z';
 
     try {
       final response = await _api.getDashboardOverview(
         token,
         today: isToday,
-        startDate: dateStr,
-        endDate: dateStr,
+        startDate: startIso,
+        endDate: endIso,
+        includeDetails: true,
       );
 
       if (response.statusCode == 200 && response.data != null) {
@@ -1843,25 +1847,32 @@ class InvitationController extends GetxController {
 
           // Update visitorTodayCount from API
           visitorTodayCount.value = model.kpiSummary.totalActiveVisitor;
+          isVisitorTodayLoading.value = false;
           debugPrint(
             '✅ [fetchDashboardOverview] Success: overall=${model.kpiSummary.totalOverall}, active=${model.kpiSummary.totalActiveVisitor}, pending=${model.kpiSummary.totalPendingApproval}, guests=${model.kpiSummary.totalInvitedGuest}',
           );
+        } else {
+          debugPrint(
+            '⚠️ [fetchDashboardOverview] 200 OK but body is not JSON map: ${data.runtimeType}',
+          );
         }
-      } else if (response.statusCode == 404 ||
-          (response.data is Map &&
-              (response.data['status'] == 'not_found' ||
-                  response.data['status_code'] == 404))) {
-        // Backend returns 404 when there are no records for the selected date
+      } else if (response.data is Map &&
+          (response.data['status'] == 'not_found' ||
+              response.data['status_code'] == 404)) {
+        // Backend returns JSON 404/not_found when there are legitimately no records for this date
         dashboardOverview.value = DashboardOverviewModel.empty(targetDate);
         visitorTodayCount.value = 0;
+        isVisitorTodayLoading.value = false;
         debugPrint(
           'ℹ️ [fetchDashboardOverview] No records found on $dateStr (404 Not Found) - reset overview to 0.',
         );
       } else {
-        dashboardOverviewError.value =
-            response.statusMessage ?? 'Failed to load dashboard overview';
+        final errorMsg = response.data is String
+            ? 'Server error: ${response.statusCode} (Backend proxy offline)'
+            : (response.statusMessage ?? 'Failed to load dashboard overview');
+        dashboardOverviewError.value = errorMsg;
         debugPrint(
-          '⚠️ [fetchDashboardOverview] Status code: ${response.statusCode}',
+          '⚠️ [fetchDashboardOverview] Server error: ${response.statusCode} - $errorMsg',
         );
       }
     } catch (e) {
@@ -1869,6 +1880,7 @@ class InvitationController extends GetxController {
       debugPrint('❌ [fetchDashboardOverview] Error: $e');
     } finally {
       isDashboardOverviewLoading.value = false;
+      isVisitorTodayLoading.value = false;
     }
   }
 

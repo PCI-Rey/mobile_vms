@@ -2099,9 +2099,9 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                   icon: Icons.people,
                   color: const Color(0xFF1976D2),
                   isLoading:
+                      overview == null &&
                       (invitationController.isVisitorTodayLoading.value ||
-                       invitationController.isDashboardOverviewLoading.value) &&
-                      todaySummaryCount == 0,
+                       invitationController.isDashboardOverviewLoading.value),
                   onTap: () => context.push(const NewVisitorPage()),
                 ),
               ),
