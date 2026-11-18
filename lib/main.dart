@@ -1,6 +1,8 @@
 import 'dart:ui';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:device_preview/device_preview.dart';
 import 'package:get/get.dart';
 import 'package:flutter_visitor_app/splashscreen.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -26,6 +28,25 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   debugPrint('🔔 [FCM] Background message: ${message.messageId}');
 }
+
+// ── Custom Simulation Devices for Device Preview ──────────────────────────
+final infinixHot50Pro = DeviceInfo.genericPhone(
+  platform: TargetPlatform.android,
+  name: 'Infinix Hot 50 Pro',
+  id: 'infinix_hot_50_pro',
+  screenSize: const Size(1080, 2436), // 6.78" FHD+ AMOLED (20:9)
+  pixelRatio: 2.75,
+  safeAreas: const EdgeInsets.only(top: 36, bottom: 20),
+);
+
+final redmiNote13 = DeviceInfo.genericPhone(
+  platform: TargetPlatform.android,
+  name: 'Xiaomi Redmi Note 13',
+  id: 'redmi_note_13',
+  screenSize: const Size(1080, 2400),
+  pixelRatio: 2.75,
+  safeAreas: const EdgeInsets.only(top: 34, bottom: 20),
+);
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -87,7 +108,19 @@ void main() async {
     DeviceOrientation.portraitDown,
   ]);
 
-  runApp(const MyApp());
+  runApp(
+    DevicePreview(
+      enabled: !kReleaseMode,
+      defaultDevice: infinixHot50Pro,
+      devices: [
+        infinixHot50Pro,
+        redmiNote13,
+        ...Devices.android.all,
+        ...Devices.ios.all,
+      ],
+      builder: (context) => const MyApp(),
+    ),
+  );
 }
 
 // Custom Observer to log page navigation to terminal
@@ -164,10 +197,12 @@ class _MyAppState extends State<MyApp> {
         : const Locale('en', 'US');
 
     return GetMaterialApp(
+      useInheritedMediaQuery: true,
+      locale: DevicePreview.locale(context) ?? initialLocale,
+      builder: DevicePreview.appBuilder,
       title: 'Visitor App',
       navigatorObservers: [PageLogObserver()],
       translations: AppTranslations(),
-      locale: initialLocale,
       fallbackLocale: const Locale('en', 'US'),
       theme: ThemeData(
         primaryColor: AppColors.primary500,
